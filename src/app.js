@@ -308,8 +308,13 @@ app.use('/api', (req, res) => {
     }
 });
 
-// ==================== SPA 支持 ====================
-app.use((req, res) => {
+// ==================== SPA 支持（排除根路径） ====================
+app.use((req, res, next) => {
+    // 如果请求的是根路径，跳过（让前面的 app.get('/') 处理）
+    if (req.path === '/') {
+        return next();
+    }
+    // 对于其他前端路由，返回 index.html
     res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
 });
 
