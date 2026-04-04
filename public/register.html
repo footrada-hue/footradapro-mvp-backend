@@ -595,7 +595,7 @@
     <label class="form-label">Verification Code</label>
     <div style="display: flex; gap: 12px; align-items: center;">
         <input type="text" class="form-input" id="captchaInput" placeholder="Enter code" style="flex: 1;" autocomplete="off">
-        <img id="captchaImage" src="/api/v1/captcha/generate" alt="CAPTCHA" style="height: 48px; border-radius: 12px; cursor: pointer;" title="Click to refresh">
+        <img id="captchaImage" alt="CAPTCHA" style="height: 48px; border-radius: 12px; cursor: pointer;" title="Click to refresh">
     </div>
 </div>
             <button class="btn-primary" id="sendCodeBtn">Continue</button>
@@ -866,5 +866,51 @@
 
     <script src="/js/core/config.js" defer></script>
     <script type="module" src="/js/user/register_controller.js" defer></script>
+    <!-- 手动初始化 CAPTCHA -->
+<script>
+    (function() {
+        var captchaImage = document.getElementById('captchaImage');
+        if (!captchaImage) return;
+        
+        function loadCaptcha() {
+            // 显示加载状态
+            captchaImage.style.opacity = '0.5';
+            
+            fetch('/api/v1/captcha/generate', {
+                headers: {
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                }
+            })
+            .then(function(res) { 
+                if (!res.ok) throw new Error('Network error');
+                return res.json(); 
+            })
+            .then(function(data) {
+                if (data.success && data.data && data.data.image) {
+                    captchaImage.src = data.data.image;
+                    window.currentCaptchaId = data.data.captchaId;
+                    captchaImage.style.opacity = '1';
+                } else {
+                    console.error('CAPTCHA data error:', data);
+                    setTimeout(loadCaptcha, 1000);
+                }
+            })
+            .catch(function(err) {
+                console.error('CAPTCHA fetch error:', err);
+                // 重试
+                setTimeout(loadCaptcha, 2000);
+            });
+        }
+        
+        // 点击刷新
+        captchaImage.addEventListener('click', function(e) {
+            e.preventDefault();
+            loadCaptcha();
+        });
+        
+        // 初始加载
+        loadCaptcha();
+    })();
+</script>
 </body>
 </html>
