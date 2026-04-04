@@ -295,28 +295,24 @@ app.use('/api/v1/admin/support', adminSupportRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/user/deposit', depositNotifyRoutes);
 app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
-// ==================== API 404 处理 ====================
-app.use('/api', (req, res) => {
-    if (req.path.startsWith('/api')) {
-        res.status(404).json({
-            success: false,
-            error: 'Not Found',
-            message: `Cannot ${req.method} ${req.url}`
-        });
-    } else {
-        res.status(404).sendFile(path.join(process.cwd(), 'public', 'index.html'));
+// ==================== 前端路由支持 ====================
+app.use((req, res) => {
+    // 如果请求的是根路径，返回 home.html
+    if (req.path === '/') {
+        return res.sendFile(path.join(process.cwd(), 'public', 'home.html'));
     }
+    // 如果请求的是前端页面路由，返回 index.html
+    if (!req.path.startsWith('/api') && !req.path.startsWith('/health')) {
+        return res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
+    }
+    // API 404
+    res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: `Cannot ${req.method} ${req.url}`
+    });
 });
 
-// ==================== SPA 支持（排除根路径） ====================
-app.use((req, res, next) => {
-    // 如果请求的是根路径，跳过（让前面的 app.get('/') 处理）
-    if (req.path === '/') {
-        return next();
-    }
-    // 对于其他前端路由，返回 index.html
-    res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
-});
 
 // ==================== 全局错误处理 ====================
 app.use((err, req, res, next) => {
