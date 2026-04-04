@@ -213,13 +213,12 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ==================== Session 配置 ====================
-// 临时使用内存存储，调试登录问题
 app.use(session({
     secret: process.env.SESSION_SECRET || 'footradapro-super-secret-key-2024',
     resave: true,
     saveUninitialized: true,
     cookie: {
-        secure: false,
+        secure: true,   // 改为 true（因为网站是 HTTPS）
         httpOnly: true,
         maxAge: 7 * 24 * 60 * 60 * 1000,
         sameSite: 'lax'
