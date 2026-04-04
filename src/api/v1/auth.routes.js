@@ -5,7 +5,7 @@ import { body, validationResult } from 'express-validator';
 import fetch from 'node-fetch';
 import { getDb } from '../../database/connection.js';
 import logger from '../../utils/logger.js';
-import { captchaStore } from './captcha.routes.js'; // 导入图形验证码存储
+import { captchaStore } from './captcha.routes.js';
 
 const router = express.Router();
 
@@ -15,9 +15,9 @@ const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 const SENDER_EMAIL = process.env.SENDER_EMAIL || 'noreply@footradapro.com';
 const SENDER_NAME = 'FOOTRADAPRO';
 
-// ==================== 验证码存储（内存，生产建议用Redis）====================
+// ==================== 验证码存储 ====================
 const verificationCodes = new Map();
-const CODE_EXPIRY = 10 * 60 * 1000; // 10分钟
+const CODE_EXPIRY = 10 * 60 * 1000;
 
 function generateEmailHtml(code) {
     return `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -47,7 +47,7 @@ const registerValidation = [
     body('token').notEmpty().withMessage('缺少临时令牌')
 ];
 
-// ==================== 发送验证码（需携带图形验证码令牌）- 增强错误日志 ====================
+// ==================== 发送验证码 ====================
 router.post('/send-code',
     body('email').isEmail().normalizeEmail(),
     async (req, res) => {
@@ -64,13 +64,9 @@ router.post('/send-code',
             });
         }
 
-        const { email, captchaToken } = req.body;
+        const { email } = req.body;
         console.log('Email:', email);
-        console.log('CaptchaToken:', captchaToken);
 
-
-
-        // 检查邮箱是否已注册
         const db = getDb();
         const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(email);
         if (existing) {
@@ -78,7 +74,6 @@ router.post('/send-code',
             return res.status(409).json({ success: false, error: 'EMAIL_ALREADY_REGISTERED' });
         }
 
-        // 生成邮箱验证码
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         const expires = Date.now() + CODE_EXPIRY;
         verificationCodes.set(email, {
@@ -89,9 +84,7 @@ router.post('/send-code',
         });
         
         console.log('✅ Generated email code for', email, ':', code);
-        console.log('Current verificationCodes size:', verificationCodes.size);
 
-        // 发送邮件
         try {
             console.log('Sending email via Brevo...');
             const response = await fetch(BREVO_API_URL, {
@@ -123,7 +116,7 @@ router.post('/send-code',
     }
 );
 
-// ==================== 验证邮箱验证码（生成临时令牌）====================
+// ==================== 验证邮箱验证码 ====================
 router.post('/verify-code',
     body('email').isEmail().normalizeEmail(),
     body('code').isLength({ min: 6, max: 6 }).isNumeric(),
@@ -144,14 +137,7 @@ router.post('/verify-code',
         console.log('Looking up code for email:', email);
         
         const record = verificationCodes.get(email);
-        console.log('Record found:', record ? 'Yes' : 'No');
         
-        if (record) {
-            console.log('Stored code:', record.code, 'Expires:', new Date(record.expires));
-            console.log('Received code:', code);
-        }
-
-        // 检查是否被锁定
         if (record?.lockedUntil && record.lockedUntil > Date.now()) {
             console.log('Account locked until:', new Date(record.lockedUntil));
             return res.status(429).json({ success: false, error: 'TOO_MANY_ATTEMPTS' });
@@ -171,7 +157,6 @@ router.post('/verify-code',
         if (record.code !== code) {
             console.log('Code mismatch');
             
-            // 记录错误次数
             record.attempts = (record.attempts || 0) + 1;
             const maxAttempts = parseInt(process.env.CODE_MAX_ATTEMPTS || 5);
             if (record.attempts >= maxAttempts) {
@@ -183,7 +168,6 @@ router.post('/verify-code',
             return res.status(400).json({ success: false, error: 'INVALID_OR_EXPIRED_CODE' });
         }
 
-        // 验证成功，生成临时 JWT
         const jwtSecret = process.env.JWT_SECRET || 'footradapro-jwt-secret-key-2024';
         const tempToken = jwt.sign(
             { email, purpose: 'registration' },
@@ -191,7 +175,6 @@ router.post('/verify-code',
             { expiresIn: '15m' }
         );
 
-        // 清除邮箱验证码记录
         verificationCodes.delete(email);
         
         console.log('Code verified successfully, token generated');
@@ -200,8 +183,7 @@ router.post('/verify-code',
     }
 );
 
-// ==================== 注册（需要临时令牌）- 添加邮箱标准化处理 ====================
-// ==================== 注册（需要临时令牌）====================
+// ==================== 注册 ====================
 router.post('/register', registerValidation, async (req, res) => {
     console.log('=== /register called ===');
     console.log('Request body:', req.body);
@@ -218,7 +200,6 @@ router.post('/register', registerValidation, async (req, res) => {
 
     const { username, password, firstName, lastName, country, occupation, token } = req.body;
 
-    // 验证临时令牌
     let decoded;
     try {
         const jwtSecret = process.env.JWT_SECRET || 'footradapro-jwt-secret-key-2024';
@@ -228,7 +209,6 @@ router.post('/register', registerValidation, async (req, res) => {
         return res.status(401).json({ success: false, error: 'INVALID_TOKEN' });
     }
 
-    // 邮箱标准化处理：移除点号并转为小写（针对 Gmail）
     const normalizedRequestEmail = username.replace(/\./g, '').toLowerCase();
     const normalizedTokenEmail = decoded.email.replace(/\./g, '').toLowerCase();
     
@@ -236,14 +216,13 @@ router.post('/register', registerValidation, async (req, res) => {
     console.log('Normalized token email:', normalizedTokenEmail);
     
     if (normalizedRequestEmail !== normalizedTokenEmail || decoded.purpose !== 'registration') {
-        console.log('Email mismatch - Token email:', decoded.email, 'Request email:', username);
+        console.log('Email mismatch');
         return res.status(401).json({ success: false, error: 'INVALID_TOKEN' });
     }
 
     const db = getDb();
 
     try {
-        // 检查用户是否已存在（使用原始邮箱，但移除点号后检查）
         const existingUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
         if (existingUser) {
             return res.status(409).json({ 
@@ -252,14 +231,11 @@ router.post('/register', registerValidation, async (req, res) => {
             });
         }
 
-        // 加密密码
         const hashedPassword = await bcrypt.hash(password, 12);
         
-        // 生成唯一UID
         const uid = 'U' + Date.now().toString().slice(-8) + Math.random().toString(36).substring(2, 5).toUpperCase();
         console.log('Generated UID:', uid);
 
-        // 插入用户 - 使用原始邮箱（带点号）
         const stmt = db.prepare(`
             INSERT INTO users (
                 uid, username, password, first_name, last_name, country, occupation,
@@ -273,31 +249,35 @@ router.post('/register', registerValidation, async (req, res) => {
             req.ip
         );
 
-        // 获取新用户
         const newUser = db.prepare('SELECT id, uid, username, role FROM users WHERE uid = ?').get(uid);
         console.log('New user in DB:', newUser);
 
-        // 自动登录：设置 session
-req.session.userId = newUser.id;
-req.session.uid = newUser.uid;
-req.session.role = newUser.role;
-req.session.isNewUser = true;
+        // 自动登录：设置 session 并显式保存
+        req.session.userId = newUser.id;
+        req.session.uid = newUser.uid;
+        req.session.role = newUser.role;
+        req.session.isNewUser = true;
         
-      // 更新最后登录时间
-    db.prepare('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?').run(newUser.id);
-    
-    console.log('Auto login successful for new user:', newUser.uid);
-    
-    res.json({
-        success: true,
-        data: {
-            uid: newUser.uid,
-            username: newUser.username,
-            balance: 100.00,
-            role: newUser.role,
-            isNewUser: true
-
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error:', err);
+                return res.status(500).json({ success: false, error: 'SESSION_ERROR' });
             }
+            
+            db.prepare('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?').run(newUser.id);
+            
+            console.log('Auto login successful for new user:', newUser.uid);
+            
+            res.json({
+                success: true,
+                data: {
+                    uid: newUser.uid,
+                    username: newUser.username,
+                    balance: 100.00,
+                    role: newUser.role,
+                    isNewUser: true
+                }
+            });
         });
 
     } catch (error) {
@@ -330,7 +310,6 @@ router.post('/login', loginValidation, async (req, res) => {
     const db = getDb();
 
     try {
-        // 查找用户
         const user = db.prepare('SELECT id, uid, username, password, balance, role, status FROM users WHERE username = ?').get(username);
         console.log('User found:', user ? 'Yes' : 'No');
 
@@ -341,7 +320,6 @@ router.post('/login', loginValidation, async (req, res) => {
             });
         }
 
-        // 检查用户状态
         if (user.status !== 'active') {
             return res.status(403).json({ 
                 success: false, 
@@ -349,7 +327,6 @@ router.post('/login', loginValidation, async (req, res) => {
             });
         }
 
-        // 验证密码
         const validPassword = await bcrypt.compare(password, user.password);
         console.log('Password valid:', validPassword);
         
@@ -360,24 +337,29 @@ router.post('/login', loginValidation, async (req, res) => {
             });
         }
 
-        // 设置 session
         req.session.userId = user.id;
         req.session.uid = user.uid;
         req.session.role = user.role;
         
-        // 更新最后登录时间
-        db.prepare('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
-
-        console.log('Login successful:', user.uid);
-
-        res.json({
-            success: true,
-            data: {
-                uid: user.uid,
-                username: user.username,
-                balance: user.balance,
-                role: user.role
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error:', err);
+                return res.status(500).json({ success: false, error: 'SESSION_ERROR' });
             }
+            
+            db.prepare('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
+            
+            console.log('Login successful:', user.uid);
+            
+            res.json({
+                success: true,
+                data: {
+                    uid: user.uid,
+                    username: user.username,
+                    balance: user.balance,
+                    role: user.role
+                }
+            });
         });
 
     } catch (error) {
