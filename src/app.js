@@ -80,7 +80,6 @@ import { verifyAndFixTeamLogos } from './jobs/verify-team-logos.js';
 import { initSocket } from './socket/index.js';
 import './jobs/auto-fetch-scores.js';
 import depositNotifyRoutes from './api/v1/user/deposit-notify.routes.js';
-// 强制加载 emailservice 以显示调试信息
 import './services/emailservice.js';
 
 // ==================== 导入数据库 ====================
@@ -157,7 +156,7 @@ const corsOptions = {
         if (NODE_ENV === 'development') {
             return callback(null, true);
         }
-        const allowedOrigins = config.ALLOWED_ORIGINS || [];
+        const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
@@ -183,7 +182,7 @@ app.use(session({
         db: 'sessions.db',
         dir: './src/database/data'
     }),
-    secret: config.SESSION_SECRET || process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET || 'fallback-secret-change-in-production',
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -206,11 +205,133 @@ app.use(morgan(NODE_ENV === 'production' ? 'combined' : 'dev', {
 
 // ==================== 静态文件服务 ====================
 app.use(express.static(path.join(process.cwd(), 'public'), config.staticOptions));
-// ==================== 首页 - 显示官网页面 ====================
+
+// ==================== 多页面应用路由 ====================
+
+// 官网首页
 app.get('/', (req, res) => {
-    res.sendFile('home.html', { root: path.join(process.cwd(), 'public') });
+    res.sendFile(path.join(process.cwd(), 'public', 'home.html'));
 });
-// ==================== 健康检查 ====================
+
+// 认证相关
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'login.html'));
+});
+
+app.get('/register', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'register.html'));
+});
+
+// 用户相关
+app.get('/profile', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'profile.html'));
+});
+
+app.get('/settings', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'settings.html'));
+});
+
+app.get('/change-password', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'change-password.html'));
+});
+
+app.get('/set-paypassword', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'set-paypassword.html'));
+});
+
+// 资金相关
+app.get('/deposit', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'deposit.html'));
+});
+
+app.get('/withdraw', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'withdraw.html'));
+});
+
+app.get('/fund-detail', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'fund-detail.html'));
+});
+
+// 交易相关
+app.get('/match-market', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'match-market.html'));
+});
+
+app.get('/transaction-list', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'transaction-list.html'));
+});
+
+app.get('/transaction-detail', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'transaction-detail.html'));
+});
+
+// 报表相关
+app.get('/platform-reports', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'platform-reports.html'));
+});
+
+app.get('/historical-reports', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'historical-reports.html'));
+});
+
+app.get('/report-detail', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'report-detail.html'));
+});
+
+// 授权相关
+app.get('/authorizations', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'authorizations.html'));
+});
+
+app.get('/authorize-submit', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'authorize-submit.html'));
+});
+
+// FAQ 相关
+app.get('/faq-list', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'faq-list.html'));
+});
+
+app.get('/faq-detail', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'faq-detail.html'));
+});
+
+app.get('/faq-auth', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'faq-auth.html'));
+});
+
+// 客服相关
+app.get('/support', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'support.html'));
+});
+
+app.get('/support-chat', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'support-chat.html'));
+});
+
+// VIP
+app.get('/vip-details', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'vip-details.html'));
+});
+
+// 其他
+app.get('/privacy', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'privacy.html'));
+});
+
+app.get('/terms', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'terms.html'));
+});
+
+app.get('/result', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'result.html'));
+});
+
+app.get('/notification-demo', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'notification-demo.html'));
+});
+
+// 健康检查
 app.get('/health', (req, res) => {
     res.status(200).json({
         status: 'OK',
@@ -283,8 +404,6 @@ app.use('/api/v1/user/network', userNetworkRoutes);
 app.use('/api/v1/news', newsRoutes);
 app.use('/api/v1/admin/upload', adminUploadRoutes);
 app.use('/api/v1/user/authorize', authorizeRoutes);
-app.use('/api/v1/admin/report', reportRoutes);
-app.use('/api/v1/user/report', userReportRoutes);
 app.use('/api/v1/user/withdraw/user', withdrawUserRoutes);
 app.use('/api/v1/user/stats', statsRoutes);
 app.use('/api/v1/user/balance/logs', balanceLogsRoutes);
@@ -295,24 +414,11 @@ app.use('/api/v1/admin/support', adminSupportRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/user/deposit', depositNotifyRoutes);
 app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
-// ==================== 前端路由支持 ====================
-app.use((req, res) => {
-    // 如果请求的是根路径，返回 home.html
-    if (req.path === '/') {
-        return res.sendFile(path.join(process.cwd(), 'public', 'home.html'));
-    }
-    // 如果请求的是前端页面路由，返回 index.html
-    if (!req.path.startsWith('/api') && !req.path.startsWith('/health')) {
-        return res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
-    }
-    // API 404
-    res.status(404).json({
-        success: false,
-        error: 'Not Found',
-        message: `Cannot ${req.method} ${req.url}`
-    });
-});
 
+// ==================== 404 处理 ====================
+app.use((req, res) => {
+    res.status(404).sendFile(path.join(process.cwd(), 'public', '404.html'));
+});
 
 // ==================== 全局错误处理 ====================
 app.use((err, req, res, next) => {
@@ -474,13 +580,13 @@ const startServer = async () => {
         process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
         process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-process.on('unhandledRejection', (reason, promise) => {
-    logger.error('Unhandled Rejection at:', promise);
-    logger.error('Reason:', reason);
-    console.error('=== 完整错误堆栈 ===');
-    console.error(reason?.stack || reason);
-    console.error('===================');
-});
+        process.on('unhandledRejection', (reason, promise) => {
+            logger.error('Unhandled Rejection at:', promise);
+            logger.error('Reason:', reason);
+            console.error('=== 完整错误堆栈 ===');
+            console.error(reason?.stack || reason);
+            console.error('===================');
+        });
 
         process.on('uncaughtException', (err) => {
             logger.error('Uncaught Exception:', err);
