@@ -103,15 +103,15 @@ app.use(helmet({
                 "https://fonts.googleapis.com",
                 "https://cdnjs.cloudflare.com",
                 "https://www.gstatic.com",
-                "https://*.tawk.to",
-                "https://embed.tawk.to"
+                
+                
             ],
             fontSrc: [
                 "'self'", 
                 "https://fonts.gstatic.com",
                 "https://cdnjs.cloudflare.com",
-                "https://embed.tawk.to",
-                "https://*.tawk.to"
+                
+                
             ],
             scriptSrc: [
                 "'self'", 
@@ -121,29 +121,35 @@ app.use(helmet({
                 "https://www.gstatic.com",
                 "https://challenges.cloudflare.com",
                 "https://cdn.jsdelivr.net",
-                "https://embed.tawk.to",
-                "https://*.tawk.to",
+                
+                "'self'",
+"'unsafe-inline'",
+"'unsafe-eval'",
+"https://cdnjs.cloudflare.com",
+"https://www.footradapro.com",
+"https://api.footradapro.com",
                 "https://cdn.socket.io"
+                
             ],
             scriptSrcAttr: ["'unsafe-inline'"],
             imgSrc: [
                 "'self'", 
                 "data:", 
                 "https:",
-                "https://*.tawk.to"
+                
             ],
             connectSrc: [
                 "'self'", 
                 "https://cdn.jsdelivr.net",
-                "https://*.tawk.to",
-                "wss://*.tawk.to",
-                "https://embed.tawk.to",
+                
+                
+                
                 "ws://localhost:*",
                 "wss://localhost:*"
             ],
             frameSrc: [
                 "'self'",
-                "https://*.tawk.to"
+                
             ],
         },
     },
