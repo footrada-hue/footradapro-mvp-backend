@@ -256,13 +256,14 @@ router.post('/register', registerValidation, async (req, res) => {
         // 生成 JWT token
         const jwtToken = generateToken(newUser);
 
-        // 设置 Cookie
-        res.cookie('footradapro_token', jwtToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        });
+        // 设置 Cookie - 兼容 HTTP 和 HTTPS
+res.cookie('footradapro_token', jwtToken, {
+    httpOnly: true,
+    secure: false,      // 先改为 false 测试
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    domain: '.footradapro.com'  // 添加 domain，支持子域名
+});
 
         // 自动登录：设置 session（兼容旧代码）
         req.session.userId = newUser.id;
