@@ -278,24 +278,25 @@ router.post('/register', registerValidation, async (req, res) => {
         console.log('New user in DB:', newUser);
 
         // 自动登录：设置 session
-        req.session.userId = newUser.id;
-        req.session.uid = newUser.uid;
-        req.session.role = newUser.role;
-        req.session.isNewUser = true;
+req.session.userId = newUser.id;
+req.session.uid = newUser.uid;
+req.session.role = newUser.role;
+req.session.isNewUser = true;
         
-        // 更新最后登录时间
-        db.prepare('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?').run(newUser.id);
-        
-        console.log('Auto login successful for new user:', newUser.uid);
+      // 更新最后登录时间
+    db.prepare('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?').run(newUser.id);
+    
+    console.log('Auto login successful for new user:', newUser.uid);
+    
+    res.json({
+        success: true,
+        data: {
+            uid: newUser.uid,
+            username: newUser.username,
+            balance: 100.00,
+            role: newUser.role,
+            isNewUser: true
 
-        res.json({
-            success: true,
-            data: {
-                uid: newUser.uid,
-                username: newUser.username,
-                balance: 100.00,
-                role: newUser.role,
-                isNewUser: true
             }
         });
 

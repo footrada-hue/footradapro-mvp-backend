@@ -221,15 +221,15 @@ app.use(session({
         db: 'sessions.db',
         dir: './src/database/data'
     }),
-    secret: process.env.SESSION_SECRET || 'fallback-secret-change-in-production',
-    resave: false,
-    saveUninitialized: false,
-cookie: {
-    secure: true,  // HTTPS 下可以安全使用
-    httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    sameSite: 'lax'
-},
+    secret: process.env.SESSION_SECRET || 'footradapro-super-secret-key-2024',
+    resave: true,  // 改为 true
+    saveUninitialized: true,  // 改为 true
+    cookie: {
+        secure: false,  // 强制 false（即使有 HTTPS 也先设为 false 测试）
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        sameSite: 'lax'
+    },
     name: 'footradapro.sid'
 }));
 
