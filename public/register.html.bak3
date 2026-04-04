@@ -866,7 +866,7 @@
         function loadCaptcha() {
             captchaImage.style.opacity = '0.5';
             
-            fetch('https://api.footradapro.com/api/v1/captcha/generate', {
+            fetch('/api/v1/captcha/generate', {
                 headers: {
                     'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
                 }
@@ -1126,7 +1126,7 @@
 
         function refreshCaptcha() {
             if (!elements.captchaImage) return;
-            fetch('https://api.footradapro.com/api/v1/captcha/generate', {
+            fetch('/api/v1/captcha/generate', {
                 headers: { 'X-CSRF-Token': AppState.csrfToken }
             })
             .then(function(res) { return res.json(); })
@@ -1200,7 +1200,7 @@
             }
             setLoading(elements.sendCodeBtn, true, getText('sending'));
             try {
-                var verifyRes = await fetch('https://api.footradapro.com/api/v1/captcha/verify', {
+                var verifyRes = await fetch('/api/v1/captcha/verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': AppState.csrfToken },
                     credentials: 'include',
@@ -1215,7 +1215,7 @@
                     return;
                 }
                 var captchaToken = verifyData.data.token;
-                var response = await fetch('https://api.footradapro.com/api/v1/auth/send-code', {
+                var response = await fetch('/api/v1/auth/send-code', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': AppState.csrfToken },
                     credentials: 'include',
@@ -1278,7 +1278,7 @@
             }
             setLoading(elements.verifyCodeBtn, true, getText('verifying'));
             try {
-                var response = await fetch('https://api.footradapro.com/api/v1/auth/verify-code', {
+                var response = await fetch('/api/v1/auth/verify-code', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': AppState.csrfToken },
                     credentials: 'include',
@@ -1328,7 +1328,7 @@
             }
             setLoading(elements.sendCodeBtn, true, getText('sending'));
             try {
-                var response = await fetch('https://api.footradapro.com/api/v1/auth/resend-code', {
+                var response = await fetch('/api/v1/auth/resend-code', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': AppState.csrfToken },
                     credentials: 'include',
@@ -1376,7 +1376,7 @@
             }
             setLoading(elements.completeRegistrationBtn, true, getText('creating'));
             try {
-                var response = await fetch('https://api.footradapro.com/api/v1/auth/register', {
+                var response = await fetch('/api/v1/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': AppState.csrfToken },
                     credentials: 'include',
