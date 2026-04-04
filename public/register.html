@@ -25,19 +25,16 @@
             justify-content: center;
         }
         
-        /* 淺色主題 */
         body[data-theme="light"] {
             background-color: #FFFFFF;
             color: #1A1F36;
         }
         
-        /* 深色主題 */
         body[data-theme="dark"] {
             background-color: #0A0C12;
             color: #EDEDF0;
         }
         
-        /* 主容器 */
         .auth-container {
             width: 100%;
             max-width: 400px;
@@ -45,7 +42,6 @@
             padding: 24px;
         }
         
-        /* 品牌區域 */
         .brand {
             text-align: center;
             margin-bottom: 48px;
@@ -69,7 +65,6 @@
             -webkit-text-fill-color: transparent;
         }
         
-        /* 右上角設置欄 */
         .settings-bar {
             position: fixed;
             top: 20px;
@@ -87,7 +82,6 @@
             }
         }
         
-        /* 統一的按鈕組樣式 */
         .btn-group {
             display: flex;
             background: rgba(248, 249, 252, 0.9);
@@ -103,7 +97,6 @@
             border-color: #1F242F;
         }
         
-        /* 統一的按鈕樣式 */
         .btn-option {
             padding: 0 14px;
             height: 32px;
@@ -133,7 +126,6 @@
             color: white;
         }
         
-        /* 語言切換組特殊處理 */
         .lang-group {
             position: relative;
             cursor: pointer;
@@ -206,7 +198,6 @@
             font-weight: 500;
         }
         
-        /* 步驟切換 */
         .step { display: none; }
         .step.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn {
@@ -214,7 +205,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
-        /* 標題區域 */
         .header {
             text-align: center;
             margin-bottom: 32px;
@@ -232,7 +222,6 @@
             color: #8A99AA;
         }
         
-        /* 表單 */
         .form-group {
             margin-bottom: 20px;
         }
@@ -274,7 +263,6 @@
             margin-top: 8px;
         }
         
-        /* 驗證碼 */
         .code-inputs {
             display: flex;
             gap: 10px;
@@ -312,7 +300,6 @@
             .code-inputs { gap: 8px; }
         }
         
-        /* 按鈕 */
         .btn-primary {
             width: 100%;
             height: 48px;
@@ -352,7 +339,6 @@
             color: #FF6B00;
         }
         
-        /* 密碼規則 */
         .password-requirements {
             margin-top: 12px;
             padding: 12px;
@@ -396,7 +382,6 @@
         .strength-bar.active { background: #FF6B00; }
         .strength-text { font-size: 11px; color: #8A99AA; margin-top: 4px; }
         
-        /* 複選框 */
         .checkbox-group {
             display: flex;
             align-items: center;
@@ -420,7 +405,6 @@
             text-decoration: none;
         }
         
-        /* 模態框 */
         .modal {
             display: none;
             position: fixed;
@@ -499,7 +483,6 @@
             font-weight: 500;
         }
         
-        /* Toast */
         .toast-container {
             position: fixed;
             top: 20px;
@@ -552,21 +535,17 @@
 </head>
 <body>
     <div class="auth-container">
-        <!-- 品牌區域 -->
         <div class="brand">
             <a href="/" class="brand-logo">FOOTRADA</a>
         </div>
 
-        <!-- 右上角設置欄 -->
         <div class="settings-bar">
-            <!-- 主題切換按鈕組 -->
             <div class="btn-group">
                 <button class="btn-option" data-theme="light">Light</button>
                 <button class="btn-option" data-theme="auto">Auto</button>
                 <button class="btn-option" data-theme="dark">Dark</button>
             </div>
             
-            <!-- 語言切換按鈕組 -->
             <div class="btn-group lang-group">
                 <button class="btn-option" id="langBtn">
                     <span id="currentLang">EN</span> <i class="fas fa-chevron-down"></i>
@@ -579,7 +558,6 @@
             </div>
         </div>
 
-        <!-- 步驟1：Email -->
         <div id="step1" class="step active">
             <div class="header">
                 <h1>Create account</h1>
@@ -590,21 +568,19 @@
                 <input type="email" class="form-input" id="email" placeholder="name@example.com">
                 <p class="helper-text">We'll send you a verification code</p>
             </div>
-            <!-- 图形验证码 -->
-<div class="form-group">
-    <label class="form-label">Verification Code</label>
-    <div style="display: flex; gap: 12px; align-items: center;">
-        <input type="text" class="form-input" id="captchaInput" placeholder="Enter code" style="flex: 1;" autocomplete="off">
-        <img id="captchaImage" alt="CAPTCHA" style="height: 48px; border-radius: 12px; cursor: pointer;" title="Click to refresh">
-    </div>
-</div>
+            <div class="form-group">
+                <label class="form-label">Verification Code</label>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <input type="text" class="form-input" id="captchaInput" placeholder="Enter code" style="flex: 1;" autocomplete="off">
+                    <img id="captchaImage" alt="CAPTCHA" style="height: 48px; border-radius: 12px; cursor: pointer;" title="Click to refresh">
+                </div>
+            </div>
             <button class="btn-primary" id="sendCodeBtn">Continue</button>
             <div class="secondary-link">
                 <a href="/login.html">Already have an account? Sign in</a>
             </div>
         </div>
 
-        <!-- 步驟2：驗證碼 -->
         <div id="step2" class="step">
             <div class="header">
                 <h1>Verify your email</h1>
@@ -629,7 +605,6 @@
         </div>
     </div>
 
-    <!-- 密碼模態框 -->
     <div class="modal" id="passwordModal">
         <div class="modal-content">
             <h2>Set password</h2>
@@ -661,7 +636,6 @@
         </div>
     </div>
 
-    <!-- 成功彈窗 -->
     <div class="modal" id="trustModal">
         <div class="modal-content">
             <div class="success-icon"><i class="fas fa-check-circle"></i></div>
@@ -676,6 +650,26 @@
             <p class="auto-redirect">Redirecting in <span id="countdown">5</span>s</p>
         </div>
     </div>
+
+    <script>
+    // ==================== 全局配置（内嵌） ====================
+    window.FOOTRADAPRO = {
+        ENV: { env: 'prod', apiBaseUrl: { prod: 'https://api.footradapro.com/api/v1' } },
+        UTILS: {
+            getStorage: function(k, d) { 
+                try { return JSON.parse(localStorage.getItem('footradapro_' + k) || null) || d; } 
+                catch(e) { return d; } 
+            },
+            setStorage: function(k, v) { 
+                localStorage.setItem('footradapro_' + k, JSON.stringify(v)); 
+            },
+            getApiBaseUrl: function() { 
+                return 'https://api.footradapro.com/api/v1'; 
+            }
+        },
+        ROUTES: {}, THEME: {}, USER: {}, CONSTANTS: {}, FEATURES: {}, SECURITY: {}, THIRD_PARTY: {}
+    };
+    </script>
 
     <script>
     // ==================== 主題切換 ====================
@@ -757,7 +751,6 @@
     })();
     </script>
 
-    <!-- 密碼驗證腳本 -->
     <script>
     (function() {
         const pwdInput = document.getElementById('newPassword');
@@ -864,16 +857,13 @@
     })();
     </script>
 
-    <script src="/js/core/config.js" defer></script>
-    <script type="module" src="/js/user/register_controller.js" defer></script>
     <!-- 手动初始化 CAPTCHA -->
-<script>
+    <script>
     (function() {
         var captchaImage = document.getElementById('captchaImage');
         if (!captchaImage) return;
         
         function loadCaptcha() {
-            // 显示加载状态
             captchaImage.style.opacity = '0.5';
             
             fetch('/api/v1/captcha/generate', {
@@ -897,20 +887,638 @@
             })
             .catch(function(err) {
                 console.error('CAPTCHA fetch error:', err);
-                // 重试
                 setTimeout(loadCaptcha, 2000);
             });
         }
         
-        // 点击刷新
         captchaImage.addEventListener('click', function(e) {
             e.preventDefault();
             loadCaptcha();
         });
         
-        // 初始加载
         loadCaptcha();
     })();
-</script>
+    </script>
+
+    <!-- 注册控制器（内嵌） -->
+    <script>
+    (function() {
+        'use strict';
+
+        if (!window.FOOTRADAPRO) {
+            console.error('[FATAL] Core config not loaded');
+            return;
+        }
+
+        var CONFIG = window.FOOTRADAPRO;
+        var UTILS = CONFIG.UTILS;
+
+        var AppState = {
+            email: '',
+            tempToken: null,
+            countdownInterval: null,
+            redirectCountdown: null,
+            csrfToken: document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '',
+            requestInProgress: false,
+            debug: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1',
+            currentLang: 'en'
+        };
+
+        var elements = {
+            step1: document.getElementById('step1'),
+            step2: document.getElementById('step2'),
+            emailInput: document.getElementById('email'),
+            sendCodeBtn: document.getElementById('sendCodeBtn'),
+            displayEmail: document.getElementById('displayEmail'),
+            codeInputs: document.querySelectorAll('.code-digit'),
+            verifyCodeBtn: document.getElementById('verifyCodeBtn'),
+            resendLink: document.getElementById('resendCode'),
+            backToEmail: document.getElementById('backToEmail'),
+            passwordModal: document.getElementById('passwordModal'),
+            newPassword: document.getElementById('newPassword'),
+            confirmNewPassword: document.getElementById('confirmNewPassword'),
+            completeRegistrationBtn: document.getElementById('completeRegistrationBtn'),
+            termsCheckbox: document.getElementById('termsCheckbox'),
+            trustModal: document.getElementById('trustModal'),
+            goToHomeBtn: document.getElementById('goToHomeBtn'),
+            countdownSpan: document.getElementById('countdown'),
+            captchaInput: document.getElementById('captchaInput'),
+            captchaImage: document.getElementById('captchaImage')
+        };
+
+        var I18N = {
+            en: {
+                emailInvalid: 'Please enter a valid email address',
+                sending: 'Sending...',
+                emailExists: 'Email already registered',
+                sendFailed: 'Failed to send code',
+                networkError: 'Network error, please try again',
+                codeInvalid: 'Please enter a valid 6-digit code',
+                sessionExpired: 'Session expired, please start over',
+                verifying: 'Verifying...',
+                codeExpired: 'Code expired, please request a new one',
+                codeInvalidMsg: 'Invalid verification code',
+                codeResent: 'New code sent',
+                resendFailed: 'Failed to resend code',
+                captchaRequired: 'Please enter the verification code',
+                captchaInvalid: 'Invalid verification code, please try again',
+                captchaPlaceholder: 'Enter code',
+                refreshCaptcha: 'Click to refresh',
+                passwordRequired: 'Password is required',
+                passwordLength: 'At least 8 characters',
+                passwordUppercase: 'At least 1 uppercase letter',
+                passwordLowercase: 'At least 1 lowercase letter',
+                passwordNumber: 'At least 1 number',
+                passwordMismatch: 'Passwords do not match',
+                termsRequired: 'You must agree to the Terms of Service',
+                creating: 'Creating account...',
+                registrationFailed: 'Registration failed',
+                verificationExpired: 'Verification expired, please start over',
+                codeAutoFilled: 'Code auto-filled!',
+                resendCode: 'Resend code',
+                resendWithCountdown: 'Resend ({seconds}s)',
+                confirmClose: 'Are you sure? Your progress will be lost.',
+                backToEmail: 'Use different email',
+                verifyEmailTitle: 'Verify your email',
+                verifyEmailDesc: 'Enter the code sent to',
+                createAccountTitle: 'Create account',
+                createAccountDesc: 'Start your journey with FootRada',
+                welcomeTitle: 'Welcome!',
+                welcomeDesc: 'Your account is ready',
+                sandboxMode: 'Sandbox mode',
+                testFunds: '10,000 tUSDT',
+                testFundsDesc: 'Test funds',
+                startExploring: 'Start exploring →',
+                redirecting: 'Redirecting in',
+                seconds: 's'
+            }
+        };
+
+        function getText(key, args) {
+            var lang = AppState.currentLang;
+            var text = I18N[lang] ? I18N[lang][key] : I18N.en[key];
+            if (!text) text = key;
+            if (args !== undefined && typeof text === 'string') {
+                return text.replace(/{seconds}/g, args);
+            }
+            return text;
+        }
+
+        function updatePageTexts() {
+            var step1Title = document.querySelector('#step1 .header h1');
+            var step1Desc = document.querySelector('#step1 .header p');
+            if (step1Title) step1Title.textContent = getText('createAccountTitle');
+            if (step1Desc) step1Desc.textContent = getText('createAccountDesc');
+            
+            var step2Title = document.querySelector('#step2 .header h1');
+            var step2Desc = document.querySelector('#step2 .header p');
+            if (step2Title) step2Title.textContent = getText('verifyEmailTitle');
+            if (step2Desc && elements.displayEmail) {
+                step2Desc.innerHTML = getText('verifyEmailDesc') + ' <strong>' + (elements.displayEmail.textContent || '') + '</strong>';
+            }
+            
+            if (elements.captchaInput) {
+                elements.captchaInput.placeholder = getText('captchaPlaceholder');
+            }
+            
+            if (elements.sendCodeBtn && !elements.sendCodeBtn.disabled && !elements.sendCodeBtn.dataset.originalText) {
+                elements.sendCodeBtn.textContent = getText('createAccountTitle');
+            }
+            
+            var backLink = document.querySelector('#step2 .secondary-link a');
+            if (backLink && backLink.id === 'backToEmail') {
+                backLink.textContent = getText('backToEmail');
+            }
+            
+            var welcomeTitle = document.querySelector('#trustModal .modal-content h2');
+            var welcomeDesc = document.querySelector('#trustModal .modal-content > p');
+            if (welcomeTitle) welcomeTitle.textContent = getText('welcomeTitle');
+            if (welcomeDesc) welcomeDesc.textContent = getText('welcomeDesc');
+            
+            var trustItems = document.querySelectorAll('#trustModal .trust-item');
+            if (trustItems.length >= 3) {
+                var sandboxItem = trustItems[0].querySelector('span') || trustItems[0];
+                var tUSDTItem = trustItems[1].querySelector('span') || trustItems[1];
+                var testFundsItem = trustItems[2].querySelector('span') || trustItems[2];
+                if (sandboxItem) sandboxItem.textContent = getText('sandboxMode');
+                if (tUSDTItem) tUSDTItem.textContent = getText('testFunds');
+                if (testFundsItem) testFundsItem.textContent = getText('testFundsDesc');
+            }
+            
+            var startBtn = document.querySelector('#trustModal #goToHomeBtn');
+            if (startBtn) startBtn.textContent = getText('startExploring');
+            
+            var redirectText = document.querySelector('#trustModal .auto-redirect');
+            if (redirectText) {
+                redirectText.innerHTML = getText('redirecting') + ' <span id="countdown">5</span> ' + getText('seconds');
+            }
+        }
+
+        function showToast(message, type) {
+            type = type || 'error';
+            var toastContainer = document.querySelector('.toast-container');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.className = 'toast-container';
+                document.body.appendChild(toastContainer);
+            }
+            var toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
+            setTimeout(function() {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(function() { toast.remove(); }, 300);
+            }, 3000);
+        }
+
+        function setLoading(btn, isLoading, loadingText) {
+            loadingText = loadingText || 'Processing...';
+            if (!btn) return;
+            if (isLoading) {
+                btn.disabled = true;
+                btn.dataset.originalText = btn.innerHTML;
+                btn.innerHTML = '<span class="spinner"></span> ' + loadingText;
+                AppState.requestInProgress = true;
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = btn.dataset.originalText || btn.innerHTML;
+                AppState.requestInProgress = false;
+            }
+        }
+
+        function openModal(modal) {
+            if (!modal) return;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(modal) {
+            if (!modal) return;
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function validateEmail(email) {
+            if (!email || typeof email !== 'string') return false;
+            email = email.trim();
+            return /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/.test(email);
+        }
+
+        function validatePassword(password) {
+            var result = { valid: false, errors: [], strength: 0 };
+            if (!password) {
+                result.errors.push(getText('passwordRequired'));
+                return result;
+            }
+            if (password.length >= 8) result.strength++;
+            else result.errors.push(getText('passwordLength'));
+            if (/[A-Z]/.test(password)) result.strength++;
+            else result.errors.push(getText('passwordUppercase'));
+            if (/[a-z]/.test(password)) result.strength++;
+            else result.errors.push(getText('passwordLowercase'));
+            if (/[0-9]/.test(password)) result.strength++;
+            else result.errors.push(getText('passwordNumber'));
+            result.valid = result.errors.length === 0;
+            return result;
+        }
+
+        function refreshCaptcha() {
+            if (!elements.captchaImage) return;
+            fetch('/api/v1/captcha/generate', {
+                headers: { 'X-CSRF-Token': AppState.csrfToken }
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.success && data.data && data.data.image) {
+                    elements.captchaImage.src = data.data.image;
+                    window.currentCaptchaId = data.data.captchaId;
+                }
+            })
+            .catch(function(err) { console.error('Captcha fetch error:', err); });
+        }
+
+        function setupCodeInputs() {
+            if (!elements.codeInputs || elements.codeInputs.length === 0) return;
+            elements.codeInputs.forEach(function(input, idx) {
+                input.addEventListener('input', function(e) {
+                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                    if (e.target.value.length === 1 && idx < 5) {
+                        elements.codeInputs[idx + 1].focus();
+                    }
+                    updateVerifyButtonState();
+                    var allFilled = Array.from(elements.codeInputs).every(function(inp) { return inp.value.length === 1; });
+                    if (allFilled && elements.verifyCodeBtn && !elements.verifyCodeBtn.disabled) {
+                        setTimeout(function() { verifyCode(); }, 200);
+                    }
+                });
+                input.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    var paste = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+                    if (paste.length === 6) {
+                        paste.split('').forEach(function(char, i) {
+                            if (elements.codeInputs[i]) elements.codeInputs[i].value = char;
+                        });
+                        if (elements.codeInputs[5]) elements.codeInputs[5].focus();
+                        updateVerifyButtonState();
+                        setTimeout(function() { verifyCode(); }, 200);
+                    }
+                });
+            });
+        }
+
+        function updateVerifyButtonState() {
+            if (!elements.verifyCodeBtn) return;
+            var allFilled = Array.from(elements.codeInputs).every(function(inp) { return inp.value.length === 1; });
+            elements.verifyCodeBtn.disabled = !allFilled;
+        }
+
+        function checkFormValidity() {
+            if (!elements.sendCodeBtn) return;
+            var emailValid = validateEmail(elements.emailInput ? elements.emailInput.value.trim() : '');
+            var captchaValid = elements.captchaInput ? elements.captchaInput.value.trim().length > 0 : true;
+            elements.sendCodeBtn.disabled = !(emailValid && captchaValid);
+        }
+
+        async function sendCode() {
+            if (AppState.requestInProgress) return;
+            var email = elements.emailInput.value.trim();
+            if (!validateEmail(email)) {
+                showToast(getText('emailInvalid'), 'error');
+                return;
+            }
+            var captchaCode = elements.captchaInput ? elements.captchaInput.value.trim() : '';
+            if (!captchaCode) {
+                showToast(getText('captchaRequired'), 'error');
+                return;
+            }
+            if (!window.currentCaptchaId) {
+                showToast(getText('captchaRequired'), 'error');
+                refreshCaptcha();
+                return;
+            }
+            setLoading(elements.sendCodeBtn, true, getText('sending'));
+            try {
+                var verifyRes = await fetch('/api/v1/captcha/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': AppState.csrfToken },
+                    credentials: 'include',
+                    body: JSON.stringify({ captchaId: window.currentCaptchaId, userInput: captchaCode })
+                });
+                var verifyData = await verifyRes.json();
+                if (!verifyRes.ok || !verifyData.success) {
+                    showToast(getText('captchaInvalid'), 'error');
+                    refreshCaptcha();
+                    if (elements.captchaInput) elements.captchaInput.value = '';
+                    setLoading(elements.sendCodeBtn, false);
+                    return;
+                }
+                var captchaToken = verifyData.data.token;
+                var response = await fetch('/api/v1/auth/send-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': AppState.csrfToken },
+                    credentials: 'include',
+                    body: JSON.stringify({ email: email, captchaToken: captchaToken })
+                });
+                var data = await response.json();
+                if (data.success) {
+                    AppState.email = email;
+                    if (elements.displayEmail) {
+                        elements.displayEmail.textContent = maskEmail(email);
+                        var step2Desc = document.querySelector('#step2 .header p');
+                        if (step2Desc) {
+                            step2Desc.innerHTML = getText('verifyEmailDesc') + ' <strong>' + maskEmail(email) + '</strong>';
+                        }
+                    }
+                    showStep(2);
+                    startResendCountdown(60);
+                    setTimeout(function() {
+                        if (elements.codeInputs && elements.codeInputs[0]) {
+                            elements.codeInputs[0].focus();
+                        }
+                    }, 300);
+                } else {
+                    if (data.error === 'EMAIL_ALREADY_REGISTERED') {
+                        showToast(getText('emailExists'), 'error');
+                    } else {
+                        showToast(data.error || getText('sendFailed'), 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Send code error:', error);
+                showToast(getText('networkError'), 'error');
+            } finally {
+                setLoading(elements.sendCodeBtn, false);
+            }
+        }
+
+        function maskEmail(email) {
+            var parts = email.split('@');
+            var local = parts[0];
+            var domain = parts[1];
+            if (local.length <= 2) return email;
+            return local.charAt(0) + '***' + local.charAt(local.length - 1) + '@' + domain;
+        }
+
+        async function verifyCode() {
+            if (AppState.requestInProgress) return;
+            var code = '';
+            for (var i = 0; i < elements.codeInputs.length; i++) {
+                code += elements.codeInputs[i].value;
+            }
+            if (!code || code.length !== 6 || !/^\d+$/.test(code)) {
+                showToast(getText('codeInvalid'), 'error');
+                return;
+            }
+            if (!AppState.email) {
+                showToast(getText('sessionExpired'), 'error');
+                showStep(1);
+                return;
+            }
+            setLoading(elements.verifyCodeBtn, true, getText('verifying'));
+            try {
+                var response = await fetch('/api/v1/auth/verify-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': AppState.csrfToken },
+                    credentials: 'include',
+                    body: JSON.stringify({ email: AppState.email, code: code })
+                });
+                var data = await response.json();
+                if (response.ok && data.success) {
+                    AppState.tempToken = data.data ? data.data.token : null;
+                    openModal(elements.passwordModal);
+                    setTimeout(function() {
+                        if (elements.newPassword) elements.newPassword.focus();
+                    }, 300);
+                } else {
+                    var errorMsg = data.error || data.message || 'Verification failed';
+                    if (errorMsg.indexOf('expired') !== -1) {
+                        showToast(getText('codeExpired'), 'error');
+                        resetCodeInputs();
+                        startResendCountdown(60);
+                    } else {
+                        showToast(getText('codeInvalidMsg'), 'error');
+                        resetCodeInputs();
+                    }
+                }
+            } catch (error) {
+                console.error('Verify code error:', error);
+                showToast(getText('networkError'), 'error');
+            } finally {
+                setLoading(elements.verifyCodeBtn, false);
+            }
+        }
+
+        function resetCodeInputs() {
+            for (var i = 0; i < elements.codeInputs.length; i++) {
+                elements.codeInputs[i].value = '';
+            }
+            if (elements.codeInputs[0]) elements.codeInputs[0].focus();
+            updateVerifyButtonState();
+        }
+
+        async function resendCode(e) {
+            e.preventDefault();
+            if (AppState.requestInProgress) return;
+            if (!AppState.email) {
+                showToast(getText('sessionExpired'), 'error');
+                showStep(1);
+                return;
+            }
+            setLoading(elements.sendCodeBtn, true, getText('sending'));
+            try {
+                var response = await fetch('/api/v1/auth/resend-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': AppState.csrfToken },
+                    credentials: 'include',
+                    body: JSON.stringify({ email: AppState.email })
+                });
+                var data = await response.json();
+                if (data.success) {
+                    showToast(getText('codeResent'), 'success');
+                    startResendCountdown(60);
+                    resetCodeInputs();
+                } else {
+                    showToast(data.error || getText('resendFailed'), 'error');
+                }
+            } catch (error) {
+                console.error('Resend code error:', error);
+                showToast(getText('networkError'), 'error');
+            } finally {
+                setLoading(elements.sendCodeBtn, false);
+            }
+        }
+
+        async function completeRegistration() {
+            if (AppState.requestInProgress) return;
+            var password = elements.newPassword ? elements.newPassword.value : '';
+            var confirm = elements.confirmNewPassword ? elements.confirmNewPassword.value : '';
+            var termsChecked = elements.termsCheckbox ? elements.termsCheckbox.checked : false;
+            var pwdValidation = validatePassword(password);
+            if (!pwdValidation.valid) {
+                showToast(pwdValidation.errors[0], 'error');
+                return;
+            }
+            if (password !== confirm) {
+                showToast(getText('passwordMismatch'), 'error');
+                return;
+            }
+            if (!termsChecked) {
+                showToast(getText('termsRequired'), 'error');
+                return;
+            }
+            if (!AppState.email || !AppState.tempToken) {
+                showToast(getText('sessionExpired'), 'error');
+                closeModal(elements.passwordModal);
+                showStep(1);
+                return;
+            }
+            setLoading(elements.completeRegistrationBtn, true, getText('creating'));
+            try {
+                var response = await fetch('/api/v1/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': AppState.csrfToken },
+                    credentials: 'include',
+                    body: JSON.stringify({ username: AppState.email, password: password, token: AppState.tempToken })
+                });
+                var data = await response.json();
+                if (response.ok && data.success) {
+                    UTILS.setStorage('user', { email: AppState.email, username: AppState.email });
+                    closeModal(elements.passwordModal);
+                    openModal(elements.trustModal);
+                    startRedirectCountdown(5);
+                } else {
+                    var errorMsg = data.error || data.message || getText('registrationFailed');
+                    if (errorMsg.indexOf('token') !== -1 || errorMsg.indexOf('expired') !== -1) {
+                        showToast(getText('verificationExpired'), 'error');
+                        closeModal(elements.passwordModal);
+                        showStep(1);
+                    } else {
+                        showToast(errorMsg, 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showToast(getText('networkError'), 'error');
+            } finally {
+                setLoading(elements.completeRegistrationBtn, false);
+            }
+        }
+
+        function startResendCountdown(seconds) {
+            if (AppState.countdownInterval) clearInterval(AppState.countdownInterval);
+            var link = elements.resendLink;
+            if (!link) return;
+            link.style.pointerEvents = 'none';
+            link.textContent = getText('resendWithCountdown', seconds);
+            AppState.countdownInterval = setInterval(function() {
+                seconds--;
+                if (seconds <= 0) {
+                    clearInterval(AppState.countdownInterval);
+                    link.style.pointerEvents = 'auto';
+                    link.textContent = getText('resendCode');
+                } else {
+                    link.textContent = getText('resendWithCountdown', seconds);
+                }
+            }, 1000);
+        }
+
+        function startRedirectCountdown(seconds) {
+            var countdownSpan = document.getElementById('countdown');
+            if (!countdownSpan) return;
+            countdownSpan.textContent = seconds;
+            if (AppState.redirectCountdown) clearInterval(AppState.redirectCountdown);
+            AppState.redirectCountdown = setInterval(function() {
+                seconds--;
+                if (seconds <= 0) {
+                    clearInterval(AppState.redirectCountdown);
+                    window.location.href = '/index.html';
+                } else {
+                    var span = document.getElementById('countdown');
+                    if (span) span.textContent = seconds;
+                }
+            }, 1000);
+        }
+
+        function showStep(step) {
+            if (step === 1) {
+                if (elements.step1) elements.step1.classList.add('active');
+                if (elements.step2) elements.step2.classList.remove('active');
+            } else {
+                if (elements.step1) elements.step1.classList.remove('active');
+                if (elements.step2) elements.step2.classList.add('active');
+            }
+        }
+
+        function handleLanguageChange(event) {
+            var lang = event.detail.lang;
+            AppState.currentLang = lang;
+            updatePageTexts();
+        }
+
+        function bindEvents() {
+            if (elements.emailInput) {
+                elements.emailInput.addEventListener('input', checkFormValidity);
+                elements.emailInput.addEventListener('blur', checkFormValidity);
+            }
+            if (elements.captchaInput) {
+                elements.captchaInput.addEventListener('input', checkFormValidity);
+            }
+            if (elements.sendCodeBtn) elements.sendCodeBtn.addEventListener('click', sendCode);
+            if (elements.resendLink) elements.resendLink.addEventListener('click', resendCode);
+            if (elements.codeInputs && elements.codeInputs.length > 0) setupCodeInputs();
+            if (elements.verifyCodeBtn) elements.verifyCodeBtn.addEventListener('click', verifyCode);
+            if (elements.completeRegistrationBtn) elements.completeRegistrationBtn.addEventListener('click', completeRegistration);
+            if (elements.goToHomeBtn) elements.goToHomeBtn.addEventListener('click', function() { window.location.href = '/index.html'; });
+            if (elements.captchaImage) {
+                elements.captchaImage.addEventListener('click', function() { refreshCaptcha(); });
+            }
+            if (elements.backToEmail) {
+                elements.backToEmail.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showStep(1);
+                    if (elements.emailInput) {
+                        elements.emailInput.value = '';
+                        elements.emailInput.focus();
+                    }
+                    if (elements.captchaInput) elements.captchaInput.value = '';
+                    refreshCaptcha();
+                    checkFormValidity();
+                });
+            }
+            if (elements.passwordModal) {
+                elements.passwordModal.addEventListener('click', function(e) {
+                    if (e.target === elements.passwordModal) {
+                        if (confirm(getText('confirmClose'))) {
+                            closeModal(elements.passwordModal);
+                            showStep(1);
+                        }
+                    }
+                });
+            }
+            window.addEventListener('languageChanged', handleLanguageChange);
+        }
+
+        function init() {
+            try {
+                var savedLang = localStorage.getItem('lang') || localStorage.getItem('user_language') || 'en';
+                AppState.currentLang = savedLang;
+            } catch (e) {
+                AppState.currentLang = 'en';
+            }
+            
+            refreshCaptcha();
+            bindEvents();
+            updatePageTexts();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
+    </script>
 </body>
 </html>
