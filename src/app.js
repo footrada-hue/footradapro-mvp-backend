@@ -224,12 +224,12 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'fallback-secret-change-in-production',
     resave: false,
     saveUninitialized: false,
-    cookie: {
-        secure: NODE_ENV === 'production',
-        httpOnly: true,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        sameSite: 'lax'
-    },
+cookie: {
+    secure: false,  // 临时改为 false，让 HTTP 也能设置 Cookie
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: 'lax'
+},
     name: 'footradapro.sid'
 }));
 
