@@ -177,13 +177,29 @@ scriptSrc: [
 // ==================== CORS 配置 ====================
 const corsOptions = {
     origin: function(origin, callback) {
+        // 允许的域名列表（生产环境）
+        const allowedOrigins = [
+            'https://www.footradapro.com',
+            'https://footradapro.com',
+            'https://api.footradapro.com',
+            'http://localhost:3000',
+            'http://localhost:5500'
+        ];
+        
+        // 开发环境允许所有
         if (NODE_ENV === 'development') {
             return callback(null, true);
         }
-        const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        
+        // 允许没有 origin 的请求（如 Postman、服务器内部调用）
+        if (!origin) {
+            return callback(null, true);
+        }
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
+            console.warn(`CORS blocked origin: ${origin}`);
             callback(new Error('Not allowed by CORS'));
         }
     },
