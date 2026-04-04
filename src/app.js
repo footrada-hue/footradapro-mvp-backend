@@ -206,7 +206,10 @@ app.use(morgan(NODE_ENV === 'production' ? 'combined' : 'dev', {
 
 // ==================== 静态文件服务 ====================
 app.use(express.static(path.join(process.cwd(), 'public'), config.staticOptions));
-
+// ==================== 首页 - 显示官网页面 ====================
+app.get('/', (req, res) => {
+    res.sendFile('home.html', { root: path.join(process.cwd(), 'public') });
+});
 // ==================== 健康检查 ====================
 app.get('/health', (req, res) => {
     res.status(200).json({
