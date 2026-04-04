@@ -50,7 +50,6 @@ const registerValidation = [
 // ==================== 发送验证码（需携带图形验证码令牌）- 增强错误日志 ====================
 router.post('/send-code',
     body('email').isEmail().normalizeEmail(),
-    body('captchaToken').notEmpty().withMessage('Missing captcha token'),
     async (req, res) => {
         console.log('=== /send-code called ===');
         console.log('Request body:', req.body);
@@ -69,25 +68,7 @@ router.post('/send-code',
         console.log('Email:', email);
         console.log('CaptchaToken:', captchaToken);
 
-        // 验证图形验证码令牌
-        console.log('Looking up token in captchaStore:', `token:${captchaToken}`);
-        const captchaValid = captchaStore.get(`token:${captchaToken}`);
-        
-        if (!captchaValid) {
-            console.log('❌ Captcha token not found in store');
-            return res.status(400).json({ success: false, error: 'INVALID_CAPTCHA_TOKEN' });
-        }
-        
-        console.log('✅ Captcha token found, expires:', new Date(captchaValid.expires));
-        
-        if (captchaValid.expires < Date.now()) {
-            console.log('❌ Captcha token expired');
-            return res.status(400).json({ success: false, error: 'INVALID_CAPTCHA_TOKEN' });
-        }
-        
-        // 令牌一次性使用，验证后删除
-        captchaStore.delete(`token:${captchaToken}`);
-        console.log('✅ Captcha token deleted');
+
 
         // 检查邮箱是否已注册
         const db = getDb();
