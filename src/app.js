@@ -213,19 +213,13 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ==================== Session 配置 ====================
-import SQLiteStore from 'connect-sqlite3';
-const SQLiteStoreSession = SQLiteStore(session);
-
+// 临时使用内存存储，调试登录问题
 app.use(session({
-    store: new SQLiteStoreSession({
-        db: 'sessions.db',
-        dir: './src/database/data'
-    }),
     secret: process.env.SESSION_SECRET || 'footradapro-super-secret-key-2024',
-    resave: true,  // 改为 true
-    saveUninitialized: true,  // 改为 true
+    resave: true,
+    saveUninitialized: true,
     cookie: {
-        secure: false,  // 强制 false（即使有 HTTPS 也先设为 false 测试）
+        secure: false,
         httpOnly: true,
         maxAge: 7 * 24 * 60 * 60 * 1000,
         sameSite: 'lax'
