@@ -113,24 +113,18 @@ app.use(helmet({
                 
                 
             ],
-            scriptSrc: [
-                "'self'", 
-                "'unsafe-inline'", 
-                "'unsafe-eval'",
-                "https://cdnjs.cloudflare.com",
-                "https://www.gstatic.com",
-                "https://challenges.cloudflare.com",
-                "https://cdn.jsdelivr.net",
-                
-                "'self'",
-"'unsafe-inline'",
-"'unsafe-eval'",
-"https://cdnjs.cloudflare.com",
-"https://www.footradapro.com",
-"https://api.footradapro.com",
-                "https://cdn.socket.io"
-                
-            ],
+scriptSrc: [
+    "'self'",
+    "'unsafe-inline'",
+    "'unsafe-eval'",
+    "https://cdnjs.cloudflare.com",
+    "https://www.gstatic.com",
+    "https://challenges.cloudflare.com",
+    "https://cdn.jsdelivr.net",
+    "https://cdn.socket.io",
+    "https://www.footradapro.com",
+    "https://api.footradapro.com"
+],
             scriptSrcAttr: ["'unsafe-inline'"],
             imgSrc: [
                 "'self'", 
