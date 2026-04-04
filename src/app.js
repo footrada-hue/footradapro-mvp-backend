@@ -156,15 +156,14 @@ scriptSrc: [
                 "https:",
                 
             ],
-            connectSrc: [
-                "'self'", 
-                "https://cdn.jsdelivr.net",
-                
-                
-                
-                "ws://localhost:*",
-                "wss://localhost:*"
-            ],
+connectSrc: [
+    "'self'", 
+    "https://cdn.jsdelivr.net",
+    "https://api.footradapro.com",
+    "https://www.footradapro.com",
+    "ws://localhost:*",
+    "wss://localhost:*"
+],
             frameSrc: [
                 "'self'",
                 
