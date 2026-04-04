@@ -207,11 +207,28 @@ app.use(morgan(NODE_ENV === 'production' ? 'combined' : 'dev', {
 app.use(express.static(path.join(process.cwd(), 'public'), config.staticOptions));
 // ==================== 显式 JS 文件路由（解决 500 错误） ====================
 app.get('/js/core/config.js', (req, res) => {
+    res.type('application/javascript');
     res.sendFile(path.join(process.cwd(), 'public', 'js', 'core', 'config.js'));
 });
 
 app.get('/js/user/register_controller.js', (req, res) => {
+    res.type('application/javascript');
     res.sendFile(path.join(process.cwd(), 'public', 'js', 'user', 'register_controller.js'));
+});
+
+app.get('/js/user/index_controller.js', (req, res) => {
+    res.type('application/javascript');
+    res.sendFile(path.join(process.cwd(), 'public', 'js', 'user', 'index_controller.js'));
+});
+
+app.get('/js/user/home.js', (req, res) => {
+    res.type('application/javascript');
+    res.sendFile(path.join(process.cwd(), 'public', 'js', 'user', 'home.js'));
+});
+
+app.get('/js/core/theme.js', (req, res) => {
+    res.type('application/javascript');
+    res.sendFile(path.join(process.cwd(), 'public', 'js', 'core', 'theme.js'));
 });
 // ==================== 多页面应用路由 ====================
 
