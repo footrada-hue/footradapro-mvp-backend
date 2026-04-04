@@ -568,13 +568,6 @@
                 <input type="email" class="form-input" id="email" placeholder="name@example.com">
                 <p class="helper-text">We'll send you a verification code</p>
             </div>
-            <div class="form-group">
-                <label class="form-label">Verification Code</label>
-                <div style="display: flex; gap: 12px; align-items: center;">
-                    <input type="text" class="form-input" id="captchaInput" placeholder="Enter code" style="flex: 1;" autocomplete="off">
-                    <img id="captchaImage" alt="CAPTCHA" style="height: 48px; border-radius: 12px; cursor: pointer;" title="Click to refresh">
-                </div>
-            </div>
             <button class="btn-primary" id="sendCodeBtn">Continue</button>
             <div class="secondary-link">
                 <a href="/login.html">Already have an account? Sign in</a>
@@ -857,50 +850,7 @@
     })();
     </script>
 
-    <!-- 手动初始化 CAPTCHA -->
-    <script>
-    (function() {
-        var captchaImage = document.getElementById('captchaImage');
-        if (!captchaImage) return;
-        
-        function loadCaptcha() {
-            captchaImage.style.opacity = '0.5';
-            
-            fetch('https://api.footradapro.com/api/v1/captcha/generate', {
-                headers: {
-                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                }
-            })
-            .then(function(res) { 
-                if (!res.ok) throw new Error('Network error');
-                return res.json(); 
-            })
-            .then(function(data) {
-                if (data.success && data.data && data.data.image) {
-                    captchaImage.src = data.data.image;
-                    window.currentCaptchaId = data.data.captchaId;
-                    captchaImage.style.opacity = '1';
-                } else {
-                    console.error('CAPTCHA data error:', data);
-                    setTimeout(loadCaptcha, 1000);
-                }
-            })
-            .catch(function(err) {
-                console.error('CAPTCHA fetch error:', err);
-                setTimeout(loadCaptcha, 2000);
-            });
-        }
-        
-        captchaImage.addEventListener('click', function(e) {
-            e.preventDefault();
-            loadCaptcha();
-        });
-        
-        loadCaptcha();
-    })();
-    </script>
-
-    <!-- 注册控制器（内嵌） -->
+    <!-- 注册控制器（内嵌，已移除图形验证码） -->
     <script>
     (function() {
         'use strict';
@@ -941,9 +891,7 @@
             termsCheckbox: document.getElementById('termsCheckbox'),
             trustModal: document.getElementById('trustModal'),
             goToHomeBtn: document.getElementById('goToHomeBtn'),
-            countdownSpan: document.getElementById('countdown'),
-            captchaInput: document.getElementById('captchaInput'),
-            captchaImage: document.getElementById('captchaImage')
+            countdownSpan: document.getElementById('countdown')
         };
 
         var I18N = {
@@ -960,10 +908,6 @@
                 codeInvalidMsg: 'Invalid verification code',
                 codeResent: 'New code sent',
                 resendFailed: 'Failed to resend code',
-                captchaRequired: 'Please enter the verification code',
-                captchaInvalid: 'Invalid verification code, please try again',
-                captchaPlaceholder: 'Enter code',
-                refreshCaptcha: 'Click to refresh',
                 passwordRequired: 'Password is required',
                 passwordLength: 'At least 8 characters',
                 passwordUppercase: 'At least 1 uppercase letter',
@@ -1015,10 +959,6 @@
             if (step2Title) step2Title.textContent = getText('verifyEmailTitle');
             if (step2Desc && elements.displayEmail) {
                 step2Desc.innerHTML = getText('verifyEmailDesc') + ' <strong>' + (elements.displayEmail.textContent || '') + '</strong>';
-            }
-            
-            if (elements.captchaInput) {
-                elements.captchaInput.placeholder = getText('captchaPlaceholder');
             }
             
             if (elements.sendCodeBtn && !elements.sendCodeBtn.disabled && !elements.sendCodeBtn.dataset.originalText) {
@@ -1124,21 +1064,6 @@
             return result;
         }
 
-        function refreshCaptcha() {
-            if (!elements.captchaImage) return;
-            fetch('https://api.footradapro.com/api/v1/captcha/generate', {
-                headers: { 'X-CSRF-Token': AppState.csrfToken }
-            })
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-                if (data.success && data.data && data.data.image) {
-                    elements.captchaImage.src = data.data.image;
-                    window.currentCaptchaId = data.data.captchaId;
-                }
-            })
-            .catch(function(err) { console.error('Captcha fetch error:', err); });
-        }
-
         function setupCodeInputs() {
             if (!elements.codeInputs || elements.codeInputs.length === 0) return;
             elements.codeInputs.forEach(function(input, idx) {
@@ -1177,8 +1102,7 @@
         function checkFormValidity() {
             if (!elements.sendCodeBtn) return;
             var emailValid = validateEmail(elements.emailInput ? elements.emailInput.value.trim() : '');
-            var captchaValid = elements.captchaInput ? elements.captchaInput.value.trim().length > 0 : true;
-            elements.sendCodeBtn.disabled = !(emailValid && captchaValid);
+            elements.sendCodeBtn.disabled = !emailValid;
         }
 
         async function sendCode() {
@@ -1188,38 +1112,15 @@
                 showToast(getText('emailInvalid'), 'error');
                 return;
             }
-            var captchaCode = elements.captchaInput ? elements.captchaInput.value.trim() : '';
-            if (!captchaCode) {
-                showToast(getText('captchaRequired'), 'error');
-                return;
-            }
-            if (!window.currentCaptchaId) {
-                showToast(getText('captchaRequired'), 'error');
-                refreshCaptcha();
-                return;
-            }
+
             setLoading(elements.sendCodeBtn, true, getText('sending'));
+
             try {
-                var verifyRes = await fetch('https://api.footradapro.com/api/v1/captcha/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': AppState.csrfToken },
-                    credentials: 'include',
-                    body: JSON.stringify({ captchaId: window.currentCaptchaId, userInput: captchaCode })
-                });
-                var verifyData = await verifyRes.json();
-                if (!verifyRes.ok || !verifyData.success) {
-                    showToast(getText('captchaInvalid'), 'error');
-                    refreshCaptcha();
-                    if (elements.captchaInput) elements.captchaInput.value = '';
-                    setLoading(elements.sendCodeBtn, false);
-                    return;
-                }
-                var captchaToken = verifyData.data.token;
                 var response = await fetch('https://api.footradapro.com/api/v1/auth/send-code', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': AppState.csrfToken },
                     credentials: 'include',
-                    body: JSON.stringify({ email: email, captchaToken: captchaToken })
+                    body: JSON.stringify({ email: email, captchaToken: 'bypass' })
                 });
                 var data = await response.json();
                 if (data.success) {
@@ -1462,18 +1363,12 @@
                 elements.emailInput.addEventListener('input', checkFormValidity);
                 elements.emailInput.addEventListener('blur', checkFormValidity);
             }
-            if (elements.captchaInput) {
-                elements.captchaInput.addEventListener('input', checkFormValidity);
-            }
             if (elements.sendCodeBtn) elements.sendCodeBtn.addEventListener('click', sendCode);
             if (elements.resendLink) elements.resendLink.addEventListener('click', resendCode);
             if (elements.codeInputs && elements.codeInputs.length > 0) setupCodeInputs();
             if (elements.verifyCodeBtn) elements.verifyCodeBtn.addEventListener('click', verifyCode);
             if (elements.completeRegistrationBtn) elements.completeRegistrationBtn.addEventListener('click', completeRegistration);
             if (elements.goToHomeBtn) elements.goToHomeBtn.addEventListener('click', function() { window.location.href = '/index.html'; });
-            if (elements.captchaImage) {
-                elements.captchaImage.addEventListener('click', function() { refreshCaptcha(); });
-            }
             if (elements.backToEmail) {
                 elements.backToEmail.addEventListener('click', function(e) {
                     e.preventDefault();
@@ -1482,8 +1377,6 @@
                         elements.emailInput.value = '';
                         elements.emailInput.focus();
                     }
-                    if (elements.captchaInput) elements.captchaInput.value = '';
-                    refreshCaptcha();
                     checkFormValidity();
                 });
             }
@@ -1508,7 +1401,6 @@
                 AppState.currentLang = 'en';
             }
             
-            refreshCaptcha();
             bindEvents();
             updatePageTexts();
         }
