@@ -242,16 +242,16 @@ app.use(morgan(NODE_ENV === 'production' ? 'combined' : 'dev', {
         write: (message) => logger.info(message.trim())
     }
 }));
-
+// 官网首页
+app.get('/', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'home.html'));
+});
 // ==================== 静态文件服务 ====================
 app.use(express.static(path.join(process.cwd(), 'public'), config.staticOptions));
 
 // ==================== 多页面应用路由 ====================
 
-// 官网首页
-app.get('/', (req, res) => {
-    res.sendFile(path.join(process.cwd(), 'public', 'home.html'));
-});
+
 
 // 认证相关
 app.get('/login', (req, res) => {
