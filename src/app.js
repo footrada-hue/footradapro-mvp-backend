@@ -81,7 +81,7 @@ import { initSocket } from './socket/index.js';
 import './jobs/auto-fetch-scores.js';
 import depositNotifyRoutes from './api/v1/user/deposit-notify.routes.js';
 import './services/emailservice.js';
-
+import SQLiteStore from 'connect-sqlite3';
 // ==================== 导入数据库 ====================
 import database from './database/connection.js';
 
@@ -213,7 +213,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ==================== Session 配置 ====================
-import SQLiteStore from 'connect-sqlite3';
+
 const SQLiteStoreSession = SQLiteStore(session);
 
 app.use(session({
