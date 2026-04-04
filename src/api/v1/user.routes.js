@@ -5,7 +5,36 @@ import { auth, filterByMode, requireTestMode } from '../../middlewares/auth.midd
 import profileRoutes from './user/profile.routes.js';
 
 const router = express.Router();
+// ==================== 临时调试接口 ====================
+router.get('/debug/users', (req, res) => {
+    try {
+        const db = getDb();
+        const users = db.prepare('SELECT id, username, created_at FROM users ORDER BY id DESC LIMIT 20').all();
+        res.json({ 
+            success: true, 
+            count: users.length,
+            data: users 
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 
+router.get('/debug/db-status', (req, res) => {
+    try {
+        const db = getDb();
+        const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+        const userCount = db.prepare("SELECT COUNT(*) as count FROM users").get();
+        res.json({ 
+            success: true, 
+            tables: tables.map(t => t.name),
+            userCount: userCount.count,
+            dbPath: config.DB_PATH
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 // ==================== 所有路由都需要认证 ====================
 router.use(auth);
 
@@ -241,33 +270,3 @@ router.get('/profile', (req, res) => {
 });
 
 export default router;
-// ==================== 临时调试接口 ====================
-router.get('/debug/users', (req, res) => {
-    try {
-        const db = getDb();
-        const users = db.prepare('SELECT id, username, created_at FROM users ORDER BY id DESC LIMIT 20').all();
-        res.json({ 
-            success: true, 
-            count: users.length,
-            data: users 
-        });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-router.get('/debug/db-status', (req, res) => {
-    try {
-        const db = getDb();
-        const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
-        const userCount = db.prepare("SELECT COUNT(*) as count FROM users").get();
-        res.json({ 
-            success: true, 
-            tables: tables.map(t => t.name),
-            userCount: userCount.count,
-            dbPath: config.DB_PATH
-        });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
