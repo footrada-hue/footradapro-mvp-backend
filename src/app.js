@@ -225,7 +225,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
 cookie: {
-    secure: false,  // 临时改为 false，让 HTTP 也能设置 Cookie
+    secure: true,  // HTTPS 下可以安全使用
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60 * 1000,
     sameSite: 'lax'
