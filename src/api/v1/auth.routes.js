@@ -6,6 +6,7 @@ import fetch from 'node-fetch';
 import { getDb } from '../../database/connection.js';
 import logger from '../../utils/logger.js';
 import { captchaStore } from './captcha.routes.js';
+import { generateToken } from '../../middlewares/jwt.middleware.js';
 
 const router = express.Router();
 
@@ -252,7 +253,18 @@ router.post('/register', registerValidation, async (req, res) => {
         const newUser = db.prepare('SELECT id, uid, username, role FROM users WHERE uid = ?').get(uid);
         console.log('New user in DB:', newUser);
 
-        // 自动登录：设置 session 并显式保存
+        // 生成 JWT token
+        const jwtToken = generateToken(newUser);
+
+        // 设置 Cookie
+        res.cookie('footradapro_token', jwtToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
+        // 自动登录：设置 session（兼容旧代码）
         req.session.userId = newUser.id;
         req.session.uid = newUser.uid;
         req.session.role = newUser.role;
@@ -275,7 +287,8 @@ router.post('/register', registerValidation, async (req, res) => {
                     username: newUser.username,
                     balance: 100.00,
                     role: newUser.role,
-                    isNewUser: true
+                    isNewUser: true,
+                    token: jwtToken
                 }
             });
         });
@@ -337,6 +350,18 @@ router.post('/login', loginValidation, async (req, res) => {
             });
         }
 
+        // 生成 JWT token
+        const jwtToken = generateToken(user);
+
+        // 设置 Cookie
+        res.cookie('footradapro_token', jwtToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
+        // 设置 session（兼容旧代码）
         req.session.userId = user.id;
         req.session.uid = user.uid;
         req.session.role = user.role;
@@ -357,7 +382,8 @@ router.post('/login', loginValidation, async (req, res) => {
                     uid: user.uid,
                     username: user.username,
                     balance: user.balance,
-                    role: user.role
+                    role: user.role,
+                    token: jwtToken
                 }
             });
         });
@@ -373,17 +399,35 @@ router.post('/login', loginValidation, async (req, res) => {
 
 // ==================== 登出 ====================
 router.post('/logout', (req, res) => {
+    res.clearCookie('footradapro.sid');
+    res.clearCookie('footradapro_token');
     req.session.destroy((err) => {
         if (err) {
             return res.status(500).json({ success: false, error: 'LOGOUT_FAILED' });
         }
-        res.clearCookie('footradapro.sid');
         res.json({ success: true });
     });
 });
 
 // ==================== 获取当前会话 ====================
 router.get('/session', (req, res) => {
+    // 优先从 JWT token 获取
+    const token = req.cookies.footradapro_token;
+    if (token) {
+        try {
+            const jwtSecret = process.env.JWT_SECRET || 'footradapro-jwt-secret-key-2024';
+            const decoded = jwt.verify(token, jwtSecret);
+            const db = getDb();
+            const user = db.prepare('SELECT uid, username, balance, role FROM users WHERE id = ?').get(decoded.id);
+            if (user) {
+                return res.json({ success: true, data: user });
+            }
+        } catch (err) {
+            console.error('JWT verify error:', err);
+        }
+    }
+    
+    // 降级到 session
     if (!req.session.userId) {
         return res.status(401).json({ success: false, error: 'NOT_AUTHENTICATED' });
     }
