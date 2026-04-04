@@ -1,0 +1,306 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>清算管理 · FOOTRADA 後台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/admin-settle.css">
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 左侧导航栏 -->
+        <aside class="admin-sidebar" id="sidebar-container"></aside>
+
+        <!-- 右侧主内容区 -->
+        <main class="admin-main">
+            <!-- 顶部栏 -->
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1><i class="fas fa-calculator"></i> 清算管理</h1>
+                </div>
+                <div class="admin-user">
+                    <span id="adminName">管理员</span>
+                    <button class="icon-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            </header>
+
+            <!-- 统计卡片 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue"><i class="fas fa-clock"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="pendingCount">0</div>
+                        <div class="stat-label">待结算比赛</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green"><i class="fas fa-calendar-day"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="todayCount">0</div>
+                        <div class="stat-label">今日清算</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange"><i class="fas fa-chart-line"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="totalAmount">0</div>
+                        <div class="stat-label">总清算金额</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon purple"><i class="fas fa-history"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="settledCount">0</div>
+                        <div class="stat-label">已结算比赛</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 筛选栏 -->
+            <div class="filter-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="搜索球队名称...">
+                </div>
+                <select id="leagueFilter" class="filter-select">
+                    <option value="all">所有联赛</option>
+                    <option value="Premier League">🏴󠁧󠁢󠁥󠁮󠁧󠁿 英超</option>
+                    <option value="La Liga">🇪🇸 西甲</option>
+                    <option value="Serie A">🇮🇹 意甲</option>
+                    <option value="Bundesliga">🇩🇪 德甲</option>
+                    <option value="Ligue 1">🇫🇷 法甲</option>
+                    <option value="Champions League">🏆 欧冠</option>
+                </select>
+                <select id="hasAuthFilter" class="filter-select">
+                    <option value="all">全部比赛</option>
+                    <option value="yes">有授权记录</option>
+                    <option value="no">无授权记录</option>
+                </select>
+                <select id="sortFilter" class="filter-select">
+                    <option value="time_desc">时间（新→旧）</option>
+                    <option value="time_asc">时间（旧→新）</option>
+                    <option value="auth_desc">授权人数（高→低）</option>
+                    <option value="auth_asc">授权人数（低→高）</option>
+                    <option value="amount_desc">总金额（高→低）</option>
+                    <option value="amount_asc">总金额（低→高）</option>
+                </select>
+                <button class="btn-reset" id="resetFilterBtn"><i class="fas fa-redo-alt"></i> 重置</button>
+            </div>
+
+            <!-- 批量操作栏 -->
+            <div class="batch-bar" id="batchBar" style="display: none;">
+                <div class="batch-info">
+                    <i class="fas fa-check-circle"></i>
+                    已选择 <span id="selectedCount">0</span> 场比赛
+                </div>
+                <div class="batch-actions">
+                    <button class="btn-batch" id="batchSettleBtn">
+                        <i class="fas fa-layer-group"></i> 批量清算
+                    </button>
+                    <button class="btn-batch outline" id="selectAllBtn">
+                        <i class="fas fa-check-double"></i> 全选
+                    </button>
+                    <button class="btn-batch outline" id="clearSelectionBtn">
+                        <i class="fas fa-times"></i> 清空选择
+                    </button>
+                </div>
+            </div>
+
+            <!-- 标签页 -->
+            <div class="tabs-container">
+                <button class="tab-btn active" data-tab="pending">
+                    <i class="fas fa-hourglass-half"></i> 待结算
+                </button>
+                <button class="tab-btn" data-tab="history">
+                    <i class="fas fa-history"></i> 清算历史
+                </button>
+            </div>
+
+            <!-- 待结算列表 -->
+            <div class="tab-pane active" id="pendingPane">
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"><input type="checkbox" id="selectAllCheckbox"></th>
+                                <th>比赛</th>
+                                <th>联赛</th>
+                                <th>比赛时间</th>
+                                <th>比分</th>
+                                <th>执行比例</th>
+                                <th class="sortable" data-sort="auth">授权人数 <i class="fas fa-sort"></i></th>
+                                <th class="sortable" data-sort="amount">总金额 <i class="fas fa-sort"></i></th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingTableBody">
+                            <tr><td colspan="9" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> 加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="pendingPagination"></div>
+            </div>
+
+            <!-- 清算历史 -->
+            <div class="tab-pane" id="historyPane">
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>比赛</th>
+                                <th>赛果</th>
+                                <th>收益率</th>
+                                <th>授权人数</th>
+                                <th>总金额</th>
+                                <th>用户总收益</th>
+                                <th>清算时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <tr><td colspan="9" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> 加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="historyPagination"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 批量清算模态框 -->
+    <div class="modal-overlay" id="batchSettleModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-layer-group"></i> 批量清算</h3>
+                <button class="modal-close" id="closeBatchModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="info-card">
+                    <div class="info-title">将清算 <span id="batchCount">0</span> 场比赛</div>
+                    <div class="info-meta">请选择统一的清算参数</div>
+                </div>
+
+                <div class="config-card">
+                    <div class="config-header"><i class="fas fa-sliders-h"></i> 批量清算参数</div>
+                    <div class="status-group">
+                        <button class="status-option win active" id="batchWinBtn"><i class="fas fa-arrow-up"></i> 全部盈利</button>
+                        <button class="status-option loss" id="batchLossBtn"><i class="fas fa-arrow-down"></i> 全部亏损</button>
+                    </div>
+                    <div class="profit-config" id="batchProfitBlock">
+                        <div class="config-label">收益率 (%)</div>
+                        <div class="input-group">
+                            <input type="number" id="batchProfitRate" value="40" min="0" max="1000" step="1">
+                            <span>%</span>
+                        </div>
+                        <div class="config-hint">所有比赛统一使用此收益率</div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-outline" id="cancelBatchBtn">取消</button>
+                    <button class="btn-primary" id="confirmBatchBtn"><i class="fas fa-check"></i> 确认批量清算</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 单场清算模态框（快速清算版） -->
+    <div class="modal-overlay" id="settleModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-calculator"></i> 执行清算</h3>
+                <button class="modal-close" id="closeModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="info-card">
+                    <div class="info-title" id="modalMatchTitle">-</div>
+                    <div class="info-meta">
+                        <span><i class="fas fa-trophy"></i> <span id="modalMatchLeague">-</span></span>
+                        <span><i class="fas fa-calendar"></i> <span id="modalMatchTime">-</span></span>
+                    </div>
+                </div>
+
+                <div class="config-card">
+                    <div class="config-header"><i class="fas fa-sliders-h"></i> 清算参数</div>
+                    <div class="config-row">
+                        <div class="config-item">
+                            <div class="config-label">执行比例</div>
+                            <div class="config-value" id="modalExecRate">-</div>
+                        </div>
+                        <div class="config-item">
+                            <div class="config-label">授权总金额</div>
+                            <div class="config-value" id="modalTotalAuth">-</div>
+                        </div>
+                    </div>
+                    <div class="status-group">
+                        <button class="status-option win active" id="winStatusBtn"><i class="fas fa-arrow-up"></i> 盈利</button>
+                        <button class="status-option loss" id="lossStatusBtn"><i class="fas fa-arrow-down"></i> 亏损</button>
+                    </div>
+                    <div class="profit-config" id="profitConfigBlock">
+                        <div class="config-label">收益率 (%)</div>
+                        <div class="input-group">
+                            <input type="number" id="profitRateInput" value="40" min="0" max="1000" step="1">
+                            <span>%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="auth-section">
+                    <div class="auth-header" id="toggleAuthBtn">
+                        <i class="fas fa-chevron-right" id="authToggleIcon"></i>
+                        <span>授权明细 (<span id="authCount">0</span> 笔)</span>
+                        <button class="export-btn" id="exportAuthBtn"><i class="fas fa-download"></i> 导出</button>
+                    </div>
+                    <div class="auth-content" id="authContent" style="display: none;">
+                        <table class="auth-table">
+                            <thead><tr><th>用户ID</th><th>用户名</th><th>授权金额</th><th>授权时间</th></tr></thead>
+                            <tbody id="authTableBody"><tr><td colspan="4" class="empty-cell">暂无授权记录</td></tr></tbody>
+                        </table>
+                        <div class="auth-footer">
+                            <span>总笔数: <strong id="totalAuthCount">0</strong></span>
+                            <span>总金额: <strong id="totalAuthAmount">0.00</strong> USDT</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="preview-card">
+                    <div class="preview-header"><i class="fas fa-chart-pie"></i> 清算预览</div>
+                    <div class="preview-total">
+                        <span>💰 平台总支出</span>
+                        <span class="highlight" id="previewTotalPayout">0.00 USDT</span>
+                    </div>
+                    <div class="preview-grid">
+                        <div class="preview-item"><span>总授权金额</span><span id="previewTotalAmount">0 USDT</span></div>
+                        <div class="preview-item"><span>总实际部署</span><span id="previewTotalDeployed">0.00 USDT</span></div>
+                        <div class="preview-item"><span>总策略储备</span><span id="previewTotalReserved">0.00 USDT</span></div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-outline" id="cancelSettleBtn">取消</button>
+                    <button class="btn-primary" id="confirmSettleBtn"><i class="fas fa-check"></i> 确认清算</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        fetch('/admin/components/sidebar.html')
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById('sidebar-container').innerHTML = html;
+                document.querySelectorAll('.admin-nav-item').forEach(link => {
+                    if (link.getAttribute('href') === window.location.pathname) {
+                        link.classList.add('active');
+                    }
+                });
+            })
+            .catch(err => console.error('加载侧边栏失败:', err));
+    </script>
+    <script src="/js/admin/settle_controller.js"></script>
+</body>
+</html>

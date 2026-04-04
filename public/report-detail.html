@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Match Report · FOOTRADA</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 核心样式 -->
+    <link rel="stylesheet" href="/css/core/variables.css">
+    <link rel="stylesheet" href="/css/core/layout.css">
+    <link rel="stylesheet" href="/css/core/components.css">
+    
+    <style>
+        /* 比赛卡片 - 固定顶部 */
+        .match-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 28px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .team-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .team {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .team-crest {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 10px;
+            border-radius: 50%;
+            background: rgba(var(--brand-rgb), 0.1);
+            border: 1px solid var(--border-brand-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .team-crest img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 10px;
+        }
+        
+        .team-crest i {
+            font-size: 32px;
+            color: var(--brand-500);
+        }
+        
+        .team-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .vs-badge {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--brand-500);
+            background: rgba(var(--brand-rgb), 0.1);
+            padding: 5px 12px;
+            border-radius: 40px;
+        }
+        
+        .score-area {
+            text-align: center;
+            padding: 16px 0;
+            border-top: 1px solid var(--border-brand-light);
+            border-bottom: 1px solid var(--border-brand-light);
+            margin-bottom: 16px;
+        }
+        
+        .score {
+            font-size: 44px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            color: var(--brand-500);
+        }
+        
+        .match-result {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 4px 16px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .match-result.win {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--success-500);
+        }
+        
+        .match-result.loss {
+            background: rgba(239, 68, 68, 0.12);
+            color: var(--danger-500);
+        }
+        
+        .match-result.draw {
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--warning-500);
+        }
+        
+        .match-meta {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+        
+        .match-meta span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .match-meta i {
+            color: var(--brand-500);
+            font-size: 11px;
+        }
+        
+        /* 报告内容 */
+        .report-content {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .report-text {
+            font-family: var(--font-mono);
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+        }
+        
+        /* 头部返回按钮 */
+        .report-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-brand-light);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .back-btn:hover {
+            border-color: var(--brand-500);
+            color: var(--brand-500);
+        }
+        
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        /* 底部操作栏 */
+        .action-bar {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .action-btn.secondary {
+            background: transparent;
+            border: 1px solid var(--border-brand-light);
+            color: var(--text-secondary);
+        }
+        
+        .action-btn.secondary:hover {
+            border-color: var(--brand-500);
+            color: var(--brand-500);
+        }
+        
+        .action-btn.primary {
+            background: var(--gradient-primary);
+            border: none;
+            color: white;
+        }
+        
+        .action-btn.primary:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--neon-glow);
+        }
+        
+        /* 加载状态 */
+        .loading-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .loading-state i {
+            font-size: 48px;
+            color: var(--brand-500);
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .error-state i {
+            font-size: 56px;
+            color: var(--danger-500);
+            margin-bottom: 16px;
+        }
+        
+        .error-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--success-500);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-size: 13px;
+            z-index: 1000;
+            animation: fadeUp 0.3s ease;
+        }
+        
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, 20px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .team-crest {
+                width: 56px;
+                height: 56px;
+            }
+            .team-crest i {
+                font-size: 26px;
+            }
+            .score {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 头部 -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="report-header">
+                <button class="back-btn" onclick="history.back()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1 class="page-title">Match Report</h1>
+                <div style="width: 40px;"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 中部可滚动区域 -->
+    <main class="content-scrollable">
+        <div class="content-container">
+            <!-- 加载状态 -->
+            <div id="loadingState" class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading report...</p>
+            </div>
+
+            <!-- 错误状态 -->
+            <div id="errorState" class="error-state" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <p id="errorMessage">Report not found</p>
+                <div class="error-buttons">
+                    <button class="btn-secondary" onclick="history.back()">Go Back</button>
+                    <button class="btn-primary" onclick="location.reload()">Retry</button>
+                </div>
+            </div>
+
+            <!-- 报告内容 -->
+            <div id="reportContent" style="display: none;">
+                <!-- 比赛卡片 - 固定显示 -->
+                <div class="match-card">
+                    <div class="team-row">
+                        <div class="team">
+                            <div class="team-crest" id="homeCrest">
+                                <i class="fas fa-shield-alt"></i>
+                                <img id="homeImg" style="display: none;">
+                            </div>
+                            <div class="team-name" id="homeName">Home</div>
+                        </div>
+                        <div class="vs-badge">VS</div>
+                        <div class="team">
+                            <div class="team-crest" id="awayCrest">
+                                <i class="fas fa-shield-alt"></i>
+                                <img id="awayImg" style="display: none;">
+                            </div>
+                            <div class="team-name" id="awayName">Away</div>
+                        </div>
+                    </div>
+                    
+                    <div class="score-area">
+                        <div class="score" id="matchScore">-</div>
+                        <div class="match-result" id="matchResult" style="display: none;"></div>
+                    </div>
+                    
+                    <div class="match-meta">
+                        <span><i class="fas fa-trophy"></i> <span id="matchLeague">-</span></span>
+                        <span><i class="fas fa-calendar"></i> <span id="matchTime">-</span></span>
+                        <span><i class="fas fa-clock"></i> <span id="matchStatus">-</span></span>
+                    </div>
+                </div>
+
+                <!-- 报告内容 - 可滚动 -->
+                <div class="report-content">
+                    <div class="report-text" id="reportText">Loading...</div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="action-bar">
+                    <button class="action-btn secondary" id="copyBtn"><i class="fas fa-copy"></i> Copy</button>
+                    <button class="action-btn primary" id="downloadBtn"><i class="fas fa-download"></i> Save</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部导航 -->
+    <nav class="bottom-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="/match-market.html" class="nav-item">
+                <i class="fas fa-chart-line"></i>
+                <span>Markets</span>
+            </a>
+            <a href="/support.html" class="nav-item">
+                <i class="fas fa-headset"></i>
+                <span>Support</span>
+            </a>
+            <a href="/profile.html" class="nav-item">
+                <i class="fas fa-user"></i>
+                <span>Account</span>
+            </a>
+        </div>
+    </nav>
+
+    <script src="/js/user/report-detail.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (window.ThemeManager) await ThemeManager.init(true);
+        });
+    </script>
+</body>
+</html>

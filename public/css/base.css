@@ -1,0 +1,380 @@
+/* =====================================================
+   FOOTRADAPRO - 全局基礎樣式
+   生產版本 - 世界級APP視覺標準
+   ===================================================== */
+
+/* ===== 字體系統 ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    /* ===== 字體系統 ===== */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-size-xs: 12px;
+    --font-size-sm: 14px;
+    --font-size-md: 16px;
+    --font-size-lg: 18px;
+    --font-size-xl: 20px;
+    --font-size-2xl: 24px;
+    
+    /* ===== 字重 ===== */
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    
+    /* ===== 間距系統（4的倍數） ===== */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 28px;
+    --space-8: 32px;
+    --space-9: 36px;
+    --space-10: 40px;
+    
+    /* ===== 圓角系統 ===== */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;
+    
+    /* ===== 陰影系統 ===== */
+    --shadow-none: none;
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    
+    /* ===== 過渡動畫 ===== */
+    --transition-fast: 150ms ease;
+    --transition-base: 250ms ease;
+    --transition-slow: 350ms ease;
+}
+
+/* ===== 真實模式（默認）- 奢華金融橙 ===== */
+:root {
+    --primary: #F7931A;
+    --primary-light: #FFB347;
+    --primary-dark: #E67E22;
+    --primary-rgb: 247, 147, 26;
+    
+    --accent: #F7931A;
+    --accent-rgb: 247, 147, 26;
+    
+    --success: #10B981;
+    --danger: #EF4444;
+    --warning: #F59E0B;
+    --info: #3B82F6;
+    
+    --bg-primary: #0B0E13;
+    --bg-secondary: #0F1422;
+    --bg-card: #151A28;
+    --bg-card-hover: #1F242D;
+    
+    --border-light: rgba(255, 255, 255, 0.05);
+    --border-medium: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.15);
+    
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --text-tertiary: #64748B;
+    --text-disabled: #475569;
+    
+    --icon-primary: #94A3B8;
+    --icon-secondary: #64748B;
+    
+    /* ===== 真實模式強化視覺 ===== */
+    --gradient-primary: linear-gradient(135deg, #F7931A, #FFB347);
+    --gradient-secondary: linear-gradient(135deg, #FFB347, #F7931A);
+    --glow-primary: 0 0 20px rgba(247, 147, 26, 0.5);
+    --glow-soft: 0 0 15px rgba(247, 147, 26, 0.3);
+    --shadow-strong: 0 10px 30px rgba(247, 147, 26, 0.3);
+    --shadow-soft: 0 5px 15px rgba(247, 147, 26, 0.15);
+    
+    /* 動畫時間 */
+    --animation-slow: 3s;
+    --animation-medium: 2s;
+    --animation-fast: 1s;
+}
+
+/* ===== 測試模式 - 科技紫藍 ===== */
+:root.test-mode {
+    --primary: #5B8CFF;
+    --primary-light: #7BAAFF;
+    --primary-dark: #3B6EF0;
+    --primary-rgb: 91, 140, 255;
+    
+    --accent: #5B8CFF;
+    --accent-rgb: 91, 140, 255;
+    
+    /* 測試模式背景微調 */
+    --bg-card: #0F172A;
+    --bg-card-hover: #1A1F2A;
+    --border-strong: rgba(91, 140, 255, 0.2);
+    --border-medium: rgba(91, 140, 255, 0.15);
+    
+    /* ===== 測試模式強化視覺 ===== */
+    --gradient-primary: linear-gradient(135deg, #5B8CFF, #7BAAFF);
+    --gradient-secondary: linear-gradient(135deg, #7BAAFF, #5B8CFF);
+    --glow-primary: 0 0 20px rgba(91, 140, 255, 0.5);
+    --glow-soft: 0 0 15px rgba(91, 140, 255, 0.3);
+    --shadow-strong: 0 10px 30px rgba(91, 140, 255, 0.3);
+    --shadow-soft: 0 5px 15px rgba(91, 140, 255, 0.15);
+}
+
+/* ===== 淺色主題 ===== */
+[data-theme="light"] {
+    --bg-primary: #F8FAFC;
+    --bg-secondary: #F1F5F9;
+    --bg-card: #FFFFFF;
+    --bg-card-hover: #F8FAFC;
+    
+    --border-light: rgba(0, 0, 0, 0.05);
+    --border-medium: rgba(0, 0, 0, 0.08);
+    --border-strong: rgba(0, 0, 0, 0.12);
+    
+    --text-primary: #0F172A;
+    --text-secondary: #334155;
+    --text-tertiary: #64748B;
+    --text-disabled: #94A3B8;
+    
+    --icon-primary: #475569;
+    --icon-secondary: #64748B;
+}
+
+/* ===== 測試模式 + 淺色主題 ===== */
+[data-theme="light"].test-mode {
+    --primary: #5B8CFF;
+    --primary-light: #7BAAFF;
+    --primary-dark: #3B6EF0;
+    
+    --accent: #5B8CFF;
+    --accent-rgb: 91, 140, 255;
+    
+    --bg-card: #FFFFFF;
+    --bg-card-hover: #F8FAFC;
+}
+
+/* ===== 基礎重置 ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color var(--transition-base), color var(--transition-base);
+}
+
+/* ===== 容器 ===== */
+.container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 var(--space-4);
+}
+
+/* ===== 按鈕基礎樣式 ===== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    border: 1px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: translateX(-100%);
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: var(--shadow-soft);
+}
+
+.btn-primary:hover {
+    background: var(--gradient-secondary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-strong);
+}
+
+.btn-primary:hover::after {
+    animation: shine 1.5s infinite;
+}
+
+.btn-outline {
+    background: transparent;
+    border-color: var(--border-medium);
+    color: var(--text-primary);
+}
+
+.btn-outline:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    box-shadow: var(--glow-soft);
+}
+
+/* ===== 卡片基礎樣式 ===== */
+.card {
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.05) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+}
+
+.card:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow-soft);
+    transform: translateY(-2px);
+}
+
+.card:hover::before {
+    opacity: 1;
+    animation: rotate 10s linear infinite;
+}
+
+/* ===== 圖標基礎樣式 ===== */
+.icon {
+    color: var(--icon-primary);
+    transition: color var(--transition-base);
+}
+
+.icon-primary {
+    color: var(--primary);
+    filter: drop-shadow(var(--glow-soft));
+}
+
+/* ===== 文字顏色 ===== */
+.text-primary {
+    color: var(--primary);
+}
+
+.text-success {
+    color: var(--success);
+}
+
+.text-danger {
+    color: var(--danger);
+}
+
+.text-warning {
+    color: var(--warning);
+}
+
+/* ===== 測試模式標籤 ===== */
+.test-mode-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-1) var(--space-2);
+    background: rgba(var(--primary-rgb), 0.15);
+    color: var(--primary);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(var(--primary-rgb), 0.3);
+    box-shadow: var(--glow-soft);
+}
+
+/* ===== 貨幣符號 ===== */
+.currency {
+    color: var(--primary);
+    font-weight: var(--font-weight-bold);
+    filter: drop-shadow(var(--glow-soft));
+}
+
+/* ===== 動畫定義 ===== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes shine {
+    0% { transform: translateX(-100%); }
+    20% { transform: translateX(100%); }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes pulse {
+    0%, 100% { 
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+.fade-in {
+    animation: fadeIn var(--transition-base);
+}
+
+/* ===== 真實模式特有動畫 ===== */
+:root .btn-primary {
+    animation: pulse 3s infinite;
+}
+
+/* ===== 測試模式特有動畫 ===== */
+:root.test-mode .btn-primary {
+    animation: none;
+}
+
+:root.test-mode .card::before {
+    animation: rotate 15s linear infinite reverse;
+}

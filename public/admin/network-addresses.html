@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网络地址管理 - FOOTRADAPRO 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- 全局配置 -->
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+    
+    <!-- 样式文件 -->
+    <link rel="stylesheet" href="/css/admin-base.css">
+    <link rel="stylesheet" href="/css/admin-nav.css">
+    <link rel="stylesheet" href="/css/admin-network-addresses.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 侧边栏容器 - 动态加载 -->
+        <aside class="admin-sidebar" id="sidebar-container"></aside>
+        
+        <script>
+            // 加载侧边栏组件
+            fetch('/admin/components/sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('sidebar-container').innerHTML = html;
+                    // 高亮当前菜单
+                    const currentPath = window.location.pathname;
+                    setTimeout(() => {
+                        document.querySelectorAll('.admin-nav-item').forEach(link => {
+                            if (link.getAttribute('href') === currentPath) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }, 100);
+                })
+                .catch(err => console.error('加载侧边栏失败:', err));
+        </script>
+        
+        <!-- 主内容区域 -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>
+                    <i class="fas fa-network-wired"></i> 
+                    网络充值地址管理
+                </h1>
+                <div class="admin-user">
+                    <span id="adminName">管理员</span>
+                    <button class="icon-btn" id="logoutBtn" title="退出登录">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+            
+            <div class="admin-content">
+                <!-- 地址表单 -->
+                <div class="address-form">
+                    <div class="network-tabs" id="networkTabs">
+                        <button class="network-tab active" data-network="TRC20">
+                            <i class="fas fa-bolt"></i> TRC20 (Tron)
+                        </button>
+                        <button class="network-tab" data-network="ERC20">
+                            <i class="fab fa-ethereum"></i> ERC20 (Ethereum)
+                        </button>
+                        <button class="network-tab" data-network="BEP20">
+                            <i class="fas fa-chart-line"></i> BEP20 (BSC)
+                        </button>
+                    </div>
+                    
+                    <form id="addressForm">
+                        <input type="hidden" id="network" value="TRC20">
+                        
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-qrcode"></i> 充值地址 
+                                <span style="color: #ef4444;">*</span>
+                            </label>
+                            <input type="text" id="address" class="form-input" 
+                                   placeholder="请输入充值地址" autocomplete="off">
+                            <div class="address-preview" id="addressPreview">
+                                地址将显示在此处
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-info-circle"></i> 网络说明（可选）
+                            </label>
+                            <textarea id="note" rows="2" 
+                                      placeholder="例如：推荐使用 TRC20 网络，速度快手续费低"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-toggle-on"></i> 状态
+                            </label>
+                            <select id="status">
+                                <option value="active">✅ 启用</option>
+                                <option value="inactive">⛔ 禁用</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn-save">
+                            <i class="fas fa-save"></i> 保存配置
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- 当前配置列表 -->
+                <div class="current-configs">
+                    <h3>
+                        <i class="fas fa-list"></i> 
+                        当前配置
+                    </h3>
+                    <div id="configList">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>加载中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- 页面逻辑脚本 -->
+    <script src="/js/admin/network-addresses.js"></script>
+    
+    <script>
+        // 退出登录
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async function() {
+                try {
+                    await fetch('/api/v1/admin/logout', { 
+                        method: 'POST', 
+                        credentials: 'include' 
+                    });
+                    window.location.href = '/admin/index.html';
+                } catch (err) {
+                    console.error('退出失败:', err);
+                    window.location.href = '/admin/index.html';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

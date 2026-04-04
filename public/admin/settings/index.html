@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统设置 · FOOTRADA 管理后台</title>
+    <link rel="stylesheet" href="/css/admin-base.css">
+    <link rel="stylesheet" href="/css/settings.css">
+    <link rel="stylesheet" href="/css/admin-nav.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/js/core/timezone.js"></script>
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/admin-settings.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 侧边导航栏 - 统一风格 -->
+                <!-- 侧边导航栏 -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">FOOT<span>RADA</span></div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html" class="admin-nav-item ">
+                    <i class="fas fa-tachometer-alt"></i> <span>仪表盘</span>
+                </a>
+                <a href="/admin/stats.html" class="admin-nav-item ">
+                    <i class="fas fa-chart-pie"></i> <span>数据统计</span>
+                </a>
+                <a href="/admin/users.html" class="admin-nav-item ">
+                    <i class="fas fa-users"></i> <span>用户管理</span>
+                </a>
+                <a href="/admin/admins.html" class="admin-nav-item ">
+                    <i class="fas fa-user-shield"></i> <span>管理员管理</span>
+                </a>
+                <a href="/admin/deposits.html" class="admin-nav-item ">
+                    <i class="fas fa-arrow-down"></i> <span>充值审核</span>
+                </a>
+                <a href="/admin/withdrawals.html" class="admin-nav-item ">
+                    <i class="fas fa-arrow-up"></i> <span>提现审核</span>
+                </a>
+                <a href="/admin/finance.html" class="admin-nav-item ">
+                    <i class="fas fa-chart-line"></i> <span>财务管理</span>
+                </a>
+                <a href="/admin/matches.html" class="admin-nav-item ">
+                    <i class="fas fa-futbol"></i> <span>比赛管理</span>
+                </a>
+                <a href="/admin/settle.html" class="admin-nav-item ">
+                    <i class="fas fa-calculator"></i> <span>清算管理</span>
+                </a>
+                <a href="/admin/report-editor.html" class="admin-nav-item ">
+                    <i class="fas fa-edit"></i> <span>报告编辑</span>
+                </a>
+                <a href="/admin/ticker-manager.html" class="admin-nav-item ">
+                    <i class="fas fa-bolt"></i> <span>动态管理</span>
+                </a>
+                <a href="/admin/notifications.html" class="admin-nav-item ">
+                    <i class="fas fa-bell"></i> <span>通知管理</span>
+                </a>
+                <a href="/admin/settings/index.html" class="admin-nav-item active">
+                    <i class="fas fa-cog"></i> <span>系统设置</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1 class="page-title">系统设置中心</h1>
+                <div class="admin-user">
+                    <span id="adminName">管理员</span>
+                    <button class="icon-btn" id="logoutBtn" title="退出登录">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- 设置卡片网格 -->
+            <div class="settings-grid">
+                <div class="setting-card" onclick="location.href='/admin/settings/basic.html'">
+                    <div class="card-icon">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <h3 class="card-title">网站基础设置</h3>
+                    <p class="card-desc">配置网站名称、Logo、SEO、联系方式等基础信息</p>
+                    <div class="card-footer">
+                        <span class="card-badge">基础信息</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <div class="setting-card" onclick="location.href='/admin/settings/trade.html'">
+                    <div class="card-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3 class="card-title">交易规则配置</h3>
+                    <p class="card-desc">设置限额、费率、授权规则等交易参数</p>
+                    <div class="card-footer">
+                        <span class="card-badge">交易参数</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <div class="setting-card" onclick="location.href='/admin/settings/withdraw.html'">
+                    <div class="card-icon">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <h3 class="card-title">提现网络配置</h3>
+                    <p class="card-desc">管理TRC20/ERC20/BEP20网络参数</p>
+                    <div class="card-footer">
+                        <span class="card-badge">资金配置</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <div class="setting-card" onclick="location.href='/admin/settings/email.html'">
+                    <div class="card-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <h3 class="card-title">邮件模板编辑</h3>
+                    <p class="card-desc">自定义各类系统邮件的模板内容</p>
+                    <div class="card-footer">
+                        <span class="card-badge">通知配置</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <div class="setting-card" onclick="location.href='/admin/settings/layout.html'">
+                    <div class="card-icon">
+                        <i class="fas fa-paint-brush"></i>
+                    </div>
+                    <h3 class="card-title">首页布局设置</h3>
+                    <p class="card-desc">调整首页模块顺序、轮播图、公告等</p>
+                    <div class="card-footer">
+                        <span class="card-badge">界面配置</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/admin/settings.js"></script>
+    <script>
+        // 退出登录
+        document.getElementById('logoutBtn')?.addEventListener('click', () => {
+            window.location.href = '/admin/index.html';
+        });
+
+        // 保存所有更改
+        document.getElementById('saveAllBtn')?.addEventListener('click', () => {
+            alert('所有设置已保存！');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>邮件模板配置 · FOOTRADA 管理后台</title>
+    <link rel="stylesheet" href="/css/admin-base.css">
+    <link rel="stylesheet" href="/css/admin-settings.css">
+    <link rel="stylesheet" href="/css/admin-nav.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 基础样式 - 与网站基础设置完全一致 */
+        .admin-main {
+            flex: 1;
+            padding: 24px 32px;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .settings-container {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 768px) {
+            .admin-main {
+                padding: 16px;
+            }
+        }
+
+        /* 双列布局 */
+        .two-column {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        /* 左侧模板列表卡片 */
+        .template-list-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .list-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-strong);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-secondary);
+        }
+
+        .list-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .list-title i {
+            color: var(--accent);
+        }
+
+        .list-search {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-strong);
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            font-size: 14px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 8px 12px 8px 36px;
+            border: 1px solid var(--border-strong);
+            border-radius: 30px;
+            font-size: 13px;
+            background: var(--bg-primary);
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .template-items {
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .template-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            border: 1px solid transparent;
+        }
+
+        .template-item:hover {
+            background: var(--bg-secondary);
+            border-color: var(--border-strong);
+        }
+
+        .template-item.active {
+            background: var(--accent-light);
+            border-color: var(--accent);
+        }
+
+        .item-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 18px;
+        }
+
+        .template-item.active .item-icon {
+            background: var(--accent);
+            color: white;
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .item-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 30px;
+        }
+
+        .item-badge.active {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .item-badge.inactive {
+            background: var(--bg-secondary);
+            color: var(--text-tertiary);
+        }
+
+        .item-desc {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        .item-time {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+        }
+
+        /* 右侧编辑器卡片 */
+        .editor-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-strong);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-secondary);
+        }
+
+        .panel-header i {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 20px;
+        }
+
+        .panel-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .editor-tabs {
+            display: flex;
+            gap: 2px;
+            background: var(--bg-card);
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid var(--border-strong);
+        }
+
+        .editor-tab {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .editor-tab:hover {
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+        }
+
+        .editor-tab.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .panel-body {
+            padding: 24px;
+        }
+
+        /* 快速操作按钮组 */
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border-strong);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .quick-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-color: var(--accent);
+        }
+
+        .quick-btn i {
+            color: var(--accent);
+            font-size: 12px;
+        }
+
+        /* 变量标签区域 */
+        .variables-section {
+            margin-bottom: 24px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid var(--border-strong);
+        }
+
+        .variables-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .variables-title span {
+            font-size: 12px;
+            font-weight: normal;
+            color: var(--accent);
+            background: var(--bg-card);
+            padding: 2px 8px;
+            border-radius: 30px;
+        }
+
+        .variables-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .variable-tag {
+            padding: 6px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            border-radius: 30px;
+            font-size: 12px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            font-weight: 500;
+        }
+
+        .variable-tag:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .variable-tag i {
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .variable-tag:hover i {
+            color: white;
+        }
+
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid var(--border-strong);
+            border-radius: 8px;
+            font-size: 14px;
+            background: #ffffff;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .form-control:hover {
+            border-color: var(--accent);
+            background: #fafafa;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            background: #ffffff;
+        }
+
+        textarea.form-control {
+            font-family: monospace;
+            line-height: 1.6;
+            min-height: 300px;
+            resize: vertical;
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .form-hint i {
+            color: var(--accent);
+        }
+
+        /* 测试发送区域 */
+        .test-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-strong);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 24px;
+            display: flex;
+            align-items: flex-end;
+            gap: 16px;
+        }
+
+        .test-section .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-strong);
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-strong);
+        }
+
+        /* 预览模态框 */
+        .preview-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            max-width: 90%;
+            background: var(--bg-card);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            z-index: 10000;
+        }
+
+        .preview-modal.active {
+            display: block;
+        }
+
+        .preview-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-strong);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-secondary);
+            border-radius: 16px 16px 0 0;
+        }
+
+        .preview-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .preview-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid var(--border-strong);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-body {
+            padding: 24px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .preview-subject {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-strong);
+        }
+
+        .preview-content {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .preview-footer {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-strong);
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-align: center;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+        }
+
+        .modal-overlay.active {
+            display: block;
+        }
+
+        @media (max-width: 1024px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <script src="/js/core/timezone.js"></script>
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 侧边导航栏 -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">FOOT<span>RADA</span></div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html" class="admin-nav-item"><i class="fas fa-tachometer-alt"></i> <span>仪表盘</span></a>
+                <a href="/admin/stats.html" class="admin-nav-item"><i class="fas fa-chart-pie"></i> <span>数据统计</span></a>
+                <a href="/admin/users.html" class="admin-nav-item"><i class="fas fa-users"></i> <span>用户管理</span></a>
+                <a href="/admin/admins.html" class="admin-nav-item"><i class="fas fa-user-shield"></i> <span>管理员管理</span></a>
+                <a href="/admin/deposits.html" class="admin-nav-item"><i class="fas fa-arrow-down"></i> <span>充值审核</span></a>
+                <a href="/admin/withdrawals.html" class="admin-nav-item"><i class="fas fa-arrow-up"></i> <span>提现审核</span></a>
+                <a href="/admin/finance.html" class="admin-nav-item"><i class="fas fa-chart-line"></i> <span>财务管理</span></a>
+                <a href="/admin/matches.html" class="admin-nav-item"><i class="fas fa-futbol"></i> <span>比赛管理</span></a>
+                <a href="/admin/settle.html" class="admin-nav-item"><i class="fas fa-calculator"></i> <span>清算管理</span></a>
+                <a href="/admin/report-editor.html" class="admin-nav-item"><i class="fas fa-edit"></i> <span>报告编辑</span></a>
+                <a href="/admin/ticker-manager.html" class="admin-nav-item"><i class="fas fa-bolt"></i> <span>动态管理</span></a>
+                <a href="/admin/notifications.html" class="admin-nav-item"><i class="fas fa-bell"></i> <span>通知管理</span></a>
+                <a href="/admin/settings/index.html" class="admin-nav-item active"><i class="fas fa-cog"></i> <span>系统设置</span></a>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="admin-main">
+            <!-- 头部 -->
+            <header class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-strong);">
+                <div class="header-left" style="display: flex; align-items: center; gap: 16px;">
+                    <button class="back-btn" onclick="location.href='/admin/settings/index.html'" style="width: 40px; height: 40px; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--border-strong); color: var(--text-secondary); cursor: pointer;">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h1 class="page-title" style="font-size: 24px; font-weight: 700;">邮件模板配置</h1>
+                </div>
+                <div class="header-actions" style="display: flex; gap: 12px;">
+                    <button class="btn btn-secondary" id="previewBtn">
+                        <i class="fas fa-eye"></i> 预览
+                    </button>
+                    <button class="btn btn-primary" id="saveBtn">
+                        <i class="fas fa-save"></i> 保存当前模板
+                    </button>
+                </div>
+            </header>
+
+            <div class="settings-container">
+                <!-- 双列布局 -->
+                <div class="two-column">
+                    <!-- 左侧：模板列表 -->
+                    <div class="template-list-card">
+                        <div class="list-header">
+                            <div class="list-title">
+                                <i class="fas fa-list"></i> 邮件模板
+                            </div>
+                            <button class="btn btn-secondary" style="padding: 6px 12px;" id="newTemplateBtn">
+                                <i class="fas fa-plus"></i> 新建
+                            </button>
+                        </div>
+                        <div class="list-search">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="searchTemplates" placeholder="搜索模板...">
+                            </div>
+                        </div>
+                        <div class="template-items" id="templateList"></div>
+                    </div>
+
+                    <!-- 右侧：编辑器 -->
+                    <div class="editor-card">
+                        <div class="panel-header">
+                            <i class="fas fa-edit"></i>
+                            <h3 id="currentTemplateTitle">编辑模板 · 欢迎邮件</h3>
+                            <div class="editor-tabs">
+                                <button class="editor-tab active" data-mode="text">文本</button>
+                                <button class="editor-tab" data-mode="html">HTML</button>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <!-- 快速操作按钮组 -->
+                            <div class="quick-actions">
+                                <button class="quick-btn" id="insertVariableBtn">
+                                    <i class="fas fa-code"></i> 插入变量
+                                </button>
+                                <button class="quick-btn" id="enableToggleBtn">
+                                    <i class="fas fa-power-off"></i> 启用/停用
+                                </button>
+                                <button class="quick-btn" id="resetTemplateBtn">
+                                    <i class="fas fa-history"></i> 恢复默认
+                                </button>
+                            </div>
+
+                            <!-- 变量标签 -->
+                            <div class="variables-section">
+                                <div class="variables-title">
+                                    可用变量
+                                    <span>点击插入</span>
+                                </div>
+                                <div class="variables-grid" id="variableGrid"></div>
+                            </div>
+
+                            <!-- 邮件主题 -->
+                            <div class="form-group">
+                                <label class="form-label">邮件主题</label>
+                                <input type="text" class="form-control" id="emailSubject" value="">
+                                <div class="form-hint">
+                                    <i class="fas fa-info-circle"></i> 建议60个字符以内，当前: <span id="subjectLength">0</span>字符
+                                </div>
+                            </div>
+
+                            <!-- 邮件内容 - 唯一textarea -->
+                            <div class="form-group">
+                                <label class="form-label">邮件内容</label>
+                                <textarea class="form-control" id="emailContent" rows="14"></textarea>
+                                <div class="form-hint" id="contentHint">
+                                    <i class="fas fa-info-circle"></i> 支持变量替换，点击变量插入
+                                </div>
+                            </div>
+
+                            <!-- 测试发送 -->
+                            <div class="test-section">
+                                <div class="form-group">
+                                    <label class="form-label">发送测试邮件到</label>
+                                    <input type="email" class="form-control" id="testEmail" value="admin@footrada.com" placeholder="输入测试邮箱">
+                                </div>
+                                <button class="btn btn-primary" id="sendTestBtn" style="height: 46px;">
+                                    <i class="fas fa-paper-plane"></i> 发送测试
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 底部操作按钮 -->
+                <div class="form-actions">
+                    <button class="btn btn-danger" id="resetAllBtn">
+                        <i class="fas fa-history"></i> 恢复默认
+                    </button>
+                    <button class="btn btn-secondary" onclick="location.href='/admin/settings/index.html'">
+                        <i class="fas fa-times"></i> 取消
+                    </button>
+                    <button class="btn btn-primary" id="saveAllBtn">
+                        <i class="fas fa-save"></i> 保存所有模板
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 预览模态框 -->
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="preview-modal" id="previewModal">
+        <div class="preview-header">
+            <h3>邮件预览</h3>
+            <button class="preview-close" id="closePreviewBtn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="preview-body">
+            <div class="preview-subject" id="previewSubject"></div>
+            <div class="preview-content" id="previewContent"></div>
+            <div class="preview-footer">预览效果，实际发送时会替换为真实变量</div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 模板数据 ==========
+        const TEMPLATES = {
+            welcome: {
+                id: 'welcome',
+                name: '欢迎邮件',
+                category: 'register',
+                status: 'active',
+                desc: '新用户注册成功',
+                time: '2小时前',
+                subject: '欢迎加入 FOOTRADA，{{username}}！',
+                content: `尊敬的 {{username}}：
+
+感谢您注册 FOOTRADA 平台！我们非常高兴欢迎您的加入。
+
+请点击以下链接验证您的邮箱地址：
+{{verify_link}}
+
+验证码：{{verify_code}}（有效期为24小时）
+
+如果您没有注册 FOOTRADA，请忽略此邮件。
+
+FOOTRADA 团队
+{{date}} {{time}}`,
+                html: `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎加入 FOOTRADA</title>
+</head>
+<body>
+    <h2>尊敬的 {{username}}：</h2>
+    <p>感谢您注册 FOOTRADA 平台！我们非常高兴欢迎您的加入。</p>
+    <p>请点击以下链接验证您的邮箱地址：<br>
+    <a href="{{verify_link}}">{{verify_link}}</a></p>
+    <p>验证码：<strong>{{verify_code}}</strong>（有效期为24小时）</p>
+    <p>如果您没有注册 FOOTRADA，请忽略此邮件。</p>
+    <p>FOOTRADA 团队<br>{{date}} {{time}}</p>
+</body>
+</html>`
+            },
+            verify: {
+                id: 'verify',
+                name: '邮箱验证',
+                category: 'register',
+                status: 'active',
+                desc: '验证码邮件',
+                time: '昨天',
+                subject: '请验证您的邮箱 - FOOTRADA',
+                content: `您好 {{username}}：
+
+您的邮箱验证码是：{{verify_code}}
+
+验证链接：{{verify_link}}
+
+验证码有效期为24小时，请尽快验证。`,
+                html: `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>邮箱验证 - FOOTRADA</title>
+</head>
+<body>
+    <h2>您好 {{username}}：</h2>
+    <p>您的邮箱验证码是：<strong>{{verify_code}}</strong></p>
+    <p>验证链接：<a href="{{verify_link}}">{{verify_link}}</a></p>
+    <p>验证码有效期为24小时，请尽快验证。</p>
+</body>
+</html>`
+            },
+            reset: {
+                id: 'reset',
+                name: '密码重置',
+                category: 'reset',
+                status: 'inactive',
+                desc: '忘记密码重置链接',
+                time: '3天前',
+                subject: '重置您的密码 - FOOTRADA',
+                content: `您好 {{username}}：
+
+我们收到了您重置密码的请求。
+
+请点击以下链接重置密码：
+{{reset_link}}
+
+如果这不是您本人的操作，请忽略此邮件。`,
+                html: `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>密码重置 - FOOTRADA</title>
+</head>
+<body>
+    <h2>您好 {{username}}：</h2>
+    <p>我们收到了您重置密码的请求。</p>
+    <p>请点击以下链接重置密码：<br>
+    <a href="{{reset_link}}">{{reset_link}}</a></p>
+    <p>如果这不是您本人的操作，请忽略此邮件。</p>
+</body>
+</html>`
+            },
+            deposit: {
+                id: 'deposit',
+                name: '充值成功',
+                category: 'deposit',
+                status: 'active',
+                desc: '充值到账通知',
+                time: '上周',
+                subject: '充值成功通知 - FOOTRADA',
+                content: `您好 {{username}}：
+
+您的充值已成功到账！
+
+充值金额：{{amount}} USDT
+交易ID：{{txid}}
+
+感谢您的支持！`,
+                html: `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>充值成功 - FOOTRADA</title>
+</head>
+<body>
+    <h2>您好 {{username}}：</h2>
+    <p>您的充值已成功到账！</p>
+    <p>充值金额：<strong>{{amount}} USDT</strong></p>
+    <p>交易ID：{{txid}}</p>
+    <p>感谢您的支持！</p>
+</body>
+</html>`
+            },
+            withdraw: {
+                id: 'withdraw',
+                name: '提现通知',
+                category: 'withdraw',
+                status: 'inactive',
+                desc: '提现申请/成功',
+                time: '5天前',
+                subject: '提现处理通知 - FOOTRADA',
+                content: `您好 {{username}}：
+
+您的提现申请已处理。
+
+提现金额：{{amount}} USDT
+提现地址：{{address}}
+交易ID：{{txid}}
+
+预计1-2小时内到账。`,
+                html: `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>提现通知 - FOOTRADA</title>
+</head>
+<body>
+    <h2>您好 {{username}}：</h2>
+    <p>您的提现申请已处理。</p>
+    <p>提现金额：<strong>{{amount}} USDT</strong></p>
+    <p>提现地址：{{address}}</p>
+    <p>交易ID：{{txid}}</p>
+    <p>预计1-2小时内到账。</p>
+</body>
+</html>`
+            },
+            settlement: {
+                id: 'settlement',
+                name: '结算通知',
+                category: 'settlement',
+                status: 'inactive',
+                desc: '比赛结算结果',
+                time: '1周前',
+                subject: '比赛结算通知 - FOOTRADA',
+                content: `您好 {{username}}：
+
+您参与的比赛已结算。
+
+比赛结果：{{result}}
+结算金额：{{amount}} USDT
+
+祝您下次好运！`,
+                html: `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>结算通知 - FOOTRADA</title>
+</head>
+<body>
+    <h2>您好 {{username}}：</h2>
+    <p>您参与的比赛已结算。</p>
+    <p>比赛结果：{{result}}</p>
+    <p>结算金额：<strong>{{amount}} USDT</strong></p>
+    <p>祝您下次好运！</p>
+</body>
+</html>`
+            },
+            system: {
+                id: 'system',
+                name: '系统通知',
+                category: 'system',
+                status: 'active',
+                desc: '系统公告和维护',
+                time: '2周前',
+                subject: '系统维护通知 - FOOTRADA',
+                content: `尊敬的FOOTRADA用户：
+
+系统将于 {{date}} {{time}} 进行维护，预计持续2小时。
+
+维护期间可能影响正常使用，给您带来不便敬请谅解。
+
+FOOTRADA团队`,
+                html: `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>系统通知 - FOOTRADA</title>
+</head>
+<body>
+    <h2>尊敬的FOOTRADA用户：</h2>
+    <p>系统将于 <strong>{{date}} {{time}}</strong> 进行维护，预计持续2小时。</p>
+    <p>维护期间可能影响正常使用，给您带来不便敬请谅解。</p>
+    <p>FOOTRADA团队</p>
+</body>
+</html>`
+            }
+        };
+
+        // 可用变量（按模板类型分组）
+        const VARIABLES = {
+            common: ['{{username}}', '{{email}}', '{{date}}', '{{time}}', '{{site_name}}', '{{support_email}}'],
+            register: ['{{verify_code}}', '{{verify_link}}'],
+            reset: ['{{reset_link}}'],
+            deposit: ['{{amount}}', '{{txid}}'],
+            withdraw: ['{{amount}}', '{{address}}', '{{txid}}'],
+            settlement: ['{{result}}', '{{amount}}']
+        };
+
+        let currentId = 'welcome';
+        let currentMode = 'text'; // 'text' 或 'html'
+
+        // ========== 初始化 ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            renderTemplateList();
+            loadTemplate('welcome');
+            setupEventListeners();
+        });
+
+        // 获取分类图标
+        function getIcon(category) {
+            const icons = {
+                register: 'fa-user-plus',
+                reset: 'fa-key',
+                deposit: 'fa-arrow-down',
+                withdraw: 'fa-arrow-up',
+                settlement: 'fa-calculator',
+                system: 'fa-bell'
+            };
+            return icons[category] || 'fa-envelope';
+        }
+
+        // 渲染模板列表
+        function renderTemplateList() {
+            const list = document.getElementById('templateList');
+            list.innerHTML = '';
+            
+            Object.values(TEMPLATES).forEach(t => {
+                const activeClass = t.id === currentId ? 'active' : '';
+                const statusClass = t.status === 'active' ? 'active' : 'inactive';
+                const statusText = t.status === 'active' ? '启用' : '停用';
+                
+                const div = document.createElement('div');
+                div.className = `template-item ${activeClass}`;
+                div.dataset.id = t.id;
+                div.dataset.category = t.category;
+                div.innerHTML = `
+                    <div class="item-icon"><i class="fas ${getIcon(t.category)}"></i></div>
+                    <div class="item-info">
+                        <div class="item-name">
+                            ${t.name}
+                            <span class="item-badge ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="item-desc">${t.desc}</div>
+                        <div class="item-time">更新于 ${t.time}</div>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // 加载模板
+        function loadTemplate(id) {
+            const t = TEMPLATES[id];
+            if (!t) return;
+            
+            currentId = id;
+            document.getElementById('currentTemplateTitle').textContent = `编辑模板 · ${t.name}`;
+            document.getElementById('emailSubject').value = t.subject;
+            
+            // 根据当前模式设置内容
+            document.getElementById('emailContent').value = currentMode === 'text' ? t.content : t.html;
+            
+            document.getElementById('subjectLength').textContent = t.subject.length;
+            
+            // 更新变量标签
+            const vars = [...(VARIABLES.common || []), ...(VARIABLES[t.category] || [])];
+            document.getElementById('variableGrid').innerHTML = vars.map(v => 
+                `<span class="variable-tag" data-var="${v}"><i class="fas fa-code"></i> ${v}</span>`
+            ).join('');
+            
+            // 更新列表选中状态
+            document.querySelectorAll('.template-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.id === id);
+            });
+        }
+
+        // ========== 事件监听 ==========
+        function setupEventListeners() {
+            // 模板列表点击
+            document.getElementById('templateList').addEventListener('click', e => {
+                const item = e.target.closest('.template-item');
+                if (item && item.dataset.id) {
+                    loadTemplate(item.dataset.id);
+                }
+            });
+
+            // 标签切换
+            document.querySelectorAll('.editor-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const t = TEMPLATES[currentId];
+                    if (!t) return;
+                    
+                    currentMode = this.dataset.mode;
+                    // 切换内容
+                    document.getElementById('emailContent').value = currentMode === 'text' ? t.content : t.html;
+                    
+                    // 更新提示文字
+                    const hint = document.getElementById('contentHint');
+                    hint.innerHTML = currentMode === 'text' 
+                        ? '<i class="fas fa-info-circle"></i> 支持变量替换，点击变量插入'
+                        : '<i class="fas fa-info-circle"></i> HTML源码模式，点击变量插入';
+                });
+            });
+
+            // 变量点击插入
+            document.getElementById('variableGrid').addEventListener('click', e => {
+                const tag = e.target.closest('.variable-tag');
+                if (!tag) return;
+                
+                const variable = tag.dataset.var;
+                const textarea = document.getElementById('emailContent');
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const value = textarea.value;
+                
+                textarea.value = value.substring(0, start) + variable + value.substring(end);
+                textarea.focus();
+                textarea.setSelectionRange(start + variable.length, start + variable.length);
+                
+                // 实时更新模板数据
+                const t = TEMPLATES[currentId];
+                if (t) {
+                    if (currentMode === 'text') {
+                        t.content = textarea.value;
+                    } else {
+                        t.html = textarea.value;
+                    }
+                }
+            });
+
+            // 插入变量按钮（滚动到变量区域）
+            document.getElementById('insertVariableBtn').addEventListener('click', () => {
+                document.querySelector('.variables-section').scrollIntoView({ behavior: 'smooth' });
+            });
+
+            // 启用/停用按钮
+            document.getElementById('enableToggleBtn').addEventListener('click', () => {
+                const t = TEMPLATES[currentId];
+                if (!t) return;
+                
+                t.status = t.status === 'active' ? 'inactive' : 'active';
+                t.time = '刚刚';
+                renderTemplateList();
+                showToast(`模板已${t.status === 'active' ? '启用' : '停用'}`);
+            });
+
+            // 恢复默认模板（刷新页面重新加载原始数据）
+            document.getElementById('resetTemplateBtn').addEventListener('click', () => {
+                if (confirm('确定要恢复默认内容吗？')) {
+                    location.reload();
+                }
+            });
+
+            // 新建模板
+            document.getElementById('newTemplateBtn').addEventListener('click', () => {
+                const newId = 'new_' + Date.now();
+                TEMPLATES[newId] = {
+                    id: newId,
+                    name: '新模板',
+                    category: 'register',
+                    status: 'inactive',
+                    desc: '新建模板',
+                    time: '刚刚',
+                    subject: '新邮件主题',
+                    content: '请输入邮件内容...',
+                    html: '<p>请输入HTML内容...</p>'
+                };
+                renderTemplateList();
+                loadTemplate(newId);
+                showToast('新模板已创建');
+            });
+
+            // 搜索模板
+            document.getElementById('searchTemplates').addEventListener('input', e => {
+                const term = e.target.value.toLowerCase();
+                document.querySelectorAll('.template-item').forEach(item => {
+                    const name = item.querySelector('.item-name').childNodes[0].textContent.toLowerCase();
+                    const desc = item.querySelector('.item-desc').textContent.toLowerCase();
+                    const match = name.includes(term) || desc.includes(term);
+                    item.style.display = match ? 'flex' : 'none';
+                });
+            });
+
+            // 主题字数统计
+            document.getElementById('emailSubject').addEventListener('input', function() {
+                document.getElementById('subjectLength').textContent = this.value.length;
+            });
+
+            // 实时保存内容到模板
+            document.getElementById('emailContent').addEventListener('input', function() {
+                const t = TEMPLATES[currentId];
+                if (t) {
+                    if (currentMode === 'text') {
+                        t.content = this.value;
+                    } else {
+                        t.html = this.value;
+                    }
+                }
+            });
+
+            // 预览
+            document.getElementById('previewBtn').addEventListener('click', function() {
+                const t = TEMPLATES[currentId];
+                if (!t) return;
+                
+                const subject = document.getElementById('emailSubject').value;
+                const content = document.getElementById('emailContent').value;
+                
+                // 简单替换变量示例
+                const previewSubject = subject
+                    .replace(/{{username}}/g, 'john_doe')
+                    .replace(/{{verify_code}}/g, '123456')
+                    .replace(/{{amount}}/g, '1,000')
+                    .replace(/{{date}}/g, '2024-01-20')
+                    .replace(/{{time}}/g, '14:30');
+                    
+                const previewContent = content
+                    .replace(/{{username}}/g, 'john_doe')
+                    .replace(/{{verify_code}}/g, '123456')
+                    .replace(/{{verify_link}}/g, 'https://footrada.com/verify?code=123456')
+                    .replace(/{{amount}}/g, '1,000')
+                    .replace(/{{txid}}/g, '0x1234...5678')
+                    .replace(/{{address}}/g, 'TXYZ...1234')
+                    .replace(/{{result}}/g, '主队胜')
+                    .replace(/{{date}}/g, '2024-01-20')
+                    .replace(/{{time}}/g, '14:30')
+                    .replace(/{{site_name}}/g, 'FOOTRADA')
+                    .replace(/{{support_email}}/g, 'support@footrada.com')
+                    .replace(/\n/g, '<br>');
+                
+                document.getElementById('previewSubject').textContent = '主题：' + previewSubject;
+                document.getElementById('previewContent').innerHTML = previewContent;
+                
+                document.getElementById('modalOverlay').classList.add('active');
+                document.getElementById('previewModal').classList.add('active');
+            });
+
+            // 关闭预览
+            document.getElementById('closePreviewBtn').addEventListener('click', closePreview);
+            document.getElementById('modalOverlay').addEventListener('click', closePreview);
+
+            function closePreview() {
+                document.getElementById('modalOverlay').classList.remove('active');
+                document.getElementById('previewModal').classList.remove('active');
+            }
+
+            // 保存当前模板
+            document.getElementById('saveBtn').addEventListener('click', function() {
+                const t = TEMPLATES[currentId];
+                if (!t) return;
+                
+                t.subject = document.getElementById('emailSubject').value;
+                if (currentMode === 'text') {
+                    t.content = document.getElementById('emailContent').value;
+                } else {
+                    t.html = document.getElementById('emailContent').value;
+                }
+                t.time = '刚刚';
+                renderTemplateList();
+                showToast(`✅ 模板 "${t.name}" 已保存`);
+            });
+
+            // 发送测试
+            document.getElementById('sendTestBtn').addEventListener('click', function() {
+                const email = document.getElementById('testEmail').value;
+                if (!email) {
+                    showToast('请输入测试邮箱', 'error');
+                    return;
+                }
+                showToast(`📧 测试邮件已发送到 ${email}`);
+            });
+
+            // 保存所有模板
+            document.getElementById('saveAllBtn').addEventListener('click', function() {
+                showToast('所有模板已保存');
+            });
+
+            // 恢复所有默认
+            document.getElementById('resetAllBtn').addEventListener('click', function() {
+                if (confirm('确定要恢复所有默认设置吗？此操作不可撤销。')) {
+                    location.reload();
+                }
+            });
+        }
+
+        // 显示提示消息
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            let bgColor = '#10b981'; // success green
+            if (type === 'error') bgColor = '#ef4444';
+            else if (type === 'info') bgColor = '#3b82f6';
+            
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 24px;
+                background: ${bgColor};
+                color: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10001;
+                animation: slideIn 0.3s ease;
+                font-weight: 500;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

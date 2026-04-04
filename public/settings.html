@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Settings · FOOTRADA</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/core/theme.js"></script>
+    
+    <!-- 核心样式系统 -->
+    <link rel="stylesheet" href="/css/core/variables.css">
+    <link rel="stylesheet" href="/css/core/layout.css">
+    <link rel="stylesheet" href="/css/core/components.css">
+    
+    <style>
+        /* 头部 */
+        .header-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-brand-light);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .back-btn:hover {
+            border-color: var(--brand-500);
+            color: var(--brand-500);
+        }
+        
+        .page-title {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--brand-400));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .test-mode-badge {
+            background: #2563EB;
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 30px;
+            margin-left: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        /* 设置分组 */
+        .settings-group {
+            background: var(--bg-card);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 20px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        
+        .group-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-brand-light);
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .settings-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-brand-light);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+        
+        .settings-item:hover {
+            background: rgba(var(--brand-rgb), 0.05);
+        }
+        
+        .item-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+        
+        .item-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--brand-500);
+            font-size: 16px;
+        }
+        
+        .item-content {
+            flex: 1;
+        }
+        
+        .item-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+        
+        .item-desc {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+        
+        .item-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .item-value {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .item-arrow {
+            color: var(--text-tertiary);
+            font-size: 12px;
+        }
+        
+        /* 退出按钮 */
+        .logout-btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid var(--border-brand-light);
+            border-radius: 40px;
+            color: var(--danger-500);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--danger-500);
+        }
+        
+        /* 版本信息 */
+        .version-info {
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-tertiary);
+            padding: 8px 0;
+        }
+        
+        /* 语言选择模态框 */
+        .lang-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        
+        .lang-modal-content {
+            background: var(--bg-card);
+            border-radius: 28px;
+            width: 90%;
+            max-width: 320px;
+            padding: 24px;
+            border: 1px solid var(--border-brand-light);
+        }
+        
+        .lang-modal h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+        
+        .lang-option {
+            width: 100%;
+            padding: 12px 16px;
+            background: transparent;
+            border: 1px solid var(--border-brand-light);
+            border-radius: 14px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+            margin-bottom: 8px;
+        }
+        
+        .lang-option:hover {
+            border-color: var(--brand-500);
+            background: rgba(var(--brand-rgb), 0.05);
+        }
+        
+        .lang-flag {
+            font-size: 20px;
+        }
+        
+        .lang-close {
+            width: 100%;
+            padding: 12px;
+            margin-top: 12px;
+            background: transparent;
+            border: 1px solid var(--border-brand-light);
+            border-radius: 40px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 480px) {
+            .item-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+            .item-title {
+                font-size: 13px;
+            }
+            .item-desc {
+                font-size: 10px;
+            }
+            .group-header {
+                padding: 10px 14px;
+                font-size: 11px;
+            }
+            .settings-item {
+                padding: 10px 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="header-container">
+            <div class="header-section">
+                <a href="/profile.html" class="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="page-title">
+                    Settings
+                    <span id="testModeBadge" class="test-mode-badge" style="display: none;">
+                        <i class="fas fa-flask"></i> TEST
+                    </span>
+                </h1>
+                <div style="width: 40px;"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="content-scrollable">
+        <div class="content-container">
+            <!-- Profile Settings -->
+            <div class="settings-group">
+                <div class="group-header">Profile</div>
+                <!-- i18n: "settings.group.profile" -->
+                
+                <div class="settings-item" onclick="location.href='/profile.html'">
+                    <div class="item-left">
+                        <div class="item-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="item-content">
+                            <div class="item-title">Personal Information</div>
+                            <!-- i18n: "settings.profile.info" -->
+                            <div class="item-desc">View and edit your profile</div>
+                            <!-- i18n: "settings.profile.info_desc" -->
+                        </div>
+                    </div>
+                    <div class="item-right">
+                        <i class="fas fa-chevron-right item-arrow"></i>
+                    </div>
+                </div>
+                
+                <div class="settings-item" onclick="location.href='/change-password.html'">
+                    <div class="item-left">
+                        <div class="item-icon">
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <div class="item-content">
+                            <div class="item-title">Change Password</div>
+                            <!-- i18n: "settings.profile.change_password" -->
+                            <div class="item-desc">Update your login password</div>
+                            <!-- i18n: "settings.profile.change_password_desc" -->
+                        </div>
+                    </div>
+                    <div class="item-right">
+                        <i class="fas fa-chevron-right item-arrow"></i>
+                    </div>
+                </div>
+                
+                <div class="settings-item" onclick="location.href='/set-paypassword.html'">
+                    <div class="item-left">
+                        <div class="item-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div class="item-content">
+                            <div class="item-title">Payment Password</div>
+                            <!-- i18n: "settings.profile.pay_password" -->
+                            <div class="item-desc" id="payPasswordDesc">Set withdrawal password</div>
+                            <!-- i18n: "settings.profile.pay_password_desc" -->
+                        </div>
+                    </div>
+                    <div class="item-right">
+                        <span class="item-value" id="payPasswordStatus">Not Set</span>
+                        <i class="fas fa-chevron-right item-arrow"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preferences -->
+            <div class="settings-group">
+                <div class="group-header">Preferences</div>
+                <!-- i18n: "settings.group.preferences" -->
+                
+                <div class="settings-item" id="languageItem">
+                    <div class="item-left">
+                        <div class="item-icon">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <div class="item-content">
+                            <div class="item-title">Language</div>
+                            <!-- i18n: "settings.preferences.language" -->
+                            <div class="item-desc">Choose your preferred language</div>
+                            <!-- i18n: "settings.preferences.language_desc" -->
+                        </div>
+                    </div>
+                    <div class="item-right">
+                        <span class="item-value" id="currentLang">English</span>
+                        <i class="fas fa-chevron-right item-arrow"></i>
+                    </div>
+                </div>
+                
+                <div class="settings-item">
+                    <div class="item-left">
+                        <div class="item-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="item-content">
+                            <div class="item-title">Notifications</div>
+                            <!-- i18n: "settings.preferences.notifications" -->
+                            <div class="item-desc">Manage your notification preferences</div>
+                            <!-- i18n: "settings.preferences.notifications_desc" -->
+                        </div>
+                    </div>
+                    <div class="item-right">
+                        <label class="switch">
+                            <input type="checkbox" id="notificationToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Support & About -->
+            <div class="settings-group">
+                <div class="group-header">Support & About</div>
+                <!-- i18n: "settings.group.support" -->
+                
+                <div class="settings-item" onclick="location.href='/support.html'">
+                    <div class="item-left">
+                        <div class="item-icon">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <div class="item-content">
+                            <div class="item-title">Help Center</div>
+                            <!-- i18n: "settings.support.help" -->
+                            <div class="item-desc">Get support and FAQ</div>
+                            <!-- i18n: "settings.support.help_desc" -->
+                        </div>
+                    </div>
+                    <div class="item-right">
+                        <i class="fas fa-chevron-right item-arrow"></i>
+                    </div>
+                </div>
+                
+                <div class="settings-item" onclick="location.href='/terms.html'">
+                    <div class="item-left">
+                        <div class="item-icon">
+                            <i class="fas fa-file-contract"></i>
+                        </div>
+                        <div class="item-content">
+                            <div class="item-title">Terms of Service</div>
+                            <!-- i18n: "settings.support.terms" -->
+                            <div class="item-desc">Read our terms and conditions</div>
+                            <!-- i18n: "settings.support.terms_desc" -->
+                        </div>
+                    </div>
+                    <div class="item-right">
+                        <i class="fas fa-chevron-right item-arrow"></i>
+                    </div>
+                </div>
+                
+                <div class="settings-item" onclick="location.href='/privacy.html'">
+                    <div class="item-left">
+                        <div class="item-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="item-content">
+                            <div class="item-title">Privacy Policy</div>
+                            <!-- i18n: "settings.support.privacy" -->
+                            <div class="item-desc">Learn how we protect your data</div>
+                            <!-- i18n: "settings.support.privacy_desc" -->
+                        </div>
+                    </div>
+                    <div class="item-right">
+                        <i class="fas fa-chevron-right item-arrow"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logout Button -->
+            <button class="logout-btn" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+                <!-- i18n: "settings.logout" -->
+            </button>
+
+            <!-- Version Info -->
+            <div class="version-info">
+                FOOTRADA v6.5.0
+            </div>
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="/match-market.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Markets</span></a>
+            <a href="/support.html" class="nav-item"><i class="fas fa-headset"></i><span>Support</span></a>
+            <a href="/profile.html" class="nav-item active"><i class="fas fa-user"></i><span>Account</span></a>
+        </div>
+    </nav>
+
+    <script src="/js/user/settings.js"></script>
+    
+    <script>
+        // 语言选择模态框
+        function showLanguageModal() {
+            const modal = document.createElement('div');
+            modal.className = 'lang-modal';
+            modal.innerHTML = `
+                <div class="lang-modal-content">
+                    <h3>Select Language</h3>
+                    <!-- i18n: "settings.language.title" -->
+                    <div class="lang-option" data-lang="en">
+                        <span class="lang-flag">🇬🇧</span>
+                        <span>English</span>
+                    </div>
+                    <div class="lang-option" data-lang="zh">
+                        <span class="lang-flag">🇨🇳</span>
+                        <span>中文</span>
+                    </div>
+                    <div class="lang-option" data-lang="es">
+                        <span class="lang-flag">🇪🇸</span>
+                        <span>Español</span>
+                    </div>
+                    <div class="lang-option" data-lang="ja">
+                        <span class="lang-flag">🇯🇵</span>
+                        <span>日本語</span>
+                    </div>
+                    <button class="lang-close">Cancel</button>
+                    <!-- i18n: "common.cancel" -->
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            modal.querySelectorAll('.lang-option').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const langCode = this.dataset.lang;
+                    const langNames = {
+                        'en': 'English',
+                        'zh': '中文',
+                        'es': 'Español',
+                        'ja': '日本語'
+                    };
+                    localStorage.setItem('preferred_lang', langCode);
+                    const currentLangEl = document.getElementById('currentLang');
+                    if (currentLangEl) currentLangEl.textContent = langNames[langCode] || 'English';
+                    modal.remove();
+                });
+            });
+            
+            modal.querySelector('.lang-close').addEventListener('click', () => modal.remove());
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
+        }
+        
+        // 主题初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (window.ThemeManager) {
+                await ThemeManager.init(true);
+                const testModeBadge = document.getElementById('testModeBadge');
+                if (testModeBadge) {
+                    testModeBadge.style.display = ThemeManager.isTestMode ? 'inline-flex' : 'none';
+                }
+            }
+            
+            // 语言选择
+            const languageItem = document.getElementById('languageItem');
+            if (languageItem) {
+                languageItem.addEventListener('click', showLanguageModal);
+            }
+            
+            // 通知开关
+            const notificationToggle = document.getElementById('notificationToggle');
+            if (notificationToggle) {
+                const notificationsEnabled = localStorage.getItem('notifications_enabled') !== 'false';
+                notificationToggle.checked = notificationsEnabled;
+                notificationToggle.addEventListener('change', function() {
+                    localStorage.setItem('notifications_enabled', this.checked);
+                });
+            }
+            
+            // 加载支付密码状态
+            async function loadPayPasswordStatus() {
+                try {
+                    const res = await fetch('/api/v1/user/profile/paypassword/status', { credentials: 'include' });
+                    const data = await res.json();
+                    if (data.success) {
+                        const statusEl = document.getElementById('payPasswordStatus');
+                        const descEl = document.getElementById('payPasswordDesc');
+                        if (statusEl) {
+                            const hasPayPassword = data.data.has_paypassword;
+                            statusEl.textContent = hasPayPassword ? 'Set' : 'Not Set';
+                            statusEl.style.color = hasPayPassword ? '#10b981' : '#f59e0b';
+                        }
+                        if (descEl) {
+                            descEl.textContent = 'Manage withdrawal password';
+                        }
+                    }
+                } catch (err) {
+                    console.error('Failed to load paypassword status:', err);
+                }
+            }
+            
+            loadPayPasswordStatus();
+        });
+    </script>
+</body>
+</html>

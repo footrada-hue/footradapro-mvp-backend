@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticker Manager - FOOTRADAPRO Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/time.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+    <link rel="stylesheet" href="/css/admin-base.css">
+    <link rel="stylesheet" href="/css/admin-nav.css">
+    <style>
+        /* ===== Custom Styles ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .stat-icon.blue { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .stat-icon.green { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .stat-icon.orange { background: rgba(255, 107, 0, 0.1); color: #ff6b00; }
+        .stat-icon.purple { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+
+        .stat-info h3 {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .stat-info .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .editor-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .editor-card h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge {
+            background: var(--accent);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .auto-generate-section {
+            background: linear-gradient(135deg, rgba(255, 107, 0, 0.05), rgba(59, 130, 246, 0.05));
+            border: 1px dashed var(--accent);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stats-preview {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .stat-item {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-item .label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-bottom: 8px;
+        }
+
+        .stat-item .number {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-item .unit {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-left: 4px;
+        }
+
+        .template-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .template-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .icon-auth { background: rgba(251, 191, 36, 0.1); color: #fbbf24; }
+        .icon-profit { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .icon-system { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+
+        .template-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .template-desc {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-top: 2px;
+        }
+
+        .match-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 10px;
+            margin: 16px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+        }
+
+        .match-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .match-checkbox:hover {
+            border-color: var(--accent);
+            background: var(--bg-card-hover);
+        }
+
+        .match-checkbox input[type="checkbox"] {
+            accent-color: var(--accent);
+        }
+
+        .param-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin: 16px 0;
+            flex-wrap: wrap;
+        }
+
+        .param-item {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .param-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .user-id-preview {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-secondary);
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--accent);
+            border: 1px solid var(--border-light);
+            margin: 12px 0;
+            letter-spacing: 0.5px;
+        }
+
+        .message-list {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .message-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-bottom: 1px solid var(--border-light);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .message-item:hover {
+            background: var(--bg-card-hover);
+            border-radius: 8px;
+        }
+
+        .message-item:last-child {
+            border-bottom: none;
+        }
+
+        .message-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .message-content {
+            flex: 1;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .message-actions {
+            display: flex;
+            gap: 8px;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .message-item:hover .message-actions {
+            opacity: 1;
+        }
+
+        .edit-btn, .delete-btn {
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .edit-btn:hover { color: var(--accent); }
+        .delete-btn:hover { color: #ef4444; }
+
+        .edit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .edit-modal.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background: var(--bg-card);
+            border-radius: 24px;
+            width: 90%;
+            max-width: 500px;
+            padding: 24px;
+            border: 1px solid var(--border-strong);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            margin-bottom: 24px;
+        }
+
+        .modal-body textarea {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-strong);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .weight-slider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .weight-slider input {
+            flex: 1;
+        }
+
+        .weight-value {
+            min-width: 40px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 30px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 107, 0, 0.1);
+            color: var(--accent);
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .filter-select {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-strong);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: var(--text-primary);
+            width: 100%;
+        }
+
+        .btn-primary, .btn-secondary {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-strong);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .page-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--border-strong);
+            background: var(--bg-card);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .page-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">FOOT<span>RADA</span></div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html" class="admin-nav-item">
+                    <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+                </a>
+                <a href="/admin/stats.html" class="admin-nav-item">
+                    <i class="fas fa-chart-pie"></i> <span>Statistics</span>
+                </a>
+                <a href="/admin/users.html" class="admin-nav-item">
+                    <i class="fas fa-users"></i> <span>Users</span>
+                </a>
+                <a href="/admin/admins.html" class="admin-nav-item">
+                    <i class="fas fa-user-shield"></i> <span>Admins</span>
+                </a>
+                <a href="/admin/deposits.html" class="admin-nav-item">
+                    <i class="fas fa-arrow-down"></i> <span>Deposits</span>
+                </a>
+                <a href="/admin/withdrawals.html" class="admin-nav-item">
+                    <i class="fas fa-arrow-up"></i> <span>Withdrawals</span>
+                </a>
+                <a href="/admin/finance.html" class="admin-nav-item">
+                    <i class="fas fa-chart-line"></i> <span>Finance</span>
+                </a>
+                <a href="/admin/matches.html" class="admin-nav-item">
+                    <i class="fas fa-futbol"></i> <span>Matches</span>
+                </a>
+                <a href="/admin/settle.html" class="admin-nav-item">
+                    <i class="fas fa-calculator"></i> <span>Settlement</span>
+                </a>
+                <a href="/admin/report-editor.html" class="admin-nav-item">
+                    <i class="fas fa-edit"></i> <span>Reports</span>
+                </a>
+                <a href="/admin/ticker-manager.html" class="admin-nav-item active">
+                    <i class="fas fa-bolt"></i> <span>Ticker Manager</span>
+                </a>
+                <a href="/admin/notifications.html" class="admin-nav-item">
+                    <i class="fas fa-bell"></i> <span>Notifications</span>
+                </a>
+                <a href="/admin/settings/index.html" class="admin-nav-item">
+                    <i class="fas fa-cog"></i> <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>Ticker Manager</h1>
+                <div class="admin-user">
+                    <span id="adminName">Admin</span>
+                    <button class="icon-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue"><i class="fas fa-database"></i></div>
+                        <div class="stat-info">
+                            <h3>Total Messages</h3>
+                            <div class="value" id="totalCount">-</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green"><i class="fas fa-bolt"></i></div>
+                        <div class="stat-info">
+                            <h3>Auth Records</h3>
+                            <div class="value" id="authCount">-</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange"><i class="fas fa-coins"></i></div>
+                        <div class="stat-info">
+                            <h3>Profit Records</h3>
+                            <div class="value" id="profitCount">-</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple"><i class="fas fa-bullhorn"></i></div>
+                        <div class="stat-info">
+                            <h3>System Announcements</h3>
+                            <div class="value" id="systemCount">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Recommendations Section -->
+                <div class="auto-generate-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-robot" style="color: var(--accent);"></i>
+                            AI Recommendations
+                            <span class="badge">Based on real data</span>
+                        </div>
+                        <div>
+                            <button class="btn-secondary" onclick="refreshStats()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <button class="btn-primary" onclick="generateRecommended()" style="margin-left: 8px;">
+                                <i class="fas fa-magic"></i> Generate
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Live Stats Preview -->
+                    <div class="stats-preview" id="liveStats">
+                        <div class="stat-item">
+                            <div class="label">Total Platform Volume</div>
+                            <div><span class="number" id="totalVolume">-</span><span class="unit">USDT</span></div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="label">24h Authorization</div>
+                            <div><span class="number" id="dailyAuth">-</span><span class="unit">USDT</span></div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="label">Yesterday Profit</div>
+                            <div><span class="number" id="yesterdayProfit">-</span><span class="unit">USDT</span></div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="label">Active Users</div>
+                            <div><span class="number" id="activeUsers">-</span><span class="unit"></span></div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="label">Hot Match</div>
+                            <div class="number" id="hotMatch" style="font-size: 16px;">-</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="label">Prize Pool</div>
+                            <div><span class="number" id="prizePool">5,000</span><span class="unit">USDT</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Recommendations List -->
+                    <div class="message-list" id="recommendList">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="manual">✍️ Manual Generate</button>
+                    <button class="tab-btn" data-tab="all">📋 All Messages</button>
+                    <button class="tab-btn" data-tab="history">📜 Generation History</button>
+                </div>
+
+                <!-- Manual Generate Tab -->
+                <div class="tab-content active" id="manualTab">
+                    <!-- Auth Generator -->
+                    <div class="editor-card">
+                        <div class="template-header">
+                            <div class="template-icon icon-auth"><i class="fas fa-bolt"></i></div>
+                            <div>
+                                <div class="template-title">⚡ Auth Message Generator</div>
+                                <div class="template-desc">Generate user authorization records</div>
+                            </div>
+                        </div>
+
+                        <!-- Match Selection -->
+                        <div class="param-label">Select Matches (Multiple)</div>
+                        <div class="match-selector" id="authMatches">
+                            <!-- Dynamic content -->
+                        </div>
+
+                        <!-- Parameters -->
+                        <div class="param-row">
+                            <div class="param-item">
+                                <div class="param-label">Auth Amount Range (USDT)</div>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="number" id="authMin" value="100" min="10" class="filter-select" style="width: 100px;">
+                                    <span style="line-height: 40px;">-</span>
+                                    <input type="number" id="authMax" value="10000" min="100" class="filter-select" style="width: 100px;">
+                                </div>
+                            </div>
+                            <div class="param-item">
+                                <div class="param-label">Count</div>
+                                <input type="number" id="authCount" value="10" min="1" max="100" class="filter-select">
+                            </div>
+                            <div class="param-item">
+                                <div class="param-label">Weight</div>
+                                <input type="number" id="authWeight" value="100" min="1" max="1000" class="filter-select">
+                            </div>
+                        </div>
+
+                        <!-- User ID Preview -->
+                        <div class="param-label">User ID Format</div>
+                        <div class="user-id-preview">
+                            U278591754W3 · U123456789X1 · U987654321Z9 · U456789123Y5
+                        </div>
+
+                        <button class="btn-primary" onclick="generateAuth()" style="margin-top: 16px;">
+                            <i class="fas fa-play"></i> Generate Auth Messages
+                        </button>
+                    </div>
+
+                    <!-- Profit Generator -->
+                    <div class="editor-card">
+                        <div class="template-header">
+                            <div class="template-icon icon-profit"><i class="fas fa-coins"></i></div>
+                            <div>
+                                <div class="template-title">💰 Profit Message Generator</div>
+                                <div class="template-desc">Generate user profit records</div>
+                            </div>
+                        </div>
+
+                        <!-- Match Selection -->
+                        <div class="param-label">Select Matches (Multiple)</div>
+                        <div class="match-selector" id="profitMatches">
+                            <!-- Dynamic content -->
+                        </div>
+
+                        <!-- Parameters -->
+                        <div class="param-row">
+                            <div class="param-item">
+                                <div class="param-label">Profit Amount Range (USDT)</div>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="number" id="profitMin" value="10" min="1" class="filter-select" style="width: 100px;">
+                                    <span style="line-height: 40px;">-</span>
+                                    <input type="number" id="profitMax" value="5000" min="10" class="filter-select" style="width: 100px;">
+                                </div>
+                            </div>
+                            <div class="param-item">
+                                <div class="param-label">Count</div>
+                                <input type="number" id="profitCount" value="10" min="1" max="100" class="filter-select">
+                            </div>
+                            <div class="param-item">
+                                <div class="param-label">Weight</div>
+                                <input type="number" id="profitWeight" value="100" min="1" max="1000" class="filter-select">
+                            </div>
+                        </div>
+
+                        <button class="btn-primary" onclick="generateProfit()" style="margin-top: 16px;">
+                            <i class="fas fa-play"></i> Generate Profit Messages
+                        </button>
+                    </div>
+                </div>
+
+                <!-- All Messages Tab -->
+                <div class="tab-content" id="allTab">
+                    <div class="editor-card">
+                        <div class="section-header">
+                            <h2>📋 All Messages</h2>
+                            <div>
+                                <button class="btn-secondary" onclick="clearAll()">
+                                    <i class="fas fa-trash"></i> Clear All
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="param-row" style="margin-bottom: 20px;">
+                            <div class="param-item">
+                                <select id="filterType" class="filter-select">
+                                    <option value="all">All Types</option>
+                                    <option value="auth">⚡ Auth</option>
+                                    <option value="profit">💰 Profit</option>
+                                    <option value="system">📢 System</option>
+                                </select>
+                            </div>
+                            <div class="param-item">
+                                <input type="text" id="searchMessage" placeholder="Search messages..." class="filter-select">
+                            </div>
+                        </div>
+
+                        <!-- Messages List -->
+                        <div class="message-list" id="allMessagesList" style="max-height: 500px; overflow-y: auto;">
+                            <!-- Dynamic content -->
+                        </div>
+
+                        <!-- Pagination -->
+                        <div style="display: flex; justify-content: center; gap: 8px; margin-top: 20px;">
+                            <button class="page-btn" id="prevPage"><i class="fas fa-chevron-left"></i></button>
+                            <span id="pageInfo" style="line-height: 36px; color: var(--text-secondary);">Page 1</span>
+                            <button class="page-btn" id="nextPage"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generation History Tab -->
+                <div class="tab-content" id="historyTab">
+                    <div class="editor-card">
+                        <div class="section-header">
+                            <h2>📜 Generation History</h2>
+                            <div>
+                                <span class="badge" id="todayGenerated">Today: 0</span>
+                            </div>
+                        </div>
+
+                        <!-- Today's Stats -->
+                        <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
+                            <div class="stat-card">
+                                <div class="stat-icon blue"><i class="fas fa-calendar-day"></i></div>
+                                <div class="stat-info">
+                                    <h3>Today's Generations</h3>
+                                    <div class="value" id="todayGenerationCount">0</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon green"><i class="fas fa-bolt"></i></div>
+                                <div class="stat-info">
+                                    <h3>Auth Generated</h3>
+                                    <div class="value" id="todayAuthCount">0</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon orange"><i class="fas fa-coins"></i></div>
+                                <div class="stat-info">
+                                    <h3>Profit Generated</h3>
+                                    <div class="value" id="todayProfitCount">0</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon purple"><i class="fas fa-bullhorn"></i></div>
+                                <div class="stat-info">
+                                    <h3>System Generated</h3>
+                                    <div class="value" id="todaySystemCount">0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- History Table -->
+                        <div class="table-container">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date & Time</th>
+                                        <th>Admin</th>
+                                        <th>Total</th>
+                                        <th>Auth</th>
+                                        <th>Profit</th>
+                                        <th>System</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyList">
+                                    <tr><td colspan="6" class="loading"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="pagination" id="historyPagination"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="edit-modal" id="editModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Edit Message</h3>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <textarea id="editMessage" rows="3"></textarea>
+                
+                <div class="weight-slider">
+                    <span>Weight</span>
+                    <input type="range" id="editWeight" min="1" max="1000" value="100">
+                    <span class="weight-value" id="editWeightValue">100</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeEditModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveEdit()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== Global Variables ====================
+        let currentPage = 1;
+        let totalPages = 1;
+        let editingId = null;
+        let allMessages = [];
+        let historyPage = 1;
+        let historyTotalPages = 1;
+
+        // ==================== Utility Functions ====================
+        function generateUserId() {
+            const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+            const numbers = '0123456789';
+            
+            let userId = 'U';
+            for (let i = 0; i < 9; i++) {
+                userId += numbers[Math.floor(Math.random() * numbers.length)];
+            }
+            userId += letters[Math.floor(Math.random() * letters.length)];
+            userId += numbers[Math.floor(Math.random() * numbers.length)];
+            
+            return userId;
+        }
+
+        function formatNumber(num) {
+            return num.toLocaleString('en-US');
+        }
+
+        // ==================== Load Live Stats ====================
+        async function loadLiveStats() {
+            try {
+                const result = await FOOTRADAPRO.UTILS.request('/admin/ticker-manager/live-stats');
+                
+                if (result.success) {
+                    document.getElementById('totalVolume').textContent = formatNumber(result.data.totalVolume || 0);
+                    document.getElementById('dailyAuth').textContent = formatNumber(result.data.dailyAuth || 0);
+                    document.getElementById('yesterdayProfit').textContent = formatNumber(result.data.yesterdayProfit || 0);
+                    document.getElementById('activeUsers').textContent = formatNumber(result.data.activeUsers || 0);
+                    document.getElementById('hotMatch').textContent = result.data.hotMatch || 'None';
+                }
+            } catch (err) {
+                console.error('Failed to load live stats:', err);
+            }
+        }
+
+        // ==================== Load Recommendations ====================
+        async function loadRecommendations() {
+            try {
+                const result = await FOOTRADAPRO.UTILS.request('/admin/ticker-manager/recommendations');
+                
+                if (result.success) {
+                    const list = document.getElementById('recommendList');
+                    let html = '';
+                    
+                    result.data.forEach(item => {
+                        let icon = '';
+                        let bgColor = '';
+                        
+                        switch(item.type) {
+                            case 'auth':
+                                icon = '⚡';
+                                bgColor = 'rgba(251, 191, 36, 0.1)';
+                                break;
+                            case 'profit':
+                                icon = '💰';
+                                bgColor = 'rgba(16, 185, 129, 0.1)';
+                                break;
+                            case 'system':
+                                icon = '📢';
+                                bgColor = 'rgba(59, 130, 246, 0.1)';
+                                break;
+                        }
+                        
+                        html += `
+                            <div class="message-item">
+                                <div class="message-icon" style="background: ${bgColor};">${icon}</div>
+                                <div class="message-content">${item.message}</div>
+                                <div class="message-actions">
+                                    <button class="edit-btn" onclick="addToManual('${item.message}', '${item.type}')">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    list.innerHTML = html || '<div style="text-align: center; padding: 20px; color: var(--text-tertiary);">No recommendations</div>';
+                }
+            } catch (err) {
+                console.error('Failed to load recommendations:', err);
+            }
+        }
+
+        // ==================== Add to Manual ====================
+        function addToManual(message, type) {
+            alert('Added to generator preview (editable)');
+        }
+
+        // ==================== Generate Recommended ====================
+        async function generateRecommended() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+            try {
+                const result = await FOOTRADAPRO.UTILS.request('/admin/ticker-manager/generate-recommended', {
+                    method: 'POST'
+                });
+
+                if (result.success) {
+                    alert(`✅ Successfully generated ${result.data.generated} messages`);
+                    loadStats();
+                    loadAllMessages();
+                    loadTodayStats();
+                    loadGenerationHistory();
+                }
+            } catch (err) {
+                alert('Generation failed: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magic"></i> Generate';
+            }
+        }
+
+        // ==================== Refresh Stats ====================
+        async function refreshStats() {
+            await loadLiveStats();
+            await loadRecommendations();
+        }
+
+        // ==================== Load Matches ====================
+        async function loadMatches() {
+            try {
+                const result = await FOOTRADAPRO.UTILS.request('/admin/matches/list');
+                
+                if (result.success) {
+                    const matches = result.data;
+                    
+                    let authHtml = '';
+                    matches.forEach(match => {
+                        authHtml += `
+                            <label class="match-checkbox">
+                                <input type="checkbox" name="authMatches" value="${match.match_id}">
+                                <span>${match.home_team} vs ${match.away_team}</span>
+                                <span style="margin-left: auto; font-size: 11px; color: var(--text-tertiary);">${match.league}</span>
+                            </label>
+                        `;
+                    });
+                    document.getElementById('authMatches').innerHTML = authHtml || '<div style="padding: 20px; text-align: center;">No matches</div>';
+                    document.getElementById('profitMatches').innerHTML = authHtml;
+                }
+            } catch (err) {
+                console.error('Failed to load matches:', err);
+            }
+        }
+
+        // ==================== Load Stats ====================
+        async function loadStats() {
+            try {
+                const result = await FOOTRADAPRO.UTILS.request('/admin/ticker-manager/stats');
+                if (result.success) {
+                    document.getElementById('totalCount').textContent = result.data.total || 0;
+                    document.getElementById('authCount').textContent = result.data.auth_count || 0;
+                    document.getElementById('profitCount').textContent = result.data.profit_count || 0;
+                    document.getElementById('systemCount').textContent = result.data.system_count || 0;
+                }
+            } catch (err) {
+                console.error('Failed to load stats:', err);
+            }
+        }
+
+        // ==================== Load All Messages ====================
+        async function loadAllMessages() {
+            try {
+                const type = document.getElementById('filterType').value;
+                const search = document.getElementById('searchMessage').value;
+                
+                const result = await FOOTRADAPRO.UTILS.request(
+                    `/admin/ticker-manager/messages?page=${currentPage}&limit=20&type=${type}&search=${encodeURIComponent(search)}`
+                );
+                
+                if (result.success) {
+                    allMessages = result.data;
+                    totalPages = result.pagination.pages;
+                    
+                    renderMessages();
+                }
+            } catch (err) {
+                console.error('Failed to load messages:', err);
+            }
+        }
+
+        // ==================== Render Messages ====================
+        function renderMessages() {
+            const list = document.getElementById('allMessagesList');
+            let html = '';
+            
+            allMessages.forEach(msg => {
+                let icon = '';
+                let bgColor = '';
+                
+                switch(msg.type) {
+                    case 'auth':
+                        icon = '⚡';
+                        bgColor = 'rgba(251, 191, 36, 0.1)';
+                        break;
+                    case 'profit':
+                        icon = '💰';
+                        bgColor = 'rgba(16, 185, 129, 0.1)';
+                        break;
+                    case 'system':
+                        icon = '📢';
+                        bgColor = 'rgba(59, 130, 246, 0.1)';
+                        break;
+                }
+                
+                html += `
+                    <div class="message-item">
+                        <div class="message-icon" style="background: ${bgColor};">${icon}</div>
+                        <div class="message-content">${msg.message}</div>
+                        <div class="message-actions">
+                            <button class="edit-btn" onclick="openEditModal(${msg.id}, '${msg.message.replace(/'/g, "\\'")}', ${msg.weight || 100})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="delete-btn" onclick="deleteMessage(${msg.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            list.innerHTML = html || '<div style="text-align: center; padding: 40px; color: var(--text-tertiary);">No messages</div>';
+            
+            document.getElementById('pageInfo').textContent = `Page ${currentPage} / ${totalPages}`;
+        }
+
+        // ==================== Edit Message ====================
+        function openEditModal(id, message, weight) {
+            editingId = id;
+            document.getElementById('editMessage').value = message;
+            document.getElementById('editWeight').value = weight;
+            document.getElementById('editWeightValue').textContent = weight;
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+            editingId = null;
+        }
+
+        async function saveEdit() {
+            const message = document.getElementById('editMessage').value;
+            const weight = document.getElementById('editWeight').value;
+
+            try {
+                const result = await FOOTRADAPRO.UTILS.request(`/admin/ticker-manager/message/${editingId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ message, weight })
+                });
+
+                if (result.success) {
+                    alert('✅ Changes saved');
+                    closeEditModal();
+                    loadAllMessages();
+                }
+            } catch (err) {
+                alert('Save failed: ' + err.message);
+            }
+        }
+
+        // ==================== Delete Message ====================
+        async function deleteMessage(id) {
+            if (!confirm('Delete this message?')) return;
+
+            try {
+                const result = await FOOTRADAPRO.UTILS.request(`/admin/ticker-manager/message/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (result.success) {
+                    loadAllMessages();
+                    loadStats();
+                }
+            } catch (err) {
+                alert('Delete failed: ' + err.message);
+            }
+        }
+
+        // ==================== Generate Auth ====================
+        async function generateAuth() {
+            const matches = Array.from(document.querySelectorAll('input[name="authMatches"]:checked'))
+                .map(cb => cb.value);
+            
+            if (matches.length === 0) {
+                alert('Please select at least one match');
+                return;
+            }
+
+            const data = {
+                type: 'auth',
+                matches: matches,
+                minAmount: parseInt(document.getElementById('authMin').value),
+                maxAmount: parseInt(document.getElementById('authMax').value),
+                count: parseInt(document.getElementById('authCount').value),
+                weight: parseInt(document.getElementById('authWeight').value)
+            };
+
+            await generateTickerMessages(data);
+        }
+
+        // ==================== Generate Profit ====================
+        async function generateProfit() {
+            const matches = Array.from(document.querySelectorAll('#profitMatches input:checked'))
+                .map(cb => cb.value);
+            
+            if (matches.length === 0) {
+                alert('Please select at least one match');
+                return;
+            }
+
+            const data = {
+                type: 'profit',
+                matches: matches,
+                minAmount: parseInt(document.getElementById('profitMin').value),
+                maxAmount: parseInt(document.getElementById('profitMax').value),
+                count: parseInt(document.getElementById('profitCount').value),
+                weight: parseInt(document.getElementById('profitWeight').value)
+            };
+
+            await generateTickerMessages(data);
+        }
+
+        // ==================== Generate Ticker Messages ====================
+        async function generateTickerMessages(data) {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+            try {
+                const result = await FOOTRADAPRO.UTILS.request('/admin/ticker-manager/generate-custom', {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+
+                if (result.success) {
+                    alert(`✅ Successfully generated ${result.data.generated} messages`);
+                    loadStats();
+                    loadAllMessages();
+                    loadTodayStats();
+                    loadGenerationHistory();
+                }
+            } catch (err) {
+                alert('Generation failed: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-play"></i> Generate';
+            }
+        }
+
+        // ==================== Clear All ====================
+        async function clearAll() {
+            if (!confirm('Clear all messages?')) return;
+            
+            const res = await FOOTRADAPRO.UTILS.request('/admin/ticker-manager/clear', { 
+                method: 'DELETE' 
+            });
+            
+            if (res.success) {
+                alert(`✅ Cleared ${res.data.deleted} messages`);
+                loadStats();
+                loadAllMessages();
+            }
+        }
+
+        // ==================== Load Today Stats ====================
+        async function loadTodayStats() {
+            try {
+                const result = await FOOTRADAPRO.UTILS.request('/admin/ticker-manager/today-stats');
+                
+                if (result.success) {
+                    document.getElementById('todayGenerationCount').textContent = result.data.generation_count;
+                    document.getElementById('todayAuthCount').textContent = result.data.total_auth;
+                    document.getElementById('todayProfitCount').textContent = result.data.total_profit;
+                    document.getElementById('todaySystemCount').textContent = result.data.total_system;
+                    document.getElementById('todayGenerated').textContent = `Today: ${result.data.total_generated}`;
+                }
+            } catch (err) {
+                console.error('Failed to load today stats:', err);
+            }
+        }
+
+        // ==================== Load Generation History ====================
+        async function loadGenerationHistory() {
+            try {
+                const result = await FOOTRADAPRO.UTILS.request(
+                    `/admin/ticker-manager/generation-history?page=${historyPage}&limit=15`
+                );
+                
+                if (result.success) {
+                    const tbody = document.getElementById('historyList');
+                    historyTotalPages = result.pagination.pages;
+                    
+                    if (result.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="loading">No generation history</td></tr>';
+                    } else {
+                        let html = '';
+                        result.data.forEach(item => {
+                            const date = new Date(item.created_at);
+                            const formattedDate = date.toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                hour12: false
+                            });
+                            
+                            html += `
+                                <tr>
+                                    <td>${formattedDate}</td>
+                                    <td>${item.admin_name || 'Admin'}</td>
+                                    <td><strong>${item.generated_count}</strong></td>
+                                    <td><span style="color: #fbbf24;">${item.auth_count}</span></td>
+                                    <td><span style="color: #10b981;">${item.profit_count}</span></td>
+                                    <td><span style="color: #3b82f6;">${item.system_count}</span></td>
+                                </tr>
+                            `;
+                        });
+                        tbody.innerHTML = html;
+                    }
+                    
+                    renderHistoryPagination();
+                }
+            } catch (err) {
+                console.error('Failed to load history:', err);
+                document.getElementById('historyList').innerHTML = '<tr><td colspan="6" class="loading" style="color: #ef4444;">Failed to load</td></tr>';
+            }
+        }
+
+        // ==================== Render History Pagination ====================
+        function renderHistoryPagination() {
+            const pagination = document.getElementById('historyPagination');
+            
+            if (historyTotalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            html += `<button class="page-btn" onclick="changeHistoryPage(${historyPage - 1})" ${historyPage === 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
+
+            for (let i = 1; i <= historyTotalPages; i++) {
+                if (i === 1 || i === historyTotalPages || (i >= historyPage - 2 && i <= historyPage + 2)) {
+                    html += `<button class="page-btn ${i === historyPage ? 'active' : ''}" onclick="changeHistoryPage(${i})">${i}</button>`;
+                } else if (i === historyPage - 3 || i === historyPage + 3) {
+                    html += `<button class="page-btn" disabled>...</button>`;
+                }
+            }
+
+            html += `<button class="page-btn" onclick="changeHistoryPage(${historyPage + 1})" ${historyPage === historyTotalPages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
+            pagination.innerHTML = html;
+        }
+
+        // ==================== Change History Page ====================
+        window.changeHistoryPage = function(page) {
+            if (page < 1 || page > historyTotalPages) return;
+            historyPage = page;
+            loadGenerationHistory();
+        };
+
+        // ==================== Initialize ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            loadMatches();
+            loadStats();
+            loadLiveStats();
+            loadRecommendations();
+            loadAllMessages();
+            loadTodayStats();
+
+            // Weight slider联动
+            document.getElementById('editWeight').addEventListener('input', (e) => {
+                document.getElementById('editWeightValue').textContent = e.target.value;
+            });
+
+            // Tab切换
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    btn.classList.add('active');
+                    document.getElementById(btn.dataset.tab + 'Tab').classList.add('active');
+                    
+                    if (btn.dataset.tab === 'all') {
+                        loadAllMessages();
+                    } else if (btn.dataset.tab === 'history') {
+                        historyPage = 1;
+                        loadTodayStats();
+                        loadGenerationHistory();
+                    }
+                });
+            });
+
+            // Filter events
+            document.getElementById('filterType').addEventListener('change', () => {
+                currentPage = 1;
+                loadAllMessages();
+            });
+
+            document.getElementById('searchMessage').addEventListener('input', () => {
+                clearTimeout(window.searchTimer);
+                window.searchTimer = setTimeout(() => {
+                    currentPage = 1;
+                    loadAllMessages();
+                }, 500);
+            });
+
+            // Pagination events
+            document.getElementById('prevPage').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    loadAllMessages();
+                }
+            });
+
+            document.getElementById('nextPage').addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    loadAllMessages();
+                }
+            });
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            window.location.href = '/admin/index.html';
+        });
+    </script>
+</body>
+</html>

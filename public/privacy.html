@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Privacy Policy · FOOTRADA</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/core/theme.js"></script>
+    
+    <!-- 核心样式系统 -->
+    <link rel="stylesheet" href="/css/core/variables.css">
+    <link rel="stylesheet" href="/css/core/layout.css">
+    <link rel="stylesheet" href="/css/core/components.css">
+    
+    <style>
+        /* 头部 */
+        .header-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-brand-light);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .back-btn:hover {
+            border-color: var(--brand-500);
+            color: var(--brand-500);
+        }
+        
+        .page-title {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--brand-400));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .test-mode-badge {
+            background: #2563EB;
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 30px;
+            margin-left: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .placeholder {
+            width: 40px;
+        }
+        
+        /* 内容容器 */
+        .legal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .last-updated {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-brand-light);
+        }
+        
+        .legal-content h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 24px 0 12px;
+        }
+        
+        .legal-content h2:first-of-type {
+            margin-top: 0;
+        }
+        
+        .legal-content p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        
+        .legal-content ul {
+            margin: 12px 0 16px;
+            padding-left: 24px;
+        }
+        
+        .legal-content li {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .legal-content a {
+            color: var(--brand-500);
+            text-decoration: none;
+        }
+        
+        .legal-content a:hover {
+            text-decoration: underline;
+        }
+        
+        .legal-content address {
+            font-style: normal;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin: 16px 0;
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: transparent;
+            border: 1px solid var(--border-brand-light);
+            border-radius: 40px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+        
+        .back-link:hover {
+            border-color: var(--brand-500);
+            color: var(--brand-500);
+        }
+        
+        @media (max-width: 480px) {
+            .legal-content {
+                padding: 20px;
+            }
+            .legal-content h2 {
+                font-size: 16px;
+            }
+            .legal-content p,
+            .legal-content li {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="header-container">
+            <div class="header-section">
+                <a href="/settings.html" class="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="page-title">
+                    Privacy Policy
+                    <span id="testModeBadge" class="test-mode-badge" style="display: none;">
+                        <i class="fas fa-flask"></i> TEST
+                    </span>
+                </h1>
+                <div class="placeholder"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="content-scrollable">
+        <div class="content-container">
+            <div class="legal-content">
+                <p class="last-updated">Last updated: February 26, 2026</p>
+                <!-- i18n: "privacy.last_updated" -->
+
+                <p><strong>FOOTRADA</strong> ("we", "us", or "our") respects your privacy and is committed to protecting it through this Privacy Policy. This policy describes how we collect, use, and share your personal information when you use our website, applications, and related services (the "Service").</p>
+                <!-- i18n: "privacy.intro" -->
+
+                <h2>1. Information We Collect</h2>
+                <!-- i18n: "privacy.section1.title" -->
+                <p>We collect several types of information from and about users of our Service, including:</p>
+                <!-- i18n: "privacy.section1.desc" -->
+                <ul>
+                    <li><strong>Personal Information:</strong> When you register, we may collect your email address, phone number, and account credentials. You may also provide optional information such as a referral code.</li>
+                    <!-- i18n: "privacy.section1.item1" -->
+                    <li><strong>Usage Data:</strong> We automatically collect information about how you interact with the Service, such as your IP address, browser type, pages visited, time spent, and other diagnostic data.</li>
+                    <!-- i18n: "privacy.section1.item2" -->
+                    <li><strong>Cookies and Tracking Technologies:</strong> We use cookies and similar tracking technologies to track activity on our Service and hold certain information. You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent.</li>
+                    <!-- i18n: "privacy.section1.item3" -->
+                </ul>
+
+                <h2>2. How We Use Your Information</h2>
+                <!-- i18n: "privacy.section2.title" -->
+                <p>We use the collected information for various purposes:</p>
+                <!-- i18n: "privacy.section2.desc" -->
+                <ul>
+                    <li>To provide, maintain, and improve the Service.</li>
+                    <!-- i18n: "privacy.section2.item1" -->
+                    <li>To manage your account and verify your identity.</li>
+                    <!-- i18n: "privacy.section2.item2" -->
+                    <li>To communicate with you, including sending service updates and promotional messages (with your consent where required).</li>
+                    <!-- i18n: "privacy.section2.item3" -->
+                    <li>To monitor usage and analyze trends to enhance user experience.</li>
+                    <!-- i18n: "privacy.section2.item4" -->
+                    <li>To detect, prevent, and address technical issues or fraudulent activities.</li>
+                    <!-- i18n: "privacy.section2.item5" -->
+                </ul>
+
+                <h2>3. Sharing Your Information</h2>
+                <!-- i18n: "privacy.section3.title" -->
+                <p>We do not sell, trade, or rent your personal information to third parties. We may share information in the following circumstances:</p>
+                <!-- i18n: "privacy.section3.desc" -->
+                <ul>
+                    <li><strong>Service Providers:</strong> We may employ third-party companies to facilitate our Service (e.g., hosting, email delivery). These providers have access to your information only to perform tasks on our behalf and are obligated not to disclose or use it for any other purpose.</li>
+                    <!-- i18n: "privacy.section3.item1" -->
+                    <li><strong>Legal Requirements:</strong> We may disclose your information if required to do so by law or in response to valid requests by public authorities (e.g., a court or government agency).</li>
+                    <!-- i18n: "privacy.section3.item2" -->
+                    <li><strong>Business Transfers:</strong> If we are involved in a merger, acquisition, or asset sale, your information may be transferred as part of that transaction.</li>
+                    <!-- i18n: "privacy.section3.item3" -->
+                </ul>
+
+                <h2>4. Data Security</h2>
+                <!-- i18n: "privacy.section4.title" -->
+                <p>We take reasonable measures to protect your personal information from unauthorized access, alteration, disclosure, or destruction. However, no method of transmission over the Internet or electronic storage is 100% secure, and we cannot guarantee absolute security.</p>
+                <!-- i18n: "privacy.section4.desc" -->
+
+                <h2>5. Your Data Rights</h2>
+                <!-- i18n: "privacy.section5.title" -->
+                <p>Depending on your location, you may have the following rights regarding your personal information:</p>
+                <!-- i18n: "privacy.section5.desc" -->
+                <ul>
+                    <li><strong>Access:</strong> You can request a copy of the data we hold about you.</li>
+                    <!-- i18n: "privacy.section5.item1" -->
+                    <li><strong>Rectification:</strong> You can request that we correct inaccurate or incomplete data.</li>
+                    <!-- i18n: "privacy.section5.item2" -->
+                    <li><strong>Deletion:</strong> You can request that we delete your personal data, subject to certain legal exceptions.</li>
+                    <!-- i18n: "privacy.section5.item3" -->
+                    <li><strong>Objection:</strong> You can object to our processing of your data for direct marketing purposes.</li>
+                    <!-- i18n: "privacy.section5.item4" -->
+                </ul>
+                <p>To exercise any of these rights, please contact us at <a href="mailto:privacy@footrada.com">privacy@footrada.com</a>.</p>
+                <!-- i18n: "privacy.section5.contact" -->
+
+                <h2>6. Children's Privacy</h2>
+                <!-- i18n: "privacy.section6.title" -->
+                <p>Our Service is not intended for individuals under the age of 18. We do not knowingly collect personal information from children. If you become aware that a child has provided us with personal information, please contact us, and we will take steps to delete such information.</p>
+                <!-- i18n: "privacy.section6.desc" -->
+
+                <h2>7. International Data Transfers</h2>
+                <!-- i18n: "privacy.section7.title" -->
+                <p>Your information may be transferred to and maintained on servers located outside your country of residence, where data protection laws may differ. By using the Service, you consent to such transfers. We take appropriate safeguards to ensure your information is protected.</p>
+                <!-- i18n: "privacy.section7.desc" -->
+
+                <h2>8. Changes to This Privacy Policy</h2>
+                <!-- i18n: "privacy.section8.title" -->
+                <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the "Last updated" date. You are advised to review this policy periodically for any changes.</p>
+                <!-- i18n: "privacy.section8.desc" -->
+
+                <h2>9. Contact Us</h2>
+                <!-- i18n: "privacy.section9.title" -->
+                <p>If you have any questions about this Privacy Policy, please contact us at <a href="mailto:privacy@footrada.com">privacy@footrada.com</a> or by mail at:</p>
+                <!-- i18n: "privacy.section9.desc" -->
+                <address>
+                    FOOTRADA<br>
+                    123 Finance Street<br>
+                    Singapore 018906
+                </address>
+
+                <a href="/settings.html" class="back-link">
+                    <i class="fas fa-arrow-left"></i> Back to Settings
+                </a>
+                <!-- i18n: "privacy.back_button" -->
+            </div>
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="/match-market.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Markets</span></a>
+            <a href="/support.html" class="nav-item"><i class="fas fa-headset"></i><span>Support</span></a>
+            <a href="/profile.html" class="nav-item active"><i class="fas fa-user"></i><span>Account</span></a>
+        </div>
+    </nav>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (window.ThemeManager) {
+                await ThemeManager.init(true);
+                
+                const testModeBadge = document.getElementById('testModeBadge');
+                if (testModeBadge) {
+                    testModeBadge.style.display = ThemeManager.isTestMode ? 'inline-flex' : 'none';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

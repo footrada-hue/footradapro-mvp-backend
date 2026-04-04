@@ -1,0 +1,658 @@
+[dotenv@17.3.1] injecting env (17) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+🚀 開始同步比賽數據...
+🕒 2026/3/16 09:25:20
+🔑 使用 API Key: 9ce49fba...
+📡 Premier League: 9 場比賽
+⚽ 處理: Brentford FC vs Wolverhampton Wanderers FC (ID: match_538078)
+🔄 更新: Brentford FC vs Wolverhampton Wanderers FC
+⚽ 處理: AFC Bournemouth vs Manchester United FC (ID: match_538085)
+🔄 更新: AFC Bournemouth vs Manchester United FC
+⚽ 處理: Brighton & Hove Albion FC vs Liverpool FC (ID: match_538087)
+🔄 更新: Brighton & Hove Albion FC vs Liverpool FC
+⚽ 處理: Fulham FC vs Burnley FC (ID: match_538089)
+🔄 更新: Fulham FC vs Burnley FC
+⚽ 處理: Everton FC vs Chelsea FC (ID: match_538088)
+🔄 更新: Everton FC vs Chelsea FC
+⚽ 處理: Leeds United FC vs Brentford FC (ID: match_538090)
+🔄 更新: Leeds United FC vs Brentford FC
+⚽ 處理: Newcastle United FC vs Sunderland AFC (ID: match_538092)
+🔄 更新: Newcastle United FC vs Sunderland AFC
+⚽ 處理: Aston Villa FC vs West Ham United FC (ID: match_538086)
+🔄 更新: Aston Villa FC vs West Ham United FC
+⚽ 處理: Tottenham Hotspur FC vs Nottingham Forest FC (ID: match_538093)
+🔄 更新: Tottenham Hotspur FC vs Nottingham Forest FC
+📡 La Liga: 11 場比賽
+⚽ 處理: Rayo Vallecano de Madrid vs Levante UD (ID: match_544489)
+🔄 更新: Rayo Vallecano de Madrid vs Levante UD
+⚽ 處理: Villarreal CF vs Real Sociedad de Fútbol (ID: match_544500)
+🔄 更新: Villarreal CF vs Real Sociedad de Fútbol
+⚽ 處理: Elche CF vs RCD Mallorca (ID: match_544493)
+🔄 更新: Elche CF vs RCD Mallorca
+⚽ 處理: RCD Espanyol de Barcelona vs Getafe CF (ID: match_544494)
+🔄 更新: RCD Espanyol de Barcelona vs Getafe CF
+⚽ 處理: Levante UD vs Real Oviedo (ID: match_544495)
+🔄 更新: Levante UD vs Real Oviedo
+⚽ 處理: CA Osasuna vs Girona FC (ID: match_544499)
+🔄 更新: CA Osasuna vs Girona FC
+⚽ 處理: Sevilla FC vs Valencia CF (ID: match_544496)
+🔄 更新: Sevilla FC vs Valencia CF
+⚽ 處理: FC Barcelona vs Rayo Vallecano de Madrid (ID: match_544492)
+🔄 更新: FC Barcelona vs Rayo Vallecano de Madrid
+⚽ 處理: RC Celta de Vigo vs Deportivo Alavés (ID: match_544497)
+🔄 更新: RC Celta de Vigo vs Deportivo Alavés
+⚽ 處理: Athletic Club vs Real Betis Balompié (ID: match_544491)
+🔄 更新: Athletic Club vs Real Betis Balompié
+⚽ 處理: Real Madrid CF vs Club Atlético de Madrid (ID: match_544498)
+🔄 更新: Real Madrid CF vs Club Atlético de Madrid
+📡 Serie A: 11 場比賽
+⚽ 處理: US Cremonese vs ACF Fiorentina (ID: match_537104)
+🔄 更新: US Cremonese vs ACF Fiorentina
+⚽ 處理: Cagliari Calcio vs SSC Napoli (ID: match_537109)
+🔄 更新: Cagliari Calcio vs SSC Napoli
+⚽ 處理: Genoa CFC vs Udinese Calcio (ID: match_537110)
+🔄 更新: Genoa CFC vs Udinese Calcio
+⚽ 處理: Parma Calcio 1913 vs US Cremonese (ID: match_537114)
+🔄 更新: Parma Calcio 1913 vs US Cremonese
+⚽ 處理: AC Milan vs Torino FC (ID: match_537106)
+🔄 更新: AC Milan vs Torino FC
+⚽ 處理: Juventus FC vs US Sassuolo Calcio (ID: match_537113)
+🔄 更新: Juventus FC vs US Sassuolo Calcio
+⚽ 處理: Como 1907 vs AC Pisa 1909 (ID: match_537111)
+🔄 更新: Como 1907 vs AC Pisa 1909
+⚽ 處理: Atalanta BC vs Hellas Verona FC (ID: match_537108)
+🔄 更新: Atalanta BC vs Hellas Verona FC
+⚽ 處理: Bologna FC 1909 vs SS Lazio (ID: match_537112)
+🔄 更新: Bologna FC 1909 vs SS Lazio
+⚽ 處理: AS Roma vs US Lecce (ID: match_537107)
+🔄 更新: AS Roma vs US Lecce
+⚽ 處理: ACF Fiorentina vs FC Internazionale Milano (ID: match_537105)
+🔄 更新: ACF Fiorentina vs FC Internazionale Milano
+📡 Bundesliga: 9 場比賽
+⚽ 處理: RB Leipzig vs TSG 1899 Hoffenheim (ID: match_540647)
+🔄 更新: RB Leipzig vs TSG 1899 Hoffenheim
+⚽ 處理: 1. FC Heidenheim 1846 vs Bayer 04 Leverkusen (ID: match_540640)
+🔄 更新: 1. FC Heidenheim 1846 vs Bayer 04 Leverkusen
+⚽ 處理: VfL Wolfsburg vs SV Werder Bremen (ID: match_540643)
+🔄 更新: VfL Wolfsburg vs SV Werder Bremen
+⚽ 處理: 1. FC Köln vs Borussia Mönchengladbach (ID: match_540645)
+🔄 更新: 1. FC Köln vs Borussia Mönchengladbach
+⚽ 處理: FC Bayern München vs 1. FC Union Berlin (ID: match_540646)
+🔄 更新: FC Bayern München vs 1. FC Union Berlin
+⚽ 處理: Borussia Dortmund vs Hamburger SV (ID: match_540648)
+🔄 更新: Borussia Dortmund vs Hamburger SV
+⚽ 處理: 1. FSV Mainz 05 vs Eintracht Frankfurt (ID: match_540641)
+🔄 更新: 1. FSV Mainz 05 vs Eintracht Frankfurt
+⚽ 處理: FC St. Pauli 1910 vs SC Freiburg (ID: match_540642)
+🔄 更新: FC St. Pauli 1910 vs SC Freiburg
+⚽ 處理: FC Augsburg vs VfB Stuttgart (ID: match_540644)
+🔄 更新: FC Augsburg vs VfB Stuttgart
+📡 Ligue 1: 9 場比賽
+⚽ 處理: Racing Club de Lens vs Angers SCO (ID: match_542647)
+🔄 更新: Racing Club de Lens vs Angers SCO
+⚽ 處理: Toulouse FC vs FC Lorient (ID: match_542643)
+🔄 更新: Toulouse FC vs FC Lorient
+⚽ 處理: AJ Auxerre vs Stade Brestois 29 (ID: match_542640)
+🔄 更新: AJ Auxerre vs Stade Brestois 29
+⚽ 處理: OGC Nice vs Paris Saint-Germain FC (ID: match_542644)
+🔄 更新: OGC Nice vs Paris Saint-Germain FC
+⚽ 處理: Olympique Lyonnais vs AS Monaco FC (ID: match_542645)
+🔄 更新: Olympique Lyonnais vs AS Monaco FC
+⚽ 處理: Paris FC vs Le Havre AC (ID: match_542642)
+🔄 更新: Paris FC vs Le Havre AC
+⚽ 處理: Olympique de Marseille vs Lille OSC (ID: match_542646)
+🔄 更新: Olympique de Marseille vs Lille OSC
+⚽ 處理: Stade Rennais FC 1901 vs FC Metz (ID: match_542648)
+🔄 更新: Stade Rennais FC 1901 vs FC Metz
+⚽ 處理: FC Nantes vs RC Strasbourg Alsace (ID: match_542641)
+🔄 更新: FC Nantes vs RC Strasbourg Alsace
+📡 Champions League: 8 場比賽
+⚽ 處理: Sporting Clube de Portugal vs FK Bodø/Glimt (ID: match_552082)
+🔄 更新: Sporting Clube de Portugal vs FK Bodø/Glimt
+⚽ 處理: Chelsea FC vs Paris Saint-Germain FC (ID: match_552076)
+🔄 更新: Chelsea FC vs Paris Saint-Germain FC
+⚽ 處理: Manchester City FC vs Real Madrid CF (ID: match_552078)
+🔄 更新: Manchester City FC vs Real Madrid CF
+⚽ 處理: Arsenal FC vs Bayer 04 Leverkusen (ID: match_552083)
+🔄 更新: Arsenal FC vs Bayer 04 Leverkusen
+⚽ 處理: FC Barcelona vs Newcastle United FC (ID: match_552080)
+🔄 更新: FC Barcelona vs Newcastle United FC
+⚽ 處理: Liverpool FC vs Galatasaray SK (ID: match_552077)
+🔄 更新: Liverpool FC vs Galatasaray SK
+⚽ 處理: FC Bayern München vs Atalanta BC (ID: match_552079)
+🔄 更新: FC Bayern München vs Atalanta BC
+⚽ 處理: Tottenham Hotspur FC vs Club Atlético de Madrid (ID: match_552081)
+🔄 更新: Tottenham Hotspur FC vs Club Atlético de Madrid
+
+✅ 同步完成！
+📊 數據庫中共有 63 場比賽
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+🚀 開始同步比賽數據 (UTC 時間)...
+🕒 當前 UTC 時間: 2026-03-16T19:00:00.828Z
+
+🏆 處理聯賽: Premier League
+⚽ Brentford FC vs Wolverhampton Wanderers FC
+   🕒 比賽時間 (UTC): 2026-03-16T20:00:00Z
+   ✅ 新增成功
+⚽ AFC Bournemouth vs Manchester United FC
+   🕒 比賽時間 (UTC): 2026-03-20T20:00:00Z
+   ✅ 新增成功
+⚽ Brighton & Hove Albion FC vs Liverpool FC
+   🕒 比賽時間 (UTC): 2026-03-21T12:30:00Z
+   ✅ 新增成功
+⚽ Fulham FC vs Burnley FC
+   🕒 比賽時間 (UTC): 2026-03-21T15:00:00Z
+   ✅ 新增成功
+⚽ Everton FC vs Chelsea FC
+   🕒 比賽時間 (UTC): 2026-03-21T17:30:00Z
+   ✅ 新增成功
+⚽ Leeds United FC vs Brentford FC
+   🕒 比賽時間 (UTC): 2026-03-21T20:00:00Z
+   ✅ 新增成功
+⚽ Newcastle United FC vs Sunderland AFC
+   🕒 比賽時間 (UTC): 2026-03-22T12:00:00Z
+   ✅ 新增成功
+⚽ Aston Villa FC vs West Ham United FC
+   🕒 比賽時間 (UTC): 2026-03-22T14:15:00Z
+   ✅ 新增成功
+⚽ Tottenham Hotspur FC vs Nottingham Forest FC
+   🕒 比賽時間 (UTC): 2026-03-22T14:15:00Z
+   ✅ 新增成功
+
+🏆 處理聯賽: La Liga
+⚽ Rayo Vallecano de Madrid vs Levante UD
+   🕒 比賽時間 (UTC): 2026-03-16T20:00:00Z
+   ✅ 新增成功
+⚽ Villarreal CF vs Real Sociedad de Fútbol
+   🕒 比賽時間 (UTC): 2026-03-20T20:00:00Z
+   ✅ 新增成功
+⚽ Elche CF vs RCD Mallorca
+   🕒 比賽時間 (UTC): 2026-03-21T13:00:00Z
+   ✅ 新增成功
+⚽ RCD Espanyol de Barcelona vs Getafe CF
+   🕒 比賽時間 (UTC): 2026-03-21T15:15:00Z
+   ✅ 新增成功
+⚽ Levante UD vs Real Oviedo
+   🕒 比賽時間 (UTC): 2026-03-21T17:30:00Z
+   ✅ 新增成功
+⚽ CA Osasuna vs Girona FC
+   🕒 比賽時間 (UTC): 2026-03-21T17:30:00Z
+   ✅ 新增成功
+⚽ Sevilla FC vs Valencia CF
+   🕒 比賽時間 (UTC): 2026-03-21T20:00:00Z
+   ✅ 新增成功
+⚽ FC Barcelona vs Rayo Vallecano de Madrid
+   🕒 比賽時間 (UTC): 2026-03-22T13:00:00Z
+   ✅ 新增成功
+⚽ RC Celta de Vigo vs Deportivo Alavés
+   🕒 比賽時間 (UTC): 2026-03-22T15:15:00Z
+   ✅ 新增成功
+⚽ Athletic Club vs Real Betis Balompié
+   🕒 比賽時間 (UTC): 2026-03-22T17:30:00Z
+   ✅ 新增成功
+⚽ Real Madrid CF vs Club Atlético de Madrid
+   🕒 比賽時間 (UTC): 2026-03-22T20:00:00Z
+   ✅ 新增成功
+
+🏆 處理聯賽: Serie A
+⚽ US Cremonese vs ACF Fiorentina
+   🕒 比賽時間 (UTC): 2026-03-16T19:45:00Z
+   ✅ 新增成功
+⚽ Cagliari Calcio vs SSC Napoli
+   🕒 比賽時間 (UTC): 2026-03-20T17:30:00Z
+   ✅ 新增成功
+⚽ Genoa CFC vs Udinese Calcio
+   🕒 比賽時間 (UTC): 2026-03-20T19:45:00Z
+   ✅ 新增成功
+⚽ Parma Calcio 1913 vs US Cremonese
+   🕒 比賽時間 (UTC): 2026-03-21T14:00:00Z
+   ✅ 新增成功
+⚽ AC Milan vs Torino FC
+   🕒 比賽時間 (UTC): 2026-03-21T17:00:00Z
+   ✅ 新增成功
+⚽ Juventus FC vs US Sassuolo Calcio
+   🕒 比賽時間 (UTC): 2026-03-21T19:45:00Z
+   ✅ 新增成功
+⚽ Como 1907 vs AC Pisa 1909
+   🕒 比賽時間 (UTC): 2026-03-22T11:30:00Z
+   ✅ 新增成功
+⚽ Atalanta BC vs Hellas Verona FC
+   🕒 比賽時間 (UTC): 2026-03-22T14:00:00Z
+   ✅ 新增成功
+⚽ Bologna FC 1909 vs SS Lazio
+   🕒 比賽時間 (UTC): 2026-03-22T14:00:00Z
+   ✅ 新增成功
+⚽ AS Roma vs US Lecce
+   🕒 比賽時間 (UTC): 2026-03-22T17:00:00Z
+   ✅ 新增成功
+⚽ ACF Fiorentina vs FC Internazionale Milano
+   🕒 比賽時間 (UTC): 2026-03-22T19:45:00Z
+   ✅ 新增成功
+
+🏆 處理聯賽: Bundesliga
+⚽ RB Leipzig vs TSG 1899 Hoffenheim
+   🕒 比賽時間 (UTC): 2026-03-20T19:30:00Z
+   ✅ 新增成功
+⚽ 1. FC Heidenheim 1846 vs Bayer 04 Leverkusen
+   🕒 比賽時間 (UTC): 2026-03-21T14:30:00Z
+   ✅ 新增成功
+⚽ VfL Wolfsburg vs SV Werder Bremen
+   🕒 比賽時間 (UTC): 2026-03-21T14:30:00Z
+   ✅ 新增成功
+⚽ 1. FC Köln vs Borussia Mönchengladbach
+   🕒 比賽時間 (UTC): 2026-03-21T14:30:00Z
+   ✅ 新增成功
+⚽ FC Bayern München vs 1. FC Union Berlin
+   🕒 比賽時間 (UTC): 2026-03-21T14:30:00Z
+   ✅ 新增成功
+⚽ Borussia Dortmund vs Hamburger SV
+   🕒 比賽時間 (UTC): 2026-03-21T17:30:00Z
+   ✅ 新增成功
+⚽ 1. FSV Mainz 05 vs Eintracht Frankfurt
+   🕒 比賽時間 (UTC): 2026-03-22T14:30:00Z
+   ✅ 新增成功
+⚽ FC St. Pauli 1910 vs SC Freiburg
+   🕒 比賽時間 (UTC): 2026-03-22T16:30:00Z
+   ✅ 新增成功
+⚽ FC Augsburg vs VfB Stuttgart
+   🕒 比賽時間 (UTC): 2026-03-22T18:30:00Z
+   ✅ 新增成功
+
+🏆 處理聯賽: Ligue 1
+⚽ Racing Club de Lens vs Angers SCO
+   🕒 比賽時間 (UTC): 2026-03-20T19:45:00Z
+   ✅ 新增成功
+⚽ Toulouse FC vs FC Lorient
+   🕒 比賽時間 (UTC): 2026-03-21T16:00:00Z
+   ✅ 新增成功
+⚽ AJ Auxerre vs Stade Brestois 29
+   🕒 比賽時間 (UTC): 2026-03-21T18:00:00Z
+   ✅ 新增成功
+⚽ OGC Nice vs Paris Saint-Germain FC
+   🕒 比賽時間 (UTC): 2026-03-21T20:05:00Z
+   ✅ 新增成功
+⚽ Olympique Lyonnais vs AS Monaco FC
+   🕒 比賽時間 (UTC): 2026-03-22T14:00:00Z
+   ✅ 新增成功
+⚽ Paris FC vs Le Havre AC
+   🕒 比賽時間 (UTC): 2026-03-22T16:15:00Z
+   ✅ 新增成功
+⚽ Olympique de Marseille vs Lille OSC
+   🕒 比賽時間 (UTC): 2026-03-22T16:15:00Z
+   ✅ 新增成功
+⚽ Stade Rennais FC 1901 vs FC Metz
+   🕒 比賽時間 (UTC): 2026-03-22T16:15:00Z
+   ✅ 新增成功
+⚽ FC Nantes vs RC Strasbourg Alsace
+   🕒 比賽時間 (UTC): 2026-03-22T19:45:00Z
+   ✅ 新增成功
+
+🏆 處理聯賽: Champions League
+⚽ Sporting Clube de Portugal vs FK Bodø/Glimt
+   🕒 比賽時間 (UTC): 2026-03-17T17:45:00Z
+   ✅ 新增成功
+⚽ Chelsea FC vs Paris Saint-Germain FC
+   🕒 比賽時間 (UTC): 2026-03-17T20:00:00Z
+   ✅ 新增成功
+⚽ Manchester City FC vs Real Madrid CF
+   🕒 比賽時間 (UTC): 2026-03-17T20:00:00Z
+   ✅ 新增成功
+⚽ Arsenal FC vs Bayer 04 Leverkusen
+   🕒 比賽時間 (UTC): 2026-03-17T20:00:00Z
+   ✅ 新增成功
+⚽ FC Barcelona vs Newcastle United FC
+   🕒 比賽時間 (UTC): 2026-03-18T17:45:00Z
+   ✅ 新增成功
+⚽ Liverpool FC vs Galatasaray SK
+   🕒 比賽時間 (UTC): 2026-03-18T20:00:00Z
+   ✅ 新增成功
+⚽ FC Bayern München vs Atalanta BC
+   🕒 比賽時間 (UTC): 2026-03-18T20:00:00Z
+   ✅ 新增成功
+⚽ Tottenham Hotspur FC vs Club Atlético de Madrid
+   🕒 比賽時間 (UTC): 2026-03-18T20:00:00Z
+   ✅ 新增成功
+
+✅ ===== 同步完成 =====
+📊 新增: 57 場, 更新: 0 場
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+🚀 開始同步比賽數據 (UTC 時間)...
+🕒 當前 UTC 時間: 2026-03-17T19:00:00.764Z
+
+🏆 處理聯賽: Premier League
+⚽ AFC Bournemouth vs Manchester United FC
+   🕒 比賽時間 (UTC): 2026-03-20T20:00:00Z
+   ✅ 更新成功
+⚽ Brighton & Hove Albion FC vs Liverpool FC
+   🕒 比賽時間 (UTC): 2026-03-21T12:30:00Z
+   ✅ 更新成功
+⚽ Fulham FC vs Burnley FC
+   🕒 比賽時間 (UTC): 2026-03-21T15:00:00Z
+   ✅ 更新成功
+⚽ Everton FC vs Chelsea FC
+   🕒 比賽時間 (UTC): 2026-03-21T17:30:00Z
+   ✅ 更新成功
+⚽ Leeds United FC vs Brentford FC
+   🕒 比賽時間 (UTC): 2026-03-21T20:00:00Z
+   ✅ 更新成功
+⚽ Newcastle United FC vs Sunderland AFC
+   🕒 比賽時間 (UTC): 2026-03-22T12:00:00Z
+   ✅ 更新成功
+⚽ Aston Villa FC vs West Ham United FC
+   🕒 比賽時間 (UTC): 2026-03-22T14:15:00Z
+   ✅ 更新成功
+⚽ Tottenham Hotspur FC vs Nottingham Forest FC
+   🕒 比賽時間 (UTC): 2026-03-22T14:15:00Z
+   ✅ 更新成功
+
+🏆 處理聯賽: La Liga
+⚽ Villarreal CF vs Real Sociedad de Fútbol
+   🕒 比賽時間 (UTC): 2026-03-20T20:00:00Z
+   ✅ 更新成功
+⚽ Elche CF vs RCD Mallorca
+   🕒 比賽時間 (UTC): 2026-03-21T13:00:00Z
+   ✅ 更新成功
+⚽ RCD Espanyol de Barcelona vs Getafe CF
+   🕒 比賽時間 (UTC): 2026-03-21T15:15:00Z
+   ✅ 更新成功
+⚽ Levante UD vs Real Oviedo
+   🕒 比賽時間 (UTC): 2026-03-21T17:30:00Z
+   ✅ 更新成功
+⚽ CA Osasuna vs Girona FC
+   🕒 比賽時間 (UTC): 2026-03-21T17:30:00Z
+   ✅ 更新成功
+⚽ Sevilla FC vs Valencia CF
+   🕒 比賽時間 (UTC): 2026-03-21T20:00:00Z
+   ✅ 更新成功
+⚽ FC Barcelona vs Rayo Vallecano de Madrid
+   🕒 比賽時間 (UTC): 2026-03-22T13:00:00Z
+   ✅ 更新成功
+⚽ RC Celta de Vigo vs Deportivo Alavés
+   🕒 比賽時間 (UTC): 2026-03-22T15:15:00Z
+   ✅ 更新成功
+⚽ Athletic Club vs Real Betis Balompié
+   🕒 比賽時間 (UTC): 2026-03-22T17:30:00Z
+   ✅ 更新成功
+⚽ Real Madrid CF vs Club Atlético de Madrid
+   🕒 比賽時間 (UTC): 2026-03-22T20:00:00Z
+   ✅ 更新成功
+
+🏆 處理聯賽: Serie A
+⚽ Cagliari Calcio vs SSC Napoli
+   🕒 比賽時間 (UTC): 2026-03-20T17:30:00Z
+   ✅ 更新成功
+⚽ Genoa CFC vs Udinese Calcio
+   🕒 比賽時間 (UTC): 2026-03-20T19:45:00Z
+   ✅ 更新成功
+⚽ Parma Calcio 1913 vs US Cremonese
+   🕒 比賽時間 (UTC): 2026-03-21T14:00:00Z
+   ✅ 更新成功
+⚽ AC Milan vs Torino FC
+   🕒 比賽時間 (UTC): 2026-03-21T17:00:00Z
+   ✅ 更新成功
+⚽ Juventus FC vs US Sassuolo Calcio
+   🕒 比賽時間 (UTC): 2026-03-21T19:45:00Z
+   ✅ 更新成功
+⚽ Como 1907 vs AC Pisa 1909
+   🕒 比賽時間 (UTC): 2026-03-22T11:30:00Z
+   ✅ 更新成功
+⚽ Atalanta BC vs Hellas Verona FC
+   🕒 比賽時間 (UTC): 2026-03-22T14:00:00Z
+   ✅ 更新成功
+⚽ Bologna FC 1909 vs SS Lazio
+   🕒 比賽時間 (UTC): 2026-03-22T14:00:00Z
+   ✅ 更新成功
+⚽ AS Roma vs US Lecce
+   🕒 比賽時間 (UTC): 2026-03-22T17:00:00Z
+   ✅ 更新成功
+⚽ ACF Fiorentina vs FC Internazionale Milano
+   🕒 比賽時間 (UTC): 2026-03-22T19:45:00Z
+   ✅ 更新成功
+
+🏆 處理聯賽: Bundesliga
+⚽ RB Leipzig vs TSG 1899 Hoffenheim
+   🕒 比賽時間 (UTC): 2026-03-20T19:30:00Z
+   ✅ 更新成功
+⚽ 1. FC Heidenheim 1846 vs Bayer 04 Leverkusen
+   🕒 比賽時間 (UTC): 2026-03-21T14:30:00Z
+   ✅ 更新成功
+⚽ VfL Wolfsburg vs SV Werder Bremen
+   🕒 比賽時間 (UTC): 2026-03-21T14:30:00Z
+   ✅ 更新成功
+⚽ 1. FC Köln vs Borussia Mönchengladbach
+   🕒 比賽時間 (UTC): 2026-03-21T14:30:00Z
+   ✅ 更新成功
+⚽ FC Bayern München vs 1. FC Union Berlin
+   🕒 比賽時間 (UTC): 2026-03-21T14:30:00Z
+   ✅ 更新成功
+⚽ Borussia Dortmund vs Hamburger SV
+   🕒 比賽時間 (UTC): 2026-03-21T17:30:00Z
+   ✅ 更新成功
+⚽ 1. FSV Mainz 05 vs Eintracht Frankfurt
+   🕒 比賽時間 (UTC): 2026-03-22T14:30:00Z
+   ✅ 更新成功
+⚽ FC St. Pauli 1910 vs SC Freiburg
+   🕒 比賽時間 (UTC): 2026-03-22T16:30:00Z
+   ✅ 更新成功
+⚽ FC Augsburg vs VfB Stuttgart
+   🕒 比賽時間 (UTC): 2026-03-22T18:30:00Z
+   ✅ 更新成功
+
+🏆 處理聯賽: Ligue 1
+⚽ Racing Club de Lens vs Angers SCO
+   🕒 比賽時間 (UTC): 2026-03-20T19:45:00Z
+   ✅ 更新成功
+⚽ Toulouse FC vs FC Lorient
+   🕒 比賽時間 (UTC): 2026-03-21T16:00:00Z
+   ✅ 更新成功
+⚽ AJ Auxerre vs Stade Brestois 29
+   🕒 比賽時間 (UTC): 2026-03-21T18:00:00Z
+   ✅ 更新成功
+⚽ OGC Nice vs Paris Saint-Germain FC
+   🕒 比賽時間 (UTC): 2026-03-21T20:00:00Z
+   ✅ 更新成功
+⚽ Olympique Lyonnais vs AS Monaco FC
+   🕒 比賽時間 (UTC): 2026-03-22T14:00:00Z
+   ✅ 更新成功
+⚽ Paris FC vs Le Havre AC
+   🕒 比賽時間 (UTC): 2026-03-22T16:15:00Z
+   ✅ 更新成功
+⚽ Olympique de Marseille vs Lille OSC
+   🕒 比賽時間 (UTC): 2026-03-22T16:15:00Z
+   ✅ 更新成功
+⚽ Stade Rennais FC 1901 vs FC Metz
+   🕒 比賽時間 (UTC): 2026-03-22T16:15:00Z
+   ✅ 更新成功
+⚽ FC Nantes vs RC Strasbourg Alsace
+   🕒 比賽時間 (UTC): 2026-03-22T19:45:00Z
+   ✅ 更新成功
+
+🏆 處理聯賽: Champions League
+⚽ Chelsea FC vs Paris Saint-Germain FC
+   🕒 比賽時間 (UTC): 2026-03-17T20:00:00Z
+   ✅ 更新成功
+⚽ Manchester City FC vs Real Madrid CF
+   🕒 比賽時間 (UTC): 2026-03-17T20:00:00Z
+   ✅ 更新成功
+⚽ Arsenal FC vs Bayer 04 Leverkusen
+   🕒 比賽時間 (UTC): 2026-03-17T20:00:00Z
+   ✅ 更新成功
+⚽ FC Barcelona vs Newcastle United FC
+   🕒 比賽時間 (UTC): 2026-03-18T17:45:00Z
+   ✅ 更新成功
+⚽ Liverpool FC vs Galatasaray SK
+   🕒 比賽時間 (UTC): 2026-03-18T20:00:00Z
+   ✅ 更新成功
+⚽ FC Bayern München vs Atalanta BC
+   🕒 比賽時間 (UTC): 2026-03-18T20:00:00Z
+   ✅ 更新成功
+⚽ Tottenham Hotspur FC vs Club Atlético de Madrid
+   🕒 比賽時間 (UTC): 2026-03-18T20:00:00Z
+   ✅ 更新成功
+
+✅ ===== 同步完成 =====
+📊 新增: 0 場, 更新: 53 場
+[dotenv@17.3.1] injecting env (17) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+🚀 開始同步比賽數據 (UTC 時間)...
+🕒 當前 UTC 時間: 2026-03-18T19:00:00.953Z
+
+🏆 處理聯賽: Premier League
+⚽ AFC Bournemouth vs Manchester United FC
+   🕒 比賽時間 (UTC): 2026-03-20T20:00:00Z
+   ✅ 更新成功
+⚽ Brighton & Hove Albion FC vs Liverpool FC
+   🕒 比賽時間 (UTC): 2026-03-21T12:30:00Z
+   ✅ 更新成功
+⚽ Fulham FC vs Burnley FC
+   🕒 比賽時間 (UTC): 2026-03-21T15:00:00Z
+   ✅ 更新成功
+⚽ Everton FC vs Chelsea FC
+   🕒 比賽時間 (UTC): 2026-03-21T17:30:00Z
+   ✅ 更新成功
+⚽ Leeds United FC vs Brentford FC
+   🕒 比賽時間 (UTC): 2026-03-21T20:00:00Z
+   ✅ 更新成功
+⚽ Newcastle United FC vs Sunderland AFC
+   🕒 比賽時間 (UTC): 2026-03-22T12:00:00Z
+   ✅ 更新成功
+⚽ Aston Villa FC vs West Ham United FC
+   🕒 比賽時間 (UTC): 2026-03-22T14:15:00Z
+   ✅ 更新成功
+⚽ Tottenham Hotspur FC vs Nottingham Forest FC
+   🕒 比賽時間 (UTC): 2026-03-22T14:15:00Z
+   ✅ 更新成功
+
+🏆 處理聯賽: La Liga
+⚽ Villarreal CF vs Real Sociedad de Fútbol
+   🕒 比賽時間 (UTC): 2026-03-20T20:00:00Z
+   ✅ 更新成功
+⚽ Elche CF vs RCD Mallorca
+   🕒 比賽時間 (UTC): 2026-03-21T13:00:00Z
+   ✅ 更新成功
+⚽ RCD Espanyol de Barcelona vs Getafe CF
+   🕒 比賽時間 (UTC): 2026-03-21T15:15:00Z
+   ✅ 更新成功
+⚽ Levante UD vs Real Oviedo
+   🕒 比賽時間 (UTC): 2026-03-21T17:30:00Z
+   ✅ 更新成功
+⚽ CA Osasuna vs Girona FC
+   🕒 比賽時間 (UTC): 2026-03-21T17:30:00Z
+   ✅ 更新成功
+⚽ Sevilla FC vs Valencia CF
+   🕒 比賽時間 (UTC): 2026-03-21T20:00:00Z
+   ✅ 更新成功
+⚽ FC Barcelona vs Rayo Vallecano de Madrid
+   🕒 比賽時間 (UTC): 2026-03-22T13:00:00Z
+   ✅ 更新成功
+⚽ RC Celta de Vigo vs Deportivo Alavés
+   🕒 比賽時間 (UTC): 2026-03-22T15:15:00Z
+   ✅ 更新成功
+⚽ Athletic Club vs Real Betis Balompié
+   🕒 比賽時間 (UTC): 2026-03-22T17:30:00Z
+   ✅ 更新成功
+⚽ Real Madrid CF vs Club Atlético de Madrid
+   🕒 比賽時間 (UTC): 2026-03-22T20:00:00Z
+   ✅ 更新成功
+
+🏆 處理聯賽: Serie A
+⚽ Cagliari Calcio vs SSC Napoli
+   🕒 比賽時間 (UTC): 2026-03-20T17:30:00Z
+   ✅ 更新成功
+⚽ Genoa CFC vs Udinese Calcio
+   🕒 比賽時間 (UTC): 2026-03-20T19:45:00Z
+   ✅ 更新成功
+⚽ Parma Calcio 1913 vs US Cremonese
+   🕒 比賽時間 (UTC): 2026-03-21T14:00:00Z
+   ✅ 更新成功
+⚽ AC Milan vs Torino FC
+   🕒 比賽時間 (UTC): 2026-03-21T17:00:00Z
+   ✅ 更新成功
+⚽ Juventus FC vs US Sassuolo Calcio
+   🕒 比賽時間 (UTC): 2026-03-21T19:45:00Z
+   ✅ 更新成功
+⚽ Como 1907 vs AC Pisa 1909
+   🕒 比賽時間 (UTC): 2026-03-22T11:30:00Z
+   ✅ 更新成功
+⚽ Atalanta BC vs Hellas Verona FC
+   🕒 比賽時間 (UTC): 2026-03-22T14:00:00Z
+   ✅ 更新成功
+⚽ Bologna FC 1909 vs SS Lazio
+   🕒 比賽時間 (UTC): 2026-03-22T14:00:00Z
+   ✅ 更新成功
+⚽ AS Roma vs US Lecce
+   🕒 比賽時間 (UTC): 2026-03-22T17:00:00Z
+   ✅ 更新成功
+⚽ ACF Fiorentina vs FC Internazionale Milano
+   🕒 比賽時間 (UTC): 2026-03-22T19:45:00Z
+   ✅ 更新成功
+
+🏆 處理聯賽: Bundesliga
+⚽ RB Leipzig vs TSG 1899 Hoffenheim
+   🕒 比賽時間 (UTC): 2026-03-20T19:30:00Z
+   ✅ 更新成功
+⚽ 1. FC Heidenheim 1846 vs Bayer 04 Leverkusen
+   🕒 比賽時間 (UTC): 2026-03-21T14:30:00Z
+   ✅ 更新成功
+⚽ VfL Wolfsburg vs SV Werder Bremen
+   🕒 比賽時間 (UTC): 2026-03-21T14:30:00Z
+   ✅ 更新成功
+⚽ 1. FC Köln vs Borussia Mönchengladbach
+   🕒 比賽時間 (UTC): 2026-03-21T14:30:00Z
+   ✅ 更新成功
+⚽ FC Bayern München vs 1. FC Union Berlin
+   🕒 比賽時間 (UTC): 2026-03-21T14:30:00Z
+   ✅ 更新成功
+⚽ Borussia Dortmund vs Hamburger SV
+   🕒 比賽時間 (UTC): 2026-03-21T17:30:00Z
+   ✅ 更新成功
+⚽ 1. FSV Mainz 05 vs Eintracht Frankfurt
+   🕒 比賽時間 (UTC): 2026-03-22T14:30:00Z
+   ✅ 更新成功
+⚽ FC St. Pauli 1910 vs SC Freiburg
+   🕒 比賽時間 (UTC): 2026-03-22T16:30:00Z
+   ✅ 更新成功
+⚽ FC Augsburg vs VfB Stuttgart
+   🕒 比賽時間 (UTC): 2026-03-22T18:30:00Z
+   ✅ 更新成功
+
+🏆 處理聯賽: Ligue 1
+⚽ Racing Club de Lens vs Angers SCO
+   🕒 比賽時間 (UTC): 2026-03-20T19:45:00Z
+   ✅ 更新成功
+⚽ Toulouse FC vs FC Lorient
+   🕒 比賽時間 (UTC): 2026-03-21T16:00:00Z
+   ✅ 更新成功
+⚽ AJ Auxerre vs Stade Brestois 29
+   🕒 比賽時間 (UTC): 2026-03-21T18:00:00Z
+   ✅ 更新成功
+⚽ OGC Nice vs Paris Saint-Germain FC
+   🕒 比賽時間 (UTC): 2026-03-21T20:00:00Z
+   ✅ 更新成功
+⚽ Olympique Lyonnais vs AS Monaco FC
+   🕒 比賽時間 (UTC): 2026-03-22T14:00:00Z
+   ✅ 更新成功
+⚽ Paris FC vs Le Havre AC
+   🕒 比賽時間 (UTC): 2026-03-22T16:15:00Z
+   ✅ 更新成功
+⚽ Olympique de Marseille vs Lille OSC
+   🕒 比賽時間 (UTC): 2026-03-22T16:15:00Z
+   ✅ 更新成功
+⚽ Stade Rennais FC 1901 vs FC Metz
+   🕒 比賽時間 (UTC): 2026-03-22T16:15:00Z
+   ✅ 更新成功
+⚽ FC Nantes vs RC Strasbourg Alsace
+   🕒 比賽時間 (UTC): 2026-03-22T19:45:00Z
+   ✅ 更新成功
+
+🏆 處理聯賽: Champions League
+⚽ Liverpool FC vs Galatasaray SK
+   🕒 比賽時間 (UTC): 2026-03-18T20:00:00Z
+   ✅ 更新成功
+⚽ FC Bayern München vs Atalanta BC
+   🕒 比賽時間 (UTC): 2026-03-18T20:00:00Z
+   ✅ 更新成功
+⚽ Tottenham Hotspur FC vs Club Atlético de Madrid
+   🕒 比賽時間 (UTC): 2026-03-18T20:00:00Z
+   ✅ 更新成功
+
+✅ ===== 同步完成 =====
+📊 新增: 0 場, 更新: 49 場

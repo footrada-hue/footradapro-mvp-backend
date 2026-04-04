@@ -1,0 +1,533 @@
+/* ======================================================
+   FOOTRADAPRO - Support Page Styles
+   与首页主题完全统一
+   ====================================================== */
+
+/* ===== 基础重置 ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #111827;
+    color: #FFFFFF;
+    line-height: 1.5;
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ===== Header ===== */
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(17, 24, 39, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.header-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 16px 32px;
+}
+
+/* 顶部导航栏 */
+.top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 48px;
+}
+
+.back-btn,
+.theme-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(249, 115, 22, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #F97316;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.back-btn:hover,
+.theme-btn:hover {
+    background: rgba(249, 115, 22, 0.2);
+    border-color: #F97316;
+}
+
+.page-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #FFFFFF;
+    letter-spacing: -0.3px;
+}
+
+/* ===== 欢迎区域 ===== */
+.page-header {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+.main-title {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #FFFFFF, #FDBA74);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 12px;
+}
+
+.page-desc {
+    font-size: 15px;
+    color: #9CA3AF;
+}
+
+/* ===== 功能卡片网格 ===== */
+.function-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 48px;
+}
+
+.function-card {
+    background: rgba(31, 41, 55, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 28px 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.function-card:hover {
+    border-color: #F97316;
+    transform: translateY(-2px);
+    background: rgba(31, 41, 55, 0.8);
+}
+
+.function-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(249, 115, 22, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #F97316;
+    transition: all 0.2s;
+}
+
+.function-card:hover .function-icon {
+    background: #F97316;
+    color: white;
+    transform: scale(1.05);
+}
+
+.function-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #FFFFFF;
+    margin-bottom: 8px;
+}
+
+.function-desc {
+    font-size: 13px;
+    color: #9CA3AF;
+    line-height: 1.4;
+}
+
+/* ===== 在线客服区域 ===== */
+.live-chat-section {
+    margin-bottom: 40px;
+}
+
+.live-chat-btn {
+    width: 100%;
+    background: #F97316;
+    border: none;
+    border-radius: 40px;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+}
+
+.live-chat-btn:hover {
+    background: #EA580C;
+    transform: translateY(-1px);
+}
+
+.live-chat-desc {
+    text-align: center;
+    font-size: 12px;
+    color: #6B7280;
+    margin-top: 12px;
+}
+
+/* ===== 底部导航 - 与首页完全一致 ===== */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(17, 24, 39, 0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 10px 0;
+    z-index: 100;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 16px;
+    color: #6B7280;
+    text-decoration: none;
+    font-size: 12px;
+    transition: all 0.2s;
+    border-radius: 12px;
+}
+
+.nav-item i {
+    font-size: 20px;
+}
+
+.nav-item.active {
+    color: #F97316;
+}
+
+.nav-item:active {
+    background: rgba(255, 107, 0, 0.1);
+}
+
+/* ===== 模态框 ===== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal {
+    background: #1F2937;
+    border-radius: 24px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 80vh;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #FFFFFF;
+}
+
+.modal-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(249, 115, 22, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #F97316;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    color: #9CA3AF;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* 联系选项 */
+.contact-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.contact-option {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.contact-option:hover {
+    border-color: #F97316;
+    transform: translateX(4px);
+}
+
+.contact-option i {
+    width: 44px;
+    height: 44px;
+    background: rgba(249, 115, 22, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #F97316;
+    font-size: 20px;
+}
+
+.contact-option strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #FFFFFF;
+    margin-bottom: 2px;
+}
+
+.contact-option small {
+    font-size: 11px;
+    color: #6B7280;
+}
+
+/* ===== 测试模式 ===== */
+body.test-mode .back-btn,
+body.test-mode .theme-btn {
+    color: #3B82F6;
+}
+
+body.test-mode .function-icon {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3B82F6;
+}
+
+body.test-mode .function-card:hover {
+    border-color: #3B82F6;
+}
+
+body.test-mode .function-card:hover .function-icon {
+    background: #3B82F6;
+    color: white;
+}
+
+body.test-mode .live-chat-btn {
+    background: #3B82F6;
+}
+
+body.test-mode .live-chat-btn:hover {
+    background: #2563EB;
+}
+
+body.test-mode .nav-item.active {
+    color: #3B82F6;
+}
+
+body.test-mode .modal-close {
+    color: #3B82F6;
+}
+
+body.test-mode .contact-option:hover {
+    border-color: #3B82F6;
+}
+
+body.test-mode .contact-option i {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3B82F6;
+}
+
+/* ==================== 移动端响应式 ==================== */
+@media (max-width: 1023px) {
+    .header-container {
+        padding: 12px 20px;
+    }
+    
+    .top-nav {
+        margin-bottom: 32px;
+    }
+    
+    .main-title {
+        font-size: 28px;
+    }
+    
+    .page-desc {
+        font-size: 13px;
+    }
+    
+    .function-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .function-card {
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    
+    .function-icon {
+        margin-bottom: 0;
+        flex-shrink: 0;
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+    }
+    
+    .function-content {
+        flex: 1;
+    }
+    
+    .function-title {
+        font-size: 16px;
+        margin-bottom: 4px;
+    }
+    
+    .function-desc {
+        font-size: 12px;
+    }
+    
+    .live-chat-btn {
+        padding: 14px;
+        font-size: 14px;
+    }
+}
+
+/* ==================== 桌面端响应式 ==================== */
+@media (min-width: 1024px) {
+    .content-scrollable {
+        padding-bottom: 80px;
+    }
+    
+    .content-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 32px 40px;
+    }
+    
+    .bottom-nav {
+        max-width: 1200px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-left: 1px solid rgba(255, 255, 255, 0.08);
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+    }
+}
+
+/* ==================== 触摸优化 ==================== */
+button, a, .function-card, .contact-option, .nav-item {
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+/* ===== 客服弹窗样式（无额外头部，无滚动条）===== */
+.chat-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.chat-modal-container {
+    width: 500px;
+    height: 700px;
+    max-width: 95%;
+    max-height: 85vh;
+    background: transparent;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* 完全隐藏滚动条 */
+.chat-modal-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #111827;
+    overflow: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+/* Chrome/Safari */
+.chat-modal-iframe::-webkit-scrollbar {
+    display: none;
+}
+
+/* 移动端适配 */
+@media (max-width: 480px) {
+    .chat-modal-container {
+        width: 95%;
+        height: 70vh;
+    }
+}
+
+/* 测试模式弹窗 */
+body.test-mode .chat-modal-container {
+    box-shadow: 0 20px 40px rgba(59, 130, 246, 0.2);
+}

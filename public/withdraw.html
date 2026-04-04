@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Withdraw · FOOTRADA</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/core/theme.js"></script>
+    
+    <link rel="stylesheet" href="/css/core/variables.css">
+    <link rel="stylesheet" href="/css/core/layout.css">
+    <link rel="stylesheet" href="/css/core/components.css">
+    
+    <style>
+        /* ===== 头部样式 - 与充值页面一致 ===== */
+        .page-title {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--brand-400));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+        
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-brand-light);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        
+        .back-btn:hover {
+            border-color: var(--brand-500);
+            color: var(--brand-500);
+        }
+        
+        .header-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        /* ===== 余额卡片 ===== */
+        .balance-card {
+            background: linear-gradient(135deg, var(--bg-card), rgba(var(--brand-rgb), 0.03));
+            border: 1px solid var(--border-brand-light);
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        
+        .balance-label {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-bottom: 8px;
+            letter-spacing: 0.3px;
+        }
+        
+        .balance-value {
+            font-size: 40px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            background: linear-gradient(135deg, var(--text-primary), var(--brand-400));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .balance-currency {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            margin-left: 4px;
+        }
+        
+        .balance-insufficient {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--danger-500);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        /* ===== 统一卡片样式 ===== */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 20px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-brand-light);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-header i {
+            color: var(--brand-500);
+            font-size: 16px;
+            width: 20px;
+        }
+        
+        .card-header h2 {
+            font-size: 15px;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text-secondary);
+        }
+        
+        .card-body {
+            padding: 16px;
+        }
+        
+        /* ===== 表单元素 ===== */
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 14px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23F87C1A' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 14px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .form-select:focus,
+        .form-input:focus {
+            outline: none;
+            border-color: var(--brand-500);
+        }
+        
+        /* 网络信息行 */
+        .network-info {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-brand-light);
+        }
+        
+        .network-info-item {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+        }
+        
+        .network-info-label {
+            color: var(--text-tertiary);
+        }
+        
+        .network-info-value {
+            font-weight: 600;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+        }
+        
+        /* 地址提示 */
+        .address-hint {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .address-hint i {
+            color: var(--brand-500);
+            font-size: 11px;
+        }
+        
+        /* 金额输入区域 */
+        .amount-wrapper {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        
+        .amount-input-area {
+            display: flex;
+            align-items: center;
+            padding: 4px 16px;
+            border-bottom: 1px solid var(--border-brand-light);
+        }
+        
+        .amount-input-area input {
+            flex: 1;
+            padding: 14px 0;
+            background: transparent;
+            border: none;
+            font-size: 22px;
+            font-weight: 600;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+        }
+        
+        .amount-input-area input:focus {
+            outline: none;
+        }
+        
+        .amount-currency {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-tertiary);
+        }
+        
+        .amount-details {
+            padding: 12px 16px;
+        }
+        
+        .amount-detail-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            padding: 4px 0;
+        }
+        
+        .amount-detail-row.fee {
+            border-top: 1px solid var(--border-brand-light);
+            margin-top: 6px;
+            padding-top: 10px;
+        }
+        
+        .amount-detail-label {
+            color: var(--text-tertiary);
+        }
+        
+        .amount-detail-value {
+            font-weight: 600;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+        }
+        
+        .amount-detail-value.receive {
+            color: var(--brand-500);
+        }
+        
+        /* 确认区域 */
+        .confirm-section {
+            margin-top: 16px;
+        }
+        
+        .confirm-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 14px;
+            cursor: pointer;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-brand-light);
+            transition: all 0.2s;
+        }
+        
+        .confirm-checkbox:hover {
+            background: rgba(var(--brand-rgb), 0.05);
+            border-color: rgba(var(--brand-rgb), 0.3);
+        }
+        
+        .confirm-checkbox input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .confirm-checkbox span {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: 40px;
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--neon-glow);
+        }
+        
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* 测试模式警告 */
+        .test-warning {
+            background: rgba(37, 99, 235, 0.08);
+            border: 1px solid rgba(37, 99, 235, 0.25);
+            border-radius: 16px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        
+        .test-warning-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .test-warning-content i {
+            font-size: 16px;
+            color: #3b82f6;
+        }
+        
+        .test-warning-text {
+            font-size: 13px;
+            color: #3b82f6;
+        }
+        
+        .test-switch-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .test-switch-btn:hover {
+            background: #2563eb;
+        }
+        
+        /* 模态框 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        .modal {
+            background: var(--bg-card);
+            border-radius: 28px;
+            width: 90%;
+            max-width: 380px;
+            border: 1px solid var(--border-brand-light);
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            padding: 16px 20px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: var(--text-tertiary);
+        }
+        
+        .modal-body {
+            padding: 0 24px 24px;
+            text-align: center;
+        }
+        
+        .success-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(16, 185, 129, 0.12);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+        
+        .success-icon i {
+            font-size: 30px;
+            color: var(--success-500);
+        }
+        
+        .modal h2 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        
+        .modal-desc {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-bottom: 20px;
+        }
+        
+        .modal-divider {
+            height: 1px;
+            background: var(--border-brand-light);
+            margin: 16px 0;
+        }
+        
+        .modal-info-block {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 18px;
+            padding: 12px 16px;
+            text-align: left;
+            margin-bottom: 14px;
+        }
+        
+        .modal-info-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .modal-info-title i {
+            color: var(--brand-500);
+            font-size: 13px;
+        }
+        
+        .modal-info-text {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-left: 24px;
+        }
+        
+        .network-times-list {
+            list-style: none;
+            margin-left: 24px;
+        }
+        
+        .network-times-list li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+            color: var(--text-tertiary);
+            padding: 4px 0;
+        }
+        
+        .network-badge {
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            min-width: 50px;
+            text-align: center;
+        }
+        
+        .network-badge.trc20 {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success-500);
+        }
+        
+        .network-badge.bep20 {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning-500);
+        }
+        
+        .network-badge.erc20 {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+        }
+        
+        .security-note {
+            display: flex;
+            gap: 8px;
+            background: rgba(239, 68, 68, 0.05);
+            border-radius: 14px;
+            padding: 10px 12px;
+            margin-top: 12px;
+        }
+        
+        .security-note i {
+            color: var(--danger-500);
+            font-size: 13px;
+        }
+        
+        .security-note span {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            line-height: 1.4;
+        }
+        
+        .modal-footer {
+            padding: 14px 20px;
+            border-top: 1px solid var(--border-brand-light);
+        }
+        
+        .modal-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        /* 响应式 - 一个面板显示所有信息 */
+        @media (max-width: 480px) {
+            .balance-value {
+                font-size: 34px;
+            }
+            .amount-input-area input {
+                font-size: 20px;
+            }
+            .card-header {
+                padding: 12px 14px;
+            }
+            .card-body {
+                padding: 14px;
+            }
+            .network-info {
+                gap: 12px;
+            }
+            .network-info-item {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="header-container">
+            <div class="header-section">
+                <a href="/profile.html" class="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="page-title">Withdraw Funds</h1>
+                <div style="width: 40px;"></div>
+            </div>
+            
+            <div id="testWarning" class="test-warning" style="display: none;">
+                <div class="test-warning-content">
+                    <i class="fas fa-flask"></i>
+                    <span class="test-warning-text">Test mode • Withdrawals disabled</span>
+                </div>
+                <button class="test-switch-btn" id="switchToLiveBtn">Switch to Live</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="content-scrollable">
+        <div class="content-container">
+            <!-- 余额卡片 -->
+            <div class="balance-card">
+                <div class="balance-label">Available Balance</div>
+                <div class="balance-value" id="balance">0.00<span class="balance-currency"> USDT</span></div>
+                <div id="insufficientHint" class="balance-insufficient" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i> Insufficient balance
+                </div>
+            </div>
+            
+            <!-- 网络选择 -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-network-wired"></i>
+                    <h2>Network</h2>
+                </div>
+                <div class="card-body">
+                    <select id="network" class="form-select">
+                        <option value="TRC20">TRC20 (Tron) • Recommended</option>
+                        <option value="ERC20">ERC20 (Ethereum)</option>
+                        <option value="BEP20">BEP20 (BSC)</option>
+                    </select>
+                    <div class="network-info" id="networkInfo">
+                        <div class="network-info-item">
+                            <span class="network-info-label">Fee</span>
+                            <span class="network-info-value" id="feeValue">1 USDT</span>
+                        </div>
+                        <div class="network-info-item">
+                            <span class="network-info-label">Minimum</span>
+                            <span class="network-info-value" id="minValue">10 USDT</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 地址输入 -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-wallet"></i>
+                    <h2>Address</h2>
+                </div>
+                <div class="card-body">
+                    <input type="text" id="address" class="form-input" placeholder="Enter wallet address">
+                    <div class="address-hint">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Double-check address for your selected network</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 金额输入 -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-coins"></i>
+                    <h2>Amount</h2>
+                </div>
+                <div class="card-body">
+                    <div class="amount-wrapper">
+                        <div class="amount-input-area">
+                            <input type="number" id="amount" placeholder="0" min="10" step="1">
+                            <span class="amount-currency">USDT</span>
+                        </div>
+                        <div class="amount-details">
+                            <div class="amount-detail-row">
+                                <span class="amount-detail-label">You'll receive</span>
+                                <span class="amount-detail-value receive" id="receiveAmount">0.00 USDT</span>
+                            </div>
+                            <div class="amount-detail-row fee">
+                                <span class="amount-detail-label">Network fee</span>
+                                <span class="amount-detail-value" id="feeAmount">1 USDT</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 确认提交 -->
+            <div class="confirm-section">
+                <label class="confirm-checkbox">
+                    <input type="checkbox" id="confirmCheck">
+                    <span>I confirm the address is correct</span>
+                </label>
+                <button class="submit-btn" id="submitBtn" disabled>Confirm Withdrawal</button>
+            </div>
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="/match-market.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Markets</span></a>
+            <a href="/support.html" class="nav-item"><i class="fas fa-headset"></i><span>Support</span></a>
+            <a href="/profile.html" class="nav-item active"><i class="fas fa-user"></i><span>Account</span></a>
+        </div>
+    </nav>
+
+    <div class="modal-overlay" id="successModal">
+        <div class="modal">
+            <div class="modal-header">
+                <button class="modal-close" onclick="closeSuccessModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="success-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h2>Request Submitted</h2>
+                <p class="modal-desc">Your withdrawal is pending review</p>
+                <div class="modal-divider"></div>
+                <div class="modal-info-block">
+                    <div class="modal-info-title">
+                        <i class="fas fa-clock"></i>
+                        <span>Processing</span>
+                    </div>
+                    <p class="modal-info-text">Within 24 hours</p>
+                </div>
+                <div class="modal-info-block">
+                    <div class="modal-info-title">
+                        <i class="fas fa-rocket"></i>
+                        <span>Estimated arrival</span>
+                    </div>
+                    <ul class="network-times-list">
+                        <li><span class="network-badge trc20">TRC20</span> 1–5 min</li>
+                        <li><span class="network-badge bep20">BEP20</span> 1–10 min</li>
+                        <li><span class="network-badge erc20">ERC20</span> 5–30 min</li>
+                    </ul>
+                </div>
+                <div class="security-note">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>First-time withdrawals may take 1–3 business days for security review</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeSuccessModal()">Got it</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/user/withdraw.js"></script>
+    <script>
+        function closeSuccessModal() {
+            document.getElementById('successModal').classList.remove('show');
+        }
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (window.ThemeManager) {
+                await ThemeManager.init(true);
+                const warning = document.getElementById('testWarning');
+                if (warning) warning.style.display = ThemeManager.isTestMode ? 'flex' : 'none';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>FOOTRADA · Trust Terminal</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 外部 CSS -->
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/nav.css">
+    <link rel="stylesheet" href="/css/index.css">
+</head>
+<body>
+    <!-- ===== 上部：固定區域 ===== -->
+    <header class="app-header">
+        <div class="header-container">
+            <!-- 實時動態條 -->
+            <div class="ticker-bar" id="tickerBar" style="display: none;">
+                <div class="ticker-icon"><i class="fas fa-circle-nodes"></i></div>
+                <div class="ticker-wrapper">
+                    <div class="ticker-messages" id="tickerMessages">Live feed initializing...</div>
+                </div>
+                <div class="ticker-stats"><span id="tickerVolume">0</span> USDT</div>
+            </div>
+
+            <!-- 頭部 -->
+            <div class="header">
+                <div class="logo">FOOT<span>RADA</span></div>
+                <div class="actions">
+                    <div class="network-switcher" id="networkSwitcher">
+                        <button class="network-btn sandbox active" data-network="sandbox"><i class="fas fa-flask"></i> Test</button>
+                        <button class="network-btn mainnet" data-network="mainnet"><i class="fas fa-bolt"></i> Live</button>
+                    </div>
+                    <button class="icon-btn" id="themeToggle" style="display: none;"><i class="fas fa-moon"></i></button>
+                    <button class="icon-btn" id="privacyToggle"><i class="fas fa-eye"></i></button>
+                </div>
+            </div>
+
+            <!-- 身份卡片 -->
+            <div class="authority-card" id="balanceCard">
+                <div class="authority-header"><i class="fas fa-fingerprint"></i><span>Authority</span></div>
+                <div class="authority-amount-wrapper">
+                    <span class="authority-amount" id="totalBalance">0.00</span>
+                    <span class="authority-currency" id="currencySymbol">tUSDT</span>
+                </div>
+                <div class="network-badge" id="networkBadge"><i class="fas fa-flask"></i> Test</div>
+            </div>
+
+            <!-- 比赛分组标题 -->
+            <div class="section-header">
+                <h2 class="section-title"><i class="fas fa-gate"></i> <span data-i18n="open_gates_title">Today's Matches</span></h2>
+                <span class="section-badge" id="gateCount">0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== 中部：可滾動內容區域 ===== -->
+    <main class="content-scrollable">
+        <div class="content-container">
+            <div class="matches-container" id="matchesContainer"></div>
+        </div>
+    </main>
+
+    <!-- ===== 下部：固定底部導航 ===== -->
+    <nav class="bottom-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item active">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="/match-market.html" class="nav-item">
+                <i class="fas fa-chart-line"></i>
+                <span>Markets</span>
+            </a>
+            <a href="/support.html" class="nav-item">
+                <i class="fas fa-headset"></i>
+                <span>Support</span>
+            </a>
+            <a href="/profile.html" class="nav-item">
+                <i class="fas fa-user"></i>
+                <span>Account</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- 悬浮按钮 -->
+    <div class="explore-all-btn" id="exploreAllBtn" style="display: none;">
+        <button onclick="location.href='/match-market.html'">
+            <i class="fas fa-arrow-right"></i> Explore All Matches
+        </button>
+    </div>
+
+    <!-- 客服悬浮 -->
+    <div class="floating-support" id="chatWidget">
+        <button class="support-btn" id="chatButton">
+            <i class="fas fa-comment-dots"></i>
+        </button>
+    </div>
+
+    <!-- 通知弹窗 -->
+    <div class="modal-overlay" id="notificationModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="notificationTitle">System</h2>
+                <button class="modal-close" onclick="closeNotificationModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="notificationContent"></div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeNotificationModal()">Close</button>
+                <button class="btn-primary" onclick="markNotificationRead()">Acknowledge</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/time.js"></script>
+    <script src="/js/core/theme.js"></script>
+    <script src="/js/user/index_controller.js"></script>
+</body>
+</html>

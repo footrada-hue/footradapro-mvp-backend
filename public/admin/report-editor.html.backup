@@ -1,0 +1,842 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>報告編輯器 · FOOTRADA 後台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/time.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+    <link rel="stylesheet" href="/css/admin-base.css">
+    <link rel="stylesheet" href="/css/admin-nav.css">
+    <style>
+        /* 報告編輯器專用樣式 */
+        .report-editor-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .match-selector {
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .match-selector h3 {
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .match-selector h3 i {
+            color: var(--accent);
+        }
+
+        .selector-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .selector-row select {
+            flex: 1;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-strong);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .selector-row button {
+            padding: 12px 24px;
+            background: var(--accent);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .selector-row button:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        .selector-row button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .editor-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .match-info-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-strong);
+        }
+
+        .match-teams {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .match-league {
+            color: var(--text-secondary);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .match-time {
+            margin-left: auto;
+            color: var(--text-tertiary);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .report-textarea {
+            width: 100%;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-strong);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.6;
+            font-family: 'Inter', monospace;
+            resize: vertical;
+            min-height: 300px;
+            margin-bottom: 16px;
+        }
+
+        .report-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .editor-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .btn-secondary {
+            padding: 12px 24px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-strong);
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-primary {
+            padding: 12px 24px;
+            background: var(--accent);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary i {
+            font-size: 14px;
+        }
+
+        .template-badge {
+            background: var(--surface-secondary);
+            border: 1px dashed var(--border-strong);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .template-badge i {
+            color: var(--accent);
+            font-size: 16px;
+        }
+
+        .template-badge button {
+            margin-left: auto;
+            padding: 6px 12px;
+            background: transparent;
+            border: 1px solid var(--border-strong);
+            border-radius: 30px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .template-badge button:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .recent-reports {
+            margin-top: 30px;
+        }
+
+        .recent-reports h3 {
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .report-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+
+        .report-item-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .report-item-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .report-item-status.published {
+            background: #10b981;
+        }
+
+        .report-item-status.draft {
+            background: var(--accent);
+        }
+
+        .report-item-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .report-item-meta {
+            color: var(--text-tertiary);
+            font-size: 12px;
+        }
+
+        .report-item-actions button {
+            padding: 6px 12px;
+            background: transparent;
+            border: 1px solid var(--border-strong);
+            border-radius: 30px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: 8px;
+        }
+
+        .report-item-actions button:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-tertiary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-tertiary);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+    </style>
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/report-editor.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 側邊導航欄 -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">FOOT<span>RADA</span></div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html" class="admin-nav-item">儀表盤</a>
+                <a href="/admin/matches.html" class="admin-nav-item">比賽管理</a>
+                <a href="/admin/settle.html" class="admin-nav-item">清算管理</a>
+                <a href="/admin/report-editor.html" class="admin-nav-item active">報告編輯</a>
+                <a href="/admin/settings/index.html" class="admin-nav-item">系統設置</a>
+            </nav>
+        </aside>
+
+        <!-- 主內容區 -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>📝 報告編輯器</h1>
+                <div class="admin-user">
+                    <span id="adminName">管理員</span>
+                    <button class="icon-btn" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <div class="report-editor-container">
+                    <!-- 比賽選擇器 -->
+                    <div class="match-selector">
+                        <h3>
+                            <i class="fas fa-futbol"></i>
+                            選擇要編輯報告的比賽
+                        </h3>
+                        <div class="selector-row">
+                            <select id="matchSelect">
+                                <option value="">請選擇已清算的比賽...</option>
+                            </select>
+                            <button id="newReportBtn" disabled>
+                                <i class="fas fa-plus"></i> 新建報告
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 報告編輯器（初始隱藏） -->
+                    <div id="reportEditor" style="display: none;">
+                        <div class="editor-card">
+                            <div class="match-info-bar" id="matchInfoBar">
+                                <div>
+                                    <div class="match-teams" id="displayTeams"></div>
+                                    <div class="match-league" id="displayLeague"></div>
+                                </div>
+                                <div class="match-time" id="displayTime"></div>
+                            </div>
+
+                            <!-- 模板提示 -->
+                            <div class="template-badge">
+                                <i class="fas fa-lightbulb"></i>
+                                <span>建議使用簡潔的文本格式，可從外部編輯器複製貼上</span>
+                                <button id="showTemplateBtn">
+                                    <i class="fas fa-copy"></i> 查看模板
+                                </button>
+                            </div>
+
+                            <!-- 報告文本輸入框 -->
+                            <textarea 
+                                class="report-textarea" 
+                                id="reportText" 
+                                placeholder="請貼上或輸入比賽報告內容...
+例如：
+🏆 曼城 vs 利物浦
+📊 交易復盤報告
+
+🎯 系統決策
+────────────────
+✅ 選擇: 主隊勝
+📈 信心指數: 87%
+
+💰 您的收益
+────────────────
+授權: 100 USDT
+收益: +12.8 USDT
+到賬: 112.8 USDT
+
+📌 AI總結
+────────────────
+曼城主場壓倒性優勢，控球轉化為進球。"
+                            ></textarea>
+
+                            <!-- 操作按鈕 -->
+                            <div class="editor-actions">
+                                <button class="btn-secondary" id="cancelEdit">取消</button>
+                                <button class="btn-secondary" id="saveDraftBtn">
+                                    <i class="fas fa-save"></i> 保存草稿
+                                </button>
+                                <button class="btn-primary" id="publishBtn">
+                                    <i class="fas fa-globe"></i> 發布報告
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 最近報告列表 -->
+                    <div class="recent-reports" id="recentReports">
+                        <h3>📋 最近發布的報告</h3>
+                        <div id="reportsList">
+                            <div class="loading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>加載中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 模板模態框 -->
+    <div class="modal-overlay" id="templateModal" style="display: none;">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-copy"></i> 報告模板示例</h2>
+                <button class="modal-close" id="closeTemplateModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <pre style="background: var(--bg-secondary); padding: 20px; border-radius: 12px; color: var(--text-primary); font-family: monospace; line-height: 1.6; white-space: pre-wrap;">
+🏆 曼城 vs 利物浦
+📊 交易復盤報告
+
+🎯 系統決策
+────────────────
+✅ 選擇: 主隊勝
+📈 信心指數: 87%
+
+🔍 核心分析
+────────────────
+• 控球: 58% vs 42%
+• 射門: 15 vs 8
+• 預期進球(xG): 2.4 vs 1.1
+• 資金流向: 65%流向主勝
+
+⚡ 關鍵對決
+────────────────
+• 德布勞內創造4次機會
+• 哈蘭德3次射正2進球
+
+💰 您的收益
+────────────────
+授權: 100 USDT
+收益: +12.8 USDT
+到賬: 112.8 USDT
+
+📌 AI總結
+────────────────
+曼城主場壓倒性優勢，控球轉化為進球，
+市場資金流向準確預測賽果。                    
+                </pre>
+                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+                    <button class="btn-secondary" onclick="document.getElementById('templateModal').style.display='none'">關閉</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const UTILS = window.FOOTRADAPRO?.UTILS || {
+                formatDateTime: (dt) => new Date(dt).toLocaleString('zh-CN'),
+                formatAmount: (num) => num.toFixed(2)
+            };
+
+            // DOM 元素
+            const matchSelect = document.getElementById('matchSelect');
+            const newReportBtn = document.getElementById('newReportBtn');
+            const reportEditor = document.getElementById('reportEditor');
+            const recentReports = document.getElementById('recentReports');
+            const reportsList = document.getElementById('reportsList');
+            const cancelEdit = document.getElementById('cancelEdit');
+            const saveDraftBtn = document.getElementById('saveDraftBtn');
+            const publishBtn = document.getElementById('publishBtn');
+            const reportText = document.getElementById('reportText');
+            const displayTeams = document.getElementById('displayTeams');
+            const displayLeague = document.getElementById('displayLeague');
+            const displayTime = document.getElementById('displayTime');
+            const showTemplateBtn = document.getElementById('showTemplateBtn');
+            const templateModal = document.getElementById('templateModal');
+            const closeTemplateModal = document.getElementById('closeTemplateModal');
+
+            // 數據存儲
+            let matches = [];
+            let currentMatch = null;
+
+            // API請求
+            async function adminRequest(endpoint, options = {}) {
+                const token = localStorage.getItem('admin_token');
+                const defaultOptions = {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    credentials: 'include'
+                };
+                
+                try {
+                    const response = await fetch(`/api/v1/admin/report${endpoint}`, {
+                        ...defaultOptions,
+                        ...options
+                    });
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            window.location.href = '/admin/index.html';
+                        }
+                        throw new Error(data.error || '請求失敗');
+                    }
+                    
+                    return data;
+                } catch (err) {
+                    console.error('API請求失敗:', err);
+                    throw err;
+                }
+            }
+
+            // 加載比賽列表
+            async function loadMatches() {
+                try {
+                    const result = await adminRequest('/matches');
+                    if (result.success) {
+                        matches = result.data.filter(m => !m.has_report || m.report_status === 'draft');
+                        renderMatchSelect();
+                    }
+                } catch (err) {
+                    console.error('加載比賽失敗:', err);
+                }
+            }
+
+            // 渲染比賽下拉框
+            function renderMatchSelect() {
+                let html = '<option value="">請選擇已清算的比賽...</option>';
+                matches.forEach(match => {
+                    const statusText = match.has_report ? ' [草稿]' : '';
+                    html += `<option value="${match.match_id}">
+                        ${match.home_team} vs ${match.away_team} (${UTILS.formatDateTime(match.match_time)})${statusText}
+                    </option>`;
+                });
+                matchSelect.innerHTML = html;
+            }
+
+            // 加載最近報告
+            async function loadRecentReports() {
+                try {
+                    const result = await adminRequest('/');
+                    if (result.success) {
+                        renderRecentReports(result.data);
+                    }
+                } catch (err) {
+                    console.error('加載報告失敗:', err);
+                    reportsList.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>加載失敗</p></div>';
+                }
+            }
+
+            // 渲染最近報告
+            function renderRecentReports(reports) {
+                if (reports.length === 0) {
+                    reportsList.innerHTML = '<div class="empty-state"><i class="fas fa-file-alt"></i><p>暫無報告</p></div>';
+                    return;
+                }
+
+                let html = '';
+                reports.slice(0, 5).forEach(report => {
+                    const statusClass = report.status === 'published' ? 'published' : 'draft';
+                    const statusText = report.status === 'published' ? '已發布' : '草稿';
+                    
+                    html += `
+                        <div class="report-item">
+                            <div class="report-item-info">
+                                <span class="report-item-status ${statusClass}"></span>
+                                <span class="report-item-title">${report.home_team} vs ${report.away_team}</span>
+                                <span class="report-item-meta">${report.home_score} : ${report.away_score}</span>
+                            </div>
+                            <div class="report-item-actions">
+                                <span class="report-item-meta">${UTILS.formatDateTime(report.published_at || report.created_at)}</span>
+                                <button onclick="window.editReport('${report.match_id}')">
+                                    <i class="fas fa-edit"></i> 編輯
+                                </button>
+                                <button onclick="window.viewReport('${report.match_id}')">
+                                    <i class="fas fa-eye"></i> 查看
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                reportsList.innerHTML = html;
+            }
+
+            // 選擇比賽
+            matchSelect.addEventListener('change', () => {
+                newReportBtn.disabled = !matchSelect.value;
+            });
+
+            // 新建報告
+            newReportBtn.addEventListener('click', async () => {
+                const matchId = matchSelect.value;
+                if (!matchId) return;
+
+                try {
+                    // 先檢查是否已有草稿
+                    try {
+                        const existing = await adminRequest(`/${matchId}`);
+                        if (existing.success) {
+                            // 有草稿，加載它
+                            loadReportData(existing.data);
+                            return;
+                        }
+                    } catch (err) {
+                        // 404 表示沒有報告，繼續新建
+                    }
+
+                    // 從 matches 中獲取比賽信息
+                    const match = matches.find(m => m.match_id === matchId);
+                    if (!match) return;
+
+                    currentMatch = match;
+                    
+                    // 顯示比賽信息
+                    displayTeams.textContent = `${match.home_team} vs ${match.away_team}`;
+                    displayLeague.textContent = match.league || '未知聯賽';
+                    displayTime.innerHTML = `<i class="fas fa-calendar"></i> ${UTILS.formatDateTime(match.match_time)}`;
+                    
+                    // 清空報告文本
+                    reportText.value = '';
+                    
+                    reportEditor.style.display = 'block';
+                    recentReports.style.display = 'none';
+                } catch (err) {
+                    alert('加載比賽信息失敗');
+                }
+            });
+
+            // 加載報告數據
+            function loadReportData(report) {
+                currentMatch = report;
+                
+                displayTeams.textContent = `${report.home_team} vs ${report.away_team}`;
+                displayLeague.textContent = report.league || '未知聯賽';
+                displayTime.innerHTML = `<i class="fas fa-calendar"></i> ${UTILS.formatDateTime(report.match_time)}`;
+                
+                // 從 ai_deepdive 字段讀取報告內容
+                reportText.value = report.ai_deepdive || '';
+                
+                reportEditor.style.display = 'block';
+                recentReports.style.display = 'none';
+            }
+
+            // 取消編輯
+            cancelEdit.addEventListener('click', () => {
+                reportEditor.style.display = 'none';
+                recentReports.style.display = 'block';
+                currentMatch = null;
+                matchSelect.value = '';
+                newReportBtn.disabled = true;
+            });
+
+            // 保存草稿
+            saveDraftBtn.addEventListener('click', async () => {
+                await saveReport('draft');
+            });
+
+            // 發布報告
+            publishBtn.addEventListener('click', async () => {
+                await saveReport('published');
+            });
+
+            // 保存報告
+            async function saveReport(status) {
+                if (!currentMatch) return;
+
+                const data = {
+                    match_id: currentMatch.match_id,
+                    match_time: currentMatch.match_time,
+                    league: currentMatch.league,
+                    home_team: currentMatch.home_team,
+                    away_team: currentMatch.away_team,
+                    ai_deepdive: reportText.value,  // ✅ 使用 ai_deepdive 字段
+                    status: status
+                };
+
+                try {
+                    const result = await adminRequest('/save', {
+                        method: 'POST',
+                        body: JSON.stringify(data)
+                    });
+
+                    if (result.success) {
+                        alert(status === 'published' ? '✅ 報告發布成功！' : '✅ 草稿保存成功！');
+                        
+                        if (status === 'published') {
+                            // 發布後詢問是否查看
+                            if (confirm('報告發布成功！是否立即查看？')) {
+                                window.open(`/report-detail.html?match_id=${currentMatch.match_id}`, '_blank');
+                            }
+                        }
+                        
+                        // 返回列表
+                        cancelEdit.click();
+                        await loadRecentReports();
+                        await loadMatches(); // 刷新比賽列表
+                    }
+                } catch (err) {
+                    alert('保存失敗：' + (err.message || '未知錯誤'));
+                }
+            }
+
+            // 編輯報告
+            window.editReport = async function(matchId) {
+                try {
+                    const result = await adminRequest(`/${matchId}`);
+                    if (result.success) {
+                        loadReportData(result.data);
+                    }
+                } catch (err) {
+                    alert('加載報告失敗');
+                }
+            };
+
+            // 查看報告
+            window.viewReport = function(matchId) {
+                window.open(`/report-detail.html?match_id=${matchId}`, '_blank');
+            };
+
+            // 顯示模板
+            showTemplateBtn.addEventListener('click', () => {
+                templateModal.style.display = 'flex';
+            });
+
+            closeTemplateModal.addEventListener('click', () => {
+                templateModal.style.display = 'none';
+            });
+
+            // 點擊背景關閉
+            window.addEventListener('click', (e) => {
+                if (e.target === templateModal) {
+                    templateModal.style.display = 'none';
+                }
+            });
+
+            // 退出登錄
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                window.location.href = '/admin/index.html';
+            });
+
+            // 設置管理員名稱
+            const adminNameSpan = document.getElementById('adminName');
+            const storedAdmin = localStorage.getItem('admin_name');
+            if (storedAdmin) {
+                adminNameSpan.textContent = storedAdmin;
+            }
+
+            // ==================== 處理 URL 參數 ====================
+            async function handleUrlParams() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlMatchId = urlParams.get('matchId');
+                
+                if (urlMatchId) {
+                    console.log('從 URL 獲取到比賽 ID:', urlMatchId);
+                    
+                    // 等待比賽列表加載完成
+                    if (matches.length === 0) {
+                        await loadMatches();
+                    }
+                    
+                    // 查找比賽是否存在
+                    const match = matches.find(m => m.match_id === urlMatchId);
+                    
+                    if (match) {
+                        // 直接選擇該比賽
+                        matchSelect.value = urlMatchId;
+                        newReportBtn.disabled = false;
+                        
+                        // 自動點擊新建報告按鈕
+                        setTimeout(() => {
+                            newReportBtn.click();
+                        }, 100);
+                    } else {
+                        // 如果比賽不在列表中，直接通過 API 獲取比賽信息
+                        try {
+                            const response = await fetch(`/api/v1/admin/report/match/${urlMatchId}`, {
+                                credentials: 'include'
+                            });
+                            const result = await response.json();
+                            
+                            if (result.success) {
+                                const match = result.data;
+                                
+                                // 設置當前比賽
+                                currentMatch = match;
+                                
+                                // 顯示編輯器
+                                reportEditor.style.display = 'block';
+                                recentReports.style.display = 'none';
+                                
+                                // 顯示比賽信息
+                                displayTeams.textContent = `${match.home_team} vs ${match.away_team}`;
+                                displayLeague.textContent = match.league || '未知聯賽';
+                                displayTime.innerHTML = `<i class="fas fa-calendar"></i> ${UTILS.formatDateTime(match.match_time)}`;
+                                
+                                // 清空報告文本
+                                reportText.value = '';
+                                
+                                console.log('✅ 比賽已手動加載:', match);
+                            } else {
+                                console.error('加載比賽失敗:', result);
+                                alert('無法加載比賽信息：' + (result.error || '未知錯誤'));
+                            }
+                        } catch (err) {
+                            console.error('加載比賽失敗:', err);
+                            alert('無法加載比賽信息');
+                        }
+                    }
+                }
+            }
+
+            // 初始化
+            (async function() {
+                await loadMatches();
+                await loadRecentReports();
+                await handleUrlParams();
+            })();
+        })();
+    </script>
+</body>
+</html>

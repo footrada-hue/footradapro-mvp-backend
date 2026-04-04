@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0B0E11" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)">
+    <title>FAQs · FOOTRADAPRO</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 核心样式 -->
+    <link rel="stylesheet" href="/css/core/variables.css">
+    <link rel="stylesheet" href="/css/core/layout.css">
+    <link rel="stylesheet" href="/css/core/components.css">
+    
+    <!-- 页面特有样式 -->
+    <link rel="stylesheet" href="/css/pages/faq.css">
+</head>
+<body>
+    <div class="page-header">
+        <div class="top-nav">
+            <button class="back-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i></button>
+            <h1 class="page-title">FAQs</h1>
+            <div style="width: 42px;"></div>
+        </div>
+    </div>
+
+    <main class="content-scrollable">
+        <div class="content-container">
+            <div class="category-section">
+                <div class="category-title" id="categoryTitle">Loading...</div>
+                <div class="category-desc" id="categoryDesc"></div>
+            </div>
+            
+            <div class="faq-list" id="faqList">
+                <div class="loading-placeholder">Loading questions...</div>
+            </div>
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="/match-market.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Markets</span></a>
+            <a href="/support.html" class="nav-item active"><i class="fas fa-headset"></i><span>Support</span></a>
+            <a href="/profile.html" class="nav-item"><i class="fas fa-user"></i><span>Account</span></a>
+        </div>
+    </nav>
+
+    <script>
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const encodedData = urlParams.get('data');
+            
+            if (!encodedData) {
+                document.getElementById('categoryTitle').textContent = 'No Data';
+                document.getElementById('categoryDesc').textContent = 'No data received';
+                document.getElementById('faqList').innerHTML = '<div class="loading-placeholder">No data received. Please go back and try again.</div>';
+                return;
+            }
+            
+            try {
+                const data = JSON.parse(decodeURIComponent(encodedData));
+                
+                document.getElementById('categoryTitle').textContent = data.title || 'FAQs';
+                document.getElementById('categoryDesc').textContent = data.desc || 'Select a question to view the answer';
+                
+                let html = '';
+                if (data.questions && data.questions.length > 0) {
+                    data.questions.forEach((item) => {
+                        const preview = item.a.replace(/<[^>]*>/g, '').substring(0, 100);
+                        const safeQuestion = item.q.replace(/[&<>]/g, function(m) {
+                            if (m === '&') return '&amp;';
+                            if (m === '<') return '&lt;';
+                            if (m === '>') return '&gt;';
+                            return m;
+                        });
+                        html += `
+                            <div class="faq-item" data-question="${encodeURIComponent(safeQuestion)}" data-answer="${encodeURIComponent(item.a)}">
+                                <div class="faq-question">
+                                    <i class="fas fa-question-circle"></i>
+                                    <span>${safeQuestion}</span>
+                                </div>
+                                <div class="faq-preview">${preview}...</div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html = '<div class="loading-placeholder">No questions available.</div>';
+                }
+                document.getElementById('faqList').innerHTML = html;
+                
+                document.querySelectorAll('.faq-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const q = item.dataset.question;
+                        const a = item.dataset.answer;
+                        if (q && a) {
+                            window.location.href = `/faq-detail.html?q=${q}&a=${a}`;
+                        }
+                    });
+                });
+            } catch (e) {
+                console.error('解析失敗:', e);
+                document.getElementById('categoryTitle').textContent = 'Error';
+                document.getElementById('categoryDesc').textContent = 'Failed to load data';
+                document.getElementById('faqList').innerHTML = '<div class="loading-placeholder">Failed to load questions. Please go back and try again.</div>';
+            }
+        })();
+    </script>
+</body>
+</html>

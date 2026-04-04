@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>FOOTRADAPRO · Create account</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="csrf-token" content="{{csrfToken}}">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            transition: background-color 0.2s ease;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 淺色主題 */
+        body[data-theme="light"] {
+            background-color: #FFFFFF;
+            color: #1A1F36;
+        }
+        
+        /* 深色主題 */
+        body[data-theme="dark"] {
+            background-color: #0A0C12;
+            color: #EDEDF0;
+        }
+        
+        /* 主容器 */
+        .auth-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        /* 品牌區域 */
+        .brand {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        
+        .brand-logo {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            text-decoration: none;
+            background: linear-gradient(135deg, #FF6B00 0%, #FF8A3C 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        body[data-theme="dark"] .brand-logo {
+            background: linear-gradient(135deg, #FFFFFF 0%, #FF6B00 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* 右上角設置欄 */
+        .settings-bar {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 12px;
+            z-index: 1000;
+        }
+        
+        @media (max-width: 480px) {
+            .settings-bar {
+                top: 12px;
+                right: 12px;
+                gap: 8px;
+            }
+        }
+        
+        /* 統一的按鈕組樣式 */
+        .btn-group {
+            display: flex;
+            background: rgba(248, 249, 252, 0.9);
+            border: 1px solid #E9EDF2;
+            border-radius: 40px;
+            padding: 4px;
+            height: 40px;
+            backdrop-filter: blur(8px);
+        }
+        
+        body[data-theme="dark"] .btn-group {
+            background: rgba(17, 20, 28, 0.9);
+            border-color: #1F242F;
+        }
+        
+        /* 統一的按鈕樣式 */
+        .btn-option {
+            padding: 0 14px;
+            height: 32px;
+            font-size: 13px;
+            font-weight: 500;
+            background: transparent;
+            border: none;
+            border-radius: 32px;
+            color: #8A99AA;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+            line-height: 32px;
+        }
+        
+        body[data-theme="dark"] .btn-option {
+            color: #9CA3AF;
+        }
+        
+        .btn-option:hover {
+            color: #FF6B00;
+            background: rgba(255, 107, 0, 0.1);
+        }
+        
+        .btn-option.active {
+            background: #FF6B00;
+            color: white;
+        }
+        
+        /* 語言切換組特殊處理 */
+        .lang-group {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .lang-group .btn-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .lang-group .btn-option .fa-chevron-down {
+            font-size: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .lang-group.open .btn-option .fa-chevron-down {
+            transform: rotate(180deg);
+        }
+        
+        .lang-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 100px;
+            background: white;
+            border: 1px solid #E9EDF2;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px);
+            transition: all 0.2s;
+            z-index: 101;
+            overflow: hidden;
+        }
+        
+        body[data-theme="dark"] .lang-dropdown {
+            background: #11141C;
+            border-color: #1F242F;
+        }
+        
+        .lang-group.open .lang-dropdown {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .lang-option {
+            padding: 10px 16px;
+            font-size: 13px;
+            color: #5A6A7E;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-align: center;
+        }
+        
+        body[data-theme="dark"] .lang-option {
+            color: #9CA3AF;
+        }
+        
+        .lang-option:hover {
+            background: rgba(255, 107, 0, 0.1);
+            color: #FF6B00;
+        }
+        
+        .lang-option.active {
+            background: rgba(255, 107, 0, 0.15);
+            color: #FF6B00;
+            font-weight: 500;
+        }
+        
+        /* 步驟切換 */
+        .step { display: none; }
+        .step.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 標題區域 */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            color: #8A99AA;
+        }
+        
+        /* 表單 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #8A99AA;
+            margin-bottom: 8px;
+        }
+        
+        .form-input {
+            width: 100%;
+            height: 48px;
+            padding: 0 16px;
+            background: white;
+            border: 1px solid #E9EDF2;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.2s;
+            outline: none;
+        }
+        
+        body[data-theme="dark"] .form-input {
+            background: #11141C;
+            border-color: #1F242F;
+            color: #EDEDF0;
+        }
+        
+        .form-input:focus {
+            border-color: #FF6B00;
+            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
+        }
+        
+        .helper-text {
+            font-size: 12px;
+            color: #8A99AA;
+            margin-top: 8px;
+        }
+        
+        /* 驗證碼 */
+        .code-inputs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 24px 0;
+        }
+        
+        .code-digit {
+            width: 52px;
+            height: 60px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            background: white;
+            border: 1px solid #E9EDF2;
+            border-radius: 12px;
+            font-family: monospace;
+            transition: all 0.2s;
+            outline: none;
+        }
+        
+        body[data-theme="dark"] .code-digit {
+            background: #11141C;
+            border-color: #1F242F;
+            color: #EDEDF0;
+        }
+        
+        .code-digit:focus {
+            border-color: #FF6B00;
+            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
+        }
+        
+        @media (max-width: 480px) {
+            .code-digit { width: 44px; height: 52px; font-size: 20px; }
+            .code-inputs { gap: 8px; }
+        }
+        
+        /* 按鈕 */
+        .btn-primary {
+            width: 100%;
+            height: 48px;
+            background: #FF6B00;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: #F05A00;
+            transform: translateY(-1px);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .secondary-link {
+            text-align: center;
+            margin-top: 24px;
+        }
+        
+        .secondary-link a {
+            color: #8A99AA;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        
+        .secondary-link a:hover {
+            color: #FF6B00;
+        }
+        
+        /* 密碼規則 */
+        .password-requirements {
+            margin-top: 12px;
+            padding: 12px;
+            background: #F8F9FC;
+            border-radius: 8px;
+        }
+        
+        body[data-theme="dark"] .password-requirements {
+            background: #11141C;
+        }
+        
+        .requirement-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #8A99AA;
+            margin-bottom: 4px;
+        }
+        
+        .requirement-item.valid { color: #10B981; }
+        .requirement-item i { width: 14px; }
+        
+        .strength-meter {
+            display: flex;
+            gap: 4px;
+            margin-top: 8px;
+        }
+        
+        .strength-bar {
+            height: 3px;
+            flex: 1;
+            background: #E9EDF2;
+            border-radius: 4px;
+        }
+        
+        body[data-theme="dark"] .strength-bar {
+            background: #1F242F;
+        }
+        
+        .strength-bar.active { background: #FF6B00; }
+        .strength-text { font-size: 11px; color: #8A99AA; margin-top: 4px; }
+        
+        /* 複選框 */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 24px 0;
+        }
+        
+        .checkbox-group input {
+            width: 16px;
+            height: 16px;
+            accent-color: #FF6B00;
+        }
+        
+        .checkbox-group label {
+            font-size: 13px;
+            color: #8A99AA;
+        }
+        
+        .checkbox-group a {
+            color: #FF6B00;
+            text-decoration: none;
+        }
+        
+        /* 模態框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal.active { display: flex; }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 360px;
+            width: 90%;
+            text-align: center;
+        }
+        
+        body[data-theme="dark"] .modal-content {
+            background: #11141C;
+        }
+        
+        .success-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            color: #10B981;
+            font-size: 28px;
+        }
+        
+        .trust-list {
+            text-align: left;
+            margin: 24px 0;
+            padding: 16px;
+            background: #F8F9FC;
+            border-radius: 12px;
+        }
+        
+        body[data-theme="dark"] .trust-list {
+            background: #0A0C12;
+        }
+        
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            font-size: 13px;
+            color: #8A99AA;
+        }
+        
+        .trust-item i {
+            color: #FF6B00;
+            width: 20px;
+        }
+        
+        .auto-redirect {
+            font-size: 12px;
+            color: #8A99AA;
+            margin-top: 16px;
+        }
+        
+        .auto-redirect span {
+            color: #FF6B00;
+            font-weight: 500;
+        }
+        
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .toast {
+            padding: 10px 18px;
+            background: white;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-left: 3px solid;
+        }
+        
+        body[data-theme="dark"] .toast {
+            background: #11141C;
+        }
+        
+        .toast-success { border-left-color: #10B981; color: #10B981; }
+        .toast-error { border-left-color: #EF4444; color: #EF4444; }
+        
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 6px;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        @media (max-width: 480px) {
+            .auth-container { padding: 16px; }
+            .brand-logo { font-size: 28px; }
+            .header h1 { font-size: 24px; }
+            .modal-content { padding: 24px; }
+            .btn-group { height: 36px; padding: 3px; }
+            .btn-option { padding: 0 12px; height: 30px; line-height: 30px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <!-- 品牌區域 -->
+        <div class="brand">
+            <a href="/" class="brand-logo">FOOTRADA</a>
+        </div>
+
+        <!-- 右上角設置欄 -->
+        <div class="settings-bar">
+            <!-- 主題切換按鈕組 -->
+            <div class="btn-group">
+                <button class="btn-option" data-theme="light">Light</button>
+                <button class="btn-option" data-theme="auto">Auto</button>
+                <button class="btn-option" data-theme="dark">Dark</button>
+            </div>
+            
+            <!-- 語言切換按鈕組 -->
+            <div class="btn-group lang-group">
+                <button class="btn-option" id="langBtn">
+                    <span id="currentLang">EN</span> <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="lang-dropdown" id="langDropdown">
+                    <div class="lang-option" data-lang="en">English</div>
+                    <div class="lang-option" data-lang="zh">中文</div>
+                    <div class="lang-option" data-lang="ms">Melayu</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 步驟1：Email -->
+        <div id="step1" class="step active">
+            <div class="header">
+                <h1>Create account</h1>
+                <p>Start your journey with FootRada</p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" id="email" placeholder="name@example.com">
+                <p class="helper-text">We'll send you a verification code</p>
+            </div>
+            <!-- 图形验证码 -->
+<div class="form-group">
+    <label class="form-label">Verification Code</label>
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <input type="text" class="form-input" id="captchaInput" placeholder="Enter code" style="flex: 1;" autocomplete="off">
+        <img id="captchaImage" src="/api/v1/captcha/generate" alt="CAPTCHA" style="height: 48px; border-radius: 12px; cursor: pointer;" title="Click to refresh">
+    </div>
+</div>
+            <button class="btn-primary" id="sendCodeBtn">Continue</button>
+            <div class="secondary-link">
+                <a href="/login.html">Already have an account? Sign in</a>
+            </div>
+        </div>
+
+        <!-- 步驟2：驗證碼 -->
+        <div id="step2" class="step">
+            <div class="header">
+                <h1>Verify your email</h1>
+                <p>Enter the code sent to <strong id="displayEmail"></strong></p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Verification code</label>
+                <div class="code-inputs">
+                    <input type="text" class="code-digit" maxlength="1" inputmode="numeric">
+                    <input type="text" class="code-digit" maxlength="1" inputmode="numeric">
+                    <input type="text" class="code-digit" maxlength="1" inputmode="numeric">
+                    <input type="text" class="code-digit" maxlength="1" inputmode="numeric">
+                    <input type="text" class="code-digit" maxlength="1" inputmode="numeric">
+                    <input type="text" class="code-digit" maxlength="1" inputmode="numeric">
+                </div>
+                <p class="helper-text">Didn't receive code? <a href="#" id="resendCode">Resend</a></p>
+            </div>
+            <button class="btn-primary" id="verifyCodeBtn" disabled>Verify</button>
+            <div class="secondary-link">
+                <a href="#" id="backToEmail">Use different email</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 密碼模態框 -->
+    <div class="modal" id="passwordModal">
+        <div class="modal-content">
+            <h2>Set password</h2>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-input" id="newPassword" placeholder="Create a strong password">
+                <div class="strength-meter">
+                    <div class="strength-bar" id="strengthBar1"></div>
+                    <div class="strength-bar" id="strengthBar2"></div>
+                    <div class="strength-bar" id="strengthBar3"></div>
+                </div>
+                <div class="strength-text" id="strengthText">At least 8 characters</div>
+                <div class="password-requirements">
+                    <div class="requirement-item" id="reqLength"><i class="far fa-circle"></i> 8+ characters</div>
+                    <div class="requirement-item" id="reqUppercase"><i class="far fa-circle"></i> Uppercase letter</div>
+                    <div class="requirement-item" id="reqLowercase"><i class="far fa-circle"></i> Lowercase letter</div>
+                    <div class="requirement-item" id="reqNumber"><i class="far fa-circle"></i> Number</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Confirm password</label>
+                <input type="password" class="form-input" id="confirmNewPassword" placeholder="Confirm your password">
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="termsCheckbox" required>
+                <label for="termsCheckbox">I agree to <a href="/terms.html">Terms</a> & <a href="/privacy.html">Privacy</a></label>
+            </div>
+            <button class="btn-primary" id="completeRegistrationBtn">Complete</button>
+        </div>
+    </div>
+
+    <!-- 成功彈窗 -->
+    <div class="modal" id="trustModal">
+        <div class="modal-content">
+            <div class="success-icon"><i class="fas fa-check-circle"></i></div>
+            <h2>Welcome!</h2>
+            <p>Your account is ready</p>
+            <div class="trust-list">
+                <div class="trust-item"><i class="fas fa-flask"></i> Sandbox mode</div>
+                <div class="trust-item"><i class="fas fa-coins"></i> 10,000 tUSDT</div>
+                <div class="trust-item"><i class="fas fa-shield-alt"></i> Test funds</div>
+            </div>
+            <button class="btn-primary" id="goToHomeBtn">Start exploring →</button>
+            <p class="auto-redirect">Redirecting in <span id="countdown">5</span>s</p>
+        </div>
+    </div>
+
+    <script>
+    // ==================== 主題切換 ====================
+    (function() {
+        let savedTheme = localStorage.getItem('theme') || 'auto';
+        
+        function setTheme(theme) {
+            if (theme === 'auto') {
+                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            } else {
+                document.body.setAttribute('data-theme', theme);
+            }
+            localStorage.setItem('theme', theme);
+            
+            document.querySelectorAll('.btn-option[data-theme]').forEach(btn => {
+                if (btn.getAttribute('data-theme') === theme) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+        
+        document.querySelectorAll('.btn-option[data-theme]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                setTheme(this.getAttribute('data-theme'));
+            });
+        });
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (localStorage.getItem('theme') === 'auto') setTheme('auto');
+        });
+        
+        setTheme(savedTheme);
+    })();
+    
+    // ==================== 語言切換 ====================
+    (function() {
+        const langBtn = document.getElementById('langBtn');
+        const langGroup = document.querySelector('.lang-group');
+        const currentLangSpan = document.getElementById('currentLang');
+        let currentLang = localStorage.getItem('lang') || 'en';
+        const langNames = { en: 'EN', zh: '中文', ms: 'MS' };
+        
+        function setLang(lang) {
+            currentLang = lang;
+            localStorage.setItem('lang', lang);
+            if (currentLangSpan) currentLangSpan.textContent = langNames[lang] || 'EN';
+            document.querySelectorAll('.lang-option').forEach(opt => {
+                if (opt.getAttribute('data-lang') === lang) {
+                    opt.classList.add('active');
+                } else {
+                    opt.classList.remove('active');
+                }
+            });
+            window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang } }));
+        }
+        
+        if (langBtn && langGroup) {
+            langBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                langGroup.classList.toggle('open');
+            });
+        }
+        
+        document.querySelectorAll('.lang-option').forEach(opt => {
+            opt.addEventListener('click', function() {
+                setLang(this.getAttribute('data-lang'));
+                if (langGroup) langGroup.classList.remove('open');
+            });
+        });
+        
+        document.addEventListener('click', function() {
+            if (langGroup) langGroup.classList.remove('open');
+        });
+        
+        setLang(currentLang);
+    })();
+    </script>
+
+    <!-- 密碼驗證腳本 -->
+    <script>
+    (function() {
+        const pwdInput = document.getElementById('newPassword');
+        const confirmInput = document.getElementById('confirmNewPassword');
+        const completeBtn = document.getElementById('completeRegistrationBtn');
+        
+        if (pwdInput) {
+            const bars = [
+                document.getElementById('strengthBar1'),
+                document.getElementById('strengthBar2'),
+                document.getElementById('strengthBar3')
+            ];
+            const strengthText = document.getElementById('strengthText');
+            const reqLength = document.getElementById('reqLength');
+            const reqUpper = document.getElementById('reqUppercase');
+            const reqLower = document.getElementById('reqLowercase');
+            const reqNumber = document.getElementById('reqNumber');
+            
+            function updateRequirement(el, valid) {
+                if (!el) return;
+                const icon = el.querySelector('i');
+                if (valid) {
+                    el.classList.add('valid');
+                    icon.className = 'fas fa-check-circle';
+                } else {
+                    el.classList.remove('valid');
+                    icon.className = 'far fa-circle';
+                }
+            }
+            
+            function checkStrength(pwd) {
+                let strength = 0;
+                const hasLength = pwd.length >= 8;
+                const hasUpper = /[A-Z]/.test(pwd);
+                const hasLower = /[a-z]/.test(pwd);
+                const hasNumber = /[0-9]/.test(pwd);
+                
+                if (hasLength) strength++;
+                if (hasUpper) strength++;
+                if (hasLower) strength++;
+                if (hasNumber) strength++;
+                
+                updateRequirement(reqLength, hasLength);
+                updateRequirement(reqUpper, hasUpper);
+                updateRequirement(reqLower, hasLower);
+                updateRequirement(reqNumber, hasNumber);
+                
+                return strength;
+            }
+            
+            function updateStrength() {
+                const pwd = pwdInput.value;
+                const strength = checkStrength(pwd);
+                
+                bars.forEach((bar, i) => {
+                    if (bar) {
+                        if (i < strength) {
+                            bar.classList.add('active');
+                        } else {
+                            bar.classList.remove('active');
+                        }
+                    }
+                });
+                
+                if (strengthText) {
+                    if (pwd.length === 0) {
+                        strengthText.textContent = 'Enter password';
+                    } else if (strength < 3) {
+                        strengthText.textContent = 'Weak';
+                    } else if (strength < 4) {
+                        strengthText.textContent = 'Medium';
+                    } else {
+                        strengthText.textContent = 'Strong';
+                    }
+                }
+            }
+            
+            function checkComplete() {
+                if (!completeBtn) return;
+                const pwd = pwdInput.value;
+                const confirm = confirmInput?.value || '';
+                const termsChecked = document.getElementById('termsCheckbox')?.checked;
+                const isValid = checkStrength(pwd) >= 3 && pwd === confirm && pwd.length > 0 && termsChecked;
+                completeBtn.disabled = !isValid;
+            }
+            
+            pwdInput.addEventListener('input', () => {
+                updateStrength();
+                checkComplete();
+            });
+            
+            if (confirmInput) {
+                confirmInput.addEventListener('input', checkComplete);
+            }
+            
+            const termsCheckbox = document.getElementById('termsCheckbox');
+            if (termsCheckbox) {
+                termsCheckbox.addEventListener('change', checkComplete);
+            }
+            
+            updateStrength();
+            checkComplete();
+        }
+    })();
+    </script>
+
+    <script src="/js/core/config.js" defer></script>
+    <script type="module" src="/js/user/register_controller.js" defer></script>
+</body>
+</html>

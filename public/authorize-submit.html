@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0B0E11" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)">
+    <meta name="description" content="FOOTRADAPRO - 1-Click Authorization">
+    <title>Authorize · FOOTRADAPRO</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+<!-- 核心样式（与首页/比赛超市共享）-->
+<link rel="stylesheet" href="/css/core/variables.css">
+<link rel="stylesheet" href="/css/core/layout.css">
+<link rel="stylesheet" href="/css/core/components.css">
+
+<!-- 页面特有样式 -->
+<link rel="stylesheet" href="/css/pages/authorize.css">
+</head>
+<body>
+
+<div class="authorize-container">
+    <!-- 返回頭部 -->
+    <div class="back-header">
+        <button class="back-btn" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h1 data-i18n="authorization">Authorization</h1>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="loading-state">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p data-i18n="loading_match_details">Loading match details...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="error-state" style="display: none;">
+        <i class="fas fa-exclamation-circle"></i>
+        <p data-i18n="match_not_found">Match not found</p>
+        <button class="btn-primary" onclick="history.back()" data-i18n="go_back">Go Back</button>
+    </div>
+
+    <!-- Match Content -->
+    <div id="matchContent" style="display: none;">
+        <!-- 比賽卡片 -->
+        <div class="match-card">
+            <div class="team-logos">
+                <div class="team-logo home">
+                    <div class="logo-container" id="homeLogoContainer">
+                        <i class="fas fa-shield-alt default-logo"></i>
+                        <img id="homeLogo" src="" alt="" style="display: none;">
+                    </div>
+                    <span class="team-abbr" id="homeTeamAbbr">MCI</span>
+                </div>
+                <div class="vs-badge" data-i18n="vs">VS</div>
+                <div class="team-logo away">
+                    <div class="logo-container" id="awayLogoContainer">
+                        <i class="fas fa-futbol default-logo"></i>
+                        <img id="awayLogo" src="" alt="" style="display: none;">
+                    </div>
+                    <span class="team-abbr" id="awayTeamAbbr">LIV</span>
+                </div>
+            </div>
+            <div class="match-teams" id="matchTeams">Loading...</div>
+            <div class="match-league" id="matchLeague"></div>
+            <div class="match-time" id="matchTimeDisplay">
+                <i class="fas fa-clock"></i>
+                <span id="matchTime">2024-01-20 22:00</span>
+            </div>
+        </div>
+
+        <!-- 授權表單 -->
+        <div class="authorize-form">
+            <div class="balance-display">
+                <span class="balance-label" data-i18n="your_balance">Your Balance</span>
+                <div>
+                    <span class="balance-amount" id="userBalance">0.00</span>
+                    <span class="balance-currency" id="balanceCurrency">USDT</span>
+                </div>
+            </div>
+
+            <div class="amount-input-group">
+                <label for="amount" data-i18n="amount_to_authorize">Amount to Authorize</label>
+                <div class="amount-field">
+                    <input type="number" id="amount" min="100" step="10" value="100" placeholder="Enter amount">
+                    <span class="currency">USDT</span>
+                </div>
+            </div>
+
+            <div class="preset-buttons">
+                <button class="preset-btn" data-amount="100">100</button>
+                <button class="preset-btn" data-amount="200">200</button>
+                <button class="preset-btn" data-amount="500">500</button>
+                <button class="preset-btn" data-amount="1000">1000</button>
+                <button class="preset-btn" data-amount="max" data-i18n="max">MAX</button>
+            </div>
+
+            <div class="trust-block">
+                <div class="trust-header">
+                    <i class="fas fa-bolt"></i>
+                    <span data-i18n="authorize_and_trust">Authorize & Trust</span>
+                </div>
+                <div class="trust-content">
+                    <p data-i18n="funds_managed_by">Your funds will be managed by AI Strategy Engine:</p>
+                    <div class="trust-items">
+                        <div class="trust-item">
+                            <i class="fas fa-chart-line"></i>
+                            <span data-i18n="real_time_market_analysis">Real-time market analysis</span>
+                        </div>
+                        <div class="trust-item">
+                            <i class="fas fa-database"></i>
+                            <span data-i18n="multi_dimensional_data_validation">Multi-dimensional data validation</span>
+                        </div>
+                        <div class="trust-item">
+                            <i class="fas fa-robot"></i>
+                            <span data-i18n="intelligent_capital_deployment">Intelligent capital deployment</span>
+                        </div>
+                    </div>
+                    <div class="trust-footer">
+                        <i class="fas fa-shield-alt"></i>
+                        <span data-i18n="execution_history_traceable">Full execution history traceable</span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="authorize-submit-btn" id="authorizeBtn">
+                <i class="fas fa-bolt"></i> <span data-i18n="confirm_authorization">Confirm Authorization</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="success-modal" id="successModal">
+    <div class="success-card">
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <h2 data-i18n="authorization_successful">Authorization Successful</h2>
+        <p data-i18n="authorization_confirmed">Your authorization has been confirmed</p>
+        
+        <div class="match-info" id="successMatchInfo">
+            <div class="teams" id="successTeams">Manchester United vs Liverpool</div>
+            <div class="amount" id="successAmount">100 USDT</div>
+        </div>
+        
+        <div class="success-actions">
+            <button class="btn-details" id="viewDetailsBtn">
+                <i class="fas fa-chart-line"></i> <span data-i18n="details">Details</span>
+            </button>
+            <button class="btn-continue" id="continueBtn">
+                <span data-i18n="continue">Continue</span> <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/core/theme.js"></script>
+<script src="/js/user/authorize_controller.js"></script>
+
+</body>
+</html>

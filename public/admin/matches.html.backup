@@ -1,0 +1,454 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>比賽管理 - FOOTRADAPRO 後台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/admin-base.css">
+    <link rel="stylesheet" href="/css/admin-nav.css">
+    <link rel="stylesheet" href="/css/admin-matches.css">
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/time.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+    
+    <style>
+        /* 前台顯示開關樣式 - 確保可見 */
+        .display-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 26px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 34px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: #10b981;
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+        
+        .toggle-label {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 6px;
+            border-radius: 12px;
+        }
+        
+        .toggle-label.enabled {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        
+        .toggle-label.disabled {
+            background: rgba(156, 163, 175, 0.2);
+            color: #9ca3af;
+        }
+        
+        /* 比賽列表容器 */
+        .matches-table-wrapper {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        
+        .matches-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+        
+        .matches-table th {
+            padding: 14px 12px;
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            text-align: left;
+            border-bottom: 1px solid var(--border-gold);
+        }
+        
+        .matches-table td {
+            padding: 14px 12px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-gold);
+            vertical-align: middle;
+        }
+        
+        .matches-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        /* 狀態徽章 */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .status-badge.upcoming {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+        }
+        
+        .status-badge.live {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+        
+        .status-badge.finished {
+            background: rgba(107, 114, 128, 0.15);
+            color: #9ca3af;
+        }
+        
+        /* 聯賽標籤 */
+        .league-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        
+        /* 執行比例 */
+        .rate-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(255, 107, 0, 0.15);
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #ff6b00;
+        }
+        
+        /* 操作按鈕 */
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .action-btn-sm {
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-gold);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .action-btn-sm:hover {
+            border-color: #ff6b00;
+            color: #ff6b00;
+        }
+        
+        .action-btn-sm.danger:hover {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+        
+        /* 空狀態 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-tertiary);
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 侧边导航栏 -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">FOOT<span>RADA</span></div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html" class="admin-nav-item">
+                    <i class="fas fa-tachometer-alt"></i> <span>仪表盘</span>
+                </a>
+                <a href="/admin/users.html" class="admin-nav-item">
+                    <i class="fas fa-users"></i> <span>用户管理</span>
+                </a>
+                <a href="/admin/matches.html" class="admin-nav-item active">
+                    <i class="fas fa-futbol"></i> <span>比賽管理</span>
+                </a>
+                <a href="/admin/settle.html" class="admin-nav-item">
+                    <i class="fas fa-calculator"></i> <span>清算管理</span>
+                </a>
+                <a href="/admin/settings/index.html" class="admin-nav-item">
+                    <i class="fas fa-cog"></i> <span>系统设置</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- 主内容 -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1><i class="fas fa-futbol"></i> 比賽管理</h1>
+                <div class="admin-user">
+                    <span id="adminName">管理员</span>
+                    <button class="icon-btn" id="logoutBtn" title="退出登录">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <!-- 統計卡片 -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue"><i class="fas fa-calendar"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-label">總比賽</div>
+                            <div class="stat-value" id="totalMatches">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green"><i class="fas fa-eye"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-label">前台顯示</div>
+                            <div class="stat-value" id="activeCount">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange"><i class="fas fa-play-circle"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-label">進行中</div>
+                            <div class="stat-value" id="liveCount">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-label">已結束</div>
+                            <div class="stat-value" id="finishedCount">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作欄 -->
+                <div class="action-bar">
+                    <div class="action-bar-left">
+                        <button class="btn-primary" id="syncBtn">
+                            <i class="fas fa-cloud-download-alt"></i> 同步比賽
+                        </button>
+                        <button class="btn-secondary" id="refreshBtn">
+                            <i class="fas fa-sync-alt"></i> 刷新
+                        </button>
+                    </div>
+                    <div class="action-bar-right">
+                        <div class="sync-status" id="syncStatus">
+                            <i class="fas fa-check-circle"></i>
+                            <span>數據已同步</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 時間快捷篩選 -->
+                <div class="time-filter-bar">
+                    <span class="filter-label"><i class="fas fa-clock"></i> 時間篩選</span>
+                    <div class="time-buttons">
+                        <button class="time-btn" data-days="0">今天</button>
+                        <button class="time-btn" data-days="1">明天</button>
+                        <button class="time-btn" data-days="7">本週</button>
+                        <button class="time-btn active" data-days="all">全部</button>
+                    </div>
+                    <div class="sort-buttons">
+                        <button class="sort-btn" data-sort="asc">
+                            <i class="fas fa-arrow-up"></i> 時間升序
+                        </button>
+                        <button class="sort-btn active" data-sort="desc">
+                            <i class="fas fa-arrow-down"></i> 時間降序
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 搜索和篩選欄 -->
+                <div class="search-filter-bar">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="搜索球隊、聯賽...">
+                    </div>
+                    <div class="filter-group">
+                        <select class="filter-select" id="leagueFilter">
+                            <option value="all">所有聯賽</option>
+                            <option value="Premier League">🏴󠁧󠁢󠁥󠁮󠁧󠁿 英超</option>
+                            <option value="La Liga">🇪🇸 西甲</option>
+                            <option value="Serie A">🇮🇹 意甲</option>
+                            <option value="Bundesliga">🇩🇪 德甲</option>
+                            <option value="Ligue 1">🇫🇷 法甲</option>
+                            <option value="Champions League">🏆 歐冠</option>
+                        </select>
+                        <select class="filter-select" id="statusFilter">
+                            <option value="all">所有狀態</option>
+                            <option value="upcoming">未開始</option>
+                            <option value="live">進行中</option>
+                            <option value="finished">已結束</option>
+                        </select>
+                        <select class="filter-select" id="activeFilter">
+                            <option value="all">全部</option>
+                            <option value="1">前台顯示</option>
+                            <option value="0">已隱藏</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 批量操作欄 -->
+                <div class="bulk-bar">
+                    <span class="title"><i class="fas fa-layer-group"></i> 批量操作</span>
+                    <div class="bulk-actions">
+                        <button class="action-btn" id="selectAllBtn">
+                            <i class="fas fa-check-double"></i> 全選
+                        </button>
+                        <button class="action-btn success" id="batchEnableBtn">
+                            <i class="fas fa-eye"></i> 批量顯示
+                        </button>
+                        <button class="action-btn" id="batchDisableBtn">
+                            <i class="fas fa-eye-slash"></i> 批量隱藏
+                        </button>
+                    </div>
+                    <div class="selection-info">
+                        已選擇 <span id="selectedCount">0</span> 場比賽
+                    </div>
+                </div>
+
+                <!-- 比賽列表表格 -->
+                <div class="matches-table-wrapper">
+                    <table class="matches-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" id="selectAllCheckbox">
+                                </th>
+                                <th style="min-width: 180px;">比賽</th>
+                                <th style="width: 100px;">聯賽</th>
+                                <th style="width: 140px;">比賽時間</th>
+                                <th style="width: 80px;">執行比例</th>
+                                <th style="width: 80px;">狀態</th>
+                                <th style="width: 100px;">前台顯示</th>
+                                <th style="width: 100px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matchesList">
+                            <tr>
+                                <td colspan="8" class="empty-state">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <div>加載比賽數據...</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分頁 -->
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 編輯比賽模態框 -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-sliders-h"></i> 編輯比賽策略</h2>
+                <button class="modal-close" id="closeModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editMatchForm">
+                    <input type="hidden" name="id" id="editId">
+                    
+                    <div class="match-info-preview">
+                        <div class="teams">
+                            <span id="editHomeTeam"></span>
+                            <span class="vs">VS</span>
+                            <span id="editAwayTeam"></span>
+                        </div>
+                        <div class="time">
+                            <i class="fas fa-calendar"></i> <span id="editMatchTime"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-percent"></i> 執行比例</label>
+                        <div class="slider-container">
+                            <input type="range" id="editExecutionRate" name="execution_rate" min="0" max="100" value="30" step="1">
+                            <span class="rate-value" id="editRateValue">30%</span>
+                        </div>
+                        <div class="rate-presets">
+                            <button type="button" data-rate="10">10%</button>
+                            <button type="button" data-rate="20">20%</button>
+                            <button type="button" data-rate="30">30%</button>
+                            <button type="button" data-rate="50">50%</button>
+                            <button type="button" data-rate="75">75%</button>
+                            <button type="button" data-rate="100">100%</button>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>最低授權金額</label>
+                            <input type="number" name="min_authorization" id="editMinAuth" value="100" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>單場上限</label>
+                            <input type="number" name="match_limit" id="editMatchLimit" value="500" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancelEditBtn">取消</button>
+                        <button type="submit" class="btn-primary">保存策略</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/admin/matches_controller.js"></script>
+</body>
+</html>

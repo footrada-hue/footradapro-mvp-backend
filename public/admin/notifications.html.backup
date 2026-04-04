@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通知管理 - FOOTRADAPRO 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/time.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+    <link rel="stylesheet" href="/css/admin-base.css">
+    <style>
+        .notification-type {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .type-info { background: rgba(59,130,246,0.15); color: #3b82f6; }
+        .type-success { background: rgba(0,230,138,0.15); color: #00e68a; }
+        .type-warning { background: rgba(255,193,7,0.15); color: #ffc107; }
+        .type-danger { background: rgba(255,77,79,0.15); color: #ff4d4f; }
+    </style>
+        <link rel="stylesheet" href="/css/admin-nav.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="admin-layout">
+                <!-- 侧边导航 - 统一图标风格 -->
+                <!-- 侧边导航栏 -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">FOOT<span>RADA</span></div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html" class="admin-nav-item ">
+                    <i class="fas fa-tachometer-alt"></i> <span>仪表盘</span>
+                </a>
+                <a href="/admin/stats.html" class="admin-nav-item ">
+                    <i class="fas fa-chart-pie"></i> <span>数据统计</span>
+                </a>
+                <a href="/admin/users.html" class="admin-nav-item ">
+                    <i class="fas fa-users"></i> <span>用户管理</span>
+                </a>
+                <a href="/admin/admins.html" class="admin-nav-item ">
+                    <i class="fas fa-user-shield"></i> <span>管理员管理</span>
+                </a>
+                <a href="/admin/deposits.html" class="admin-nav-item ">
+                    <i class="fas fa-arrow-down"></i> <span>充值审核</span>
+                </a>
+                <a href="/admin/withdrawals.html" class="admin-nav-item ">
+                    <i class="fas fa-arrow-up"></i> <span>提现审核</span>
+                </a>
+                <a href="/admin/finance.html" class="admin-nav-item ">
+                    <i class="fas fa-chart-line"></i> <span>财务管理</span>
+                </a>
+                <a href="/admin/matches.html" class="admin-nav-item ">
+                    <i class="fas fa-futbol"></i> <span>比赛管理</span>
+                </a>
+                <a href="/admin/settle.html" class="admin-nav-item ">
+                    <i class="fas fa-calculator"></i> <span>清算管理</span>
+                </a>
+                <a href="/admin/report-editor.html" class="admin-nav-item ">
+                    <i class="fas fa-edit"></i> <span>报告编辑</span>
+                </a>
+                <a href="/admin/ticker-manager.html" class="admin-nav-item ">
+                    <i class="fas fa-bolt"></i> <span>动态管理</span>
+                </a>
+                <a href="/admin/notifications.html" class="admin-nav-item active">
+                    <i class="fas fa-bell"></i> <span>通知管理</span>
+                </a>
+                <a href="/admin/settings/index.html" class="admin-nav-item ">
+                    <i class="fas fa-cog"></i> <span>系统设置</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>通知管理</h1>
+                <div class="admin-user">
+                    <span id="adminName">管理员</span>
+                    <button class="icon-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <div class="action-bar" style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                    <h2>通知列表</h2>
+                    <button class="btn-primary" id="createBtn">
+                        <i class="fas fa-plus"></i> 新建通知
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>标题</th>
+                                <th>类型</th>
+                                <th>目标</th>
+                                <th>状态</th>
+                                <th>生效时间</th>
+                                <th>创建人</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="notificationList">
+                            <tr><td colspan="8" class="loading">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 新建/编辑通知模态框 -->
+    <div class="modal-overlay" id="notificationModal">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 id="modalTitle">新建通知</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="notificationForm">
+                    <input type="hidden" id="notificationId">
+                    
+                    <div class="form-group">
+                        <label>标题</label>
+                        <input type="text" id="title" required placeholder="例如: 系统维护通知">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>内容</label>
+                        <textarea id="content" rows="4" required placeholder="请输入通知内容..."></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1">
+                            <label>类型</label>
+                            <select id="type" class="filter-select">
+                                <option value="info">信息</option>
+                                <option value="success">成功</option>
+                                <option value="warning">警告</option>
+                                <option value="danger">危险</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label>目标用户</label>
+                            <select id="targetUsers" class="filter-select">
+                                <option value="all">所有用户</option>
+                                <option value="specific">指定用户</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" id="userIdGroup" style="display:none">
+                        <label>用户ID</label>
+                        <input type="number" id="userId" placeholder="输入用户ID">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1">
+                            <label>开始时间</label>
+                            <input type="datetime-local" id="startAt">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label>结束时间</label>
+                            <input type="datetime-local" id="endAt">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="isActive" checked> 立即生效
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal()">取消</button>
+                <button class="btn-primary" onclick="saveNotification()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const UTILS = FOOTRADAPRO.UTILS;
+            
+            // DOM元素
+            const notificationList = document.getElementById('notificationList');
+            const modal = document.getElementById('notificationModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const notificationId = document.getElementById('notificationId');
+            const title = document.getElementById('title');
+            const content = document.getElementById('content');
+            const type = document.getElementById('type');
+            const targetUsers = document.getElementById('targetUsers');
+            const userIdGroup = document.getElementById('userIdGroup');
+            const userId = document.getElementById('userId');
+            const startAt = document.getElementById('startAt');
+            const endAt = document.getElementById('endAt');
+            const isActive = document.getElementById('isActive');
+
+            // API请求
+            async function adminRequest(endpoint, options = {}) {
+                const defaultOptions = {
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                };
+                return UTILS.request(endpoint, { ...defaultOptions, ...options });
+            }
+
+            // 加载通知列表
+            async function loadNotifications() {
+                try {
+                    notificationList.innerHTML = '<tr><td colspan="8" class="loading">加载中...</td></tr>';
+                    const result = await adminRequest('/admin/notifications');
+                    
+                    if (result.success) {
+                        renderNotifications(result.data);
+                    }
+                } catch (err) {
+                    notificationList.innerHTML = '<tr><td colspan="8" class="loading">加载失败</td></tr>';
+                }
+            }
+
+            // 渲染列表
+            function renderNotifications(notifications) {
+                if (notifications.length === 0) {
+                    notificationList.innerHTML = '<tr><td colspan="8" class="loading">暂无通知</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                notifications.forEach(n => {
+                    const typeClass = `notification-type type-${n.type}`;
+                    const typeText = {
+                        info: '信息', success: '成功', warning: '警告', danger: '危险'
+                    }[n.type] || n.type;
+                    
+                    const target = n.target_users === 'all' ? '所有用户' : `用户ID:${n.user_id}`;
+                    const status = n.is_active ? '生效中' : '已禁用';
+                    const start = n.start_at ? UTILS.formatDateTime(n.start_at) : '立即';
+                    const end = n.end_at ? UTILS.formatDateTime(n.end_at) : '永久';
+
+                    html += `<tr>
+                        <td>${n.id}</td>
+                        <td>${n.title}</td>
+                        <td><span class="${typeClass}">${typeText}</span></td>
+                        <td>${target}</td>
+                        <td>${status}</td>
+                        <td>${start} ~ ${end}</td>
+                        <td>${n.creator_name || '-'}</td>
+                        <td>
+                            <button class="action-btn" onclick="editNotification(${n.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="action-btn danger" onclick="deleteNotification(${n.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+                });
+                notificationList.innerHTML = html;
+            }
+
+            // 显示/隐藏用户ID输入框
+            targetUsers.addEventListener('change', () => {
+                userIdGroup.style.display = targetUsers.value === 'specific' ? 'block' : 'none';
+            });
+
+            // 打开新建模态框
+            document.getElementById('createBtn').addEventListener('click', () => {
+                modalTitle.textContent = '新建通知';
+                notificationId.value = '';
+                title.value = '';
+                content.value = '';
+                type.value = 'info';
+                targetUsers.value = 'all';
+                userIdGroup.style.display = 'none';
+                userId.value = '';
+                startAt.value = '';
+                endAt.value = '';
+                isActive.checked = true;
+                modal.classList.add('show');
+            });
+
+            // 关闭模态框
+            window.closeModal = function() {
+                modal.classList.remove('show');
+            };
+
+            // 保存通知
+            window.saveNotification = async function() {
+                const data = {
+                    title: title.value,
+                    content: content.value,
+                    type: type.value,
+                    target_users: targetUsers.value,
+                    user_id: targetUsers.value === 'specific' ? userId.value : null,
+                    start_at: startAt.value || null,
+                    end_at: endAt.value || null,
+                    is_active: isActive.checked ? 1 : 0
+                };
+
+                if (!data.title || !data.content) {
+                    alert('标题和内容不能为空');
+                    return;
+                }
+
+                try {
+                    let result;
+                    if (notificationId.value) {
+                        result = await adminRequest(`/admin/notifications/${notificationId.value}`, {
+                            method: 'PUT',
+                            body: JSON.stringify(data)
+                        });
+                    } else {
+                        result = await adminRequest('/admin/notifications', {
+                            method: 'POST',
+                            body: JSON.stringify(data)
+                        });
+                    }
+
+                    if (result.success) {
+                        alert('保存成功');
+                        closeModal();
+                        loadNotifications();
+                    }
+                } catch (err) {
+                    alert('保存失败');
+                }
+            };
+
+            // 编辑通知
+            window.editNotification = async function(id) {
+                try {
+                    const result = await adminRequest(`/admin/notifications/${id}`);
+                    if (result.success) {
+                        const n = result.data;
+                        modalTitle.textContent = '编辑通知';
+                        notificationId.value = n.id;
+                        title.value = n.title;
+                        content.value = n.content;
+                        type.value = n.type;
+                        targetUsers.value = n.target_users;
+                        userId.value = n.user_id || '';
+                        userIdGroup.style.display = n.target_users === 'specific' ? 'block' : 'none';
+                        startAt.value = n.start_at ? n.start_at.slice(0,16) : '';
+                        endAt.value = n.end_at ? n.end_at.slice(0,16) : '';
+                        isActive.checked = n.is_active === 1;
+                        modal.classList.add('show');
+                    }
+                } catch (err) {
+                    alert('加载失败');
+                }
+            };
+
+            // 删除通知
+            window.deleteNotification = async function(id) {
+                if (!confirm('确定要删除这条通知吗？')) return;
+                
+                try {
+                    const result = await adminRequest(`/admin/notifications/${id}`, {
+                        method: 'DELETE'
+                    });
+                    if (result.success) {
+                        loadNotifications();
+                    }
+                } catch (err) {
+                    alert('删除失败');
+                }
+            };
+
+            // 退出登录
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                window.location.href = '/admin/index.html';
+            });
+
+            // 初始化
+            loadNotifications();
+        })();
+    </script>
+</body>
+</html>

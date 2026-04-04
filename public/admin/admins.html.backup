@@ -1,0 +1,344 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员管理 - FOOTRADAPRO 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/time.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+    
+    <!-- Styles - 三個核心後台 CSS -->
+    <link rel="stylesheet" href="/css/admin-base.css">
+    <link rel="stylesheet" href="/css/admin-nav.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 侧边导航栏 -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">FOOT<span>RADA</span></div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html" class="admin-nav-item ">
+                    <i class="fas fa-tachometer-alt"></i> <span>仪表盘</span>
+                </a>
+                <a href="/admin/stats.html" class="admin-nav-item ">
+                    <i class="fas fa-chart-pie"></i> <span>数据统计</span>
+                </a>
+                <a href="/admin/users.html" class="admin-nav-item ">
+                    <i class="fas fa-users"></i> <span>用户管理</span>
+                </a>
+                <a href="/admin/admins.html" class="admin-nav-item active">
+                    <i class="fas fa-user-shield"></i> <span>管理员管理</span>
+                </a>
+                <a href="/admin/deposits.html" class="admin-nav-item ">
+                    <i class="fas fa-arrow-down"></i> <span>充值审核</span>
+                </a>
+                <a href="/admin/withdrawals.html" class="admin-nav-item ">
+                    <i class="fas fa-arrow-up"></i> <span>提现审核</span>
+                </a>
+                <a href="/admin/finance.html" class="admin-nav-item ">
+                    <i class="fas fa-chart-line"></i> <span>财务管理</span>
+                </a>
+                <a href="/admin/matches.html" class="admin-nav-item ">
+                    <i class="fas fa-futbol"></i> <span>比赛管理</span>
+                </a>
+                <a href="/admin/settle.html" class="admin-nav-item ">
+                    <i class="fas fa-calculator"></i> <span>清算管理</span>
+                </a>
+                <a href="/admin/report-editor.html" class="admin-nav-item ">
+                    <i class="fas fa-edit"></i> <span>报告编辑</span>
+                </a>
+                <a href="/admin/ticker-manager.html" class="admin-nav-item ">
+                    <i class="fas fa-bolt"></i> <span>动态管理</span>
+                </a>
+                <a href="/admin/notifications.html" class="admin-nav-item ">
+                    <i class="fas fa-bell"></i> <span>通知管理</span>
+                </a>
+                <a href="/admin/settings/index.html" class="admin-nav-item ">
+                    <i class="fas fa-cog"></i> <span>系统设置</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>管理员管理</h1>
+                <div class="admin-user">
+                    <span id="adminName">管理员</span>
+                    <button class="icon-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <div class="action-bar">
+                    <h2>管理员列表</h2>
+                    <button class="btn-primary" id="createAdminBtn">
+                        <i class="fas fa-plus"></i> 创建子管理员
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>用户名</th>
+                                <th>姓名</th>
+                                <th>邮箱</th>
+                                <th>角色</th>
+                                <th>状态</th>
+                                <th>最后登录</th>
+                                <th>登录IP</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTableBody">
+                            <tr><td colspan="9" class="loading">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 创建管理员模态框 -->
+    <div class="modal-overlay" id="createAdminModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>创建子管理员</h2>
+                <button class="modal-close" onclick="closeCreateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createAdminForm">
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input type="text" name="username" required placeholder="例如: operator1">
+                    </div>
+                    <div class="form-group">
+                        <label>姓名</label>
+                        <input type="text" name="name" required placeholder="真实姓名">
+                    </div>
+                    <div class="form-group">
+                        <label>邮箱</label>
+                        <input type="email" name="email" required placeholder="用于接收通知">
+                    </div>
+                    <div class="form-group">
+                        <label>角色</label>
+                        <select name="role" required>
+                            <option value="admin">管理员</option>
+                            <option value="operator">运营人员</option>
+                            <option value="auditor">审计员</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>密码</label>
+                        <div class="password-field">
+                            <input type="text" id="generatedPassword" readonly value="点击生成密码">
+                            <button type="button" onclick="generatePassword()">生成密码</button>
+                        </div>
+                        <small style="color: var(--text-secondary);">请保存密码，创建后无法再次查看</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeCreateModal()">取消</button>
+                <button class="btn-primary" onclick="createAdmin()">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const UTILS = FOOTRADAPRO.UTILS;
+
+            let admins = [];
+
+            // DOM元素
+            const tbody = document.getElementById('adminTableBody');
+            const createModal = document.getElementById('createAdminModal');
+            const generatedPassword = document.getElementById('generatedPassword');
+
+            // 生成强密码
+            window.generatePassword = function() {
+                const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+                const numbers = '0123456789';
+                const special = '!@#$%^&*';
+                
+                let password = '';
+                password += uppercase[Math.floor(Math.random() * uppercase.length)];
+                password += lowercase[Math.floor(Math.random() * lowercase.length)];
+                password += numbers[Math.floor(Math.random() * numbers.length)];
+                password += special[Math.floor(Math.random() * special.length)];
+                
+                const allChars = uppercase + lowercase + numbers + special;
+                for (let i = 0; i < 6; i++) {
+                    password += allChars[Math.floor(Math.random() * allChars.length)];
+                }
+                
+                // 打乱顺序
+                password = password.split('').sort(() => Math.random() - 0.5).join('');
+                generatedPassword.value = password;
+            };
+
+            // 打开创建模态框
+            document.getElementById('createAdminBtn').addEventListener('click', () => {
+                createModal.classList.add('show');
+                generatePassword();
+            });
+
+            // 关闭模态框
+            window.closeCreateModal = function() {
+                createModal.classList.remove('show');
+                document.getElementById('createAdminForm').reset();
+            };
+
+            // API请求（新版，使用 cookie）
+            async function adminRequest(endpoint, options = {}) {
+                const defaultOptions = {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'  // ⭐ 自动携带 cookie
+                };
+                
+                try {
+                    return await UTILS.request(endpoint, { ...defaultOptions, ...options });
+                } catch (err) {
+                    if (err.message === 'UNAUTHORIZED') {
+                        window.location.href = '/admin/index.html';
+                    }
+                    throw err;
+                }
+            }
+
+            // 加载管理员列表
+            async function loadAdmins() {
+                try {
+                    tbody.innerHTML = '<tr><td colspan="9" class="loading">加载中...</td></tr>';
+                    const result = await adminRequest('/admin/admins');
+                    if (result.success) {
+                        admins = result.data;
+                        renderAdmins();
+                    }
+                } catch (err) {
+                    console.error('加载失败:', err);
+                    tbody.innerHTML = '<tr><td colspan="9" class="loading">加载失败</td></tr>';
+                }
+            }
+
+            // 渲染表格
+            function renderAdmins() {
+                if (admins.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="loading">暂无管理员</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                admins.forEach(admin => {
+                    const roleClass = admin.role;
+                    const roleText = {
+                        super_admin: '超级管理员',
+                        admin: '管理员',
+                        operator: '运营人员',
+                        auditor: '审计员'
+                    }[admin.role] || admin.role;
+
+                    const statusClass = admin.is_active ? 'active' : 'inactive';
+                    const statusText = admin.is_active ? '启用' : '禁用';
+                    const lastLogin = admin.last_login_at ? UTILS.formatDateTime(admin.last_login_at) : '-';
+
+                    html += `<tr>
+                        <td>${admin.id}</td>
+                        <td>${admin.username}</td>
+                        <td>${admin.name}</td>
+                        <td>${admin.email || '-'}</td>
+                        <td><span class="badge ${roleClass}">${roleText}</span></td>
+                        <td><span class="badge ${statusClass}">${statusText}</span></td>
+                        <td>${lastLogin}</td>
+                        <td>${admin.last_login_ip || '-'}</td>
+                        <td>
+                            <button class="btn-secondary" onclick="toggleAdmin(${admin.id})">
+                                ${admin.is_active ? '禁用' : '启用'}
+                            </button>
+                            <button class="btn-danger" onclick="resetPassword(${admin.id})">重置密码</button>
+                        </td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            }
+
+            // 创建管理员
+            window.createAdmin = async function() {
+                const form = document.getElementById('createAdminForm');
+                const formData = new FormData(form);
+                
+                const data = {
+                    username: formData.get('username'),
+                    name: formData.get('name'),
+                    email: formData.get('email'),
+                    role: formData.get('role'),
+                    password: generatedPassword.value
+                };
+
+                try {
+                    const result = await adminRequest('/admin/admins', {
+                        method: 'POST',
+                        body: JSON.stringify(data)
+                    });
+
+                    if (result.success) {
+                        alert('创建成功！密码已显示在输入框中，请保存好。');
+                        closeCreateModal();
+                        loadAdmins();
+                    } else {
+                        alert('创建失败：' + (result.error || '未知错误'));
+                    }
+                } catch (err) {
+                    alert('创建失败');
+                }
+            };
+
+            // 启用/禁用
+            window.toggleAdmin = async function(adminId) {
+                if (!confirm('确定要切换该管理员状态吗？')) return;
+                try {
+                    const result = await adminRequest(`/admin/admins/${adminId}/toggle`, {
+                        method: 'POST'
+                    });
+                    if (result.success) {
+                        loadAdmins();
+                    }
+                } catch (err) {
+                    alert('操作失败');
+                }
+            };
+
+            // 重置密码
+            window.resetPassword = async function(adminId) {
+                if (!confirm('确定要重置该管理员密码吗？')) return;
+                try {
+                    const result = await adminRequest(`/admin/admins/${adminId}/reset-password`, {
+                        method: 'POST'
+                    });
+                    if (result.success) {
+                        alert(`新密码: ${result.password}\n请立即保存！`);
+                    }
+                } catch (err) {
+                    alert('重置失败');
+                }
+            };
+
+            // 退出登录（新版，只跳转）
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                window.location.href = '/admin/index.html';
+            });
+
+            // 初始化
+            loadAdmins();
+        })();
+    </script>
+</body>
+</html>

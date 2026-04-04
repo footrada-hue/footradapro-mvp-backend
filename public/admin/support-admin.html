@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="FootRadaPro Support Admin - Manage customer conversations">
+    <title>Support Admin - FootRadaPro</title>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Socket.IO Client -->
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        .admin-container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 380px;
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .stats-bar {
+            padding: 20px;
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+        
+        .conversations-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .conv-item {
+            padding: 16px;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .conv-item:hover {
+            background: #fef9f0;
+        }
+        
+/* 当前选中的会话 - 强高亮样式 */
+.conv-item.active {
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+    border-left: 4px solid #f97316;
+    box-shadow: 0 2px 8px rgba(249, 115, 22, 0.2);
+    position: relative;
+}
+        
+/* 选中时用户名变色加粗 */
+.conv-item.active .user-name {
+    color: #ea580c;
+    font-weight: 700;
+}
+
+/* 选中时添加一个右侧小指示器 */
+.conv-item.active::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 40px;
+    background: #f97316;
+    border-radius: 4px 0 0 4px;
+}
+        
+/* 选中时的状态标签高亮 */
+.conv-item.active .status-badge {
+    background: #f97316;
+    color: white;
+    transform: scale(1.05);
+}
+        .conv-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .user-name {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .status-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .status-open {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-resolved {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .status-closed {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        .last-message {
+            font-size: 13px;
+            color: #6b7280;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .message-time {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+        
+        /* Main Chat Area */
+        /* Admin Status Selector */
+.admin-status-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    background: #f9fafb;
+    border-radius: 20px;
+}
+
+.status-label {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.admin-status-select {
+    padding: 4px 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    font-size: 12px;
+    background: white;
+    cursor: pointer;
+}
+
+.admin-status-select option[value="online"] { color: #10b981; }
+.admin-status-select option[value="away"] { color: #f59e0b; }
+.admin-status-select option[value="busy"] { color: #ef4444; }
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f9fafb;
+        }
+        
+        .chat-header-info {
+            padding: 16px 24px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status-select {
+            padding: 6px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .message {
+            display: flex;
+        }
+        
+        .message.user {
+            justify-content: flex-end;
+        }
+        
+        .message.admin {
+            justify-content: flex-start;
+        }
+        
+        .message.system {
+            justify-content: center;
+        }
+        
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            font-size: 14px;
+        }
+        
+        .user .message-bubble {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .admin .message-bubble {
+            background: white;
+            border: 1px solid #e5e7eb;
+            color: #374151;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .system .message-bubble {
+            background: #f3f4f6;
+            color: #6b7280;
+            font-style: italic;
+            font-size: 12px;
+        }
+        
+        .message-time {
+            font-size: 10px;
+            margin-top: 4px;
+            opacity: 0.7;
+        }
+        
+        /* Reply Area with Tools */
+        .reply-area {
+            padding: 16px 24px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .reply-tools {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .admin-emoji-btn, .quick-reply-toggle {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.2s;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .admin-emoji-btn:hover, .quick-reply-toggle:hover {
+            background: #f3f4f6;
+            color: #f97316;
+        }
+        
+        .reply-area input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 24px;
+            outline: none;
+            font-size: 14px;
+        }
+        
+        .reply-area input:focus {
+            border-color: #f97316;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+        }
+        
+        .reply-area button {
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #9ca3af;
+        }
+        
+        /* Quick Reply Panel */
+        .quick-reply-panel {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            width: 300px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            z-index: 1000;
+            overflow: hidden;
+        }
+        
+        .quick-reply-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            font-weight: 600;
+        }
+        
+        .quick-reply-header button {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #6b7280;
+        }
+        
+        .quick-reply-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .quick-reply-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .quick-reply-item:hover {
+            background: #fef9f0;
+        }
+        
+        .quick-reply-title {
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+        
+        .quick-reply-content {
+            font-size: 12px;
+            color: #6b7280;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* Admin Emoji Picker */
+        .admin-emoji-picker {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            width: 320px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .admin-emoji-picker .emoji-category {
+            padding: 12px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .admin-emoji-picker .emoji-category:last-child {
+            border-bottom: none;
+        }
+        
+        .admin-emoji-picker .emoji-category-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            display: block;
+            margin-bottom: 8px;
+        }
+        
+        .admin-emoji-picker .emoji-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .admin-emoji-picker .emoji-list span {
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .admin-emoji-picker .emoji-list span:hover {
+            background: #f3f4f6;
+            transform: scale(1.1);
+        }
+        
+        /* Attachment Styles */
+        .image-attachment {
+            margin: 8px 0;
+        }
+        
+        .image-attachment img {
+            max-width: 200px;
+            max-height: 150px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .image-attachment img:hover {
+            transform: scale(1.02);
+        }
+        
+        .file-attachment {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            margin-top: 8px;
+        }
+        
+        .file-attachment i {
+            font-size: 20px;
+            color: #f97316;
+        }
+        
+        .file-attachment a {
+            color: #f97316;
+            text-decoration: none;
+            word-break: break-all;
+        }
+        
+        .file-attachment a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 280px;
+            }
+            
+            .admin-emoji-picker {
+                width: 280px;
+                left: 10px;
+                bottom: 70px;
+            }
+            
+            .quick-reply-panel {
+                width: 260px;
+                right: 10px;
+                bottom: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="sidebar">
+            <div class="stats-bar" id="statsBar">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalConv">0</div>
+                    <div class="stat-label" data-i18n="total">Total</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="openConv">0</div>
+                    <div class="stat-label" data-i18n="open">Open</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="todayConv">0</div>
+                    <div class="stat-label" data-i18n="today">Today</div>
+                </div>
+            </div>
+            <div class="conversations-list" id="conversationsList">
+                <div class="empty-state" data-i18n="loading">Loading...</div>
+            </div>
+        </div>
+        
+        <div class="chat-main">
+<div class="chat-header-info" id="chatHeader" style="display: none;">
+    <div>
+        <strong data-i18n="conversation_id">Conversation ID: </strong><span id="currentConvId"></span>
+        <span id="userInfo" style="margin-left: 16px; color: #6b7280; font-size: 13px;"></span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <!-- 客服个人状态选择器 -->
+        <div class="admin-status-selector">
+            <span class="status-label">Status:</span>
+            <select id="adminStatusSelect" class="admin-status-select">
+                <option value="online">🟢 Online</option>
+                <option value="away">🟡 Away</option>
+                <option value="busy">🔴 Busy</option>
+            </select>
+        </div>
+        <div>
+            <select id="statusSelect" class="status-select">
+                <option value="open" data-i18n="status_open">Open</option>
+                <option value="resolved" data-i18n="status_resolved">Resolved</option>
+                <option value="closed" data-i18n="status_closed">Closed</option>
+            </select>
+            <button id="updateStatusBtn" style="margin-left: 8px; padding: 6px 16px; background: #f97316; color: white; border: none; border-radius: 6px; cursor: pointer;" data-i18n="update">Update</button>
+        </div>
+    </div>
+</div>
+            
+            <div class="messages-area" id="messagesArea">
+                <div class="empty-state" data-i18n="select_conversation">Select a conversation from the left</div>
+            </div>
+            
+            <div class="reply-area" id="replyArea" style="display: none;">
+                <div class="reply-tools">
+                    <button id="adminEmojiBtn" class="admin-emoji-btn" title="Emoji" data-i18n-title="emoji">
+                        <i class="far fa-smile"></i>
+                    </button>
+                    <button id="quickReplyBtn" class="quick-reply-toggle" title="Quick Replies" data-i18n-title="quick_replies">
+                        <i class="fas fa-bolt"></i>
+                    </button>
+                </div>
+                <input type="text" id="replyInput" placeholder="Type your reply..." data-i18n-placeholder="reply_placeholder">
+                <button id="sendReplyBtn" data-i18n="send">Send Reply</button>
+                <input type="file" id="adminFileInput" style="display: none;" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Reply Panel -->
+    <div id="quickReplyPanel" class="quick-reply-panel" style="display: none;">
+        <div class="quick-reply-header">
+            <span data-i18n="quick_replies_title">Quick Replies</span>
+            <button id="closeQuickReplyBtn">&times;</button>
+        </div>
+        <div class="quick-reply-list" id="quickReplyList">
+            <div class="empty-state" data-i18n="loading">Loading...</div>
+        </div>
+    </div>
+    
+    <!-- Admin Emoji Picker -->
+    <div id="adminEmojiPicker" class="admin-emoji-picker" style="display: none;">
+        <div class="emoji-category">
+            <span class="emoji-category-title">😊 Smileys</span>
+            <div class="emoji-list">
+                😀 😃 😄 😁 😆 😅 🤣 😂 🙂 🙃 😉 😊 😇 🥰 😍 🤩 😘 😗 😚 😙 😋 😛 😜 🤪 😝 🤑 🤗 🤭 🤫 🤔 🤐 🤨 😐 😑 😶 😏 😒 🙄 😬 🤥 😌 😔 😪 🤤 😴 😷 🤒 🤕 🤢 🤮 🤧 🥵 🥶 🥴 😵 🤯 🤠 🥳 😎 🤓 🧐 😕 😟 🙁 ☹️ 😮 😯 😲 😳 🥺 😦 😧 😨 😰 😥 😢 😭 😱 😖 😣 😞 😓 😩 😫 🥱 😤 😡 😠 🤬
+            </div>
+        </div>
+        <div class="emoji-category">
+            <span class="emoji-category-title">❤️ Hearts</span>
+            <div class="emoji-list">
+                ❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 ❣️ 💕 💞 💓 💗 💖 💘 💝
+            </div>
+        </div>
+        <div class="emoji-category">
+            <span class="emoji-category-title">⚽ Sports</span>
+            <div class="emoji-list">
+                ⚽ 🏀 🏈 ⚾ 🥎 🎾 🏐 🏉 🥏 🎱 🪀 🏓 🏸 🥊 🥋 🎽 ⛸️ 🥌 🎿 ⛷️ 🏂 🏋️ 🤼 🤸 🤺 🤾 🏌️ 🏇 🧘 🏄 🚣 🏊 🤽 🚴 🚵
+            </div>
+        </div>
+        <div class="emoji-category">
+            <span class="emoji-category-title">🎉 Celebrations</span>
+            <div class="emoji-list">
+                🎉 🎊 🎈 🎁 🎂 🎉 🎊 🎈 🎁 🎀 🏆 🥇 🥈 🥉 🎖️ 🏅
+            </div>
+        </div>
+    </div>
+    
+    <!-- I18N Helper -->
+    <script>
+        // I18N: Language translations placeholder
+        window.i18n = {
+            currentLang: 'en',
+            translations: {
+                en: {
+                    total: 'Total',
+                    open: 'Open',
+                    today: 'Today',
+                    loading: 'Loading...',
+                    conversation_id: 'Conversation ID: ',
+                    status_open: 'Open',
+                    status_resolved: 'Resolved',
+                    status_closed: 'Closed',
+                    update: 'Update',
+                    select_conversation: 'Select a conversation from the left',
+                    reply_placeholder: 'Type your reply...',
+                    send: 'Send Reply',
+                    emoji: 'Emoji',
+                    quick_replies: 'Quick Replies',
+                    quick_replies_title: 'Quick Replies',
+                    no_messages: 'No messages',
+                    no_conversations: 'No conversations',
+                    user: 'User',
+                    admin: 'Admin',
+                    system: 'System'
+                },
+                // Future languages can be added here
+                // zh: { ... },
+                // es: { ... }
+            },
+            
+            t(key) {
+                return this.translations[this.currentLang]?.[key] || this.translations.en[key] || key;
+            },
+            
+            setLanguage(lang) {
+                if (this.translations[lang]) {
+                    this.currentLang = lang;
+                    this.updateDOM();
+                }
+            },
+            
+            updateDOM() {
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    el.textContent = this.t(key);
+                });
+                document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                    const key = el.getAttribute('data-i18n-placeholder');
+                    el.placeholder = this.t(key);
+                });
+                document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                    const key = el.getAttribute('data-i18n-title');
+                    el.title = this.t(key);
+                });
+            }
+        };
+        
+        // Initialize i18n
+        window.i18n.updateDOM();
+    </script>
+    
+    <!-- Main Admin Script -->
+    <script src="/js/admin/support-admin.js"></script>
+</body>
+</html> 

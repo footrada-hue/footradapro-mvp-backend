@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通知彈窗演示 - FOOTRADA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0c10 0%, #1a1f2e 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        /* 模擬導航欄 */
+        .demo-navbar {
+            background: #0f1117;
+            border-radius: 20px;
+            padding: 16px 24px;
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #1f2937;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f97316;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        /* 通知鈴鐺圖標 */
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.2s;
+            background: #1f2937;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notification-bell:hover {
+            background: #f97316;
+            transform: scale(1.05);
+        }
+
+        .notification-bell i {
+            font-size: 20px;
+            color: #e5e7eb;
+        }
+
+        .notification-bell:hover i {
+            color: white;
+        }
+
+        /* 未讀紅點 */
+        .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            box-shadow: 0 0 0 2px #0f1117;
+        }
+
+        /* 下拉通知面板 */
+        .notification-dropdown {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            width: 380px;
+            background: #111827;
+            border-radius: 16px;
+            border: 1px solid #1f2937;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            z-index: 1000;
+            display: none;
+            animation: slideDown 0.2s ease;
+        }
+
+        .notification-dropdown.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dropdown-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #1f2937;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dropdown-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .mark-all-btn {
+            background: none;
+            border: none;
+            color: #f97316;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .mark-all-btn:hover {
+            background: rgba(249, 115, 22, 0.1);
+        }
+
+        .dropdown-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            padding: 14px 20px;
+            border-bottom: 1px solid #1f2937;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .notification-item:hover {
+            background: #1f2937;
+        }
+
+        .notification-item.unread {
+            background: #1a1f2e;
+            border-left: 3px solid #f97316;
+        }
+
+        .notification-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .notification-type-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .type-info { background: rgba(59,130,246,0.2); color: #3b82f6; }
+        .type-success { background: rgba(16,185,129,0.2); color: #10b981; }
+        .type-warning { background: rgba(249,115,22,0.2); color: #f97316; }
+        .type-danger { background: rgba(239,68,68,0.2); color: #ef4444; }
+
+        .notification-title-text {
+            font-weight: 500;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .notification-content {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .notification-time {
+            font-size: 10px;
+            color: #6b7280;
+        }
+
+        .dropdown-footer {
+            padding: 12px 20px;
+            border-top: 1px solid #1f2937;
+            text-align: center;
+        }
+
+        .dropdown-footer a {
+            color: #f97316;
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .dropdown-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Toast 彈窗容器 */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1100;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Toast 彈窗樣式 */
+        .notification-toast {
+            background: #1f2937;
+            border-radius: 12px;
+            width: 360px;
+            padding: 16px;
+            display: flex;
+            gap: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3), 0 8px 10px -6px rgba(0,0,0,0.2);
+            animation: toastSlideIn 0.3s ease;
+            border-left: 4px solid;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .notification-toast:hover {
+            transform: translateX(-4px);
+        }
+
+        @keyframes toastSlideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes toastSlideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        .notification-toast.toast-info { border-left-color: #3b82f6; }
+        .notification-toast.toast-success { border-left-color: #10b981; }
+        .notification-toast.toast-warning { border-left-color: #f97316; }
+        .notification-toast.toast-danger { border-left-color: #ef4444; }
+
+        .toast-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .toast-info .toast-icon { background: rgba(59,130,246,0.2); color: #3b82f6; }
+        .toast-success .toast-icon { background: rgba(16,185,129,0.2); color: #10b981; }
+        .toast-warning .toast-icon { background: rgba(249,115,22,0.2); color: #f97316; }
+        .toast-danger .toast-icon { background: rgba(239,68,68,0.2); color: #ef4444; }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .toast-message {
+            font-size: 12px;
+            color: #9ca3af;
+            line-height: 1.4;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px;
+            height: 24px;
+            transition: all 0.2s;
+        }
+
+        .toast-close:hover {
+            color: #f97316;
+        }
+
+        /* 控制面板 */
+        .demo-panel {
+            background: #111827;
+            border-radius: 20px;
+            border: 1px solid #1f2937;
+            padding: 32px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .demo-panel h2 {
+            color: #fff;
+            margin-bottom: 24px;
+            font-size: 20px;
+        }
+
+        .demo-panel h2 i {
+            color: #f97316;
+            margin-right: 8px;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .demo-btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .demo-btn-primary {
+            background: #f97316;
+            color: white;
+        }
+
+        .demo-btn-primary:hover {
+            background: #ea580c;
+            transform: translateY(-1px);
+        }
+
+        .demo-btn-secondary {
+            background: #1f2937;
+            border: 1px solid #374151;
+            color: #9ca3af;
+        }
+
+        .demo-btn-secondary:hover {
+            border-color: #f97316;
+            color: #f97316;
+        }
+
+        .notification-list {
+            margin-top: 24px;
+            border-top: 1px solid #1f2937;
+            padding-top: 24px;
+        }
+
+        .notification-list h3 {
+            color: #9ca3af;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .preview-item {
+            background: #1f2937;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preview-item span {
+            color: #e5e7eb;
+            font-size: 13px;
+        }
+
+        .preview-btn {
+            background: none;
+            border: none;
+            color: #f97316;
+            cursor: pointer;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 模擬導航欄 -->
+    <div style="position: relative;">
+        <div class="demo-navbar">
+            <div class="logo">
+                <i class="fas fa-futbol"></i> FOOTRADA
+            </div>
+            <div class="nav-right">
+                <div class="notification-bell" id="notificationBell">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge" id="unreadBadge" style="display: none;">0</span>
+                </div>
+                <div class="demo-user">
+                    <i class="fas fa-user-circle"></i> 用戶
+                </div>
+            </div>
+        </div>
+
+        <!-- 下拉通知面板 -->
+        <div class="notification-dropdown" id="notificationDropdown">
+            <div class="dropdown-header">
+                <h3><i class="fas fa-bell"></i> 通知</h3>
+                <button class="mark-all-btn" id="markAllBtn">
+                    <i class="fas fa-check-double"></i> 全部已讀
+                </button>
+            </div>
+            <div class="dropdown-list" id="dropdownList">
+                <!-- 動態加載 -->
+            </div>
+            <div class="dropdown-footer">
+                <a href="#">查看全部通知</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 容器 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- 控制面板 -->
+    <div class="demo-panel">
+        <h2><i class="fas fa-envelope"></i> 通知彈窗演示</h2>
+        
+        <div class="button-group">
+            <button class="demo-btn demo-btn-primary" onclick="showTestToast('info')">
+                <i class="fas fa-info-circle"></i> 信息通知
+            </button>
+            <button class="demo-btn demo-btn-primary" onclick="showTestToast('success')">
+                <i class="fas fa-check-circle"></i> 成功通知
+            </button>
+            <button class="demo-btn demo-btn-primary" onclick="showTestToast('warning')">
+                <i class="fas fa-exclamation-triangle"></i> 警告通知
+            </button>
+            <button class="demo-btn demo-btn-primary" onclick="showTestToast('danger')">
+                <i class="fas fa-times-circle"></i> 危險通知
+            </button>
+        </div>
+
+        <div class="button-group">
+            <button class="demo-btn demo-btn-secondary" onclick="addMockNotification()">
+                <i class="fas fa-plus"></i> 添加模擬通知
+            </button>
+            <button class="demo-btn demo-btn-secondary" onclick="showMultipleToasts()">
+                <i class="fas fa-layer-group"></i> 連續彈窗
+            </button>
+        </div>
+
+        <div class="notification-list">
+            <h3><i class="fas fa-history"></i> 已觸發的通知</h3>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        // 模擬數據
+        let notifications = [
+            { id: 1, title: "系統維護公告", content: "將於今晚 02:00-04:00 進行系統維護，屆時可能無法訪問。", type: "warning", read: false, time: "2024-01-15T10:30:00" },
+            { id: 2, title: "充值成功", content: "您成功充值 1,000 USDT，已到賬。", type: "success", read: false, time: "2024-01-14T15:20:00" },
+            { id: 3, title: "新功能上線", content: "通知中心全新升級，現在可以更方便地管理您的通知了！", type: "info", read: true, time: "2024-01-13T09:00:00" }
+        ];
+
+        let history = [];
+
+        // 顯示 Toast 彈窗
+        function showToast(notification) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `notification-toast toast-${notification.type}`;
+            
+            // 圖標映射
+            const icons = {
+                info: 'fa-info-circle',
+                success: 'fa-check-circle',
+                warning: 'fa-exclamation-triangle',
+                danger: 'fa-times-circle'
+            };
+            
+            toast.innerHTML = `
+                <div class="toast-icon">
+                    <i class="fas ${icons[notification.type]}"></i>
+                </div>
+                <div class="toast-content">
+                    <div class="toast-title">${escapeHtml(notification.title)}</div>
+                    <div class="toast-message">${escapeHtml(notification.content)}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            // 點擊彈窗可以標記已讀
+            toast.addEventListener('click', (e) => {
+                if (e.target.classList.contains('toast-close') || e.target.closest('.toast-close')) {
+                    return;
+                }
+                console.log('點擊通知:', notification);
+                toast.remove();
+            });
+            
+            container.appendChild(toast);
+            
+            // 添加到歷史記錄
+            addToHistory(notification);
+            
+            // 3秒後自動消失
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.style.animation = 'toastSlideOut 0.3s ease';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 4000);
+        }
+
+        // 顯示測試通知
+        function showTestToast(type) {
+            const testData = {
+                info: { title: "系統消息", content: "您有一條新的系統通知，請注意查收。", type: "info" },
+                success: { title: "操作成功", content: "您的設置已成功保存。", type: "success" },
+                warning: { title: "即將到期", content: "您的 VIP 會員將在 3 天後到期，請及時續費。", type: "warning" },
+                danger: { title: "安全提醒", content: "檢測到異常登錄，請及時修改密碼。", type: "danger" }
+            };
+            
+            const data = testData[type];
+            showToast({
+                id: Date.now(),
+                title: data.title,
+                content: data.content,
+                type: data.type
+            });
+        }
+
+        // 添加模擬通知（會觸發彈窗）
+        function addMockNotification() {
+            const mockData = [
+                { title: "新訂單通知", content: "您有一個新的投注訂單需要處理。", type: "info" },
+                { title: "投注中獎", content: "恭喜您！您的投注已中獎，獎金已發放。", type: "success" },
+                { title: "帳戶異常", content: "檢測到您的帳戶有異常登錄行為。", type: "danger" },
+                { title: "維護提醒", content: "系統將在 30 分鐘後進行維護。", type: "warning" }
+            ];
+            
+            const random = mockData[Math.floor(Math.random() * mockData.length)];
+            const newNotification = {
+                id: Date.now(),
+                title: random.title,
+                content: random.content,
+                type: random.type,
+                read: false,
+                time: new Date().toISOString()
+            };
+            
+            // 添加到通知列表
+            notifications.unshift(newNotification);
+            
+            // 顯示彈窗
+            showToast(newNotification);
+            
+            // 更新下拉面板和未讀數量
+            updateDropdownList();
+            updateUnreadBadge();
+        }
+
+        // 顯示連續彈窗
+        function showMultipleToasts() {
+            const types = ['info', 'success', 'warning', 'danger'];
+            types.forEach((type, index) => {
+                setTimeout(() => {
+                    showTestToast(type);
+                }, index * 800);
+            });
+        }
+
+        // 添加到歷史
+        function addToHistory(notification) {
+            history.unshift({
+                ...notification,
+                time: new Date().toLocaleTimeString()
+            });
+            updateHistoryList();
+        }
+
+        // 更新歷史列表
+        function updateHistoryList() {
+            const container = document.getElementById('historyList');
+            if (history.length === 0) {
+                container.innerHTML = '<div style="color:#6b7280; text-align:center; padding:20px;">暫無記錄</div>';
+                return;
+            }
+            
+            container.innerHTML = history.slice(0, 10).map(item => `
+                <div class="preview-item">
+                    <span>
+                        <span class="notification-type-badge type-${item.type}" style="margin-right:8px;">
+                            ${getTypeText(item.type)}
+                        </span>
+                        ${escapeHtml(item.title)}
+                    </span>
+                    <span style="color:#6b7280; font-size:11px;">${item.time}</span>
+                </div>
+            `).join('');
+        }
+
+        // 更新下拉通知面板
+        function updateDropdownList() {
+            const container = document.getElementById('dropdownList');
+            const unreadCount = notifications.filter(n => !n.read).length;
+            
+            if (notifications.length === 0) {
+                container.innerHTML = '<div style="padding:40px; text-align:center; color:#6b7280;">暫無通知</div>';
+                return;
+            }
+            
+            container.innerHTML = notifications.slice(0, 5).map(n => `
+                <div class="notification-item ${!n.read ? 'unread' : ''}" onclick="markAsRead(${n.id})">
+                    <div class="notification-title">
+                        <span class="notification-type-badge type-${n.type}">${getTypeText(n.type)}</span>
+                        <span class="notification-title-text">${escapeHtml(n.title)}</span>
+                    </div>
+                    <div class="notification-content">${escapeHtml(n.content.substring(0, 60))}${n.content.length > 60 ? '...' : ''}</div>
+                    <div class="notification-time">${formatTime(n.time)}</div>
+                </div>
+            `).join('');
+        }
+
+        // 標記為已讀
+        function markAsRead(id) {
+            const notification = notifications.find(n => n.id === id);
+            if (notification && !notification.read) {
+                notification.read = true;
+                updateDropdownList();
+                updateUnreadBadge();
+                showToast({
+                    title: "已標記為已讀",
+                    content: `您已閱讀: ${notification.title}`,
+                    type: "info"
+                });
+            }
+        }
+
+        // 全部標記為已讀
+        function markAllAsRead() {
+            notifications.forEach(n => {
+                if (!n.read) {
+                    n.read = true;
+                }
+            });
+            updateDropdownList();
+            updateUnreadBadge();
+            showToast({
+                title: "全部已讀",
+                content: "所有通知已標記為已讀",
+                type: "success"
+            });
+        }
+
+        // 更新未讀數量徽章
+        function updateUnreadBadge() {
+            const unreadCount = notifications.filter(n => !n.read).length;
+            const badge = document.getElementById('unreadBadge');
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // 輔助函數
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        function getTypeText(type) {
+            const map = { info: '信息', success: '成功', warning: '警告', danger: '危險' };
+            return map[type] || type;
+        }
+
+        function formatTime(timeStr) {
+            const date = new Date(timeStr);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return '剛剛';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}分鐘前`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}小時前`;
+            return `${Math.floor(diff / 86400000)}天前`;
+        }
+
+        // 鈴鐺點擊切換下拉面板
+        document.getElementById('notificationBell').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dropdown = document.getElementById('notificationDropdown');
+            dropdown.classList.toggle('show');
+        });
+
+        // 點擊其他地方關閉下拉面板
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('notificationDropdown');
+            const bell = document.getElementById('notificationBell');
+            if (!dropdown.contains(e.target) && !bell.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // 全部已讀按鈕
+        document.getElementById('markAllBtn').addEventListener('click', markAllAsRead);
+
+        // 初始化
+        updateDropdownList();
+        updateUnreadBadge();
+        
+        // 初始顯示一個歡迎通知
+        setTimeout(() => {
+            showToast({
+                title: "歡迎使用通知中心",
+                content: "點擊下方按鈕可以體驗不同類型的通知彈窗效果",
+                type: "info"
+            });
+        }, 500);
+    </script>
+</body>
+</html>

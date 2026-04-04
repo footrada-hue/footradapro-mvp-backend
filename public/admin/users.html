@@ -1,0 +1,129 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>用户管理 - FOOTRADAPRO 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+    <link rel="stylesheet" href="/css/admin-users.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="admin-sidebar" id="sidebar-container"></aside>
+
+<script>
+    // 加载侧边栏组件
+    fetch('/admin/components/sidebar.html')
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById('sidebar-container').innerHTML = html;
+            // 高亮当前菜单
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.admin-nav-item').forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        })
+        .catch(err => console.error('加载侧边栏失败:', err));
+</script>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1><i class="fas fa-users"></i> 用户管理</h1>
+                <div class="admin-user">
+                    <span id="adminName">管理员</span>
+                    <button class="icon-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <!-- 统计卡片 -->
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-value" id="totalUsers">0</div><div class="stat-label">总用户</div></div>
+                    <div class="stat-card"><div class="stat-value" id="testUsers">0</div><div class="stat-label">测试模式</div></div>
+                    <div class="stat-card"><div class="stat-value" id="liveUsers">0</div><div class="stat-label">主网模式</div></div>
+                    <div class="stat-card"><div class="stat-value" id="onlineUsers">0</div><div class="stat-label">在线用户</div></div>
+                </div>
+
+                <!-- 筛选栏 -->
+                <div class="filters-bar">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="搜索用户名、UID或ID">
+                    </div>
+                    <select class="filter-select" id="modeFilter">
+                        <option value="">全部模式</option>
+                        <option value="test">测试模式</option>
+                        <option value="live">主网模式</option>
+                    </select>
+                    <select class="filter-select" id="sortFilter">
+                        <option value="id_desc">按注册时间（新→旧）</option>
+                        <option value="id_asc">按注册时间（旧→新）</option>
+                        <option value="last_active_desc">按最后活动（在线优先）</option>
+                        <option value="balance_desc">按主网余额（高→低）</option>
+                        <option value="test_balance_desc">按测试余额（高→低）</option>
+                    </select>
+                    <label class="online-toggle">
+                        <input type="checkbox" id="onlineOnly"> 只看在线
+                    </label>
+                    <button class="btn-secondary" id="resetFilters"><i class="fas fa-redo-alt"></i> 重置</button>
+                </div>
+
+                <!-- 批量操作栏 -->
+                <div class="bulk-actions" id="bulkActions" style="display: none;">
+                    <span>已选择 <span id="selectedCount">0</span> 个用户</span>
+                    <button class="btn-primary" id="batchSwitchToLive"><i class="fas fa-rocket"></i> 批量切换到主网</button>
+                    <button class="btn-secondary" id="clearSelection"><i class="fas fa-times"></i> 清除选择</button>
+                </div>
+
+                <!-- 用户列表表格 - 删除学习进度列 -->
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"><input type="checkbox" id="selectAll"></th>
+                                <th>ID</th>
+                                <th>用户名</th>
+                                <th>UID</th>
+                                <th>主网余额 (USDT)</th>
+                                <th>测试余额 (tUSDT)</th>
+                                <th>模式</th>
+                                <th>锁定状态</th>
+                                <th>注册时间</th>
+                                <th>状态</th>
+                                <th>最后在线</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            <tr><td colspan="12" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页控件 -->
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 用户详情模态框 -->
+    <div class="modal-overlay" id="userDetailModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>用户详情 - <span id="detailUsername"></span></h2>
+                <button class="modal-close" id="closeModalBtn">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <div class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/admin/users_controller.js"></script>
+</body>
+</html>

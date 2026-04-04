@@ -1,0 +1,186 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>财务管理 - FOOTRADAPRO 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+    <link rel="stylesheet" href="/css/admin-users.css">
+    <link rel="stylesheet" href="/css/admin-finance.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 侧边导航栏 -->
+        <aside class="admin-sidebar" id="sidebar-container"></aside>
+
+<script>
+    // 加载侧边栏组件
+    fetch('/admin/components/sidebar.html')
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById('sidebar-container').innerHTML = html;
+            // 高亮当前菜单
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.admin-nav-item').forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        })
+        .catch(err => console.error('加载侧边栏失败:', err));
+</script>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1><i class="fas fa-chart-line"></i> 财务管理</h1>
+                <div class="admin-user">
+                    <span id="adminName">管理员</span>
+                    <button class="icon-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <!-- 统计卡片 -->
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-value" id="totalBalance">-</div><div class="stat-label">总余额</div></div>
+                    <div class="stat-card"><div class="stat-value" id="todayDeposit">-</div><div class="stat-label">今日充值</div></div>
+                    <div class="stat-card"><div class="stat-value" id="todayWithdraw">-</div><div class="stat-label">今日提现</div></div>
+                    <div class="stat-card"><div class="stat-value" id="totalRevenue">-</div><div class="stat-label">平台总收入</div></div>
+                </div>
+
+                <!-- 标签页 -->
+                <div class="finance-tabs">
+                    <button class="tab-btn active" data-tab="records"><i class="fas fa-list"></i> 财务记录</button>
+                    <button class="tab-btn" data-tab="withdrawals"><i class="fas fa-arrow-up"></i> 提现审核<span class="status-badge pending" id="pendingWithdrawCount" style="display: none;">0</span></button>
+                    <button class="tab-btn" data-tab="deposits"><i class="fas fa-arrow-down"></i> 充值确认<span class="status-badge pending" id="pendingDepositCount" style="display: none;">0</span></button>
+                </div>
+
+                <!-- 财务记录标签页 -->
+                <div class="tab-content active" id="tab-records">
+                    <div class="action-bar">
+                        <h2>财务记录</h2>
+                        <button class="btn-primary" onclick="openUserSelectModal()"><i class="fas fa-coins"></i> 调整用户余额</button>
+                    </div>
+
+                    <div class="filters-bar">
+                        <div class="search-box"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="搜索用户ID、用户名..."></div>
+                        <select class="filter-select" id="typeFilter">
+                            <option value="">全部类型</option>
+                            <option value="deposit">充值</option>
+                            <option value="withdraw">提现</option>
+                            <option value="authorization">授权</option>
+                            <option value="settlement">结算</option>
+                            <option value="bonus">体验金</option>
+                            <option value="admin_add">管理员增加</option>
+                            <option value="admin_deduct">管理员扣除</option>
+                            <option value="admin_set">管理员设置</option>
+                        </select>
+                        <select class="filter-select" id="dateFilter">
+                            <option value="7">最近7天</option><option value="30">最近30天</option><option value="90">最近90天</option><option value="all">全部</option>
+                        </select>
+                        <button class="btn-primary" id="exportBtn"><i class="fas fa-download"></i> 导出报表</button>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="admin-table">
+                            <thead><tr><th>ID</th><th>时间</th><th>用户</th><th>类型</th><th>金额</th><th>变动前</th><th>变动后</th><th>原因</th><th>操作员</th><th>操作</th></tr></thead>
+                            <tbody id="financeTableBody"><tr><td colspan="10" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr></tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination" id="pagination"></div>
+                </div>
+
+                <!-- 提现审核标签页 -->
+                <div class="tab-content" id="tab-withdrawals">
+                    <h2 style="margin-bottom: 20px;">提现审核</h2>
+                    <div class="filters-bar">
+                        <select class="filter-select" id="withdrawStatusFilter">
+                            <option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已拒绝</option><option value="completed">已完成</option><option value="all">全部</option>
+                        </select>
+                        <div class="search-box"><i class="fas fa-search"></i><input type="text" id="withdrawSearchInput" placeholder="搜索用户ID、地址..."></div>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table">
+                            <thead><tr><th>ID</th><th>申请时间</th><th>用户</th><th>金额</th><th>手续费</th><th>到账</th><th>网络</th><th>提现地址</th><th>状态</th><th>操作</th></tr></thead>
+                            <tbody id="withdrawTableBody"><tr><td colspan="10" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 充值确认标签页 -->
+                <div class="tab-content" id="tab-deposits">
+                    <h2 style="margin-bottom: 20px;">充值确认</h2>
+                    <div class="filters-bar">
+                        <select class="filter-select" id="depositStatusFilter">
+                            <option value="pending">待确认</option><option value="completed">已完成</option><option value="rejected">已驳回</option><option value="all">全部</option>
+                        </select>
+                        <div class="search-box"><i class="fas fa-search"></i><input type="text" id="depositSearchInput" placeholder="搜索用户ID、交易哈希..."></div>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table">
+                            <thead><tr><th>ID</th><th>申请时间</th><th>用户</th><th>金额</th><th>网络</th><th>交易哈希</th><th>确认数</th><th>状态</th><th>操作</th></tr></thead>
+                            <tbody id="depositTableBody"><tr><td colspan="9" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 选择用户模态框 -->
+    <div class="modal-overlay" id="userSelectModal">
+        <div class="modal">
+            <div class="modal-header"><h2>选择用户</h2><button class="modal-close" onclick="closeUserSelectModal()">&times;</button></div>
+            <div class="modal-body">
+                <div class="search-box" style="margin-bottom: 15px;"><i class="fas fa-search"></i><input type="text" id="userSearchInput" placeholder="搜索用户名、UID..."></div>
+                <div id="userList" class="user-select-list"><div class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载用户中...</div></div>
+            </div>
+            <div class="modal-footer"><button class="btn-secondary" onclick="closeUserSelectModal()">取消</button></div>
+        </div>
+    </div>
+
+    <!-- 调整余额模态框 -->
+    <div class="modal-overlay" id="adjustBalanceModal">
+        <div class="modal">
+            <div class="modal-header"><h2>调整用户余额</h2><button class="modal-close" onclick="closeAdjustModal()">&times;</button></div>
+            <div class="modal-body">
+                <div style="margin-bottom: 20px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 12px;"><div><strong>用户:</strong> <span id="adjustUsername"></span></div><div><strong>当前余额:</strong> <span id="adjustCurrentBalance"></span> USDT</div></div>
+                <input type="hidden" id="adjustUserId">
+                <div class="form-group"><label>操作类型</label><select id="adjustType" class="filter-select" style="width: 100%;"><option value="add">增加余额</option><option value="deduct">扣除余额</option><option value="set">设置为</option></select></div>
+                <div class="form-group"><label>金额 (USDT)</label><input type="number" id="adjustAmount" step="0.01" min="0" class="form-control" placeholder="输入金额"></div>
+                <div class="form-group"><label>原因</label><input type="text" id="adjustReason" class="form-control" placeholder="例如: 手动充值、退款等"></div>
+            </div>
+            <div class="modal-footer"><button class="btn-secondary" onclick="closeAdjustModal()">取消</button><button class="btn-primary" onclick="submitAdjustBalance()">确认调整</button></div>
+        </div>
+    </div>
+
+    <!-- 提现审核弹窗 -->
+    <div class="modal-overlay" id="withdrawReviewModal">
+        <div class="modal">
+            <div class="modal-header"><h2>审核提现</h2><button class="modal-close" onclick="closeWithdrawReviewModal()">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="reviewWithdrawId">
+                <div class="detail-row"><label>用户</label><span id="reviewUsername"></span></div>
+                <div class="detail-row"><label>提现金额</label><span id="reviewAmount"></span></div>
+                <div class="detail-row"><label>手续费</label><span>1 USDT</span></div>
+                <div class="detail-row"><label>实际到账</label><span id="reviewNetAmount"></span></div>
+                <div class="detail-row"><label>网络</label><span id="reviewNetwork"></span></div>
+                <div class="detail-row"><label>提现地址</label><span id="reviewAddress" style="word-break: break-all;"></span></div>
+                <div class="detail-row"><label>申请时间</label><span id="reviewTime"></span></div>
+                <div class="detail-row"><label>用户余额</label><span id="reviewUserBalance"></span></div>
+                <div id="approveSection"><div class="form-group"><label>交易哈希 (TxID) <span style="color: #ef4444;">*</span></label><input type="text" id="reviewTxHash" class="form-control tx-hash-input" placeholder="请输入区块链交易哈希"></div></div>
+                <div id="rejectSection" style="display: none;"><div class="form-group"><label>拒绝原因 <span style="color: #ef4444;">*</span></label><textarea id="reviewRejectReason" class="reject-reason-input" rows="3" placeholder="请输入拒绝原因..."></textarea></div></div>
+                <div style="display: flex; gap: 20px; margin: 20px 0;"><label style="display: flex; align-items: center; gap: 6px;"><input type="radio" name="reviewAction" value="approve" checked onclick="toggleReviewAction('approve')"> 通过</label><label style="display: flex; align-items: center; gap: 6px;"><input type="radio" name="reviewAction" value="reject" onclick="toggleReviewAction('reject')"> 拒绝</label></div>
+                <div class="form-group"><label>管理员备注</label><textarea id="adminNote" class="form-control" rows="2" placeholder="可选备注"></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn-secondary" onclick="closeWithdrawReviewModal()">取消</button><button class="btn-primary" onclick="submitWithdrawReview()">确认提交</button></div>
+        </div>
+    </div>
+
+    <script src="/js/admin/finance_controller.js"></script>
+</body>
+</html>

@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网站基础设置 · FOOTRADA 管理后台</title>
+    <link rel="stylesheet" href="/css/admin-base.css">
+    <link rel="stylesheet" href="/css/admin-settings.css">
+    <link rel="stylesheet" href="/css/admin-nav.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+
+    <script src="/js/core/timezone.js"></script>
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+
+<body>
+    <div class="admin-layout">
+        <!-- 侧边导航栏 -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">FOOT<span>RADA</span></div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html" class="admin-nav-item"><i class="fas fa-tachometer-alt"></i> <span>仪表盘</span></a>
+                <a href="/admin/stats.html" class="admin-nav-item"><i class="fas fa-chart-pie"></i> <span>数据统计</span></a>
+                <a href="/admin/users.html" class="admin-nav-item"><i class="fas fa-users"></i> <span>用户管理</span></a>
+                <a href="/admin/admins.html" class="admin-nav-item"><i class="fas fa-user-shield"></i> <span>管理员管理</span></a>
+                <a href="/admin/deposits.html" class="admin-nav-item"><i class="fas fa-arrow-down"></i> <span>充值审核</span></a>
+                <a href="/admin/withdrawals.html" class="admin-nav-item"><i class="fas fa-arrow-up"></i> <span>提现审核</span></a>
+                <a href="/admin/finance.html" class="admin-nav-item"><i class="fas fa-chart-line"></i> <span>财务管理</span></a>
+                <a href="/admin/matches.html" class="admin-nav-item"><i class="fas fa-futbol"></i> <span>比赛管理</span></a>
+                <a href="/admin/settle.html" class="admin-nav-item"><i class="fas fa-calculator"></i> <span>清算管理</span></a>
+                <a href="/admin/report-editor.html" class="admin-nav-item"><i class="fas fa-edit"></i> <span>报告编辑</span></a>
+                <a href="/admin/ticker-manager.html" class="admin-nav-item"><i class="fas fa-bolt"></i> <span>动态管理</span></a>
+                <a href="/admin/notifications.html" class="admin-nav-item"><i class="fas fa-bell"></i> <span>通知管理</span></a>
+                <a href="/admin/settings/index.html" class="admin-nav-item active"><i class="fas fa-cog"></i> <span>系统设置</span></a>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="admin-main">
+            <style>
+    /* 确保主内容区铺满 */
+    .admin-main {
+        flex: 1;
+        padding: 24px 32px;
+        background: var(--bg-primary);
+        min-height: 100vh;
+        box-sizing: border-box;
+    }
+    
+    .settings-container {
+        width: 100%;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    .settings-tabs {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    
+    .settings-panel {
+        width: 100%;
+    }
+    
+    .panel-body {
+        padding: 24px;
+    }
+    
+    .form-grid {
+        width: 100%;
+    }
+    
+    @media (max-width: 768px) {
+        .admin-main {
+            padding: 16px;
+        }
+    }
+</style>
+           <header class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-strong);">
+    <div class="header-left" style="display: flex; align-items: center; gap: 16px;">
+        <button class="back-btn" onclick="history.back()" style="width: 40px; height: 40px; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--border-strong); color: var(--text-secondary); cursor: pointer;">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h1 class="page-title" style="font-size: 24px; font-weight: 700;">网站基础设置</h1>
+    </div>
+    <div class="admin-user" style="display: flex; align-items: center; gap: 16px;">
+        <span id="adminName" style="color: var(--text-secondary);">管理员</span>
+        <button class="icon-btn" id="logoutBtn" title="退出登录" style="width: 40px; height: 40px; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--border-strong); color: var(--text-secondary); cursor: pointer;">
+            <i class="fas fa-sign-out-alt"></i>
+        </button>
+    </div>
+</header>
+
+            <div class="settings-container">
+                <!-- 设置标签页 - 现在有更多选项 -->
+                <div class="settings-tabs">
+                    <button class="tab-btn active" data-tab="basic">
+                        <i class="fas fa-globe"></i> 基础信息
+                    </button>
+                    <button class="tab-btn" data-tab="seo">
+                        <i class="fas fa-search"></i> SEO优化
+                    </button>
+                    <button class="tab-btn" data-tab="contact">
+                        <i class="fas fa-address-card"></i> 联系方式
+                    </button>
+                    <button class="tab-btn" data-tab="social">
+                        <i class="fas fa-share-alt"></i> 社交链接
+                    </button>
+                    <button class="tab-btn" data-tab="language">
+                        <i class="fas fa-language"></i> 多语言
+                    </button>
+                    <button class="tab-btn" data-tab="email">
+                        <i class="fas fa-envelope"></i> 邮件服务
+                    </button>
+                    <button class="tab-btn" data-tab="security">
+                        <i class="fas fa-shield-alt"></i> 安全设置
+                    </button>
+                    <button class="tab-btn" data-tab="performance">
+                        <i class="fas fa-tachometer-alt"></i> 性能优化
+                    </button>
+                    <button class="tab-btn" data-tab="analytics">
+                        <i class="fas fa-chart-bar"></i> 数据分析
+                    </button>
+                    <button class="tab-btn" data-tab="legal">
+                        <i class="fas fa-gavel"></i> 法律合规
+                    </button>
+                    <button class="tab-btn" data-tab="backup">
+                        <i class="fas fa-database"></i> 备份恢复
+                    </button>
+                </div>
+
+                <!-- 基础信息面板 (原有) -->
+                <div class="settings-panel active" id="panel-basic">
+                    <div class="panel-header">
+                        <i class="fas fa-globe"></i>
+                        <div>
+                            <h2>基础信息</h2>
+                            <p>配置网站的基本信息、Logo和品牌形象</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <form id="basicForm">
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-font"></i> 网站名称与标识</h3>
+                                <div class="form-grid">
+                                    <div class="form-group full-width">
+                                        <label class="form-label"><i class="fas fa-tag"></i> 网站名称</label>
+                                        <input type="text" class="form-control" id="siteName" value="FOOTRADA" placeholder="例如: FOOTRADA">
+                                        <div class="form-hint"><i class="fas fa-info-circle"></i> 显示在浏览器标题和页脚</div>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label"><i class="fas fa-quote-right"></i> 网站口号</label>
+                                        <input type="text" class="form-control" id="siteSlogan" value="Rule-Locked Football Authorization" placeholder="简短的网站描述">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-images"></i> 网站Logo与图标</h3>
+                                <div class="logo-upload">
+                                    <div class="logo-preview" id="logoPreview">
+                                        <i class="fas fa-futbol"></i>
+                                    </div>
+                                    <div class="logo-actions">
+                                        <button type="button" class="upload-btn" id="uploadLogoBtn">
+                                            <i class="fas fa-cloud-upload-alt"></i> 上传新Logo
+                                        </button>
+                                        <input type="file" id="logoInput" accept="image/png,image/jpeg,image/svg+xml" style="display: none;">
+                                        <div class="upload-hint">推荐尺寸: 200x200px · PNG/SVG 格式 · 最大 2MB</div>
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-top: 20px;">
+                                    <label class="form-label"><i class="fas fa-star"></i> Favicon</label>
+                                    <div style="display: flex; gap: 16px; align-items: center;">
+                                        <div style="width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">F</div>
+                                        <button class="btn-secondary"><i class="fas fa-upload"></i> 上传Favicon</button>
+                                        <span class="form-hint">16x16px 或 32x32px, ICO/PNG</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-link"></i> 网站URL</h3>
+                                <div class="form-group">
+                                    <label class="form-label">网站地址</label>
+                                    <input type="url" class="form-control" id="siteUrl" value="https://www.footrada.com" placeholder="https://">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">备案号</label>
+                                    <input type="text" class="form-control" id="icpNumber" placeholder="例如: 京ICP备xxxxxx号">
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-globe"></i> 全局设置</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">默认时区</label>
+                                        <select class="form-control" id="timezone">
+                                            <option value="UTC" selected>UTC (协调世界时)</option>
+                                            <option value="Asia/Shanghai">Asia/Shanghai (UTC+8)</option>
+                                            <option value="America/New_York">America/New York (UTC-5)</option>
+                                            <option value="Europe/London">Europe/London (UTC+0)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">默认货币</label>
+                                        <select class="form-control" id="defaultCurrency">
+                                            <option value="USDT" selected>USDT</option>
+                                            <option value="USD">USD</option>
+                                            <option value="EUR">EUR</option>
+                                            <option value="CNY">CNY</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">日期格式</label>
+                                        <select class="form-control" id="dateFormat">
+                                            <option value="Y-m-d">2024-01-20</option>
+                                            <option value="d/m/Y">20/01/2024</option>
+                                            <option value="m/d/Y">01/20/2024</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">时间格式</label>
+                                        <select class="form-control" id="timeFormat">
+                                            <option value="H:i">14:30 (24小时)</option>
+                                            <option value="h:i A">02:30 PM (12小时)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">网站状态</label>
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="siteStatus" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span id="siteStatusText" style="color: var(--success);">运行中</span>
+                                        </div>
+                                        <div class="form-hint">关闭后仅管理员可访问，显示维护页面</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">新用户注册</label>
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="registrationEnabled" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span>允许注册</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- SEO设置面板 (原有) -->
+                <div class="settings-panel" id="panel-seo" style="display: none;">
+                    <div class="panel-header">
+                        <i class="fas fa-search"></i>
+                        <div>
+                            <h2>SEO优化</h2>
+                            <p>优化搜索引擎收录，提升网站排名</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <form id="seoForm">
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-tag"></i> 标题与描述</h3>
+                                <div class="form-group full-width">
+                                    <label class="form-label">SEO标题</label>
+                                    <input type="text" class="form-control" id="seoTitle" value="FOOTRADA - Rule-Locked Football Authorization Platform">
+                                    <div class="form-hint">建议60个字符以内，当前: 58字符</div>
+                                </div>
+                                <div class="form-group full-width">
+                                    <label class="form-label">SEO关键词</label>
+                                    <input type="text" class="form-control" id="seoKeywords" value="football, authorization, sports, blockchain, rule-locked">
+                                    <div class="form-hint">用逗号分隔，建议5-10个关键词</div>
+                                </div>
+                                <div class="form-group full-width">
+                                    <label class="form-label">SEO描述</label>
+                                    <textarea class="form-control" id="seoDescription" rows="3">FOOTRADA is a revolutionary football authorization platform based on rule-locked technology, providing secure, transparent, and verifiable match authorization services.</textarea>
+                                    <div class="form-hint">建议160个字符以内，当前: 142字符</div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-robot"></i> 搜索引擎抓取</h3>
+                                <div class="form-group">
+                                    <label class="form-label">允许搜索引擎索引</label>
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="allowRobots" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                        <span>允许抓取</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">robots.txt</label>
+                                    <textarea class="form-control" rows="4" id="robotsTxt">User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Sitemap: https://www.footrada.com/sitemap.xml</textarea>
+                                    <div class="form-hint">自定义robots.txt内容</div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-sitemap"></i> 站点地图</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">自动生成sitemap</label>
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="autoSitemap" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span>每日更新</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">更新频率</label>
+                                        <select class="form-control" id="sitemapFrequency">
+                                            <option value="hourly">每小时</option>
+                                            <option value="daily" selected>每天</option>
+                                            <option value="weekly">每周</option>
+                                            <option value="monthly">每月</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fab fa-google"></i> 站长验证</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Google验证码</label>
+                                        <input type="text" class="form-control" id="googleVerification" placeholder="google-site-verification">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Bing验证码</label>
+                                        <input type="text" class="form-control" id="bingVerification" placeholder="msvalidate.01">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">百度验证码</label>
+                                        <input type="text" class="form-control" id="baiduVerification" placeholder="baidu-site-verification">
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 联系方式面板 (原有) -->
+                <div class="settings-panel" id="panel-contact" style="display: none;">
+                    <div class="panel-header">
+                        <i class="fas fa-address-card"></i>
+                        <div>
+                            <h2>联系方式</h2>
+                            <p>设置官方联系方式，方便用户找到我们</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <form id="contactForm">
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-envelope"></i> 邮件联系方式</h3>
+                                <div class="form-grid">
+                                    <div class="form-group full-width">
+                                        <label class="form-label">客服邮箱</label>
+                                        <input type="email" class="form-control" id="supportEmail" value="support@footrada.com">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">商务合作邮箱</label>
+                                        <input type="email" class="form-control" id="businessEmail" value="business@footrada.com">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">技术支持邮箱</label>
+                                        <input type="email" class="form-control" id="techEmail" value="tech@footrada.com">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-phone"></i> 电话联系方式</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">联系电话</label>
+                                        <input type="tel" class="form-control" id="contactPhone" placeholder="+1 234 567 890">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">传真</label>
+                                        <input type="tel" class="form-control" id="fax" placeholder="+1 234 567 891">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-map-marker-alt"></i> 地址信息</h3>
+                                <div class="form-grid">
+                                    <div class="form-group full-width">
+                                        <label class="form-label">公司地址</label>
+                                        <input type="text" class="form-control" id="companyAddress" placeholder="Address">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">城市</label>
+                                        <input type="text" class="form-control" id="city" placeholder="City">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">国家/地区</label>
+                                        <input type="text" class="form-control" id="country" placeholder="Country">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">邮政编码</label>
+                                        <input type="text" class="form-control" id="zipCode" placeholder="Zip Code">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-clock"></i> 工作时间</h3>
+                                <div class="form-grid">
+                                    <div class="form-group full-width">
+                                        <label class="form-label">工作时间</label>
+                                        <input type="text" class="form-control" id="workingHours" value="24/7 Support">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">时区</label>
+                                        <input type="text" class="form-control" id="workingTimeZone" value="UTC+8">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">节假日</label>
+                                        <input type="text" class="form-control" id="holidays" value="照常服务">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-map"></i> 地图位置</h3>
+                                <div class="form-group">
+                                    <label class="form-label">Google Maps嵌入代码</label>
+                                    <textarea class="form-control" rows="3" id="googleMapsCode" placeholder="&lt;iframe src=...&gt;"></textarea>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 社交链接面板 (原有) -->
+                <div class="settings-panel" id="panel-social" style="display: none;">
+                    <div class="panel-header">
+                        <i class="fas fa-share-alt"></i>
+                        <div>
+                            <h2>社交链接</h2>
+                            <p>配置官方社交媒体账号，扩大品牌影响力</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <form id="socialForm">
+                            <div class="social-links">
+                                <div class="social-item">
+                                    <div class="social-icon"><i class="fab fa-telegram"></i></div>
+                                    <input type="url" class="form-control" id="telegramLink" value="https://t.me/footrada" placeholder="Telegram链接">
+                                    <button class="btn-secondary" style="padding: 8px 16px;"><i class="fas fa-check-circle" style="color: var(--success);"></i> 已启用</button>
+                                </div>
+                                <div class="social-item">
+                                    <div class="social-icon"><i class="fab fa-twitter"></i></div>
+                                    <input type="url" class="form-control" id="twitterLink" value="https://twitter.com/footrada" placeholder="Twitter/X链接">
+                                    <button class="btn-secondary" style="padding: 8px 16px;"><i class="fas fa-check-circle" style="color: var(--success);"></i> 已启用</button>
+                                </div>
+                                <div class="social-item">
+                                    <div class="social-icon"><i class="fab fa-discord"></i></div>
+                                    <input type="url" class="form-control" id="discordLink" value="https://discord.gg/footrada" placeholder="Discord链接">
+                                    <button class="btn-secondary" style="padding: 8px 16px;"><i class="fas fa-check-circle" style="color: var(--success);"></i> 已启用</button>
+                                </div>
+                                <div class="social-item">
+                                    <div class="social-icon"><i class="fab fa-facebook"></i></div>
+                                    <input type="url" class="form-control" id="facebookLink" placeholder="Facebook链接（可选）">
+                                    <button class="btn-secondary" style="padding: 8px 16px;"><i class="fas fa-circle"></i> 未启用</button>
+                                </div>
+                                <div class="social-item">
+                                    <div class="social-icon"><i class="fab fa-instagram"></i></div>
+                                    <input type="url" class="form-control" id="instagramLink" placeholder="Instagram链接（可选）">
+                                    <button class="btn-secondary" style="padding: 8px 16px;"><i class="fas fa-circle"></i> 未启用</button>
+                                </div>
+                                <div class="social-item">
+                                    <div class="social-icon"><i class="fab fa-youtube"></i></div>
+                                    <input type="url" class="form-control" id="youtubeLink" placeholder="YouTube链接（可选）">
+                                    <button class="btn-secondary" style="padding: 8px 16px;"><i class="fas fa-circle"></i> 未启用</button>
+                                </div>
+                                <div class="social-item">
+                                    <div class="social-icon"><i class="fab fa-medium"></i></div>
+                                    <input type="url" class="form-control" id="mediumLink" placeholder="Medium链接（可选）">
+                                    <button class="btn-secondary" style="padding: 8px 16px;"><i class="fas fa-circle"></i> 未启用</button>
+                                </div>
+                                <div class="social-item">
+                                    <div class="social-icon"><i class="fab fa-github"></i></div>
+                                    <input type="url" class="form-control" id="githubLink" placeholder="GitHub链接（可选）">
+                                    <button class="btn-secondary" style="padding: 8px 16px;"><i class="fas fa-circle"></i> 未启用</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 多语言配置面板 (新增) -->
+                <div class="settings-panel" id="panel-language" style="display: none;">
+                    <div class="panel-header">
+                        <i class="fas fa-language"></i>
+                        <div>
+                            <h2>多语言配置</h2>
+                            <p>设置网站支持的语言和默认语言</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <form id="languageForm">
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-globe"></i> 语言设置</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">默认语言</label>
+                                        <select class="form-control" id="defaultLanguage">
+                                            <option value="en" selected>English</option>
+                                            <option value="zh">简体中文</option>
+                                            <option value="es">Español</option>
+                                            <option value="ja">日本語</option>
+                                            <option value="ko">한국어</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">语言切换器</label>
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="languageSwitcher" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span>显示语言切换按钮</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-check-circle"></i> 启用的语言</h3>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--bg-secondary); border-radius: 8px;">
+                                        <input type="checkbox" checked> <i class="fas fa-flag-usa"></i> English (美国)
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--bg-secondary); border-radius: 8px;">
+                                        <input type="checkbox" checked> <i class="fas fa-flag-china"></i> 简体中文
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--bg-secondary); border-radius: 8px;">
+                                        <input type="checkbox"> <i class="fas fa-flag-spain"></i> Español
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--bg-secondary); border-radius: 8px;">
+                                        <input type="checkbox"> <i class="fas fa-flag-japan"></i> 日本語
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--bg-secondary); border-radius: 8px;">
+                                        <input type="checkbox"> <i class="fas fa-flag-south-korea"></i> 한국어
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--bg-secondary); border-radius: 8px;">
+                                        <input type="checkbox"> <i class="fas fa-flag-france"></i> Français
+                                    </label>
+                                </div>
+                                <div class="form-hint" style="margin-top: 12px;">
+                                    <i class="fas fa-info-circle"></i> 勾选需要启用的语言，用户可以在前端切换
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-download"></i> 语言包管理</h3>
+                                <div style="display: flex; gap: 12px;">
+                                    <button class="btn-secondary"><i class="fas fa-download"></i> 导出语言包</button>
+                                    <button class="btn-secondary"><i class="fas fa-upload"></i> 导入语言包</button>
+                                    <button class="btn-primary"><i class="fas fa-sync"></i> 同步翻译</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 邮件服务面板 (新增) -->
+                <div class="settings-panel" id="panel-email" style="display: none;">
+                    <div class="panel-header">
+                        <i class="fas fa-envelope"></i>
+                        <div>
+                            <h2>邮件服务配置</h2>
+                            <p>配置SMTP服务器，用于发送系统邮件</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <form id="emailForm">
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-server"></i> SMTP服务器</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">SMTP服务器</label>
+                                        <input type="text" class="form-control" id="smtpHost" value="smtp.gmail.com" placeholder="smtp.example.com">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">端口</label>
+                                        <input type="number" class="form-control" id="smtpPort" value="587" placeholder="587">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">加密方式</label>
+                                        <select class="form-control" id="smtpEncryption">
+                                            <option value="tls" selected>TLS</option>
+                                            <option value="ssl">SSL</option>
+                                            <option value="none">无</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">发件人邮箱</label>
+                                        <input type="email" class="form-control" id="smtpFrom" value="noreply@footrada.com" placeholder="noreply@example.com">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">发件人名称</label>
+                                        <input type="text" class="form-control" id="smtpFromName" value="FOOTRADA Team" placeholder="FOOTRADA Team">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">用户名</label>
+                                        <input type="text" class="form-control" id="smtpUsername" value="noreply@footrada.com">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">密码</label>
+                                        <input type="password" class="form-control" id="smtpPassword" value="********">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-envelope-open-text"></i> 测试邮件</h3>
+                                <div style="display: flex; gap: 12px; align-items: flex-end;">
+                                    <div style="flex: 1;">
+                                        <label class="form-label">发送测试邮件到</label>
+                                        <input type="email" class="form-control" id="testEmail" placeholder="your@email.com">
+                                    </div>
+                                    <button class="btn-primary" style="height: 46px;"><i class="fas fa-paper-plane"></i> 发送测试</button>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-envelope"></i> 邮件模板</h3>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                                    <a href="/admin/settings/email.html?template=welcome" class="btn-secondary" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                                        <i class="fas fa-user-plus"></i> 欢迎邮件
+                                    </a>
+                                    <a href="/admin/settings/email.html?template=verify" class="btn-secondary" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                                        <i class="fas fa-check-circle"></i> 验证邮件
+                                    </a>
+                                    <a href="/admin/settings/email.html?template=reset" class="btn-secondary" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                                        <i class="fas fa-key"></i> 密码重置
+                                    </a>
+                                    <a href="/admin/settings/email.html?template=deposit" class="btn-secondary" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                                        <i class="fas fa-arrow-down"></i> 充值成功
+                                    </a>
+                                    <a href="/admin/settings/email.html?template=withdraw" class="btn-secondary" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                                        <i class="fas fa-arrow-up"></i> 提现通知
+                                    </a>
+                                    <a href="/admin/settings/email.html?template=settlement" class="btn-secondary" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                                        <i class="fas fa-calculator"></i> 结算通知
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 安全设置面板 (新增) -->
+                <div class="settings-panel" id="panel-security" style="display: none;">
+                    <div class="panel-header">
+                        <i class="fas fa-shield-alt"></i>
+                        <div>
+                            <h2>安全设置</h2>
+                            <p>配置网站安全策略，保护用户数据</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <form id="securityForm">
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-lock"></i> 登录安全</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">登录尝试次数限制</label>
+                                        <input type="number" class="form-control" id="loginAttempts" value="5" min="1" max="20">
+                                        <div class="form-hint">超过次数后临时锁定</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">锁定时间(分钟)</label>
+                                        <input type="number" class="form-control" id="lockTime" value="15" min="1" max="1440">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">会话超时(分钟)</label>
+                                        <input type="number" class="form-control" id="sessionTimeout" value="30" min="5" max="1440">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">验证码</label>
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="captchaEnabled" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span>登录时显示验证码</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-ban"></i> IP黑名单</h3>
+                                <div class="form-group">
+                                    <label class="form-label">禁止访问的IP</label>
+                                    <textarea class="form-control" rows="3" id="ipBlacklist" placeholder="192.168.1.1
+10.0.0.1
+172.16.0.0/12"></textarea>
+                                    <div class="form-hint">每行一个IP或CIDR范围</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">IP白名单(管理后台)</label>
+                                    <textarea class="form-control" rows="3" id="ipWhitelist" placeholder="留空表示允许所有IP"></textarea>
+                                    <div class="form-hint">只有这些IP可以访问/admin/</div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-user-secret"></i> 隐私保护</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">用户数据加密</label>
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="dataEncryption" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span>AES-256加密</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">自动登出</label>
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="autoLogout" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span>30分钟无操作自动登出</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-history"></i> 操作日志</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">保留日志天数</label>
+                                        <input type="number" class="form-control" id="logRetention" value="90" min="7" max="365">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">记录管理员操作</label>
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="logAdmin" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span>记录所有管理员操作</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 性能优化面板 (新增) -->
+                <div class="settings-panel" id="panel-performance" style="display: none;">
+                    <div class="panel-header">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <div>
+                            <h2>性能优化</h2>
+                            <p>配置缓存和性能参数，提升网站访问速度</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <form id="performanceForm">
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-database"></i> 缓存设置</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">页面缓存(秒)</label>
+                                        <input type="number" class="form-control" id="pageCache" value="3600" min="0">
+                                        <div class="form-hint">0表示不缓存</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">API缓存(秒)</label>
+                                        <input type="number" class="form-control" id="apiCache" value="300" min="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Redis缓存</label>
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="redisEnabled" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span>启用Redis缓存</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">CDN加速</label>
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="cdnEnabled">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span>启用CDN</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-compress-alt"></i> 资源压缩</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Gzip压缩</label>
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="gzipEnabled" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span>启用Gzip</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">CSS/JS合并</label>
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="mergeEnabled">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span>合并静态资源</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">图片压缩</label>
+                                        <select class="form-control" id="imageCompression">
+                                            <option value="none">不压缩</option>
+                                            <option value="low" selected>低压缩(高质量)</option>
+                                            <option value="medium">中压缩</option>
+                                            <option value="high">高压缩(低质量)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-bolt"></i> 数据库优化</h3>
+                                <div class="form-group">
+                                    <label class="form-label">慢查询阈值(秒)</label>
+                                    <input type="number" class="form-control" id="slowQuery" value="1" min="0.1" step="0.1">
+                                </div>
+                                <div style="display: flex; gap: 12px; margin-top: 16px;">
+                                    <button class="btn-secondary"><i class="fas fa-database"></i> 优化数据库</button>
+                                    <button class="btn-secondary"><i class="fas fa-chart-line"></i> 查看性能报告</button>
+                                    <button class="btn-secondary"><i class="fas fa-broom"></i> 清理缓存</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 数据分析面板 (新增) -->
+                <div class="settings-panel" id="panel-analytics" style="display: none;">
+                    <div class="panel-header">
+                        <i class="fas fa-chart-bar"></i>
+                        <div>
+                            <h2>数据分析</h2>
+                            <p>配置第三方统计工具，追踪网站流量</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <form id="analyticsForm">
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fab fa-google"></i> Google Analytics</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">测量ID</label>
+                                        <input type="text" class="form-control" id="gaId" placeholder="G-XXXXXXXXXX">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">启用</label>
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="gaEnabled">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span>启用GA4</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-chart-line"></i> 其他统计</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">百度统计ID</label>
+                                        <input type="text" class="form-control" id="baiduId" placeholder="baidu统计ID">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Clarity ID</label>
+                                        <input type="text" class="form-control" id="clarityId" placeholder="Microsoft Clarity ID">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Hotjar ID</label>
+                                        <input type="text" class="form-control" id="hotjarId" placeholder="Hotjar Site ID">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-ad"></i> 广告追踪</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Facebook Pixel ID</label>
+                                        <input type="text" class="form-control" id="fbPixel" placeholder="Facebook Pixel ID">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Google Ads ID</label>
+                                        <input type="text" class="form-control" id="googleAdsId" placeholder="AW-XXXXXXXXX">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-cookie"></i> Cookie同意</h3>
+                                <div class="form-group">
+                                    <label class="form-label">显示Cookie同意弹窗</label>
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="cookieConsent" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                        <span>显示Cookie同意提示</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">同意弹窗内容</label>
+                                    <textarea class="form-control" rows="3" id="cookieText">We use cookies to enhance your experience. By continuing to visit this site you agree to our use of cookies.</textarea>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 法律合规面板 (新增) -->
+                <div class="settings-panel" id="panel-legal" style="display: none;">
+                    <div class="panel-header">
+                        <i class="fas fa-gavel"></i>
+                        <div>
+                            <h2>法律合规</h2>
+                            <p>配置网站法律条款和隐私政策</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <form id="legalForm">
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-file-contract"></i> 法律页面</h3>
+                                <div class="form-grid">
+                                    <div class="form-group full-width">
+                                        <label class="form-label">服务条款URL</label>
+                                        <input type="url" class="form-control" id="termsUrl" value="/terms" placeholder="/terms">
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">隐私政策URL</label>
+                                        <input type="url" class="form-control" id="privacyUrl" value="/privacy" placeholder="/privacy">
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Cookie政策URL</label>
+                                        <input type="url" class="form-control" id="cookieUrl" value="/cookie-policy" placeholder="/cookie-policy">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-flag"></i> 年龄限制</h3>
+                                <div class="form-group">
+                                    <label class="form-label">最低年龄限制</label>
+                                    <input type="number" class="form-control" id="minAge" value="18" min="13" max="21">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">年龄验证弹窗</label>
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="ageVerification">
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                        <span>要求用户确认年龄</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-euro-sign"></i> 合规信息</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">公司注册号</label>
+                                        <input type="text" class="form-control" id="companyReg" placeholder="公司注册号">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">VAT税号</label>
+                                        <input type="text" class="form-control" id="vatNumber" placeholder="VAT Number">
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">监管信息</label>
+                                        <textarea class="form-control" rows="2" id="regulatoryInfo" placeholder="监管机构信息"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 备份恢复面板 (新增) -->
+                <div class="settings-panel" id="panel-backup" style="display: none;">
+                    <div class="panel-header">
+                        <i class="fas fa-database"></i>
+                        <div>
+                            <h2>备份与恢复</h2>
+                            <p>配置自动备份和手动恢复功能</p>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <form id="backupForm">
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-clock"></i> 自动备份</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">启用自动备份</label>
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <label class="toggle-switch">
+                                                <input type="checkbox" id="autoBackup" checked>
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                            <span>每天备份</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">备份频率</label>
+                                        <select class="form-control" id="backupFrequency">
+                                            <option value="hourly">每小时</option>
+                                            <option value="daily" selected>每天</option>
+                                            <option value="weekly">每周</option>
+                                            <option value="monthly">每月</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">保留备份数</label>
+                                        <input type="number" class="form-control" id="backupRetention" value="30" min="1" max="365">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">备份位置</label>
+                                        <input type="text" class="form-control" id="backupPath" value="./backups" placeholder="./backups">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-history"></i> 手动备份</h3>
+                                <div style="display: flex; gap: 12px;">
+                                    <button class="btn-primary"><i class="fas fa-database"></i> 立即备份</button>
+                                    <button class="btn-secondary"><i class="fas fa-download"></i> 下载最新备份</button>
+                                    <button class="btn-danger"><i class="fas fa-undo-alt"></i> 恢复备份</button>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="section-title"><i class="fas fa-list"></i> 最近备份</h3>
+                                <div style="background: var(--bg-secondary); border-radius: 8px; overflow: hidden;">
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <thead>
+                                            <tr style="border-bottom: 1px solid var(--border-strong);">
+                                                <th style="padding: 12px; text-align: left;">文件名</th>
+                                                <th style="padding: 12px; text-align: left;">大小</th>
+                                                <th style="padding: 12px; text-align: left;">时间</th>
+                                                <th style="padding: 12px; text-align: left;">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td style="padding: 12px;">backup_2024-01-20.sqlite</td>
+                                                <td style="padding: 12px;">256 MB</td>
+                                                <td style="padding: 12px;">2024-01-20 03:00</td>
+                                                <td style="padding: 12px;">
+                                                    <button class="btn-secondary" style="padding: 4px 8px;"><i class="fas fa-download"></i></button>
+                                                    <button class="btn-secondary" style="padding: 4px 8px;"><i class="fas fa-undo-alt"></i></button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 12px;">backup_2024-01-19.sqlite</td>
+                                                <td style="padding: 12px;">254 MB</td>
+                                                <td style="padding: 12px;">2024-01-19 03:00</td>
+                                                <td style="padding: 12px;">
+                                                    <button class="btn-secondary" style="padding: 4px 8px;"><i class="fas fa-download"></i></button>
+                                                    <button class="btn-secondary" style="padding: 4px 8px;"><i class="fas fa-undo-alt"></i></button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 12px;">backup_2024-01-18.sqlite</td>
+                                                <td style="padding: 12px;">250 MB</td>
+                                                <td style="padding: 12px;">2024-01-18 03:00</td>
+                                                <td style="padding: 12px;">
+                                                    <button class="btn-secondary" style="padding: 4px 8px;"><i class="fas fa-download"></i></button>
+                                                    <button class="btn-secondary" style="padding: 4px 8px;"><i class="fas fa-undo-alt"></i></button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 底部操作按钮 -->
+                <div class="form-actions">
+                    <button class="btn btn-danger" id="resetAllBtn">
+                        <i class="fas fa-history"></i> 恢复默认
+                    </button>
+                    <button class="btn btn-secondary" id="cancelBtn" onclick="history.back()">
+                        <i class="fas fa-times"></i> 取消
+                    </button>
+                    <button class="btn btn-primary" id="saveAllBtn">
+                        <i class="fas fa-save"></i> 保存所有设置
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 标签页切换
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const panels = {
+                'basic': document.getElementById('panel-basic'),
+                'seo': document.getElementById('panel-seo'),
+                'contact': document.getElementById('panel-contact'),
+                'social': document.getElementById('panel-social'),
+                'language': document.getElementById('panel-language'),
+                'email': document.getElementById('panel-email'),
+                'security': document.getElementById('panel-security'),
+                'performance': document.getElementById('panel-performance'),
+                'analytics': document.getElementById('panel-analytics'),
+                'legal': document.getElementById('panel-legal'),
+                'backup': document.getElementById('panel-backup')
+            };
+
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    Object.values(panels).forEach(p => p.style.display = 'none');
+                    
+                    btn.classList.add('active');
+                    const tabName = btn.dataset.tab;
+                    if (panels[tabName]) {
+                        panels[tabName].style.display = 'block';
+                    }
+                });
+            });
+
+            // 网站状态切换
+            const siteStatus = document.getElementById('siteStatus');
+            const siteStatusText = document.getElementById('siteStatusText');
+            if (siteStatus) {
+                siteStatus.addEventListener('change', function() {
+                    if (this.checked) {
+                        siteStatusText.textContent = '运行中';
+                        siteStatusText.style.color = 'var(--success)';
+                    } else {
+                        siteStatusText.textContent = '维护中';
+                        siteStatusText.style.color = 'var(--danger)';
+                    }
+                });
+            }
+
+            // Logo上传
+            const uploadBtn = document.getElementById('uploadLogoBtn');
+            const logoInput = document.getElementById('logoInput');
+            const logoPreview = document.getElementById('logoPreview');
+
+            if (uploadBtn && logoInput) {
+                uploadBtn.addEventListener('click', () => {
+                    logoInput.click();
+                });
+
+                logoInput.addEventListener('change', function(e) {
+                    if (this.files && this.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            logoPreview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;">`;
+                        }
+                        reader.readAsDataURL(this.files[0]);
+                    }
+                });
+            }
+
+            // 保存按钮
+            document.getElementById('saveBtn')?.addEventListener('click', function() {
+                alert('设置已保存！');
+            });
+
+            document.getElementById('saveAllBtn')?.addEventListener('click', function() {
+                alert('所有设置已保存！');
+            });
+
+            // 重置按钮
+            document.getElementById('resetBtn')?.addEventListener('click', function() {
+                if (confirm('确定要重置当前标签页的设置吗？')) {
+                    alert('已重置');
+                }
+            });
+
+            document.getElementById('resetAllBtn')?.addEventListener('click', function() {
+                if (confirm('确定要恢复所有默认设置吗？此操作不可撤销。')) {
+                    alert('已恢复默认设置');
+                }
+            });
+
+            // 退出登录
+            document.getElementById('logoutBtn')?.addEventListener('click', () => {
+                window.location.href = '/admin/index.html';
+            });
+        });
+    </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ========== 标签页切换 ==========
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const panels = {
+            'basic': document.getElementById('panel-basic'),
+            'seo': document.getElementById('panel-seo'),
+            'contact': document.getElementById('panel-contact'),
+            'social': document.getElementById('panel-social'),
+            'language': document.getElementById('panel-language'),
+            'email': document.getElementById('panel-email'),
+            'security': document.getElementById('panel-security'),
+            'performance': document.getElementById('panel-performance'),
+            'analytics': document.getElementById('panel-analytics'),
+            'legal': document.getElementById('panel-legal'),
+            'backup': document.getElementById('panel-backup')
+        };
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                Object.values(panels).forEach(p => p.style.display = 'none');
+                
+                btn.classList.add('active');
+                const tabName = btn.dataset.tab;
+                if (panels[tabName]) {
+                    panels[tabName].style.display = 'block';
+                }
+                
+                // 保存当前标签页到sessionStorage（刷新后保持）
+                sessionStorage.setItem('activeTab', tabName);
+            });
+        });
+
+        // 恢复上次打开的标签页
+        const activeTab = sessionStorage.getItem('activeTab');
+        if (activeTab && panels[activeTab]) {
+            document.querySelector(`[data-tab="${activeTab}"]`).click();
+        }
+
+        // ========== 加载保存的设置 ==========
+        function loadSettings() {
+            const saved = localStorage.getItem('siteSettings');
+            if (saved) {
+                try {
+                    const settings = JSON.parse(saved);
+                    
+                    // 基础信息
+                    if (settings.siteName) document.getElementById('siteName').value = settings.siteName;
+                    if (settings.siteSlogan) document.getElementById('siteSlogan').value = settings.siteSlogan;
+                    if (settings.siteUrl) document.getElementById('siteUrl').value = settings.siteUrl;
+                    if (settings.icpNumber) document.getElementById('icpNumber').value = settings.icpNumber;
+                    if (settings.timezone) document.getElementById('timezone').value = settings.timezone;
+                    if (settings.defaultCurrency) document.getElementById('defaultCurrency').value = settings.defaultCurrency;
+                    if (settings.dateFormat) document.getElementById('dateFormat').value = settings.dateFormat;
+                    if (settings.timeFormat) document.getElementById('timeFormat').value = settings.timeFormat;
+                    
+                    // 开关状态
+                    if (settings.siteStatus !== undefined) {
+                        document.getElementById('siteStatus').checked = settings.siteStatus;
+                        toggleSiteStatus(settings.siteStatus);
+                    }
+                    if (settings.registrationEnabled !== undefined) {
+                        document.getElementById('registrationEnabled').checked = settings.registrationEnabled;
+                    }
+                    
+                    // SEO
+                    if (settings.seoTitle) document.getElementById('seoTitle').value = settings.seoTitle;
+                    if (settings.seoKeywords) document.getElementById('seoKeywords').value = settings.seoKeywords;
+                    if (settings.seoDescription) document.getElementById('seoDescription').value = settings.seoDescription;
+                    if (settings.allowRobots !== undefined) document.getElementById('allowRobots').checked = settings.allowRobots;
+                    if (settings.robotsTxt) document.getElementById('robotsTxt').value = settings.robotsTxt;
+                    
+                    // 联系方式
+                    if (settings.supportEmail) document.getElementById('supportEmail').value = settings.supportEmail;
+                    if (settings.businessEmail) document.getElementById('businessEmail').value = settings.businessEmail;
+                    if (settings.techEmail) document.getElementById('techEmail').value = settings.techEmail;
+                    
+                    // 社交链接
+                    if (settings.telegramLink) document.getElementById('telegramLink').value = settings.telegramLink;
+                    if (settings.twitterLink) document.getElementById('twitterLink').value = settings.twitterLink;
+                    if (settings.discordLink) document.getElementById('discordLink').value = settings.discordLink;
+                    
+                    console.log('设置加载成功');
+                } catch (e) {
+                    console.error('加载设置失败', e);
+                }
+            }
+        }
+
+        // ========== 保存所有设置 ==========
+        function saveAllSettings() {
+            const settings = {
+                // 基础信息
+                siteName: document.getElementById('siteName')?.value || '',
+                siteSlogan: document.getElementById('siteSlogan')?.value || '',
+                siteUrl: document.getElementById('siteUrl')?.value || '',
+                icpNumber: document.getElementById('icpNumber')?.value || '',
+                timezone: document.getElementById('timezone')?.value || 'UTC',
+                defaultCurrency: document.getElementById('defaultCurrency')?.value || 'USDT',
+                dateFormat: document.getElementById('dateFormat')?.value || 'Y-m-d',
+                timeFormat: document.getElementById('timeFormat')?.value || 'H:i',
+                siteStatus: document.getElementById('siteStatus')?.checked || false,
+                registrationEnabled: document.getElementById('registrationEnabled')?.checked || false,
+                
+                // SEO
+                seoTitle: document.getElementById('seoTitle')?.value || '',
+                seoKeywords: document.getElementById('seoKeywords')?.value || '',
+                seoDescription: document.getElementById('seoDescription')?.value || '',
+                allowRobots: document.getElementById('allowRobots')?.checked || false,
+                robotsTxt: document.getElementById('robotsTxt')?.value || '',
+                
+                // 联系方式
+                supportEmail: document.getElementById('supportEmail')?.value || '',
+                businessEmail: document.getElementById('businessEmail')?.value || '',
+                techEmail: document.getElementById('techEmail')?.value || '',
+                
+                // 社交链接
+                telegramLink: document.getElementById('telegramLink')?.value || '',
+                twitterLink: document.getElementById('twitterLink')?.value || '',
+                discordLink: document.getElementById('discordLink')?.value || '',
+                facebookLink: document.getElementById('facebookLink')?.value || '',
+                instagramLink: document.getElementById('instagramLink')?.value || '',
+                youtubeLink: document.getElementById('youtubeLink')?.value || '',
+                
+                // 时间戳
+                lastSaved: new Date().toISOString()
+            };
+            
+            localStorage.setItem('siteSettings', JSON.stringify(settings));
+            
+            // 显示保存成功提示
+            showToast('所有设置已保存成功！', 'success');
+        }
+
+        // ========== 恢复默认设置 ==========
+        function resetAllSettings() {
+            if (confirm('确定要恢复所有默认设置吗？此操作不可撤销。')) {
+                localStorage.removeItem('siteSettings');
+                location.reload(); // 刷新页面恢复默认值
+            }
+        }
+
+        // ========== 显示提示消息 ==========
+        function showToast(message, type = 'info') {
+            // 创建toast元素
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 24px;
+                background: ${type === 'success' ? '#10b981' : '#3b82f6'};
+                color: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 9999;
+                animation: slideIn 0.3s ease;
+            `;
+            toast.textContent = message;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // 添加动画样式
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // ========== 网站状态切换 ==========
+        function toggleSiteStatus(checked) {
+            const siteStatusText = document.getElementById('siteStatusText');
+            if (siteStatusText) {
+                if (checked) {
+                    siteStatusText.textContent = '运行中';
+                    siteStatusText.style.color = '#10b981';
+                } else {
+                    siteStatusText.textContent = '维护中';
+                    siteStatusText.style.color = '#ef4444';
+                }
+            }
+        }
+
+        const siteStatus = document.getElementById('siteStatus');
+        if (siteStatus) {
+            siteStatus.addEventListener('change', function() {
+                toggleSiteStatus(this.checked);
+            });
+        }
+
+        // ========== Logo上传预览 ==========
+        const uploadBtn = document.getElementById('uploadLogoBtn');
+        const logoInput = document.getElementById('logoInput');
+        const logoPreview = document.getElementById('logoPreview');
+
+        if (uploadBtn && logoInput) {
+            uploadBtn.addEventListener('click', () => {
+                logoInput.click();
+            });
+
+            logoInput.addEventListener('change', function(e) {
+                if (this.files && this.files[0]) {
+                    // 检查文件大小
+                    if (this.files[0].size > 2 * 1024 * 1024) {
+                        showToast('文件不能超过2MB', 'error');
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        logoPreview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;">`;
+                        
+                        // 保存到localStorage
+                        try {
+                            localStorage.setItem('siteLogo', e.target.result);
+                            showToast('Logo上传成功', 'success');
+                        } catch (e) {
+                            showToast('Logo保存失败', 'error');
+                        }
+                    }
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
+
+        // 加载保存的Logo
+        const savedLogo = localStorage.getItem('siteLogo');
+        if (savedLogo && logoPreview) {
+            logoPreview.innerHTML = `<img src="${savedLogo}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;">`;
+        }
+
+        // ========== 绑定保存按钮 ==========
+        const saveBtn = document.getElementById('saveAllBtn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', saveAllSettings);
+        }
+
+        // ========== 绑定重置按钮 ==========
+        const resetBtn = document.getElementById('resetAllBtn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', resetAllSettings);
+        }
+
+        // ========== 退出登录 ==========
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                window.location.href = '/admin/index.html';
+            });
+        }
+
+        // ========== 加载设置 ==========
+        loadSettings();
+
+        // ========== 输入实时字符计数 ==========
+        const seoTitle = document.getElementById('seoTitle');
+        const seoDesc = document.getElementById('seoDescription');
+        
+        if (seoTitle) {
+            seoTitle.addEventListener('input', function() {
+                const hint = this.parentElement.querySelector('.form-hint');
+                if (hint) {
+                    const count = this.value.length;
+                    hint.innerHTML = `<i class="fas fa-info-circle"></i> 建议60个字符以内，当前: ${count}字符`;
+                }
+            });
+        }
+        
+        if (seoDesc) {
+            seoDesc.addEventListener('input', function() {
+                const hint = this.parentElement.querySelector('.form-hint');
+                if (hint) {
+                    const count = this.value.length;
+                    hint.innerHTML = `<i class="fas fa-info-circle"></i> 建议160个字符以内，当前: ${count}字符`;
+                }
+            });
+        }
+
+        console.log('页面初始化完成');
+    });
+</script>
+</body>
+</html>

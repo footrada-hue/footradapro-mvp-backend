@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0B0E11" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)">
+    <title>Transaction Details · FOOTRADA</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Core Config -->
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/core/theme.js"></script>
+    
+    <!-- Core Styles -->
+    <link rel="stylesheet" href="/css/core/variables.css">
+    <link rel="stylesheet" href="/css/core/layout.css">
+    <link rel="stylesheet" href="/css/core/components.css">
+    
+    <style>
+        .match-card-enhanced {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 28px;
+            padding: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .team-logos {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .team-logo {
+            text-align: center;
+        }
+        
+        .logo-container {
+            width: 60px;
+            height: 60px;
+            background: rgba(var(--brand-rgb), 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+        
+        .logo-container img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+        
+        .default-logo {
+            font-size: 32px;
+            color: var(--brand-500);
+        }
+        
+        .team-abbr {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        
+        .vs-badge {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--brand-500);
+        }
+        
+        .match-teams-large {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        
+        .match-meta {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            color: var(--text-tertiary);
+            font-size: 13px;
+        }
+        
+        .match-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .details-card-enhanced {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 28px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .details-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-brand-light);
+        }
+        
+        .details-header i {
+            color: var(--brand-500);
+            font-size: 18px;
+        }
+        
+        .details-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            padding: 20px;
+        }
+        
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .detail-item.full-width {
+            grid-column: span 2;
+        }
+        
+        .detail-item.highlight-item {
+            background: rgba(var(--brand-rgb), 0.1);
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 8px;
+        }
+        
+        .detail-item-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+        
+        .detail-item-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .detail-item-value.highlight {
+            color: var(--brand-500);
+            font-size: 20px;
+        }
+        
+        .detail-item-value.positive {
+            color: var(--success-500);
+        }
+        
+        .detail-item-value.negative {
+            color: var(--danger-500);
+        }
+        
+        .status-card-pending,
+        .status-card-settled {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 28px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .status-icon-large {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+        
+        .status-icon-large.pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning-500);
+        }
+        
+        .status-icon-large.won {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success-500);
+        }
+        
+        .status-icon-large.lost {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger-500);
+        }
+        
+        .status-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .status-title.pending {
+            color: var(--warning-500);
+        }
+        
+        .status-title.won {
+            color: var(--success-500);
+        }
+        
+        .status-title.lost {
+            color: var(--danger-500);
+        }
+        
+        .status-message {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+        
+        .countdown-container {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 28px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .countdown-label {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-bottom: 8px;
+        }
+        
+        .countdown-display {
+            font-size: 32px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--brand-500);
+        }
+        
+        .report-section {
+            margin-bottom: 20px;
+        }
+        
+        .report-preview-card-new {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 28px;
+            padding: 20px;
+        }
+        
+        .report-preview-header-new {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .report-preview-title-new {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .report-preview-title-new i {
+            color: var(--brand-500);
+        }
+        
+        .report-preview-title-new h4 {
+            margin: 0;
+            font-size: 16px;
+        }
+        
+        .report-badge-new {
+            background: rgba(var(--brand-rgb), 0.15);
+            color: var(--brand-500);
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 11px;
+        }
+        
+        .report-preview-content-new {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+        
+        .report-view-btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(var(--brand-rgb), 0.1);
+            border: 1px solid rgba(var(--brand-rgb), 0.3);
+            border-radius: 40px;
+            color: var(--brand-500);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .report-view-btn:hover {
+            background: var(--brand-500);
+            color: white;
+        }
+        
+        .tx-id-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 28px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .tx-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(var(--brand-rgb), 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--brand-500);
+        }
+        
+        .tx-content {
+            flex: 1;
+        }
+        
+        .tx-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+        
+        .tx-value {
+            font-size: 13px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+        }
+        
+        .tx-copy-btn {
+            width: 36px;
+            height: 36px;
+            background: rgba(var(--brand-rgb), 0.1);
+            border: none;
+            border-radius: 50%;
+            color: var(--brand-500);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .tx-copy-btn:hover {
+            background: var(--brand-500);
+            color: white;
+        }
+        
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .test-mode-badge {
+            background: rgba(var(--brand-rgb), 0.15);
+            color: var(--brand-500);
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 10px;
+        }
+        
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-brand-light);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .back-btn:hover {
+            border-color: var(--brand-500);
+            color: var(--brand-500);
+        }
+        
+        .loading-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-tertiary);
+        }
+        
+        .loading-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: var(--brand-500);
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .error-state i {
+            font-size: 56px;
+            color: var(--danger-500);
+            margin-bottom: 20px;
+        }
+        
+        .error-state p {
+            margin-bottom: 24px;
+            color: var(--text-secondary);
+        }
+        
+        .funds-explanation {
+            background: rgba(var(--brand-rgb), 0.05);
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 8px;
+        }
+        
+        .funds-explanation-text {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            line-height: 1.5;
+        }
+        
+        .funds-explanation-text i {
+            margin-right: 6px;
+            color: var(--brand-500);
+        }
+        
+        @media (max-width: 480px) {
+            .match-card-enhanced {
+                padding: 16px;
+            }
+            .team-logos {
+                gap: 16px;
+            }
+            .logo-container {
+                width: 48px;
+                height: 48px;
+            }
+            .logo-container img {
+                width: 32px;
+                height: 32px;
+            }
+            .default-logo {
+                font-size: 24px;
+            }
+            .match-teams-large {
+                font-size: 16px;
+            }
+            .countdown-display {
+                font-size: 24px;
+            }
+            .details-grid {
+                padding: 16px;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-container">
+            <div class="page-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <button class="back-btn" onclick="history.back()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h1 class="page-title">
+                        Transaction Details
+                        <span id="testModeBadge" class="test-mode-badge" style="display: none;">
+                            <i class="fas fa-flask"></i> TEST
+                        </span>
+                    </h1>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <main class="content-scrollable">
+        <div class="content-container">
+            <div id="loadingState" class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading transaction details...</p>
+            </div>
+            
+            <div id="errorState" class="error-state" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>Transaction not found</p>
+                <button class="btn-primary" onclick="history.back()">Go Back</button>
+            </div>
+            
+            <div id="detailContent" style="display: none;">
+                <!-- Match Card -->
+                <div class="match-card-enhanced">
+                    <div class="team-logos">
+                        <div class="team-logo home">
+                            <div class="logo-container" id="homeLogoContainer">
+                                <i class="fas fa-shield-alt default-logo"></i>
+                                <img id="homeLogo" src="" alt="" style="display: none;">
+                            </div>
+                            <span class="team-abbr" id="homeTeamAbbr">-</span>
+                        </div>
+                        <div class="vs-badge">VS</div>
+                        <div class="team-logo away">
+                            <div class="logo-container" id="awayLogoContainer">
+                                <i class="fas fa-futbol default-logo"></i>
+                                <img id="awayLogo" src="" alt="" style="display: none;">
+                            </div>
+                            <span class="team-abbr" id="awayTeamAbbr">-</span>
+                        </div>
+                    </div>
+                    
+                    <div class="match-teams-large" id="matchTeams">-</div>
+                    <div class="match-meta">
+                        <span class="match-meta-item">
+                            <i class="fas fa-trophy"></i>
+                            <span id="matchLeague">-</span>
+                        </span>
+                        <span class="match-meta-item">
+                            <i class="fas fa-calendar"></i>
+                            <span id="matchDate">-</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Status Card -->
+                <div id="statusCard"></div>
+
+                <!-- Countdown Container -->
+                <div id="countdownContainer" class="countdown-container" style="display: none;">
+                    <div class="countdown-label">
+                        <i class="fas fa-clock"></i>
+                        <span>Match Countdown</span>
+                    </div>
+                    <div class="countdown-display" id="matchCountdown">00:00:00</div>
+                </div>
+
+                <!-- AI Strategy Allocation -->
+                <div class="details-card-enhanced">
+                    <div class="details-header">
+                        <i class="fas fa-robot"></i>
+                        <h3>AI Strategy Allocation</h3>
+                    </div>
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <div class="detail-item-label">Authorization Amount</div>
+                            <div class="detail-item-value highlight" id="authAmount">-</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-item-label">AI Allocation Ratio</div>
+                            <div class="detail-item-value" id="executionRate">-</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-item-label">AI Deployed Amount</div>
+                            <div class="detail-item-value" id="deployedAmount">-</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-item-label">Reserve Amount</div>
+                            <div class="detail-item-value" id="reservedAmount">-</div>
+                        </div>
+                        <div class="detail-item full-width">
+                            <div class="detail-item-label">Authorization Time</div>
+                            <div class="detail-item-value" id="authTime">-</div>
+                        </div>
+                    </div>
+                    <div class="funds-explanation" style="margin: 0 20px 20px 20px;">
+                        <div class="funds-explanation-text">
+                            <i class="fas fa-chart-line"></i>
+                            <strong>How it works:</strong> AI trades with the deployed portion (Authorization × Ratio). The reserve is kept as stability buffer and fully returned after the match.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settlement Details -->
+                <div id="settlementCard" style="display: none;">
+                    <div class="details-card-enhanced">
+                        <div class="details-header">
+                            <i class="fas fa-chart-line"></i>
+                            <h3>Settlement Details</h3>
+                        </div>
+                        <div class="details-grid">
+                            <div class="detail-item">
+                                <div class="detail-item-label">Match Result</div>
+                                <div class="detail-item-value" id="resultText">-</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-item-label">Authorized Amount</div>
+                                <div class="detail-item-value" id="authAmountDetail">-</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-item-label">AI Allocation Ratio</div>
+                                <div class="detail-item-value" id="executionRateDetail">-</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-item-label">AI Deployed Amount</div>
+                                <div class="detail-item-value" id="deployedAmountDetail">-</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-item-label">Reserve Amount</div>
+                                <div class="detail-item-value" id="reservedAmountDetail">-</div>
+                            </div>
+                            <div class="detail-item" id="profitRateRow" style="display: none;">
+                                <div class="detail-item-label">AI Profit Rate</div>
+                                <div class="detail-item-value positive" id="profitRateText">-</div>
+                            </div>
+                            <div class="detail-item" id="aiProfitRow" style="display: none;">
+                                <div class="detail-item-label">AI Profit</div>
+                                <div class="detail-item-value positive" id="deployedProfit">-</div>
+                            </div>
+                            <div class="detail-item" id="platformFeeRow" style="display: none;">
+                                <div class="detail-item-label">Platform Fee (20%)</div>
+                                <div class="detail-item-value" id="platformFee">-</div>
+                            </div>
+                            <div class="detail-item" id="netProfitRow">
+                                <div class="detail-item-label" id="netProfitLabel">Net Profit / Loss</div>
+                                <div class="detail-item-value" id="netProfit">-</div>
+                            </div>
+                            <div class="detail-item full-width highlight-item">
+                                <div class="detail-item-label">Final Return</div>
+                                <div class="detail-item-value highlight" id="finalReturn">-</div>
+                            </div>
+                            <div class="detail-item full-width">
+                                <div class="detail-item-label">Settlement Time</div>
+                                <div class="detail-item-value" id="settledAt">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Section -->
+                <div id="progressSection" style="display: none;"></div>
+
+                <!-- Report Section -->
+                <div id="reportSectionNew" class="report-section" style="display: none;">
+                    <div class="report-preview-card-new">
+                        <div class="report-preview-header-new">
+                            <div class="report-preview-title-new">
+                                <i class="fas fa-robot"></i>
+                                <h4>AI Analysis Report</h4>
+                            </div>
+                            <span class="report-badge-new">Available</span>
+                        </div>
+                        <div class="report-preview-content-new" id="reportPreviewContent">
+                            View the complete AI analysis and trading decisions that guided this authorization.
+                        </div>
+                        <button class="report-view-btn" id="viewFullReportBtn">
+                            <span>View Full Report</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Transaction ID Card -->
+                <div class="tx-id-card">
+                    <div class="tx-icon">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <div class="tx-content">
+                        <div class="tx-label">Transaction ID</div>
+                        <div class="tx-value" id="authId">-</div>
+                    </div>
+                    <button class="tx-copy-btn" onclick="copyTxId()">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <nav class="bottom-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="/match-market.html" class="nav-item">
+                <i class="fas fa-chart-line"></i>
+                <span>Markets</span>
+            </a>
+            <a href="/support.html" class="nav-item">
+                <i class="fas fa-headset"></i>
+                <span>Support</span>
+            </a>
+            <a href="/profile.html" class="nav-item active">
+                <i class="fas fa-user"></i>
+                <span>Account</span>
+            </a>
+        </div>
+    </nav>
+    
+    <script src="/js/user/transaction-detail.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (window.ThemeManager) {
+                await ThemeManager.init(true);
+            }
+        });
+        
+        function copyTxId() {
+            const txId = document.getElementById('authId')?.textContent;
+            if (txId && txId !== '-') {
+                navigator.clipboard.writeText(txId).then(() => {
+                    showToast('Transaction ID copied');
+                });
+            }
+        }
+        
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 100px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--brand-500);
+                color: white;
+                padding: 10px 20px;
+                border-radius: 8px;
+                font-size: 14px;
+                z-index: 9999;
+                animation: fadeInUp 0.3s ease;
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+        
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translate(-50%, 20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translate(-50%, 0);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

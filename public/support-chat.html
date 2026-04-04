@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="FootRadaPro Customer Support - 24/7 Online Professional Assistance">
+    <title>Support Chat - FootRadaPro</title>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Socket.IO Client -->
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <!-- Main Styles -->
+    <link rel="stylesheet" href="/css/pages/support-chat.css">
+    
+    <style>
+        /* ===== 隐藏滚动条（关键修改）===== */
+        html, body {
+            overflow: hidden;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* 隐藏页面滚动条但允许滚动内容 */
+        .support-page {
+            overflow-y: auto;
+            scrollbar-width: none;  /* Firefox */
+            -ms-overflow-style: none;  /* IE/Edge */
+            height: 100%;
+        }
+        
+        .support-page::-webkit-scrollbar {
+            display: none;  /* Chrome/Safari */
+        }
+        
+        /* Additional styles for file attachments, emoji picker and typing indicator */
+        .input-area {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 16px 20px;
+            background: white;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .attach-btn, .emoji-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 10px;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .attach-btn:hover, .emoji-btn:hover {
+            background: #f3f4f6;
+            color: #f97316;
+        }
+        
+        .input-area input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 24px;
+            outline: none;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .input-area input:focus {
+            border-color: #f97316;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+        }
+        
+        .input-area button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .input-area button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+        }
+        
+        .input-area button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .typing-indicator {
+            padding: 8px 20px;
+            font-size: 12px;
+            color: #9ca3af;
+            font-style: italic;
+            background: #fefcf9;
+            border-top: 1px solid #f3e8e0;
+            display: none;
+        }
+        
+        .file-attachment {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            margin: 4px 0;
+        }
+        
+        .image-attachment {
+            margin: 8px 0;
+        }
+        
+        .image-attachment img {
+            max-width: 200px;
+            max-height: 150px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .image-attachment img:hover {
+            transform: scale(1.02);
+        }
+        
+        .file-link {
+            color: #f97316;
+            text-decoration: none;
+            word-break: break-all;
+        }
+        
+        .file-link:hover {
+            text-decoration: underline;
+        }
+        
+        /* Emoji Picker Styles */
+        .emoji-picker {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+            width: 320px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .emoji-category {
+            padding: 12px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .emoji-category:last-child {
+            border-bottom: none;
+        }
+        
+        .emoji-category-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            display: block;
+            margin-bottom: 8px;
+        }
+        
+        .emoji-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .emoji-list span {
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .emoji-list span:hover {
+            background: #f3f4f6;
+            transform: scale(1.1);
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .input-area {
+                padding: 12px 16px;
+            }
+            
+            .attach-btn, .emoji-btn {
+                padding: 8px;
+            }
+            
+            .input-area button {
+                padding: 10px 20px;
+            }
+            
+            .emoji-picker {
+                width: 280px;
+                left: 10px;
+                bottom: 70px;
+            }
+        }
+        
+        /* ===== 确保消息区域无滚动条 ===== */
+        .messages-area {
+            overflow-y: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .messages-area::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="support-page">
+        <div class="chat-wrapper">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <div class="avatar">⚽</div>
+                <div class="info">
+                    <h2>FootRadaPro Support</h2>
+                    <p>24/7 Online · Professional Support</p>
+                </div>
+                <div class="status-badge online">Online</div>
+            </div>
+            
+            <!-- Messages Area -->
+            <div class="messages-area" id="messagesContainer">
+                <div class="loading-message">🔄 Loading...</div>
+            </div>
+            
+            <!-- Typing Indicator -->
+            <div id="typingIndicator" class="typing-indicator"></div>
+            
+            <!-- Input Area -->
+            <div class="input-area">
+                <button id="emojiBtn" class="emoji-btn" title="Emoji">
+                    <i class="far fa-smile"></i>
+                </button>
+                <button id="attachBtn" class="attach-btn" title="Attach file">
+                    <i class="fas fa-paperclip"></i>
+                </button>
+                <input type="text" id="messageInput" placeholder="Type your message..." autocomplete="off" maxlength="5000">
+                <button id="sendBtn">Send</button>
+                <input type="file" id="fileInput" style="display: none;" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt">
+            </div>
+            
+            <!-- Emoji Picker -->
+            <div id="emojiPicker" class="emoji-picker" style="display: none;">
+                <div class="emoji-category">
+                    <span class="emoji-category-title">😊 Smileys</span>
+                    <div class="emoji-list">
+                        😀 😃 😄 😁 😆 😅 🤣 😂 🙂 🙃 😉 😊 😇 🥰 😍 🤩 😘 😗 😚 😙 😋 😛 😜 🤪 😝 🤑 🤗 🤭 🤫 🤔 🤐 🤨 😐 😑 😶 😏 😒 🙄 😬 🤥 😌 😔 😪 🤤 😴 😷 🤒 🤕 🤢 🤮 🤧 🥵 🥶 🥴 😵 🤯 🤠 🥳 😎 🤓 🧐 😕 😟 🙁 ☹️ 😮 😯 😲 😳 🥺 😦 😧 😨 😰 😥 😢 😭 😱 😖 😣 😞 😓 😩 😫 🥱 😤 😡 😠 🤬
+                    </div>
+                </div>
+                <div class="emoji-category">
+                    <span class="emoji-category-title">❤️ Hearts</span>
+                    <div class="emoji-list">
+                        ❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 ❣️ 💕 💞 💓 💗 💖 💘 💝
+                    </div>
+                </div>
+                <div class="emoji-category">
+                    <span class="emoji-category-title">⚽ Sports</span>
+                    <div class="emoji-list">
+                        ⚽ 🏀 🏈 ⚾ 🥎 🎾 🏐 🏉 🥏 🎱 🪀 🏓 🏸 🥊 🥋 🎽 ⛸️ 🥌 🎿 ⛷️ 🏂 🏋️ 🤼 🤸 🤺 🤾 🏌️ 🏇 🧘 🏄 🚣 🏊 🤽 🚴 🚵
+                    </div>
+                </div>
+                <div class="emoji-category">
+                    <span class="emoji-category-title">🎉 Celebrations</span>
+                    <div class="emoji-list">
+                        🎉 🎊 🎈 🎁 🎂 🎉 🎊 🎈 🎁 🎀 🏆 🥇 🥈 🥉 🎖️ 🏅
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Chat Script -->
+    <script src="/js/user/support-chat.js"></script>
+</body>
+</html>

@@ -1,0 +1,835 @@
+/* 结果页样式 - 混搭風格：玻璃擬態 + 奢華質感 + 賽博朋克
+   比例協調・深度打磨版
+*/
+
+:root {
+    --accent: #FF6B00;
+    --accent-400: #FF8A3C;
+    --accent-300: #FFA55A;
+    --accent-rgb: 255, 107, 0;
+    
+    --success: #10B981;
+    --success-rgb: 16, 185, 129;
+    --danger: #EF4444;
+    --danger-rgb: 239, 68, 68;
+    --warning: #F59E0B;
+    --warning-rgb: 245, 158, 11;
+    
+    --gold: #FFD700;
+    --gold-rgb: 255, 215, 0;
+    
+    --bg-primary: #0B0E11;
+    --surface-card: rgba(21, 24, 30, 0.7);
+    --surface-secondary: rgba(30, 35, 45, 0.7);
+    
+    --text-primary: #FFFFFF;
+    --text-secondary: #8E95A3;
+    --text-tertiary: #6F7D95;
+    
+    --border: rgba(255, 255, 255, 0.08);
+    --border-gold: rgba(255, 215, 0, 0.15);
+    
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+    
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --radius-2xl: 24px;
+    --radius-3xl: 28px;
+    --radius-full: 9999px;
+    
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+    
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+}
+
+[data-theme="light"] {
+    --bg-primary: #F8FAFC;
+    --surface-card: rgba(255, 255, 255, 0.8);
+    --surface-secondary: rgba(248, 250, 252, 0.8);
+    --text-primary: #0F172A;
+    --text-secondary: #334155;
+    --text-tertiary: #64748B;
+    --border: rgba(0, 0, 0, 0.06);
+    --border-gold: rgba(255, 215, 0, 0.1);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* ===== 測試模式 ===== */
+.test-mode {
+    --accent: #2563EB;
+    --accent-400: #3B82F6;
+    --accent-300: #60A5FA;
+    --accent-rgb: 37, 99, 235;
+}
+
+/* ===== 設計令牌 ===== */
+:root {
+    /* 玻璃擬態 */
+    --glass-bg: rgba(21, 26, 40, 0.7);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.05);
+    --glass-border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    
+    /* 發光效果 */
+    --neon-glow: 0 0 20px rgba(var(--accent-rgb), 0.3);
+    --neon-glow-strong: 0 0 30px rgba(var(--accent-rgb), 0.5);
+    --gold-glow: 0 0 15px rgba(255, 215, 0, 0.2);
+    
+    /* 過渡動畫 */
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding-bottom: 80px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
+}
+
+#app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: var(--space-4);
+}
+
+/* ===== 導航欄 ===== */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-4) 0;
+    margin-bottom: var(--space-6);
+}
+
+.nav-btn {
+    width: 44px;
+    height: 44px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: var(--glass-border);
+    border-bottom: var(--glass-border-bottom);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition-base);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.nav-btn::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(var(--accent-rgb), 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+}
+
+.nav-btn:hover::before {
+    opacity: 1;
+    animation: rotate 8s linear infinite;
+}
+
+.nav-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: scale(1.08);
+    box-shadow: var(--neon-glow);
+}
+
+.nav-title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--text-primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ===== 加載狀態 ===== */
+.loading-state {
+    text-align: center;
+    padding: var(--space-10) var(--space-5);
+    color: var(--text-tertiary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.loading-state i {
+    font-size: 56px;
+    color: var(--accent);
+    filter: drop-shadow(0 0 15px var(--accent));
+    animation: spin 1s linear infinite;
+}
+
+.loading-state p {
+    font-size: 16px;
+    color: var(--text-secondary);
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ===== 結果卡片 ===== */
+.result-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: var(--glass-border);
+    border-bottom: var(--glass-border-bottom);
+    border-radius: var(--radius-3xl);
+    padding: var(--space-6);
+    margin-bottom: var(--space-6);
+    box-shadow: var(--glass-shadow);
+    position: relative;
+    overflow: hidden;
+    animation: slideUp 0.4s ease;
+}
+
+.result-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(var(--accent-rgb), 0.03) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+    pointer-events: none;
+}
+
+.result-card:hover::before {
+    opacity: 1;
+    animation: rotate 20s linear infinite;
+}
+
+.result-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-400));
+    box-shadow: var(--neon-glow);
+    opacity: 0.8;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== 比賽頭部 ===== */
+.match-header {
+    text-align: center;
+    margin-bottom: var(--space-8);
+    position: relative;
+    z-index: 2;
+}
+
+.teams {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+}
+
+.team {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.team.home .team-name {
+    order: 2;
+}
+
+.team.away .team-name {
+    order: 1;
+}
+
+.team-score {
+    font-family: var(--font-mono);
+    font-size: 56px;
+    font-weight: 800;
+    color: var(--accent);
+    text-shadow: 0 0 20px var(--accent);
+    line-height: 1;
+    letter-spacing: -2px;
+}
+
+.team-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.vs {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    padding: 0 var(--space-4);
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-gold);
+}
+
+.match-league {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+}
+
+.match-league i {
+    color: var(--accent);
+    font-size: 14px;
+    filter: drop-shadow(0 0 5px var(--accent));
+}
+
+.match-time {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+}
+
+.match-time i {
+    color: var(--accent);
+    font-size: 12px;
+}
+
+/* ===== 預測對比 ===== */
+.prediction-comparison {
+    margin-bottom: var(--space-8);
+    position: relative;
+    z-index: 2;
+}
+
+.prediction-comparison h3 {
+    font-size: 18px;
+    margin-bottom: var(--space-4);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.prediction-comparison h3 i {
+    color: var(--accent);
+    filter: drop-shadow(0 0 8px var(--accent));
+    font-size: 20px;
+}
+
+.comparison-card {
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: var(--radius-xl);
+    padding: var(--space-5);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    border: var(--glass-border);
+    border-bottom: var(--glass-border-bottom);
+}
+
+.prediction-item {
+    flex: 1;
+    text-align: center;
+}
+
+.prediction-item .label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.prediction-item .value {
+    font-size: 20px;
+    font-weight: 700;
+    padding: var(--space-2) var(--space-4);
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-gold);
+    font-family: var(--font-mono);
+    color: var(--accent);
+}
+
+.vs-small {
+    color: var(--text-tertiary);
+    font-weight: 700;
+    padding: 0 var(--space-3);
+    font-size: 14px;
+}
+
+.comparison-result {
+    position: absolute;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    letter-spacing: 0.3px;
+}
+
+.comparison-result.correct {
+    background: rgba(var(--success-rgb), 0.15);
+    color: var(--success);
+    border: 1px solid rgba(var(--success-rgb), 0.3);
+    box-shadow: 0 0 15px rgba(var(--success-rgb), 0.2);
+}
+
+.comparison-result.incorrect {
+    background: rgba(var(--danger-rgb), 0.15);
+    color: var(--danger);
+    border: 1px solid rgba(var(--danger-rgb), 0.3);
+    box-shadow: 0 0 15px rgba(var(--danger-rgb), 0.2);
+}
+
+/* ===== 收益明細 ===== */
+.profit-details {
+    position: relative;
+    z-index: 2;
+}
+
+.profit-details h3 {
+    font-size: 18px;
+    margin-bottom: var(--space-4);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.profit-card {
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: var(--radius-xl);
+    padding: var(--space-5);
+    border: var(--glass-border);
+    border-bottom: var(--glass-border-bottom);
+}
+
+.profit-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border-gold);
+    font-size: 15px;
+}
+
+.profit-row:last-child {
+    border-bottom: none;
+}
+
+.profit-row.highlight {
+    background: rgba(var(--accent-rgb), 0.1);
+    margin: var(--space-2) calc(-1 * var(--space-5));
+    padding: var(--space-3) var(--space-5);
+    border-bottom: 1px solid rgba(var(--accent-rgb), 0.2);
+    border-top: 1px solid rgba(var(--accent-rgb), 0.2);
+    position: relative;
+}
+
+.profit-row.highlight::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    box-shadow: var(--neon-glow);
+}
+
+.profit-row.total {
+    font-weight: 700;
+    font-size: 18px;
+    margin-top: var(--space-2);
+    padding-top: var(--space-4);
+    border-top: 2px solid var(--border-gold);
+}
+
+.amount {
+    font-family: var(--font-mono);
+    font-weight: 600;
+}
+
+.amount.profit {
+    color: var(--success);
+    text-shadow: 0 0 8px rgba(var(--success-rgb), 0.3);
+}
+
+.amount.commission {
+    color: var(--warning);
+    text-shadow: 0 0 8px rgba(var(--warning-rgb), 0.3);
+}
+
+.amount.total-profit {
+    color: var(--accent);
+    font-size: 22px;
+    text-shadow: 0 0 12px var(--accent);
+}
+
+.vip-badge {
+    background: linear-gradient(135deg, var(--accent), var(--accent-400));
+    color: white;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-weight: 700;
+    font-size: 14px;
+    box-shadow: var(--neon-glow);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ===== 報告按鈕 ===== */
+.report-btn {
+    width: 100%;
+    padding: var(--space-4);
+    background: var(--gradient-primary);
+    border: none;
+    border-radius: var(--radius-full);
+    color: white;
+    font-weight: 700;
+    font-size: 17px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    cursor: pointer;
+    transition: var(--transition-base);
+    margin-top: var(--space-6);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--neon-glow);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.report-btn::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+}
+
+.report-btn:hover::before {
+    opacity: 1;
+    animation: rotate 8s linear infinite;
+}
+
+.report-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--neon-glow-strong);
+}
+
+.report-btn i {
+    font-size: 18px;
+    transition: transform var(--transition-base);
+}
+
+.report-btn:hover i {
+    transform: translateX(4px);
+}
+
+/* ===== 空狀態 ===== */
+.empty-state {
+    text-align: center;
+    padding: var(--space-10) var(--space-5);
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: var(--radius-3xl);
+    border: var(--glass-border);
+    border-bottom: var(--glass-border-bottom);
+    box-shadow: var(--glass-shadow);
+}
+
+.empty-state i {
+    font-size: 72px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-4);
+    opacity: 0.5;
+}
+
+.empty-state p {
+    color: var(--text-secondary);
+    font-size: 16px;
+    margin-bottom: var(--space-6);
+}
+
+/* ===== 底部導航 ===== */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: rgba(15, 20, 34, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding-bottom: 16px;
+    max-width: 480px;
+    margin: 0 auto;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+    color: var(--text-tertiary);
+    font-size: 11px;
+    text-decoration: none;
+    transition: var(--transition-base);
+    padding: var(--space-2) 0;
+}
+
+.nav-item i {
+    font-size: 20px;
+    transition: var(--transition-base);
+}
+
+.nav-item:hover {
+    color: var(--accent);
+    transform: translateY(-2px);
+}
+
+.nav-item:hover i {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 8px var(--accent));
+}
+
+.nav-item.active {
+    color: var(--accent);
+}
+
+.nav-item.active i {
+    color: var(--accent);
+    filter: drop-shadow(0 0 8px var(--accent));
+}
+
+/* ===== 動畫定義 ===== */
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { 
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+/* ===== 響應式 ===== */
+@media (max-width: 480px) {
+    #app {
+        padding: var(--space-3);
+    }
+    
+    .nav-btn {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .nav-title {
+        font-size: 18px;
+    }
+    
+    .result-card {
+        padding: var(--space-4);
+    }
+    
+    .team-score {
+        font-size: 48px;
+    }
+    
+    .team-name {
+        font-size: 16px;
+    }
+    
+    .vs {
+        font-size: 14px;
+    }
+    
+    .prediction-item .value {
+        font-size: 18px;
+        padding: var(--space-1) var(--space-3);
+    }
+    
+    .profit-row {
+        font-size: 14px;
+    }
+    
+    .profit-row.total {
+        font-size: 16px;
+    }
+    
+    .amount.total-profit {
+        font-size: 20px;
+    }
+    
+    .report-btn {
+        padding: var(--space-3);
+        font-size: 16px;
+    }
+    
+    .bottom-nav {
+        height: 70px;
+    }
+    
+    .nav-item i {
+        font-size: 18px;
+    }
+    
+    .nav-item span {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 360px) {
+    .team-score {
+        font-size: 40px;
+    }
+    
+    .team-name {
+        font-size: 14px;
+    }
+    
+    .vs {
+        padding: var(--space-1) var(--space-2);
+    }
+    
+    .prediction-item .value {
+        font-size: 16px;
+    }
+    
+    .profit-row.highlight {
+        margin: var(--space-1) calc(-1 * var(--space-4));
+        padding: var(--space-2) var(--space-4);
+    }
+}
+
+/* ===== 測試模式強化 ===== */
+.test-mode .nav-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
+}
+
+.test-mode .result-card::after {
+    background: linear-gradient(90deg, var(--accent), var(--accent-400));
+}
+
+.test-mode .team-score {
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
+}
+
+.test-mode .prediction-item .value {
+    color: var(--accent);
+}
+
+.test-mode .report-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent-400));
+}
+
+.test-mode .vip-badge {
+    background: linear-gradient(135deg, var(--accent), var(--accent-400));
+}
+
+.test-mode .nav-item.active {
+    color: var(--accent);
+}
+
+.test-mode .nav-item.active i {
+    filter: drop-shadow(0 0 8px rgba(37, 99, 235, 0.5));
+}

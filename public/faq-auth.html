@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0B0E11" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)">
+    <title>Authorization · FOOTRADAPRO</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 核心样式 -->
+    <link rel="stylesheet" href="/css/core/variables.css">
+    <link rel="stylesheet" href="/css/core/layout.css">
+    <link rel="stylesheet" href="/css/core/components.css">
+    
+    <!-- 页面特有样式 -->
+    <link rel="stylesheet" href="/css/pages/faq.css">
+</head>
+<body>
+    <div class="page-header">
+        <div class="top-nav">
+            <button class="back-btn" onclick="window.location.href='/support.html'"><i class="fas fa-arrow-left"></i></button>
+            <h1 class="page-title">Authorization</h1>
+            <div style="width: 42px;"></div>
+        </div>
+    </div>
+
+    <main class="content-scrollable">
+        <div class="content-container">
+            <div class="category-section">
+                <div class="category-title">Authorization</div>
+                <div class="category-desc">Understanding our core rule-locked system</div>
+            </div>
+            
+            <div class="faq-list">
+                <!-- 問題 1 -->
+                <div class="faq-item" data-type="faq" data-question="What is One-Click Authorization and how does it work?" data-answer='<div style="margin-bottom: 12px;"><span class="highlight">One-Click Authorization</span> is a core feature. With a single click, users can lock in strategy rules and submit an authorization for a specific football match.</div><div style="margin-bottom: 12px;">After submission, all rules are sealed with high-strength encryption, ensuring the entire process is immutable - no entity, including the platform, can modify or interfere.</div><div style="margin-bottom: 12px;">The AI system analyzes vast historical data, team form, tactics, and real-time match conditions to generate optimal strategy configurations and execute them automatically according to predefined rules, eliminating human intervention.</div><div>After the match concludes, the system automatically completes settlement based on official results, ensuring transparency, accuracy, and efficiency.</div>'>
+                    <div class="faq-question">
+                        <i class="fas fa-question-circle"></i>
+                        <span>What is One-Click Authorization and how does it work?</span>
+                    </div>
+                    <div class="faq-preview">One-Click Authorization is a core feature. With a single click, users can lock in strategy rules...</div>
+                </div>
+                
+                <!-- 問題 2 -->
+                <div class="faq-item" data-type="faq" data-question="Can I cancel an authorization after submitting it?" data-answer='<div style="margin-bottom: 12px;"><span class="highlight">No.</span> Before authorization is confirmed, the system will prompt you to enter a two-factor verification password for confirmation.</div><div>Once authorized, the system is trusted, and the authorization is permanently locked. It cannot be canceled, modified, or interfered with in any way.</div>'>
+                    <div class="faq-question">
+                        <i class="fas fa-question-circle"></i>
+                        <span>Can I cancel an authorization after submitting it?</span>
+                    </div>
+                    <div class="faq-preview">No. Before authorization is confirmed, the system will prompt you to enter a two-factor verification password...</div>
+                </div>
+                
+                <!-- 問題 3 -->
+                <div class="faq-item" data-type="faq" data-question="How accurate is the AI prediction model?" data-answer='<div style="margin-bottom: 12px;">Our AI model maintains a historical average win rate of over <span class="highlight">82%</span> across all major leagues.</div><div>For high-confidence predictions (estimated win rate exceeding 85%), the average accuracy reaches <span class="highlight">91%</span>.</div>'>
+                    <div class="faq-question">
+                        <i class="fas fa-question-circle"></i>
+                        <span>How accurate is the AI prediction model?</span>
+                    </div>
+                    <div class="faq-preview">Our AI model maintains a historical average win rate of over 82% across all major leagues...</div>
+                </div>
+                
+                <!-- 問題 4 - 直接跳轉 -->
+                <div class="faq-item" data-type="link" data-url="/platform-reports.html">
+                    <div class="faq-question">
+                        <i class="fas fa-chart-line"></i>
+                        <span>View Historical Reports</span>
+                    </div>
+                    <div class="faq-preview">Click to view all historical AI predictions and results...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="/match-market.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Markets</span></a>
+            <a href="/support.html" class="nav-item active"><i class="fas fa-headset"></i><span>Support</span></a>
+            <a href="/profile.html" class="nav-item"><i class="fas fa-user"></i><span>Account</span></a>
+        </div>
+    </nav>
+
+    <script>
+        document.querySelectorAll('.faq-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const type = item.dataset.type;
+                
+                if (type === 'link') {
+                    const url = item.dataset.url;
+                    if (url) {
+                        window.location.href = url;
+                    }
+                } else {
+                    const q = item.dataset.question;
+                    const a = item.dataset.answer;
+                    if (q && a) {
+                        window.location.href = `/faq-detail.html?q=${encodeURIComponent(q)}&a=${encodeURIComponent(a)}`;
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

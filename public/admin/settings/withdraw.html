@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提现网络配置 - FOOTRADAPRO 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+    <link rel="stylesheet" href="/css/admin-base.css">
+    <link rel="stylesheet" href="/css/admin-nav.css">
+    <style>
+        .settings-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .btn-save {
+            padding: 10px 24px;
+            background: #FF6B00;
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-save:hover {
+            background: #FF8A3C;
+        }
+
+        .network-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .network-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-strong);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header h2 i {
+            color: #FF6B00;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-badge.active {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .status-badge.inactive {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-strong);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: monospace;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #FF6B00;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-group .form-control {
+            flex: 1;
+        }
+
+        .input-group .btn-copy {
+            padding: 0 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-strong);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .input-group .btn-copy:hover {
+            background: #FF6B00;
+            color: #000;
+        }
+
+        .fee-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 28px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-secondary);
+            transition: .3s;
+            border-radius: 34px;
+            border: 1px solid var(--border-strong);
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-secondary);
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #10b981;
+            border-color: #10b981;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+            background-color: white;
+        }
+
+        .example-table {
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 24px;
+        }
+
+        .example-table h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .example-table h3 i {
+            color: #FF6B00;
+        }
+
+        .example-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .example-table th {
+            text-align: left;
+            padding: 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-strong);
+        }
+
+        .example-table td {
+            padding: 12px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border-strong);
+        }
+
+        .example-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .example-table .highlight {
+            color: #FF6B00;
+            font-weight: 600;
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .info-box i {
+            color: #3b82f6;
+            font-size: 20px;
+        }
+
+        .info-box p {
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+    </style>
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/admin-settings.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 侧边导航栏 -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">FOOT<span>RADA</span></div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html" class="admin-nav-item"><i class="fas fa-tachometer-alt"></i> <span>仪表盘</span></a>
+                <a href="/admin/stats.html" class="admin-nav-item"><i class="fas fa-chart-pie"></i> <span>数据统计</span></a>
+                <a href="/admin/users.html" class="admin-nav-item"><i class="fas fa-users"></i> <span>用户管理</span></a>
+                <a href="/admin/admins.html" class="admin-nav-item"><i class="fas fa-user-shield"></i> <span>管理员管理</span></a>
+                <a href="/admin/deposits.html" class="admin-nav-item"><i class="fas fa-arrow-down"></i> <span>充值审核</span></a>
+                <a href="/admin/withdrawals.html" class="admin-nav-item"><i class="fas fa-arrow-up"></i> <span>提现审核</span></a>
+                <a href="/admin/finance.html" class="admin-nav-item"><i class="fas fa-chart-line"></i> <span>财务管理</span></a>
+                <a href="/admin/matches.html" class="admin-nav-item"><i class="fas fa-futbol"></i> <span>比赛管理</span></a>
+                <a href="/admin/settle.html" class="admin-nav-item"><i class="fas fa-calculator"></i> <span>清算管理</span></a>
+                <a href="/admin/report-editor.html" class="admin-nav-item"><i class="fas fa-edit"></i> <span>报告编辑</span></a>
+                <a href="/admin/ticker-manager.html" class="admin-nav-item"><i class="fas fa-bolt"></i> <span>动态管理</span></a>
+                <a href="/admin/notifications.html" class="admin-nav-item"><i class="fas fa-bell"></i> <span>通知管理</span></a>
+                <a href="/admin/settings/index.html" class="admin-nav-item active"><i class="fas fa-cog"></i> <span>系统设置</span></a>
+            </nav>
+        </aside>
+
+        <!-- 主内容 -->
+        <main class="admin-main">
+            <div class="settings-container">
+                <!-- 页面标题 -->
+                <div class="page-header">
+                    <h1>提现网络配置</h1>
+                    <button class="btn-save" onclick="saveAllSettings()">
+                        <i class="fas fa-save"></i> 保存所有更改
+                    </button>
+                </div>
+
+                <!-- 网络配置网格 -->
+                <div class="network-grid">
+                    <!-- TRC20 配置 -->
+                    <div class="network-card">
+                        <div class="card-header">
+                            <h2><i class="fab fa-tron"></i> TRC20 (Tron)</h2>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span class="status-badge active" id="trc20Status">已启用</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="trc20Enabled" checked onchange="toggleNetwork('trc20')">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>充值地址</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="trc20DepositAddress" value="TXez8vPf1AbC3xYz7pQr2LmN9kHj5FgDsW" placeholder="输入TRC20充值地址">
+                                    <button class="btn-copy" onclick="copyAddress('trc20DepositAddress')">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>网络手续费 (USDT)</label>
+                                <input type="number" class="form-control" id="trc20Fee" value="1" min="0" step="0.1">
+                            </div>
+                            <div class="fee-row">
+                                <div class="form-group">
+                                    <label>最小提现</label>
+                                    <input type="number" class="form-control" id="trc20MinWithdraw" value="10" min="1">
+                                </div>
+                                <div class="form-group">
+                                    <label>最大提现</label>
+                                    <input type="number" class="form-control" id="trc20MaxWithdraw" value="10000" min="0">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>确认块数</label>
+                                <input type="number" class="form-control" id="trc20Confirmations" value="12" min="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ERC20 配置 -->
+                    <div class="network-card">
+                        <div class="card-header">
+                            <h2><i class="fab fa-ethereum"></i> ERC20 (Ethereum)</h2>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span class="status-badge active" id="erc20Status">已启用</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="erc20Enabled" checked onchange="toggleNetwork('erc20')">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>充值地址</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="erc20DepositAddress" value="0x742d35Cc6634C0532925a3b844Bc454e4438f44e" placeholder="输入ERC20充值地址">
+                                    <button class="btn-copy" onclick="copyAddress('erc20DepositAddress')">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>网络手续费 (USDT)</label>
+                                <input type="number" class="form-control" id="erc20Fee" value="1" min="0" step="0.1">
+                            </div>
+                            <div class="fee-row">
+                                <div class="form-group">
+                                    <label>最小提现</label>
+                                    <input type="number" class="form-control" id="erc20MinWithdraw" value="10" min="1">
+                                </div>
+                                <div class="form-group">
+                                    <label>最大提现</label>
+                                    <input type="number" class="form-control" id="erc20MaxWithdraw" value="10000" min="0">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>确认块数</label>
+                                <input type="number" class="form-control" id="erc20Confirmations" value="12" min="1">
+                            </div>
+                            <div class="info-box" style="margin-top: 8px;">
+                                <i class="fas fa-gas-pump"></i>
+                                <p>ERC20 网络 gas 费较高，建议提醒用户使用 TRC20</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BEP20 配置 -->
+                    <div class="network-card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-bolt"></i> BEP20 (BSC)</h2>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span class="status-badge active" id="bep20Status">已启用</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="bep20Enabled" checked onchange="toggleNetwork('bep20')">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>充值地址</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="bep20DepositAddress" value="0x8F3a91cA1d2Bc9E7F3d5aB8c4D6eF9a0b1c2d3e4" placeholder="输入BEP20充值地址">
+                                    <button class="btn-copy" onclick="copyAddress('bep20DepositAddress')">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>网络手续费 (USDT)</label>
+                                <input type="number" class="form-control" id="bep20Fee" value="1" min="0" step="0.1">
+                            </div>
+                            <div class="fee-row">
+                                <div class="form-group">
+                                    <label>最小提现</label>
+                                    <input type="number" class="form-control" id="bep20MinWithdraw" value="10" min="1">
+                                </div>
+                                <div class="form-group">
+                                    <label>最大提现</label>
+                                    <input type="number" class="form-control" id="bep20MaxWithdraw" value="10000" min="0">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>确认块数</label>
+                                <input type="number" class="form-control" id="bep20Confirmations" value="12" min="1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 全局提现设置 -->
+                <div class="network-card" style="margin-bottom: 24px;">
+                    <div class="card-header">
+                        <h2><i class="fas fa-globe"></i> 全局提现设置</h2>
+                    </div>
+                    <div class="card-body">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                            <div class="form-group">
+                                <label>提现手续费类型</label>
+                                <select class="form-control" id="feeType">
+                                    <option value="fixed" selected>固定手续费</option>
+                                    <option value="percentage">百分比</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>最低提现金额 (USDT)</label>
+                                <input type="number" class="form-control" id="globalMinWithdraw" value="10" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>提现处理时间 (小时)</label>
+                                <input type="number" class="form-control" id="processTime" value="24" min="1">
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px; margin-top: 16px;">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="autoApprove" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span style="color: var(--text-secondary);">自动审核 (金额小于1000 USDT)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 手续费示例 -->
+                <div class="example-table">
+                    <h3><i class="fas fa-calculator"></i> 提现手续费示例 (固定 1 USDT)</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>提现金额</th>
+                                <th>手续费</th>
+                                <th>实际到账</th>
+                                <th>网络</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>50 USDT</td>
+                                <td>1 USDT</td>
+                                <td class="highlight">49 USDT</td>
+                                <td>TRC20/ERC20/BEP20</td>
+                            </tr>
+                            <tr>
+                                <td>100 USDT</td>
+                                <td>1 USDT</td>
+                                <td class="highlight">99 USDT</td>
+                                <td>TRC20/ERC20/BEP20</td>
+                            </tr>
+                            <tr>
+                                <td>1000 USDT</td>
+                                <td>1 USDT</td>
+                                <td class="highlight">999 USDT</td>
+                                <td>TRC20/ERC20/BEP20</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 说明 -->
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    <p>
+                        配置说明：这里的地址会实时同步到前端的充值和提现页面。用户选择不同网络时，会自动显示对应的地址。
+                        请确保地址格式正确，否则用户资产可能丢失。
+                    </p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 页面加载
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+            
+            document.getElementById('logoutBtn')?.addEventListener('click', () => {
+                window.location.href = '/admin/index.html';
+            });
+        });
+
+        // 加载设置
+        function loadSettings() {
+            // 这里应该从API加载保存的设置
+            console.log('加载提现设置');
+        }
+
+        // 保存所有设置
+        function saveAllSettings() {
+            const settings = {
+                trc20: {
+                    enabled: document.getElementById('trc20Enabled').checked,
+                    depositAddress: document.getElementById('trc20DepositAddress').value,
+                    fee: parseFloat(document.getElementById('trc20Fee').value),
+                    minWithdraw: parseFloat(document.getElementById('trc20MinWithdraw').value),
+                    maxWithdraw: parseFloat(document.getElementById('trc20MaxWithdraw').value),
+                    confirmations: parseInt(document.getElementById('trc20Confirmations').value)
+                },
+                erc20: {
+                    enabled: document.getElementById('erc20Enabled').checked,
+                    depositAddress: document.getElementById('erc20DepositAddress').value,
+                    fee: parseFloat(document.getElementById('erc20Fee').value),
+                    minWithdraw: parseFloat(document.getElementById('erc20MinWithdraw').value),
+                    maxWithdraw: parseFloat(document.getElementById('erc20MaxWithdraw').value),
+                    confirmations: parseInt(document.getElementById('erc20Confirmations').value)
+                },
+                bep20: {
+                    enabled: document.getElementById('bep20Enabled').checked,
+                    depositAddress: document.getElementById('bep20DepositAddress').value,
+                    fee: parseFloat(document.getElementById('bep20Fee').value),
+                    minWithdraw: parseFloat(document.getElementById('bep20MinWithdraw').value),
+                    maxWithdraw: parseFloat(document.getElementById('bep20MaxWithdraw').value),
+                    confirmations: parseInt(document.getElementById('bep20Confirmations').value)
+                },
+                global: {
+                    feeType: document.getElementById('feeType').value,
+                    globalMinWithdraw: parseFloat(document.getElementById('globalMinWithdraw').value),
+                    processTime: parseInt(document.getElementById('processTime').value),
+                    autoApprove: document.getElementById('autoApprove').checked
+                }
+            };
+
+            console.log('保存设置:', settings);
+            
+            // 这里应该调用API保存
+            alert('设置已保存！');
+        }
+
+        // 切换网络状态
+        function toggleNetwork(network) {
+            const enabled = document.getElementById(network + 'Enabled').checked;
+            const statusSpan = document.getElementById(network + 'Status');
+            
+            if (enabled) {
+                statusSpan.textContent = '已启用';
+                statusSpan.className = 'status-badge active';
+            } else {
+                statusSpan.textContent = '已禁用';
+                statusSpan.className = 'status-badge inactive';
+            }
+        }
+
+        // 复制地址
+        function copyAddress(elementId) {
+            const input = document.getElementById(elementId);
+            input.select();
+            document.execCommand('copy');
+            
+            // 临时提示
+            const btn = event.target.closest('.btn-copy');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i>';
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

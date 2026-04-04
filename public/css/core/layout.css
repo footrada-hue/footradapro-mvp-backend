@@ -1,0 +1,192 @@
+/* ======================================================
+   FOOTRADAPRO - 全局布局（优化比例版）
+   三层容器架构：固定头部 + 可滚动内容 + 固定底部导航
+   ====================================================== */
+
+/* ===== 基础容器 ===== */
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: radial-gradient(ellipse at 30% 25%, #121624, #0A0C12);
+    font-family: var(--font-family);
+    font-size: var(--text-base);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ===== 固定头部 ===== */
+.app-header {
+    flex-shrink: 0;
+    background: var(--bg-header);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-brand-light);
+    z-index: 10;
+    width: 100%;
+}
+
+.header-container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 12px 20px 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ===== 可滚动内容区 ===== */
+.content-scrollable {
+    flex: 1;
+    overflow-y: auto;
+    width: 100%;
+}
+
+.content-scrollable::-webkit-scrollbar {
+    width: 4px;
+}
+
+.content-scrollable::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.content-scrollable::-webkit-scrollbar-thumb {
+    background: var(--brand-500);
+    border-radius: var(--radius-full);
+}
+
+.content-container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 20px 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ===== 固定底部导航（优化比例）===== */
+.bottom-nav {
+    flex-shrink: 0;
+    width: 100%;
+    background: var(--bg-nav);
+    backdrop-filter: blur(20px);
+    border-top: 2px solid var(--brand-500);
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+}
+
+.nav-container {
+    max-width: 480px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+}
+
+.nav-item {
+    position: relative;
+    color: #64748B;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    gap: var(--space-1);
+    flex: 1;
+    transition: color var(--transition-fast);
+    padding: 4px 0;
+}
+
+.nav-item i {
+    font-size: 22px;
+    transition: none;
+}
+
+.nav-item.active {
+    color: var(--brand-500);
+}
+
+.nav-item.active i {
+    filter: drop-shadow(0 0 6px var(--brand-500));
+}
+
+.nav-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--brand-500);
+    box-shadow: 0 0 12px var(--brand-500);
+}
+
+.nav-item:hover {
+    color: var(--brand-400);
+}
+
+/* 测试模式底部导航 */
+.test-mode .bottom-nav {
+    border-top-color: #5B8CFF;
+}
+
+.test-mode .nav-item.active {
+    color: #5B8CFF;
+}
+
+.test-mode .nav-item.active i {
+    filter: drop-shadow(0 0 6px #5B8CFF);
+}
+
+.test-mode .nav-item.active::after {
+    background: #5B8CFF;
+    box-shadow: 0 0 12px #5B8CFF;
+}
+
+.test-mode .nav-item:hover {
+    color: #7BAAFF;
+}
+
+/* ===== 电脑端居中 ===== */
+@media (min-width: 769px) {
+    .app-header,
+    .content-scrollable,
+    .bottom-nav {
+        max-width: 480px;
+        width: 480px;
+        margin: 0 auto;
+        border-left: 1px solid var(--border-brand-light);
+        border-right: 1px solid var(--border-brand-light);
+    }
+}
+
+/* ===== 移动端适配 ===== */
+@media (max-width: 480px) {
+    .header-container {
+        padding: 10px 16px 6px;
+    }
+    
+    .content-container {
+        padding: 0 16px 16px;
+    }
+    
+    .nav-item i {
+        font-size: 20px;
+    }
+    
+    .nav-item span {
+        font-size: 10px;
+    }
+}
+
+/* ===== 安全区域适配（全面屏）===== */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .nav-container {
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    }
+}

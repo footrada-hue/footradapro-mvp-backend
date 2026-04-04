@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0B0E11" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)">
+    <title>Authorizations · FOOTRADA</title>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Core Config -->
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/core/theme.js"></script>
+    
+    <!-- 核心样式系统 -->
+    <link rel="stylesheet" href="/css/core/variables.css">
+    <link rel="stylesheet" href="/css/core/layout.css">
+    <link rel="stylesheet" href="/css/core/components.css">
+    
+    <style>
+        /* ===== 头部 - 居中设计 ===== */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            position: relative;
+        }
+        
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-brand-light);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .back-btn:hover {
+            border-color: var(--brand-500);
+            color: var(--brand-500);
+        }
+        
+        .page-title-wrapper {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+        }
+        
+        .page-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(135deg, var(--text-primary), var(--brand-400));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+        
+        .test-mode-badge {
+            background: rgba(var(--brand-rgb), 0.15);
+            color: var(--brand-500);
+            font-size: 10px;
+            padding: 4px 10px;
+            border-radius: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+        }
+        
+        .test-mode .page-title {
+            background: linear-gradient(135deg, var(--text-primary), #5B8CFF);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+        
+        /* 占位元素保持左右平衡 */
+        .header-placeholder {
+            width: 40px;
+            visibility: hidden;
+            z-index: 2;
+        }
+        
+        /* 统计摘要 */
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-summary-item {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 24px;
+            padding: 16px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        
+        .stat-summary-item:hover {
+            border-color: var(--brand-500);
+            transform: translateY(-2px);
+        }
+        
+        .stat-summary-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(var(--brand-rgb), 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            color: var(--brand-500);
+            font-size: 18px;
+        }
+        
+        .stat-summary-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-summary-value {
+            font-size: 20px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+        }
+        
+        .stat-summary-value.win {
+            color: var(--success-500);
+        }
+        
+        .stat-summary-value.loss {
+            color: var(--danger-500);
+        }
+        
+        /* 筛选标签 */
+        .filter-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 0;
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            padding: 4px;
+            border-radius: 48px;
+            border: 1px solid var(--border-brand-light);
+        }
+        
+        .filter-tab {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            border-radius: 40px;
+            color: var(--text-tertiary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .filter-tab:hover {
+            color: var(--brand-500);
+        }
+        
+        .filter-tab.active {
+            background: var(--gradient-primary);
+            color: white;
+        }
+        
+        /* 章节标题 */
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0 16px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-brand-light);
+        }
+        
+        .section-title i {
+            color: var(--brand-500);
+            font-size: 14px;
+        }
+        
+        .section-title:first-of-type {
+            margin-top: 0;
+        }
+        
+        /* 授权卡片 */
+        .auth-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 24px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .auth-card:hover {
+            border-color: var(--brand-500);
+            transform: translateX(4px);
+        }
+        
+        .auth-card.pending {
+            border-left: 3px solid var(--warning-500);
+        }
+        
+        .auth-card.won {
+            border-left: 3px solid var(--success-500);
+        }
+        
+        .auth-card.lost {
+            border-left: 3px solid var(--danger-500);
+        }
+        
+        .auth-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .auth-league {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-tertiary);
+            background: rgba(0, 0, 0, 0.2);
+            padding: 4px 10px;
+            border-radius: 40px;
+        }
+        
+        .auth-league i {
+            color: var(--warning-500);
+            font-size: 10px;
+        }
+        
+        .auth-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 40px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .auth-status.pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning-500);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+        
+        .auth-status.won {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success-500);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+        
+        .auth-status.lost {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger-500);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+        }
+        
+        .auth-teams {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        
+        .team {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 40%;
+        }
+        
+        .team-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+        
+        .team-abbr {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            background: rgba(0, 0, 0, 0.2);
+            padding: 2px 8px;
+            border-radius: 40px;
+        }
+        
+        .vs-badge {
+            width: 32px;
+            height: 32px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-tertiary);
+        }
+        
+        .auth-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-brand-light);
+        }
+        
+        .auth-amount {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+        }
+        
+        .auth-amount i {
+            color: var(--brand-500);
+            font-size: 12px;
+        }
+        
+        .auth-profit {
+            font-size: 14px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 40px;
+            font-family: var(--font-mono);
+        }
+        
+        .auth-profit.positive {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success-500);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+        
+        .auth-profit.negative {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger-500);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+        }
+        
+        .auth-profit.pending {
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text-tertiary);
+            border: 1px solid var(--border-brand-light);
+        }
+        
+        .auth-time {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        
+        .auth-time i {
+            font-size: 9px;
+            color: var(--brand-500);
+        }
+        
+        /* 加载状态 */
+        .loading-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-tertiary);
+        }
+        
+        .loading-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: var(--brand-500);
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            border: 1px solid var(--border-brand-light);
+        }
+        
+        .empty-state i {
+            font-size: 56px;
+            color: var(--brand-500);
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .empty-state p {
+            margin-bottom: 20px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state .btn-primary {
+            display: inline-block;
+            padding: 10px 24px;
+            background: var(--gradient-primary);
+            border-radius: 40px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .empty-state .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* 加载更多 */
+        .load-more {
+            display: flex;
+            justify-content: center;
+            margin: 24px 0;
+        }
+        
+        .load-more-btn {
+            padding: 10px 28px;
+            background: transparent;
+            border: 1px solid var(--border-brand-light);
+            border-radius: 40px;
+            color: var(--text-tertiary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .load-more-btn:hover {
+            border-color: var(--brand-500);
+            color: var(--brand-500);
+        }
+        
+        /* 响应式 */
+        @media (max-width: 480px) {
+            .stats-summary {
+                gap: 10px;
+            }
+            .stat-summary-item {
+                padding: 12px;
+            }
+            .stat-summary-value {
+                font-size: 18px;
+            }
+            .team-name {
+                font-size: 12px;
+            }
+            .auth-amount, .auth-profit {
+                font-size: 13px;
+            }
+            .page-title {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== 上部：固定區域 ===== -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="page-header">
+                <a href="/profile.html" class="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div class="page-title-wrapper">
+                    <h1 class="page-title">
+                        Authorizations
+                        <span id="testModeBadge" class="test-mode-badge" style="display: none;">
+                            <i class="fas fa-flask"></i> TEST
+                        </span>
+                    </h1>
+                </div>
+                <div class="header-placeholder"></div>
+            </div>
+
+            <!-- 統計摘要 -->
+            <div class="stats-summary" id="statsSummary">
+                <div class="stat-summary-item">
+                    <div class="stat-summary-icon">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="stat-summary-label">Active</div>
+                    <div class="stat-summary-value" id="pendingCount">0</div>
+                </div>
+                <div class="stat-summary-item">
+                    <div class="stat-summary-icon">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                    <div class="stat-summary-label">Profit</div>
+                    <div class="stat-summary-value win" id="winCount">0</div>
+                </div>
+                <div class="stat-summary-item">
+                    <div class="stat-summary-icon">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                    <div class="stat-summary-label">Loss</div>
+                    <div class="stat-summary-value loss" id="lossCount">0</div>
+                </div>
+            </div>
+
+            <!-- 篩選標籤 -->
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-status="all">All</button>
+                <button class="filter-tab" data-status="pending">Active</button>
+                <button class="filter-tab" data-status="settled">Settled</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== 中部：可滾動內容區域 ===== -->
+    <main class="content-scrollable">
+        <div class="content-container">
+            <!-- 加載狀態 -->
+            <div id="loadingState" class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading authorizations...</p>
+            </div>
+
+            <!-- 進行中區塊 -->
+            <div id="pendingSection" style="display: none;">
+                <div class="section-title">
+                    <i class="fas fa-hourglass-half"></i>
+                    <span>Active</span>
+                </div>
+                <div id="pendingList"></div>
+            </div>
+
+            <!-- 已結算區塊 -->
+            <div id="settledSection" style="display: none;">
+                <div class="section-title">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Settled</span>
+                </div>
+                <div id="settledList"></div>
+            </div>
+
+            <!-- 全部列表 -->
+            <div id="allList"></div>
+
+            <!-- 空狀態 -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="fas fa-inbox"></i>
+                <p>No authorizations yet</p>
+                <a href="/match-market.html" class="btn-primary">Go to Markets</a>
+            </div>
+
+            <!-- 加載更多 -->
+            <div class="load-more" id="loadMore" style="display: none;">
+                <button class="load-more-btn" id="loadMoreBtn">
+                    Load More <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- ===== 下部：固定底部導航 ===== -->
+    <nav class="bottom-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="/match-market.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Markets</span></a>
+            <a href="/support.html" class="nav-item"><i class="fas fa-headset"></i><span>Support</span></a>
+            <a href="/profile.html" class="nav-item active"><i class="fas fa-user"></i><span>Account</span></a>
+        </div>
+    </nav>
+
+    <script src="/js/user/authorizations.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (window.ThemeManager) {
+                await ThemeManager.init(true);
+            }
+        });
+    </script>
+</body>
+</html>

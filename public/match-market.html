@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>FOOTRADA · Match Markets</title>
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Core Styles -->
+    <link rel="stylesheet" href="/css/core/variables.css">
+    <link rel="stylesheet" href="/css/core/components.css">
+    <link rel="stylesheet" href="/css/pages/market.css">
+    
+    <!-- 终极强制覆盖 - 与首页主题完全一致 -->
+<style>
+    /* ===== 强制背景与首页一致 ===== */
+    html, body {
+        background-color: #111827 !important;
+        background-image: none !important;
+    }
+    
+    body {
+        background: #111827 !important;
+    }
+    
+    /* ===== 强制底部导航与首页完全一致 ===== */
+    .bottom-nav {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        background: rgba(17, 24, 39, 0.95) !important;
+        backdrop-filter: blur(20px) !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+        padding: 10px 0 !important;
+        z-index: 100 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+    
+    .bottom-nav::before,
+    .bottom-nav::after {
+        display: none !important;
+        content: none !important;
+    }
+    
+    .nav-container {
+        display: flex !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+        max-width: 500px !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+    }
+    
+    .nav-item {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 4px !important;
+        padding: 8px 16px !important;
+        color: #6B7280 !important;
+        text-decoration: none !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        transition: all 0.2s !important;
+        border-radius: 12px !important;
+        background: transparent !important;
+        border: none !important;
+        position: relative !important;
+    }
+    
+    .nav-item i {
+        font-size: 20px !important;
+        margin: 0 !important;
+        filter: none !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+    
+    .nav-item span {
+        font-size: 11px !important;
+        font-weight: 500 !important;
+    }
+    
+    .nav-item.active {
+        color: #F97316 !important;
+        background: transparent !important;
+        text-shadow: none !important;
+    }
+    
+    /* 移除小圆点 */
+    .nav-item.active::after {
+        display: none !important;
+        content: none !important;
+    }
+    
+    /* 移除光晕效果 */
+    .nav-item.active i {
+        filter: none !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+    
+    .nav-item i {
+        filter: none !important;
+        box-shadow: none !important;
+    }
+    
+    .nav-item:hover i {
+        filter: none !important;
+        box-shadow: none !important;
+    }
+    
+    .nav-item:active {
+        background: rgba(255, 107, 0, 0.1) !important;
+    }
+    
+    /* 测试模式底部导航 */
+    body.test-mode .nav-item.active {
+        color: #3B82F6 !important;
+    }
+    
+    body.test-mode .nav-item:active {
+        background: rgba(59, 130, 246, 0.1) !important;
+    }
+    
+    /* ===== 强制 header 背景一致 ===== */
+    .app-header {
+        background: rgba(17, 24, 39, 0.95) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+    
+    /* ===== 强制内容区域背景透明 ===== */
+    .content-scrollable,
+    .content-container {
+        background: transparent !important;
+    }
+    
+    /* ===== 强制卡片背景一致 ===== */
+    .filter-section,
+    .match-group {
+        background: rgba(31, 41, 55, 0.6) !important;
+        backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+    
+    .compact-card {
+        background: rgba(255, 255, 255, 0.02) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+    
+    .compact-card:hover {
+        border-color: #F97316 !important;
+    }
+    
+    /* 测试模式卡片边框 */
+    body.test-mode .compact-card:hover {
+        border-color: #3B82F6 !important;
+    }
+    
+    /* ===== 品牌色统一 ===== */
+    .filter-chip.active {
+        background: #F97316 !important;
+        color: white !important;
+    }
+    
+    body.test-mode .filter-chip.active {
+        background: #3B82F6 !important;
+    }
+    
+    .card-action:not(.disabled) {
+        background: #F97316 !important;
+    }
+    
+    body.test-mode .card-action:not(.disabled) {
+        background: #3B82F6 !important;
+    }
+</style>
+    
+    <!-- Theme Management -->
+    <script src="/js/core/theme.js"></script>
+    <script src="/js/core/timezone.js"></script>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-container">
+            <!-- Ticker / Marquee -->
+            <div class="ticker-bar" id="tickerBar">
+                <div class="ticker-icon"><i class="fas fa-circle-nodes"></i></div>
+                <div class="ticker-wrapper">
+                    <div class="ticker-messages" id="tickerMessages" data-i18n="ticker.loading">Loading market updates...</div>
+                </div>
+                
+            </div>
+            
+            <!-- Control Bar -->
+            <div class="controls-group">
+                <div class="controls-left">
+                    <button class="control-btn" onclick="history.back()" aria-label="Go back" data-i18n="button.back">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
+                <div class="controls-right">
+                    <button class="control-btn" id="refreshBtn" aria-label="Refresh" data-i18n="button.refresh">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    
+                    <!-- Timezone Switcher -->
+                    <div class="timezone-switcher" id="timezoneSwitcher">
+                        <button class="timezone-trigger" id="timezoneTrigger" data-i18n="timezone.trigger">
+                            <i class="fas fa-globe"></i>
+                            <span id="currentTimezoneLabel" data-i18n="timezone.auto">Auto</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="timezone-dropdown" id="timezoneDropdown">
+                            <div class="dropdown-header">
+                                <i class="fas fa-clock"></i>
+                                <span data-i18n="timezone.select">Select Timezone</span>
+                            </div>
+                            <div class="dropdown-option" data-tz="auto">
+                                <i class="fas fa-sync-alt"></i>
+                                <span data-i18n="timezone.auto">Auto Detect</span>
+                                <span class="tz-check">✓</span>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-option" data-tz="UTC-12">UTC-12 (Baker Island)</div>
+                            <div class="dropdown-option" data-tz="UTC-11">UTC-11 (American Samoa)</div>
+                            <div class="dropdown-option" data-tz="UTC-10">UTC-10 (Honolulu)</div>
+                            <div class="dropdown-option" data-tz="UTC-9">UTC-9 (Anchorage)</div>
+                            <div class="dropdown-option" data-tz="UTC-8">UTC-8 (Los Angeles, Vancouver)</div>
+                            <div class="dropdown-option" data-tz="UTC-7">UTC-7 (Denver, Phoenix)</div>
+                            <div class="dropdown-option" data-tz="UTC-6">UTC-6 (Chicago, Mexico City)</div>
+                            <div class="dropdown-option" data-tz="UTC-5">UTC-5 (New York, Toronto)</div>
+                            <div class="dropdown-option" data-tz="UTC-4">UTC-4 (Santiago, Caracas)</div>
+                            <div class="dropdown-option" data-tz="UTC-3">UTC-3 (São Paulo, Buenos Aires)</div>
+                            <div class="dropdown-option" data-tz="UTC-2">UTC-2 (South Georgia)</div>
+                            <div class="dropdown-option" data-tz="UTC-1">UTC-1 (Azores)</div>
+                            <div class="dropdown-option" data-tz="UTC+0">UTC+0 (London, Dublin)</div>
+                            <div class="dropdown-option" data-tz="UTC+1">UTC+1 (Paris, Berlin, Rome)</div>
+                            <div class="dropdown-option" data-tz="UTC+2">UTC+2 (Athens, Cairo)</div>
+                            <div class="dropdown-option" data-tz="UTC+3">UTC+3 (Moscow, Istanbul)</div>
+                            <div class="dropdown-option" data-tz="UTC+4">UTC+4 (Dubai, Baku)</div>
+                            <div class="dropdown-option" data-tz="UTC+5">UTC+5 (Karachi, Tashkent)</div>
+                            <div class="dropdown-option" data-tz="UTC+6">UTC+6 (Dhaka, Almaty)</div>
+                            <div class="dropdown-option" data-tz="UTC+7">UTC+7 (Bangkok, Jakarta)</div>
+                            <div class="dropdown-option" data-tz="UTC+8">UTC+8 (Beijing, Hong Kong, Singapore)</div>
+                            <div class="dropdown-option" data-tz="UTC+9">UTC+9 (Tokyo, Seoul)</div>
+                            <div class="dropdown-option" data-tz="UTC+10">UTC+10 (Sydney, Melbourne)</div>
+                            <div class="dropdown-option" data-tz="UTC+11">UTC+11 (Solomon Islands)</div>
+                            <div class="dropdown-option" data-tz="UTC+12">UTC+12 (Auckland, Fiji)</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Language Switcher -->
+                    <div class="lang-switcher" id="langSwitcher">
+                        <button class="lang-trigger" data-i18n="lang.trigger">
+                            <span class="lang-code" id="currentLangDisp">EN</span>
+                            <i class="fas fa-chevron-down chevron-icon"></i>
+                        </button>
+                        <div class="lang-dropdown" id="langDropdown"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Header Title -->
+            <div class="market-header">
+                <h1 class="page-title" data-i18n="market.title">Match Markets</h1>
+                <div class="page-subtitle" data-i18n="market.subtitle">Discover and trade the best matches</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="content-scrollable">
+        <div class="content-container">
+            <!-- Dynamic content rendered by JavaScript -->
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item" data-i18n="nav.home">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="/match-market.html" class="nav-item active" data-i18n="nav.markets">
+                <i class="fas fa-chart-line"></i>
+                <span>Markets</span>
+            </a>
+            <a href="/support.html" class="nav-item" data-i18n="nav.support">
+                <i class="fas fa-headset"></i>
+                <span>Support</span>
+            </a>
+            <a href="/profile.html" class="nav-item" data-i18n="nav.account">
+                <i class="fas fa-user"></i>
+                <span>Account</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Notification Modal -->
+    <div class="modal-overlay" id="notificationModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="notificationTitle" data-i18n="modal.system">System</h2>
+                <button class="modal-close" onclick="closeNotificationModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="notificationContent"></div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeNotificationModal()" data-i18n="modal.close">Close</button>
+                <button class="btn-primary" onclick="markNotificationRead()" data-i18n="modal.acknowledge">Acknowledge</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/core/config.js"></script>
+    <script src="/js/user/match-market_controller.js"></script>
+    
+    <script>
+        // Timezone switcher initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.FOOTRADA_TIMEZONE) {
+                window.FOOTRADA_TIMEZONE.initTimezoneSwitcher();
+            }
+        });
+    </script>
+</body>
+</html>

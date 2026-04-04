@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>数据统计 - FOOTRADAPRO 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/css/admin-base.css">
+    <link rel="stylesheet" href="/css/admin-nav.css">
+    <link rel="stylesheet" href="/css/admin-stats.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 侧边导航栏 -->
+        <aside class="admin-sidebar" id="sidebar-container"></aside>
+
+<script>
+    // 加载侧边栏组件
+    fetch('/admin/components/sidebar.html')
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById('sidebar-container').innerHTML = html;
+            // 高亮当前菜单
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.admin-nav-item').forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        })
+        .catch(err => console.error('加载侧边栏失败:', err));
+</script>
+
+        <!-- 主内容 -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1><i class="fas fa-chart-pie"></i> 数据统计</h1>
+                <div class="admin-user">
+                    <span id="adminName">管理员</span>
+                    <button class="icon-btn" id="logoutBtn" title="退出登录">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <!-- 时间范围选择器 -->
+                                     <!-- ✅ 新增：模式切换器 -->
+                    <div class="mode-switcher">
+                        <span class="mode-label"><i class="fas fa-chart-simple"></i> 数据模式</span>
+                        <div class="mode-buttons">
+                            <button class="mode-btn active" data-mode="all">
+                                <i class="fas fa-chart-pie"></i> 全部
+                            </button>
+                            <button class="mode-btn" data-mode="test">
+                                <i class="fas fa-flask"></i> 测试模式
+                            </button>
+                            <button class="mode-btn" data-mode="live">
+                                <i class="fas fa-bolt"></i> 真实模式
+                            </button>
+                        </div>
+                    </div>
+                <div class="date-range-bar">
+                    <div class="range-buttons">
+                        <button class="range-btn active" data-range="today">今日</button>
+                        <button class="range-btn" data-range="week">本周</button>
+                        <button class="range-btn" data-range="month">本月</button>
+                        <button class="range-btn" data-range="year">本年</button>
+                    </div>
+                    <div class="custom-range">
+                        <input type="date" id="startDate">
+                        <span>至</span>
+                        <input type="date" id="endDate">
+                        <button class="btn-small" id="applyRange">应用</button>
+                    </div>
+                </div>
+
+                <!-- 加载状态 -->
+                <div id="loadingSpinner" class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>加载数据中...</span>
+                </div>
+
+                <!-- 统计内容 -->
+                <div id="statsContent" style="display: none;">
+                    <!-- 核心指标卡片 -->
+                    <div class="stats-grid" id="statsCards"></div>
+
+                    <!-- 双列图表 -->
+                    <div class="two-columns">
+                        <!-- 收入趋势图 -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3><i class="fas fa-chart-line"></i> 收入趋势</h3>
+                                <div class="chart-actions">
+                                    <button class="chart-type-btn active" data-chart="trend" data-type="line">折线图</button>
+                                    <button class="chart-type-btn" data-chart="trend" data-type="bar">柱状图</button>
+                                </div>
+                            </div>
+                            <div class="chart-wrapper">
+                                <canvas id="trendChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- 比赛统计 -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3><i class="fas fa-futbol"></i> 比赛统计</h3>
+                            </div>
+                            <div class="chart-wrapper">
+                                <canvas id="matchesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 第二行：三列布局 -->
+                    <div class="three-columns">
+                        <!-- 用户活跃度 -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3><i class="fas fa-users"></i> 用户活跃度</h3>
+                            </div>
+                            <div class="chart-wrapper small">
+                                <canvas id="activityChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- 测试/真实模式分布 -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3><i class="fas fa-flask"></i> 模式分布</h3>
+                            </div>
+                            <div class="chart-wrapper small">
+                                <canvas id="modeChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- VIP分布 -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3><i class="fas fa-crown"></i> VIP等级分布</h3>
+                            </div>
+                            <div class="chart-wrapper small">
+                                <canvas id="vipChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                                        <!-- 授权统计表 -->
+                    <div class="data-table-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-list-ul"></i> 授权记录</h3>
+                            <div class="card-actions">
+                                <!-- 每页显示数量 -->
+                                <select id="authLimitSelect" class="limit-select">
+                                    <option value="20">20条/页</option>
+                                    <option value="50" selected>50条/页</option>
+                                    <option value="100">100条/页</option>
+                                </select>
+                                
+                                <!-- 状态筛选 -->
+                                <select id="authStatusFilter" class="status-select">
+                                    <option value="all">全部状态</option>
+                                    <option value="pending">待结算</option>
+                                    <option value="won">盈利</option>
+                                    <option value="lost">亏损</option>
+                                    <option value="settled">已结算</option>
+                                </select>
+                                
+                                <button class="view-link" id="exportAuthBtn">
+                                    <i class="fas fa-download"></i> 导出记录
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 表格容器 -->
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>授权ID</th>
+                                        <th>用户</th>
+                                        <th>比赛</th>
+                                        <th class="sortable" data-sort="amount">
+                                            金额 <i class="fas fa-sort"></i>
+                                        </th>
+                                        <th>状态</th>
+                                        <th class="sortable" data-sort="time">
+                                            时间 <i class="fas fa-sort"></i>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="authTableBody">
+                                    <tr><td colspan="6" class="loading-td">加载中...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- 分页控件 -->
+                        <div class="auth-pagination" id="authPagination">
+                            <button class="page-btn" id="authFirstBtn" disabled>
+                                <i class="fas fa-angle-double-left"></i>
+                            </button>
+                            <button class="page-btn" id="authPrevBtn" disabled>
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span class="page-info" id="authPageInfo">第 1 / 1 页</span>
+                            <button class="page-btn" id="authNextBtn" disabled>
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button class="page-btn" id="authLastBtn" disabled>
+                                <i class="fas fa-angle-double-right"></i>
+                            </button>
+                            <span class="total-info" id="authTotalInfo">共 0 条记录</span>
+                        </div>
+                    </div>
+    <script src="/js/admin/stats_controller.js"></script>
+</body>
+</html>

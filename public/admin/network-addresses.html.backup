@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网络地址管理 - FOOTRADAPRO 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/admin-base.css">
+    <style>
+        .address-form {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .network-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-strong);
+            padding-bottom: 12px;
+        }
+        
+        .network-tab {
+            padding: 8px 20px;
+            background: transparent;
+            border: none;
+            border-radius: 30px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .network-tab.active {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-strong);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
+        .btn-save {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 0, 0.4);
+        }
+        
+        .address-preview {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            font-family: monospace;
+            word-break: break-all;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        
+        .status-inactive {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <!-- 侧边栏导航 -->
+            <div class="admin-sidebar-logo">FOOT<span>RADA</span></div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html" class="admin-nav-item"><i class="fas fa-tachometer-alt"></i> 仪表盘</a>
+                <a href="/admin/users.html" class="admin-nav-item"><i class="fas fa-users"></i> 用户管理</a>
+                <a href="/admin/deposits.html" class="admin-nav-item"><i class="fas fa-arrow-down"></i> 充值审核</a>
+                <a href="/admin/withdrawals.html" class="admin-nav-item"><i class="fas fa-arrow-up"></i> 提现审核</a>
+                <a href="/admin/network-addresses.html" class="admin-nav-item active"><i class="fas fa-network-wired"></i> 网络地址管理</a>
+                <a href="/admin/settings/index.html" class="admin-nav-item"><i class="fas fa-cog"></i> 系统设置</a>
+            </nav>
+        </aside>
+        
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1><i class="fas fa-network-wired"></i> 网络充值地址管理</h1>
+                <div class="admin-user">
+                    <span id="adminName">管理员</span>
+                </div>
+            </header>
+            
+            <div class="admin-content">
+                <div class="address-form">
+                    <div class="network-tabs" id="networkTabs">
+                        <button class="network-tab active" data-network="TRC20">TRC20 (Tron)</button>
+                        <button class="network-tab" data-network="ERC20">ERC20 (Ethereum)</button>
+                        <button class="network-tab" data-network="BEP20">BEP20 (BSC)</button>
+                    </div>
+                    
+                    <form id="addressForm">
+                        <input type="hidden" id="network" value="TRC20">
+                        
+                        <div class="form-group">
+                            <label>充值地址</label>
+                            <input type="text" id="address" class="form-input" placeholder="请输入充值地址">
+                            <div class="address-preview" id="addressPreview"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>网络说明（可选）</label>
+                            <textarea id="note" rows="2" placeholder="例如：推荐使用 TRC20 网络，速度快手续费低"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>状态</label>
+                            <select id="status">
+                                <option value="active">启用</option>
+                                <option value="inactive">禁用</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn-save">
+                            <i class="fas fa-save"></i> 保存配置
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="current-configs">
+                    <h3>当前配置</h3>
+                    <div id="configList"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        let currentNetwork = 'TRC20';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllConfigs();
+            
+            // 网络标签切换
+            document.querySelectorAll('.network-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.network-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    currentNetwork = this.dataset.network;
+                    document.getElementById('network').value = currentNetwork;
+                    loadConfig(currentNetwork);
+                });
+            });
+            
+            // 表单提交
+            document.getElementById('addressForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await saveConfig();
+            });
+            
+            // 实时预览
+            document.getElementById('address').addEventListener('input', function() {
+                document.getElementById('addressPreview').textContent = this.value || '地址将显示在此处';
+            });
+        });
+        
+        async function loadAllConfigs() {
+            try {
+                const res = await fetch('/api/v1/admin/network/addresses', {
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    renderConfigList(data.data);
+                }
+            } catch (err) {
+                console.error('加载配置失败:', err);
+            }
+        }
+        
+        async function loadConfig(network) {
+            try {
+                const res = await fetch(`/api/v1/admin/network/address/${network}`, {
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                
+                if (data.success && data.data) {
+                    document.getElementById('address').value = data.data.address || '';
+                    document.getElementById('note').value = data.data.note || '';
+                    document.getElementById('status').value = data.data.status || 'active';
+                    document.getElementById('addressPreview').textContent = data.data.address || '地址将显示在此处';
+                } else {
+                    document.getElementById('address').value = '';
+                    document.getElementById('note').value = '';
+                    document.getElementById('status').value = 'active';
+                    document.getElementById('addressPreview').textContent = '未配置，请填写地址';
+                }
+            } catch (err) {
+                console.error('加载配置失败:', err);
+            }
+        }
+        
+        async function saveConfig() {
+            const data = {
+                network: currentNetwork,
+                address: document.getElementById('address').value.trim(),
+                note: document.getElementById('note').value.trim(),
+                status: document.getElementById('status').value
+            };
+            
+            if (!data.address) {
+                alert('请填写充值地址');
+                return;
+            }
+            
+            try {
+                const res = await fetch('/api/v1/admin/network/address', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await res.json();
+                
+                if (result.success) {
+                    alert('保存成功');
+                    loadAllConfigs();
+                } else {
+                    alert(result.message || '保存失败');
+                }
+            } catch (err) {
+                console.error('保存失败:', err);
+                alert('保存失败');
+            }
+        }
+        
+        function renderConfigList(configs) {
+            const container = document.getElementById('configList');
+            if (!container) return;
+            
+            if (!configs || Object.keys(configs).length === 0) {
+                container.innerHTML = '<p>暂无配置</p>';
+                return;
+            }
+            
+            let html = '';
+            const networks = ['TRC20', 'ERC20', 'BEP20'];
+            
+            networks.forEach(net => {
+                const config = configs[net];
+                const statusClass = config?.status === 'active' ? 'status-active' : 'status-inactive';
+                const statusText = config?.status === 'active' ? '已启用' : '已禁用';
+                const address = config?.address || '未配置';
+                const note = config?.note || '';
+                
+                html += `
+                    <div class="address-form" style="margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h4 style="color: var(--accent);">${net}</h4>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                        <div style="font-family: monospace; font-size: 13px; word-break: break-all; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;">
+                            ${address}
+                        </div>
+                        ${note ? `<div style="margin-top: 8px; font-size: 12px; color: var(--text-tertiary);">${note}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

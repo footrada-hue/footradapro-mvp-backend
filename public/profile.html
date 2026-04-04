@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>My Account · FOOTRADA</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 复用首页样式 -->
+    <link rel="stylesheet" href="/css/pages/index.css">
+    
+    <!-- Profile 页面特有样式 -->
+    <style>
+        /* 确保品牌色 RGB 变量存在 */
+        :root {
+            --brand-primary-rgb: 249, 115, 22;
+        }
+        
+        body.test-mode {
+            --brand-primary-rgb: 59, 130, 246;
+        }
+        
+        /* 统一高亮发光效果 */
+        .total-assets-card,
+        .stat-card,
+        .feature-item {
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.5);
+            box-shadow: 0 0 20px rgba(var(--brand-primary-rgb), 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .total-assets-card:hover,
+        .stat-card:hover,
+        .feature-item:hover {
+            border-color: rgba(var(--brand-primary-rgb), 1);
+            box-shadow: 0 0 35px rgba(var(--brand-primary-rgb), 0.6);
+            transform: translateY(-2px);
+        }
+        
+        /* 退出卡片独立发光（红色） */
+        .logout-item {
+            border-color: rgba(239, 68, 68, 0.5);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.25);
+        }
+        
+        .logout-item:hover {
+            border-color: rgba(239, 68, 68, 1);
+            box-shadow: 0 0 35px rgba(239, 68, 68, 0.5);
+        }
+        
+        /* 个人中心特有样式 */
+        .profile-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 2px solid var(--brand-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            box-shadow: 0 0 20px rgba(var(--brand-primary-rgb), 0.4);
+        }
+        
+        .avatar i {
+            font-size: 40px;
+            color: var(--brand-primary);
+        }
+        
+        .profile-info {
+            text-align: center;
+        }
+        
+        .username {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+        
+        .uid {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        /* 品牌标识强化 */
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #FFFFFF, var(--brand-primary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-align: center;
+            flex: 1;
+        }
+        
+        .logo span {
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+        }
+        
+        .header-main {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+        
+        /* 隐藏模式切换按钮 */
+        .mode-switch {
+            display: none;
+        }
+        
+        /* 总资产卡片 */
+        .total-assets-card {
+            background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.08), var(--bg-card));
+            backdrop-filter: blur(12px);
+            border-radius: var(--radius-2xl);
+            padding: 28px 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .total-assets-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(var(--brand-primary-rgb), 0.08), transparent 70%);
+            animation: rotate 20s linear infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .total-assets-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--brand-primary);
+            margin-bottom: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: 0 0 8px rgba(var(--brand-primary-rgb), 0.3);
+        }
+        
+        .total-assets-value {
+            font-size: 44px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            background: linear-gradient(135deg, #FFFFFF, var(--brand-primary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+        }
+        
+        .total-assets-currency {
+            font-size: 44px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            background: linear-gradient(135deg, #FFFFFF, var(--brand-primary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-left: 6px;
+        }
+        
+        /* 双按钮卡片 */
+        .double-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            flex: 1;
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border-radius: var(--radius-xl);
+            padding: 16px;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .stat-icon {
+            font-size: 28px;
+            color: var(--brand-primary);
+            margin-bottom: 8px;
+        }
+        
+        .stat-label-lg {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        /* 功能列表 */
+        .feature-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .feature-item {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border-radius: var(--radius-xl);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .feature-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        
+        .feature-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(var(--brand-primary-rgb), 0.1);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .feature-icon i {
+            font-size: 20px;
+            color: var(--brand-primary);
+        }
+        
+        .feature-text h4 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        
+        .feature-text p {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+        
+        .feature-badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+        
+        .feature-badge.set {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        .feature-arrow {
+            color: var(--text-tertiary);
+            font-size: 14px;
+        }
+        
+        .logout-item .feature-icon {
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        .logout-item .feature-icon i {
+            color: var(--danger);
+        }
+        
+        /* 充值弹窗样式 */
+        .deposit-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .deposit-modal {
+            background: var(--bg-card);
+            border-radius: 24px;
+            width: 90%;
+            max-width: 340px;
+            padding: 24px 20px;
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.3);
+            box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.3);
+            animation: modalFadeIn 0.2s ease;
+        }
+        
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .deposit-modal-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .deposit-modal-header i {
+            font-size: 48px;
+            color: var(--brand-primary);
+            margin-bottom: 8px;
+        }
+        
+        .deposit-modal-header h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .deposit-modal-header p {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+        }
+        
+        .deposit-amount-input {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .deposit-amount-input label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-bottom: 8px;
+        }
+        
+        .deposit-amount-input input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            font-size: 32px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+            text-align: center;
+            outline: none;
+        }
+        
+        .deposit-amount-input input::placeholder {
+            color: var(--text-tertiary);
+            opacity: 0.5;
+        }
+        
+        .deposit-min-hint {
+            text-align: center;
+            font-size: 11px;
+            color: var(--warning);
+            margin-bottom: 20px;
+        }
+        
+        .deposit-modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .deposit-modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .deposit-cancel-btn {
+            background: transparent;
+            border: 1px solid var(--border-brand-light);
+            color: var(--text-secondary);
+        }
+        
+        .deposit-cancel-btn:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+        
+        .deposit-confirm-btn {
+            background: var(--gradient-primary);
+            border: none;
+            color: white;
+        }
+        
+        .deposit-confirm-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(var(--brand-primary-rgb), 0.4);
+        }
+        
+        .deposit-confirm-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .profile-header {
+                margin-bottom: 16px;
+            }
+            
+            .avatar {
+                width: 64px;
+                height: 64px;
+            }
+            
+            .avatar i {
+                font-size: 32px;
+            }
+            
+            .username {
+                font-size: 18px;
+            }
+            
+            .total-assets-card {
+                padding: 20px 16px;
+                margin-bottom: 16px;
+            }
+            
+            .total-assets-label {
+                font-size: 11px;
+                margin-bottom: 8px;
+            }
+            
+            .total-assets-value,
+            .total-assets-currency {
+                font-size: 32px;
+            }
+            
+            .double-stats {
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+            
+            .stat-card {
+                padding: 12px;
+            }
+            
+            .stat-icon {
+                font-size: 24px;
+            }
+            
+            .stat-label-lg {
+                font-size: 14px;
+            }
+            
+            .feature-item {
+                padding: 12px;
+            }
+            
+            .feature-icon {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .feature-icon i {
+                font-size: 18px;
+            }
+            
+            .feature-text h4 {
+                font-size: 14px;
+            }
+            
+            .feature-text p {
+                font-size: 10px;
+            }
+            
+            .logo {
+                font-size: 20px;
+            }
+            
+            .deposit-amount-input input {
+                font-size: 28px;
+            }
+        }
+    </style>
+    
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/core/theme.js"></script>
+</head>
+<body>
+    <!-- ==================== Header ==================== -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="header-main">
+                <button class="back-btn" id="backBtn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 20px; cursor: pointer;">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="logo">FOOT<span>RADA</span></div>
+                <div style="width: 40px;"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== Main Content ==================== -->
+    <main class="main-content">
+        <div class="content-container">
+            <!-- 个人资料区域 - 居中 -->
+            <div class="profile-header">
+                <div class="avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="profile-info">
+                    <div class="username" id="username" data-i18n="profile.loading">Loading...</div>
+                    <div class="uid" id="uid">
+                        <i class="fas fa-id-card"></i>
+                        <span data-i18n="profile.uid_prefix">UID:</span> <span id="uidValue">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 总资产 -->
+            <div class="total-assets-card">
+                <div class="total-assets-label" data-i18n="profile.total_assets">TOTAL ASSETS</div>
+                <div>
+                    <span class="total-assets-value" id="totalAssets">0.00</span>
+                    <span class="total-assets-currency" id="totalAssetsCurrency">USDT</span>
+                </div>
+            </div>
+
+            <!-- 充值/提现入口 -->
+            <div class="double-stats">
+                <div class="stat-card" id="depositBtn">
+                    <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
+                    <div class="stat-label-lg" data-i18n="profile.deposit">Deposit</div>
+                </div>
+                <a href="/withdraw.html" class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
+                    <div class="stat-label-lg" data-i18n="profile.withdraw">Withdraw</div>
+                </a>
+            </div>
+
+            <!-- 功能列表 -->
+            <div class="feature-list">
+                <div class="feature-item" id="fundFlowCard">
+                    <div class="feature-left">
+                        <div class="feature-icon"><i class="fas fa-receipt"></i></div>
+                        <div class="feature-text">
+                            <h4 data-i18n="profile.fund_flow">Fund Flow</h4>
+                            <p data-i18n="profile.fund_flow_desc">View all your deposit and withdrawal records</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right feature-arrow"></i>
+                </div>
+
+                <div class="feature-item" id="authCard">
+                    <div class="feature-left">
+                        <div class="feature-icon"><i class="fas fa-list-ul"></i></div>
+                        <div class="feature-text">
+                            <h4 data-i18n="profile.authorizations">My Authorizations</h4>
+                            <p data-i18n="profile.authorizations_desc">View all your betting records</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right feature-arrow"></i>
+                </div>
+
+                <div class="feature-item" id="securityCard">
+                    <div class="feature-left">
+                        <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                        <div class="feature-text">
+                            <h4 data-i18n="profile.security">Security</h4>
+                            <p data-i18n="profile.security_desc">Password & security settings</p>
+                        </div>
+                    </div>
+                    <span class="feature-badge" id="payPasswordStatus" data-i18n="profile.not_set">Not Set</span>
+                </div>
+
+                <div class="feature-item" id="supportCard">
+                    <div class="feature-left">
+                        <div class="feature-icon"><i class="fas fa-headset"></i></div>
+                        <div class="feature-text">
+                            <h4 data-i18n="profile.support">Help & Support</h4>
+                            <p data-i18n="profile.support_desc">FAQs, contact us</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right feature-arrow"></i>
+                </div>
+
+                <div class="feature-item logout-item" id="logoutBtn">
+                    <div class="feature-left">
+                        <div class="feature-icon"><i class="fas fa-sign-out-alt"></i></div>
+                        <div class="feature-text">
+                            <h4 data-i18n="profile.logout">Logout</h4>
+                            <p data-i18n="profile.logout_desc">Sign out of your account</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right feature-arrow"></i>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ==================== Bottom Navigation ==================== -->
+    <nav class="bottom-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span data-i18n="nav.home">Home</span>
+            </a>
+            <a href="/match-market.html" class="nav-item">
+                <i class="fas fa-chart-line"></i>
+                <span data-i18n="nav.market">Market</span>
+            </a>
+            <a href="/support.html" class="nav-item">
+                <i class="fas fa-headset"></i>
+                <span data-i18n="nav.support">Support</span>
+            </a>
+            <a href="/profile.html" class="nav-item active">
+                <i class="fas fa-user"></i>
+                <span data-i18n="nav.profile">Profile</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- 充值弹窗 Modal -->
+    <div class="deposit-modal-overlay" id="depositModal">
+        <div class="deposit-modal">
+            <div class="deposit-modal-header">
+                <i class="fas fa-coins"></i>
+                <h3>Enter Deposit Amount</h3>
+                <p>Minimum: 10 USDT</p>
+            </div>
+            <div class="deposit-amount-input">
+                <label>Amount (USDT)</label>
+                <input type="number" id="depositAmountInput" placeholder="0" min="10" step="1">
+            </div>
+            <p class="deposit-min-hint" id="depositMinHint" style="display: none;">⚠️ Minimum amount is 10 USDT</p>
+            <div class="deposit-modal-buttons">
+                <button class="deposit-cancel-btn" id="depositCancelBtn">Cancel</button>
+                <button class="deposit-confirm-btn" id="depositConfirmBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量存储用户信息
+        let currentUserInfo = {
+            username: '',
+            uid: '',
+            email: ''
+        };
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (window.ThemeManager) {
+                await ThemeManager.init(true);
+                console.log('✅ ThemeManager initialized');
+                updateModeUI(ThemeManager.isTestMode);
+            }
+            
+            await loadUserProfile();
+            bindEvents();
+            initDepositModal();
+        });
+        
+        function updateModeUI(isTestMode) {
+            if (isTestMode) {
+                document.body.classList.add('test-mode');
+                document.body.classList.remove('live-mode');
+            } else {
+                document.body.classList.add('live-mode');
+                document.body.classList.remove('test-mode');
+            }
+        }
+        
+        async function loadUserProfile() {
+            try {
+                const res = await fetch('/api/v1/user/profile', { credentials: 'include' });
+                const data = await res.json();
+                if (data.success) {
+                    const usernameEl = document.getElementById('username');
+                    const uidValueEl = document.getElementById('uidValue');
+                    if (usernameEl) usernameEl.textContent = data.data.username || 'User';
+                    if (uidValueEl) uidValueEl.textContent = data.data.uid || data.data.id || 'Unknown';
+                    
+                    // 保存用户信息
+                    currentUserInfo.username = data.data.username || 'User';
+                    currentUserInfo.uid = data.data.uid || data.data.id;
+                    currentUserInfo.email = data.data.email || '';
+                }
+            } catch (err) {
+                console.error('Load profile error:', err);
+            }
+            
+            try {
+                const isTestMode = ThemeManager?.isTestMode || false;
+                const res = await fetch('/api/v1/user/balance', { credentials: 'include' });
+                const data = await res.json();
+                if (data.success) {
+                    const balance = isTestMode ? (data.data.test_balance || 0) : (data.data.balance || 0);
+                    const assetsEl = document.getElementById('totalAssets');
+                    const currencyEl = document.getElementById('totalAssetsCurrency');
+                    if (assetsEl) assetsEl.textContent = balance.toFixed(2);
+                    if (currencyEl) currencyEl.textContent = isTestMode ? 'tUSDT' : 'USDT';
+                }
+            } catch (err) {
+                console.error('Load balance error:', err);
+            }
+            
+            try {
+                const res = await fetch('/api/v1/user/profile/paypassword/status', { credentials: 'include' });
+                const data = await res.json();
+                if (data.success) {
+                    const statusEl = document.getElementById('payPasswordStatus');
+                    if (statusEl) {
+                        if (data.data.has_paypassword) {
+                            statusEl.textContent = 'Set';
+                            statusEl.classList.add('set');
+                        } else {
+                            statusEl.textContent = 'Not Set';
+                            statusEl.classList.remove('set');
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Load paypassword status error:', err);
+            }
+        }
+        
+        function bindEvents() {
+            const backBtn = document.getElementById('backBtn');
+            if (backBtn) {
+                backBtn.addEventListener('click', () => {
+                    window.history.back();
+                });
+            }
+            
+            const fundFlowCard = document.getElementById('fundFlowCard');
+            if (fundFlowCard) {
+                fundFlowCard.addEventListener('click', () => {
+                    window.location.href = '/fund-detail.html';
+                });
+            }
+            
+            const authCard = document.getElementById('authCard');
+            if (authCard) {
+                authCard.addEventListener('click', () => {
+                    window.location.href = '/authorizations.html';
+                });
+            }
+            
+            const securityCard = document.getElementById('securityCard');
+            if (securityCard) {
+                securityCard.addEventListener('click', async () => {
+                    const isTestMode = ThemeManager?.isTestMode || false;
+                    if (isTestMode) {
+                        alert('Test mode does not require payment password setup.');
+                        return;
+                    }
+                    try {
+                        const res = await fetch('/api/v1/user/profile/paypassword/status', { credentials: 'include' });
+                        const data = await res.json();
+                        if (data.success && data.data.has_paypassword) {
+                            window.location.href = '/change-password.html';
+                        } else {
+                            window.location.href = '/set-paypassword.html';
+                        }
+                    } catch (err) {
+                        console.error('Check paypassword status error:', err);
+                        window.location.href = '/set-paypassword.html';
+                    }
+                });
+            }
+            
+            const supportCard = document.getElementById('supportCard');
+            if (supportCard) {
+                supportCard.addEventListener('click', () => {
+                    window.location.href = '/support.html';
+                });
+            }
+            
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async () => {
+                    if (confirm('Are you sure you want to logout?')) {
+                        try {
+                            await fetch('/api/v1/user/logout', { method: 'POST', credentials: 'include' });
+                            window.location.href = '/login.html';
+                        } catch (err) {
+                            console.error('Logout error:', err);
+                            window.location.href = '/login.html';
+                        }
+                    }
+                });
+            }
+            
+            // 充值按钮 - 改为弹窗
+            const depositBtn = document.getElementById('depositBtn');
+            if (depositBtn) {
+                depositBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    openDepositModal();
+                });
+            }
+        }
+        
+        // ==================== 充值弹窗功能 ====================
+        
+        let depositModal = null;
+        let depositAmountInput = null;
+        let depositConfirmBtn = null;
+        let depositCancelBtn = null;
+        let depositMinHint = null;
+        
+        function initDepositModal() {
+            depositModal = document.getElementById('depositModal');
+            depositAmountInput = document.getElementById('depositAmountInput');
+            depositConfirmBtn = document.getElementById('depositConfirmBtn');
+            depositCancelBtn = document.getElementById('depositCancelBtn');
+            depositMinHint = document.getElementById('depositMinHint');
+            
+            if (depositCancelBtn) {
+                depositCancelBtn.addEventListener('click', closeDepositModal);
+            }
+            
+            if (depositConfirmBtn) {
+                depositConfirmBtn.addEventListener('click', handleDepositConfirm);
+            }
+            
+            if (depositAmountInput) {
+                depositAmountInput.addEventListener('input', function() {
+                    const amount = parseFloat(this.value);
+                    if (depositMinHint) {
+                        if (!isNaN(amount) && amount < 10) {
+                            depositMinHint.style.display = 'block';
+                        } else {
+                            depositMinHint.style.display = 'none';
+                        }
+                    }
+                });
+            }
+            
+            // 点击遮罩关闭
+            if (depositModal) {
+                depositModal.addEventListener('click', function(e) {
+                    if (e.target === depositModal) {
+                        closeDepositModal();
+                    }
+                });
+            }
+        }
+        
+        function openDepositModal() {
+            if (depositAmountInput) {
+                depositAmountInput.value = '';
+            }
+            if (depositMinHint) {
+                depositMinHint.style.display = 'none';
+            }
+            if (depositModal) {
+                depositModal.style.display = 'flex';
+            }
+            // 聚焦输入框
+            setTimeout(() => {
+                if (depositAmountInput) depositAmountInput.focus();
+            }, 100);
+        }
+        
+        function closeDepositModal() {
+            if (depositModal) {
+                depositModal.style.display = 'none';
+            }
+        }
+        
+        async function handleDepositConfirm() {
+            const amount = parseFloat(depositAmountInput?.value || 0);
+            
+            // 验证金额
+            if (isNaN(amount) || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+            
+            if (amount < 10) {
+                alert('Minimum deposit amount is 10 USDT');
+                return;
+            }
+            
+            // 禁用按钮防止重复提交
+            if (depositConfirmBtn) {
+                depositConfirmBtn.disabled = true;
+                depositConfirmBtn.textContent = 'Processing...';
+            }
+            
+            try {
+                // 发送 Telegram 通知（不等待结果，避免延迟跳转）
+                fetch('/api/v1/user/deposit/notify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        amount: amount,
+                        username: currentUserInfo.username,
+                        uid: currentUserInfo.uid,
+                        email: currentUserInfo.email
+                    })
+                }).catch(err => console.error('Telegram notify error:', err));
+                
+                // 关闭弹窗
+                closeDepositModal();
+                
+                // 跳转到充值页面，携带金额参数
+                window.location.href = `/deposit.html?amount=${amount}`;
+                
+            } catch (error) {
+                console.error('Deposit initiate error:', error);
+                alert('Network error, please try again');
+                if (depositConfirmBtn) {
+                    depositConfirmBtn.disabled = false;
+                    depositConfirmBtn.textContent = 'Confirm';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

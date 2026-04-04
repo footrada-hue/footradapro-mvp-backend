@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0B0E11" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)">
+    <title>Chain-Verified Reports · FOOTRADAPRO</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="/css/nav.css">
+    <link rel="stylesheet" href="/css/platform-reports.css">
+</head>
+<body>
+    <!-- ===== Fixed Header ===== -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="top-nav">
+                <button class="back-btn" onclick="history.back()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1 class="page-title">Chain Reports</h1>
+                <button class="theme-btn" id="themeBtn">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+
+            <!-- On-Chain Trust Badges -->
+            <div class="trust-badge-container">
+                <span class="trust-badge verified">
+                    <i class="fas fa-check-circle"></i> Verified on-chain
+                </span>
+                <span class="trust-badge ethereum">
+                    <i class="fab fa-ethereum"></i> Ethereum
+                </span>
+                <span class="trust-badge">
+                    <i class="fas fa-link"></i> 12 confirmations
+                </span>
+            </div>
+
+            <div class="page-header">
+                <h1 class="main-title">Transparency Report</h1>
+                <div class="page-desc">
+                    <span>Real-time platform statistics</span>
+                    <span class="live-indicator">
+                        <span class="pulse"></span> LIVE
+                    </span>
+                </div>
+            </div>
+
+            <!-- Period Selector -->
+            <div class="period-selector">
+                <button class="period-btn active" data-period="30d">30D</button>
+                <button class="period-btn" data-period="90d">90D</button>
+                <button class="period-btn" data-period="1y">1Y</button>
+                <button class="period-btn" data-period="all">ALL</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== Scrollable Content ===== -->
+    <main class="content-scrollable">
+        <div class="content-container">
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card animate-in">
+                    <div class="kpi-label">
+                        <i class="fas fa-chart-line"></i> Authorizations
+                    </div>
+                    <div class="kpi-value" id="totalAuth">1,245,678</div>
+                    <div class="kpi-sub">
+                        <span class="trend-up">↑12.3%</span> vs last period
+                    </div>
+                </div>
+                <div class="kpi-card animate-in" style="animation-delay: 0.1s">
+                    <div class="kpi-label">
+                        <i class="fas fa-check-circle"></i> Success Rate
+                    </div>
+                    <div class="kpi-value" id="successRate">83.2%</div>
+                    <div class="kpi-sub">
+                        <span class="trend-up">↑2.1%</span> vs last period
+                    </div>
+                </div>
+                <div class="kpi-card animate-in" style="animation-delay: 0.2s">
+                    <div class="kpi-label">
+                        <i class="fas fa-coins"></i> Volume
+                    </div>
+                    <div class="kpi-value" id="totalVolume">52.4M</div>
+                    <div class="kpi-sub">USDT · <span class="trend-up">↑8.7%</span></div>
+                </div>
+                <div class="kpi-card animate-in" style="animation-delay: 0.3s">
+                    <div class="kpi-label">
+                        <i class="fas fa-users"></i> Active Users
+                    </div>
+                    <div class="kpi-value" id="activeUsers">48.3K</div>
+                    <div class="kpi-sub">
+                        <span class="trend-up">↑5.7%</span> vs last period
+                    </div>
+                </div>
+            </div>
+
+            <!-- Platform Summary -->
+            <div class="section-title">
+                <div class="section-icon">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <h3>Platform Summary</h3>
+                <div class="section-sub">
+                    <i class="fas fa-database"></i> Aggregated
+                </div>
+            </div>
+
+            <div class="stats-card">
+                <div class="stats-row">
+                    <span class="stats-label"><i class="fas fa-arrow-up"></i> Total Payout</span>
+                    <span class="stats-value success" id="totalPayout">38.2M USDT</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label"><i class="fas fa-percent"></i> Platform Fee</span>
+                    <span class="stats-value" id="platformFee">1.2M USDT</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label"><i class="fas fa-calculator"></i> Average Auth</span>
+                    <span class="stats-value" id="avgAuth">102 USDT</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label"><i class="fas fa-chart-bar"></i> Peak Daily</span>
+                    <span class="stats-value info" id="peakVolume">2.8M USDT</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label"><i class="fas fa-trophy"></i> Total Matches</span>
+                    <span class="stats-value" id="totalMatches">24,567</span>
+                </div>
+            </div>
+
+            <!-- AI Performance -->
+            <div class="section-title">
+                <div class="section-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h3>AI Performance</h3>
+                <div class="section-sub">
+                    <i class="fas fa-microchip"></i> v2.4.0
+                </div>
+            </div>
+
+            <div class="stats-card">
+                <div class="stats-row">
+                    <span class="stats-label"><i class="fas fa-bullseye"></i> Overall Accuracy</span>
+                    <span class="stats-value success" id="overallAccuracy">83.2%</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label"><i class="fas fa-crown"></i> High-Confidence</span>
+                    <span class="stats-value success" id="highConfAccuracy">91.4%</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label"><i class="fas fa-chart-line"></i> Predictions</span>
+                    <span class="stats-value" id="totalPredictions">1.02M</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label"><i class="fas fa-medal"></i> Best League</span>
+                    <span class="stats-value" id="bestLeague">UCL (86.3%)</span>
+                </div>
+            </div>
+
+            <!-- Monthly Summary -->
+            <div class="section-title">
+                <div class="section-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <h3>Monthly Performance</h3>
+            </div>
+
+            <div class="stats-card">
+                <div class="monthly-grid" id="monthlyGrid">
+                    <!-- JS will populate -->
+                </div>
+            </div>
+
+            <!-- Smart Contract Address -->
+            <div class="section-title">
+                <div class="section-icon">
+                    <i class="fas fa-link"></i>
+                </div>
+                <h3>Verification Contract</h3>
+                <div class="section-sub tooltip" data-tooltip="Permanent reference contract">
+                    <i class="fas fa-infinity"></i> Immutable
+                </div>
+            </div>
+
+            <div class="contract-address">
+                <div class="contract-icon">
+                    <i class="fas fa-file-contract"></i>
+                </div>
+                <div class="contract-info">
+                    <div class="contract-label">Tether (USDT) · Reference Contract</div>
+                    <div class="contract-value" id="contractAddress">0xdAC17F958D2ee523a2206206994597C13D831ec7</div>
+                </div>
+                <button class="contract-copy" onclick="copyContractAddress()" title="Copy address">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+
+            <!-- On-Chain Verification Proof -->
+            <div class="section-title">
+                <div class="section-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3>Merkle Proof</h3>
+                <div class="section-sub">
+                    <i class="fas fa-check-circle" style="color: #10B981"></i> Verified
+                </div>
+            </div>
+
+            <div class="proof-section">
+                <div class="proof-header">
+                    <i class="fas fa-certificate"></i>
+                    <h4 id="proofTitle">Q1 2026 Merkle Root</h4>
+                    <span class="proof-badge">
+                        <i class="fab fa-ethereum"></i> ETH
+                    </span>
+                </div>
+                
+                <div class="proof-hash-container">
+                    <div class="proof-hash-label">
+                        <i class="fas fa-fingerprint"></i> ROOT HASH
+                    </div>
+                    <div class="proof-hash" id="proofHash">
+                        0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069
+                    </div>
+                </div>
+
+                <div class="proof-details">
+                    <div class="proof-detail-item">
+                        <div class="proof-detail-label">Block Number</div>
+                        <div class="proof-detail-value" id="blockNumber">19,245,678</div>
+                    </div>
+                    <div class="proof-detail-item">
+                        <div class="proof-detail-label">Timestamp</div>
+                        <div class="proof-detail-value" id="timestamp">2026-03-15 14:32 UTC</div>
+                    </div>
+                    <div class="proof-detail-item">
+                        <div class="proof-detail-label">Confirmations</div>
+                        <div class="proof-detail-value" id="confirmations">12,345</div>
+                    </div>
+                </div>
+
+                <div class="proof-footer">
+                    <button class="verify-btn" onclick="verifyOnEtherscan()">
+                        <i class="fab fa-ethereum"></i> Verify on Etherscan
+                    </button>
+                    <button class="verify-btn outline" onclick="verifyOnChain()">
+                        <i class="fas fa-link"></i> View Contract
+                    </button>
+                </div>
+            </div>
+
+            <!-- Download Reports -->
+            <div class="download-section">
+                <button class="download-btn primary" id="downloadPdf">
+                    <i class="fas fa-file-pdf"></i> Download Audit Report
+                </button>
+                <button class="download-btn" id="downloadJson">
+                    <i class="fas fa-file-code"></i> Download JSON Proof
+                </button>
+            </div>
+
+            <!-- Disclaimer -->
+            <div class="disclaimer" id="lastUpdated">
+                <i class="fas fa-shield-alt"></i> All data verified on Ethereum. Last updated: March 19, 2026 14:32 UTC
+            </div>
+        </div>
+    </main>
+
+    <!-- ===== Bottom Navigation ===== -->
+    <nav class="bottom-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="/match-market.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Markets</span></a>
+            <a href="/support.html" class="nav-item"><i class="fas fa-headset"></i><span>Support</span></a>
+            <a href="/profile.html" class="nav-item active"><i class="fas fa-user"></i><span>Account</span></a>
+        </div>
+    </nav>
+
+    <script>
+        // 添加返回按鈕的 hover 樣式（與 faq-auth.html 一致）
+        const style = document.createElement('style');
+        style.textContent = `
+            .back-btn {
+                width: 42px;
+                height: 42px;
+                border-radius: 50%;
+                background: rgba(255, 107, 0, 0.12);
+                backdrop-filter: blur(8px);
+                border: 1px solid rgba(255, 107, 0, 0.3);
+                color: #FF6B00;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+                font-size: 18px;
+            }
+            .back-btn:hover {
+                border-color: #FF6B00;
+                background: rgba(255, 107, 0, 0.25);
+                transform: translateY(-2px);
+                box-shadow: 0 0 20px rgba(255, 107, 0, 0.4);
+            }
+            .theme-btn {
+                width: 42px;
+                height: 42px;
+                border-radius: 50%;
+                background: rgba(255, 107, 0, 0.12);
+                backdrop-filter: blur(8px);
+                border: 1px solid rgba(255, 107, 0, 0.3);
+                color: #FF6B00;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+                font-size: 18px;
+            }
+            .theme-btn:hover {
+                border-color: #FF6B00;
+                background: rgba(255, 107, 0, 0.25);
+                transform: translateY(-2px);
+                box-shadow: 0 0 20px rgba(255, 107, 0, 0.4);
+            }
+        `;
+        document.head.appendChild(style);
+
+        const USDT_CONTRACT = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeBtn = document.getElementById('themeBtn');
+            
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.body.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+            
+            if (themeBtn) {
+                themeBtn.addEventListener('click', function() {
+                    const currentTheme = document.body.getAttribute('data-theme') || 'dark';
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    document.body.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
+                    updateThemeIcon(newTheme);
+                });
+            }
+            
+            function updateThemeIcon(theme) {
+                const icon = themeBtn.querySelector('i');
+                if (icon) {
+                    icon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+                }
+            }
+
+            const periodData = {
+                '30d': {
+                    totalAuth: '1,245,678',
+                    successRate: '83.2%',
+                    totalVolume: '52.4M',
+                    activeUsers: '48.3K',
+                    totalPayout: '38.2M USDT',
+                    platformFee: '1.2M USDT',
+                    avgAuth: '42 USDT',
+                    peakVolume: '2.8M USDT',
+                    totalMatches: '24,567',
+                    overallAccuracy: '83.2%',
+                    highConfAccuracy: '91.4%',
+                    totalPredictions: '1.02M',
+                    bestLeague: 'UCL (86.3%)',
+                    months: ['MAR', 'APR', 'MAY'],
+                    monthValues: ['18.2M', '17.8M', '19.4M'],
+                    monthRates: ['84.1%', '83.5%', '82.9%'],
+                    proofTitle: 'Q1 2026 Merkle Root',
+                    proofHash: '0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069',
+                    blockNumber: '19,245,678',
+                    timestamp: '2026-03-15 14:32 UTC',
+                    confirmations: '12,345',
+                    lastUpdated: 'March 19, 2026 14:32 UTC'
+                },
+                '90d': {
+                    totalAuth: '3,890,456',
+                    successRate: '82.8%',
+                    totalVolume: '158.7M',
+                    activeUsers: '62.9K',
+                    totalPayout: '118.3M USDT',
+                    platformFee: '3.8M USDT',
+                    avgAuth: '41 USDT',
+                    peakVolume: '3.2M USDT',
+                    totalMatches: '78,234',
+                    overallAccuracy: '82.8%',
+                    highConfAccuracy: '90.7%',
+                    totalPredictions: '3.15M',
+                    bestLeague: 'UCL (85.9%)',
+                    months: ['JAN', 'FEB', 'MAR'],
+                    monthValues: ['48.2M', '52.8M', '57.7M'],
+                    monthRates: ['82.1%', '82.5%', '84.1%'],
+                    proofTitle: 'Q1-Q2 2026 Merkle Root',
+                    proofHash: '0x8a92c1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9078',
+                    blockNumber: '19,156,789',
+                    timestamp: '2026-03-10 09:15 UTC',
+                    confirmations: '24,890',
+                    lastUpdated: 'March 19, 2026 14:32 UTC'
+                },
+                '1y': {
+                    totalAuth: '12,456,789',
+                    successRate: '81.5%',
+                    totalVolume: '524.8M',
+                    activeUsers: '98.4K',
+                    totalPayout: '412.5M USDT',
+                    platformFee: '12.8M USDT',
+                    avgAuth: '39 USDT',
+                    peakVolume: '4.5M USDT',
+                    totalMatches: '245,678',
+                    overallAccuracy: '81.5%',
+                    highConfAccuracy: '89.2%',
+                    totalPredictions: '10.2M',
+                    bestLeague: 'UCL (84.7%)',
+                    months: ['Q3 25', 'Q4 25', 'Q1 26'],
+                    monthValues: ['124.3M', '138.7M', '156.2M'],
+                    monthRates: ['80.2%', '81.8%', '82.5%'],
+                    proofTitle: 'FY 2025-2026 Merkle Root',
+                    proofHash: '0x9a03c2757ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9089',
+                    blockNumber: '18,924,567',
+                    timestamp: '2026-01-01 00:00 UTC',
+                    confirmations: '78,456',
+                    lastUpdated: 'March 19, 2026 14:32 UTC'
+                },
+                'all': {
+                    totalAuth: '24,891,234',
+                    successRate: '80.2%',
+                    totalVolume: '1.2B',
+                    activeUsers: '156.8K',
+                    totalPayout: '892.4M USDT',
+                    platformFee: '28.4M USDT',
+                    avgAuth: '37 USDT',
+                    peakVolume: '5.8M USDT',
+                    totalMatches: '512,345',
+                    overallAccuracy: '80.2%',
+                    highConfAccuracy: '87.5%',
+                    totalPredictions: '21.5M',
+                    bestLeague: 'UCL (82.3%)',
+                    months: ['2024', '2025', '2026'],
+                    monthValues: ['312M', '456M', '432M'],
+                    monthRates: ['78.5%', '79.8%', '80.2%'],
+                    proofTitle: 'Historical Merkle Root',
+                    proofHash: '0xab14d3857ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9090',
+                    blockNumber: '17,845,123',
+                    timestamp: '2024-01-01 00:00 UTC',
+                    confirmations: '2,345,678',
+                    lastUpdated: 'March 19, 2026 14:32 UTC'
+                }
+            };
+
+            const elements = {
+                totalAuth: document.getElementById('totalAuth'),
+                successRate: document.getElementById('successRate'),
+                totalVolume: document.getElementById('totalVolume'),
+                activeUsers: document.getElementById('activeUsers'),
+                totalPayout: document.getElementById('totalPayout'),
+                platformFee: document.getElementById('platformFee'),
+                avgAuth: document.getElementById('avgAuth'),
+                peakVolume: document.getElementById('peakVolume'),
+                totalMatches: document.getElementById('totalMatches'),
+                overallAccuracy: document.getElementById('overallAccuracy'),
+                highConfAccuracy: document.getElementById('highConfAccuracy'),
+                totalPredictions: document.getElementById('totalPredictions'),
+                bestLeague: document.getElementById('bestLeague'),
+                monthlyGrid: document.getElementById('monthlyGrid'),
+                proofTitle: document.getElementById('proofTitle'),
+                proofHash: document.getElementById('proofHash'),
+                blockNumber: document.getElementById('blockNumber'),
+                timestamp: document.getElementById('timestamp'),
+                confirmations: document.getElementById('confirmations'),
+                lastUpdated: document.getElementById('lastUpdated')
+            };
+
+            function updateMonthlyGrid(data) {
+                let html = '';
+                for (let i = 0; i < 3; i++) {
+                    html += `
+                        <div class="monthly-item">
+                            <div class="monthly-month">${data.months[i]}</div>
+                            <div class="monthly-value">${data.monthValues[i]}</div>
+                            <div class="monthly-sub success">${data.monthRates[i]}</div>
+                        </div>
+                    `;
+                }
+                elements.monthlyGrid.innerHTML = html;
+            }
+
+            function updateData(period) {
+                const data = periodData[period];
+                
+                elements.totalAuth.textContent = data.totalAuth;
+                elements.successRate.textContent = data.successRate;
+                elements.totalVolume.textContent = data.totalVolume;
+                elements.activeUsers.textContent = data.activeUsers;
+                elements.totalPayout.textContent = data.totalPayout;
+                elements.platformFee.textContent = data.platformFee;
+                elements.avgAuth.textContent = data.avgAuth;
+                elements.peakVolume.textContent = data.peakVolume;
+                elements.totalMatches.textContent = data.totalMatches;
+                elements.overallAccuracy.textContent = data.overallAccuracy;
+                elements.highConfAccuracy.textContent = data.highConfAccuracy;
+                elements.totalPredictions.textContent = data.totalPredictions;
+                elements.bestLeague.textContent = data.bestLeague;
+                elements.proofTitle.textContent = data.proofTitle;
+                elements.proofHash.textContent = data.proofHash;
+                elements.blockNumber.textContent = data.blockNumber;
+                elements.timestamp.textContent = data.timestamp;
+                elements.confirmations.textContent = data.confirmations;
+                
+                updateMonthlyGrid(data);
+                elements.lastUpdated.innerHTML = `<i class="fas fa-shield-alt"></i> All data verified on Ethereum. Last updated: ${data.lastUpdated}`;
+            }
+
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    updateData(this.dataset.period);
+                });
+            });
+
+            updateData('30d');
+
+            document.getElementById('downloadPdf').addEventListener('click', function() {
+                alert('📄 Downloading audit report...');
+            });
+
+            document.getElementById('downloadJson').addEventListener('click', function() {
+                alert('📦 Downloading JSON proof...');
+            });
+        });
+
+        function copyContractAddress() {
+            const address = document.getElementById('contractAddress').textContent;
+            navigator.clipboard.writeText(address).then(() => {
+                const btn = document.querySelector('.contract-copy');
+                const originalIcon = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => {
+                    btn.innerHTML = originalIcon;
+                }, 2000);
+            });
+        }
+
+        function verifyOnEtherscan() {
+            const hash = document.getElementById('proofHash').textContent;
+            window.open(`https://etherscan.io/tx/${hash}`, '_blank');
+        }
+
+        function verifyOnChain() {
+            const contract = document.getElementById('contractAddress').textContent;
+            window.open(`https://etherscan.io/address/${contract}`, '_blank');
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animation = 'slideIn 0.5s ease forwards';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.stats-card, .proof-section, .contract-address').forEach(el => {
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

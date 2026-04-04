@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>充值审核 - FOOTRADAPRO 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/time.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+    <link rel="stylesheet" href="/css/admin-base.css">
+    <link rel="stylesheet" href="/css/admin-deposits.css">
+    <link rel="stylesheet" href="/css/admin-nav.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 侧边导航 -->
+        
+        <!-- 侧边导航栏 -->
+        
+        <!-- 侧边导航栏 -->
+                <!-- 侧边导航栏 -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">FOOT<span>RADA</span></div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html" class="admin-nav-item ">
+                    <i class="fas fa-tachometer-alt"></i> <span>仪表盘</span>
+                </a>
+                <a href="/admin/stats.html" class="admin-nav-item ">
+                    <i class="fas fa-chart-pie"></i> <span>数据统计</span>
+                </a>
+                <a href="/admin/users.html" class="admin-nav-item ">
+                    <i class="fas fa-users"></i> <span>用户管理</span>
+                </a>
+                <a href="/admin/admins.html" class="admin-nav-item ">
+                    <i class="fas fa-user-shield"></i> <span>管理员管理</span>
+                </a>
+                <a href="/admin/deposits.html" class="admin-nav-item active">
+                    <i class="fas fa-arrow-down"></i> <span>充值审核</span>
+                </a>
+                <a href="/admin/withdrawals.html" class="admin-nav-item ">
+                    <i class="fas fa-arrow-up"></i> <span>提现审核</span>
+                </a>
+                <a href="/admin/finance.html" class="admin-nav-item ">
+                    <i class="fas fa-chart-line"></i> <span>财务管理</span>
+                </a>
+                <a href="/admin/matches.html" class="admin-nav-item ">
+                    <i class="fas fa-futbol"></i> <span>比赛管理</span>
+                </a>
+                <a href="/admin/settle.html" class="admin-nav-item ">
+                    <i class="fas fa-calculator"></i> <span>清算管理</span>
+                </a>
+                <a href="/admin/report-editor.html" class="admin-nav-item ">
+                    <i class="fas fa-edit"></i> <span>报告编辑</span>
+                </a>
+                <a href="/admin/ticker-manager.html" class="admin-nav-item ">
+                    <i class="fas fa-bolt"></i> <span>动态管理</span>
+                </a>
+                <a href="/admin/notifications.html" class="admin-nav-item ">
+                    <i class="fas fa-bell"></i> <span>通知管理</span>
+                </a>
+                <a href="/admin/settings/index.html" class="admin-nav-item ">
+                    <i class="fas fa-cog"></i> <span>系统设置</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- 主内容 -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>充值审核</h1>
+                <div class="admin-user">
+                    <span id="adminName">管理员</span>
+                    <button class="icon-btn" id="logoutBtn" title="退出登录">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- 全局通知条 -->
+            <div class="notification-bar" id="notificationBar" style="display: none;">
+                <i class="fas fa-bell"></i>
+                <span id="notificationMessage">有新的充值申请</span>
+                <button onclick="location.href='#pending'">查看</button>
+                <button class="close-btn" onclick="closeNotification()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue"><i class="fas fa-clock"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">待审核</span>
+                        <span class="stat-value" id="pendingCount">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">已完成</span>
+                        <span class="stat-value" id="completedCount">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon red"><i class="fas fa-times-circle"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">已驳回</span>
+                        <span class="stat-value" id="rejectedCount">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange"><i class="fas fa-coins"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">待审核总额</span>
+                        <span class="stat-value" id="pendingAmount">0 USDT</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 筛选栏 -->
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <label>状态</label>
+                    <select id="statusFilter" class="filter-select">
+                        <option value="pending">待审核</option>
+                        <option value="completed">已完成</option>
+                        <option value="rejected">已驳回</option>
+                        <option value="all">全部</option>
+                    </select>
+                </div>
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="搜索用户ID、UID...">
+                </div>
+                <button class="btn-refresh" onclick="loadDeposits()">
+                    <i class="fas fa-sync-alt"></i> 刷新
+                </button>
+            </div>
+
+            <!-- 充值列表 -->
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>时间</th>
+                            <th>用户</th>
+                            <th>金额</th>
+                            <th>网络</th>
+                            <th>截图</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="depositTableBody">
+                        <tr><td colspan="8" class="loading">加载中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            <div class="pagination" id="pagination"></div>
+        </main>
+    </div>
+
+    <!-- 审核弹窗 -->
+    <div class="modal-overlay" id="reviewModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>审核充值</h2>
+                <button class="modal-close" onclick="closeReviewModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="reviewId">
+                
+                <div class="detail-row">
+                    <label>用户信息</label>
+                    <span id="reviewUser"></span>
+                </div>
+                
+                <div class="detail-row">
+                    <label>金额</label>
+                    <span id="reviewAmount"></span>
+                </div>
+                
+                <div class="detail-row">
+                    <label>网络</label>
+                    <span id="reviewNetwork"></span>
+                </div>
+                
+                <div class="detail-row">
+                    <label>截图</label>
+                    <div class="screenshot-container" id="screenshotContainer">
+                        <img id="reviewScreenshot" src="" alt="充值截图" style="max-width: 100%; display: none;">
+                        <p id="noScreenshot">无截图</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>备注</label>
+                    <textarea id="adminNote" class="form-control" rows="3" placeholder="填写备注（可选）"></textarea>
+                </div>
+
+                <!-- 驳回原因（默认隐藏） -->
+                <div class="form-group" id="rejectReasonGroup" style="display: none;">
+                    <label>驳回原因 <span style="color: var(--danger);">*</span></label>
+                    <textarea id="rejectReason" class="form-control" rows="3" placeholder="请输入驳回原因"></textarea>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-approve" onclick="approveDeposit()">
+                        <i class="fas fa-check"></i> 通过
+                    </button>
+                    <button class="btn-reject" onclick="showRejectReason()">
+                        <i class="fas fa-times"></i> 驳回
+                    </button>
+                    <button class="btn-confirm-reject" id="confirmRejectBtn" style="display: none;" onclick="rejectDeposit()">
+                        <i class="fas fa-check"></i> 确认驳回
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const pageSize = 15;
+        let allDeposits = [];
+        let checkInterval;
+
+        // 页面加载
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDeposits();
+            startNotificationCheck();
+            
+            // 绑定筛选事件
+            document.getElementById('statusFilter').addEventListener('change', filterDeposits);
+            document.getElementById('searchInput').addEventListener('input', filterDeposits);
+            
+            // 退出登录
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                window.location.href = '/admin/index.html';
+            });
+        });
+
+        // 开始检查新通知
+        function startNotificationCheck() {
+            checkInterval = setInterval(checkNewDeposits, 10000); // 每10秒检查
+        }
+
+        // 检查新充值
+        async function checkNewDeposits() {
+            try {
+                const res = await adminRequest('/admin/deposit/stats');
+                if (res.success) {
+                    const pendingCount = res.data.pending_count;
+                    const lastCount = localStorage.getItem('lastPendingCount');
+                    
+                    if (lastCount && parseInt(pendingCount) > parseInt(lastCount)) {
+                        showNotification(`有 ${pendingCount - lastCount} 个新充值申请`);
+                    }
+                    
+                    localStorage.setItem('lastPendingCount', pendingCount);
+                }
+            } catch (err) {
+                console.error('检查新充值失败:', err);
+            }
+        }
+
+        // 显示通知
+        function showNotification(message) {
+            const bar = document.getElementById('notificationBar');
+            const msg = document.getElementById('notificationMessage');
+            msg.textContent = message;
+            bar.style.display = 'flex';
+            
+            // 5秒后自动隐藏
+            setTimeout(() => {
+                bar.style.display = 'none';
+            }, 5000);
+        }
+
+        // 关闭通知
+        function closeNotification() {
+            document.getElementById('notificationBar').style.display = 'none';
+        }
+
+        // API请求
+        async function adminRequest(endpoint, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            };
+            
+            try {
+                const response = await fetch(endpoint, { ...defaultOptions, ...options });
+                return await response.json();
+            } catch (err) {
+                console.error('API请求失败:', err);
+                throw err;
+            }
+        }
+
+        // 加载充值列表
+        async function loadDeposits() {
+            try {
+                document.getElementById('depositTableBody').innerHTML = '<tr><td colspan="8" class="loading">加载中...</td></tr>';
+                
+                // 获取统计数据
+                const statsRes = await adminRequest('/admin/deposit/stats');
+                if (statsRes.success) {
+                    document.getElementById('pendingCount').textContent = statsRes.data.pending_count || 0;
+                    document.getElementById('completedCount').textContent = statsRes.data.completed_count || 0;
+                    document.getElementById('rejectedCount').textContent = statsRes.data.rejected_count || 0;
+                    document.getElementById('pendingAmount').textContent = (statsRes.data.pending_amount || 0).toFixed(2) + ' USDT';
+                }
+                
+                // 获取充值列表
+                const depositsRes = await adminRequest('/admin/deposit/all');
+                if (depositsRes.success) {
+                    allDeposits = depositsRes.data;
+                    filterDeposits();
+                }
+            } catch (err) {
+                console.error('加载充值列表失败:', err);
+                document.getElementById('depositTableBody').innerHTML = '<tr><td colspan="8" class="loading" style="color: var(--danger);">加载失败</td></tr>';
+            }
+        }
+
+        // 筛选充值
+        function filterDeposits() {
+            const status = document.getElementById('statusFilter').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filtered = allDeposits;
+            
+            // 状态筛选
+            if (status !== 'all') {
+                filtered = filtered.filter(d => d.status === status);
+            }
+            
+            // 搜索筛选
+            if (search) {
+                filtered = filtered.filter(d => 
+                    (d.username && d.username.toLowerCase().includes(search)) ||
+                    (d.uid && d.uid.toLowerCase().includes(search)) ||
+                    String(d.user_id).includes(search)
+                );
+            }
+            
+            renderTable(filtered);
+        }
+
+        // 渲染表格
+        function renderTable(deposits) {
+            const tbody = document.getElementById('depositTableBody');
+            
+            if (deposits.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="loading">暂无记录</td></tr>';
+                return;
+            }
+            
+            let html = '';
+            deposits.forEach(d => {
+                const date = new Date(d.created_at).toLocaleString();
+                const statusClass = d.status === 'pending' ? 'status-pending' : 
+                                   d.status === 'completed' ? 'status-completed' : 'status-rejected';
+                const statusText = d.status === 'pending' ? '待审核' :
+                                  d.status === 'completed' ? '已完成' : '已驳回';
+                
+                html += `
+                    <tr>
+                        <td>${d.id}</td>
+                        <td>${date}</td>
+                        <td>${d.username || d.user_id}<br><small>UID: ${d.uid || '-'}</small></td>
+                        <td>${d.amount} USDT</td>
+                        <td>${d.network || '-'}</td>
+                        <td>
+                            ${d.screenshot ? 
+                                `<a href="${d.screenshot}" target="_blank" class="screenshot-link">查看截图</a>` : 
+                                '<span class="no-screenshot">无</span>'}
+                        </td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>
+                            ${d.status === 'pending' ? 
+                                `<button class="action-btn" onclick="openReviewModal(${d.id})">审核</button>` : 
+                                `<button class="action-btn" onclick="viewDetail(${d.id})">查看</button>`}
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        // 打开审核弹窗
+        async function openReviewModal(id) {
+            try {
+                const res = await adminRequest(`/admin/deposit/detail/${id}`);
+                if (res.success) {
+                    const d = res.data;
+                    
+                    document.getElementById('reviewId').value = d.id;
+                    document.getElementById('reviewUser').textContent = `${d.username} (UID: ${d.uid})`;
+                    document.getElementById('reviewAmount').textContent = d.amount + ' USDT';
+                    document.getElementById('reviewNetwork').textContent = d.network || '-';
+                    
+                    const screenshot = document.getElementById('reviewScreenshot');
+                    const noScreenshot = document.getElementById('noScreenshot');
+                    
+                    if (d.screenshot) {
+                        screenshot.src = d.screenshot;
+                        screenshot.style.display = 'block';
+                        noScreenshot.style.display = 'none';
+                    } else {
+                        screenshot.style.display = 'none';
+                        noScreenshot.style.display = 'block';
+                    }
+                    
+                    document.getElementById('adminNote').value = '';
+                    document.getElementById('rejectReason').value = '';
+                    document.getElementById('rejectReasonGroup').style.display = 'none';
+                    document.getElementById('confirmRejectBtn').style.display = 'none';
+                    
+                    document.getElementById('reviewModal').classList.add('show');
+                }
+            } catch (err) {
+                alert('获取详情失败');
+            }
+        }
+
+        // 关闭审核弹窗
+        function closeReviewModal() {
+            document.getElementById('reviewModal').classList.remove('show');
+        }
+
+        // 显示驳回原因输入框
+        function showRejectReason() {
+            document.getElementById('rejectReasonGroup').style.display = 'block';
+            document.getElementById('confirmRejectBtn').style.display = 'inline-block';
+        }
+
+        // 通过充值
+        async function approveDeposit() {
+            const id = document.getElementById('reviewId').value;
+            const note = document.getElementById('adminNote').value;
+            
+            if (!confirm('确认通过此充值申请？')) return;
+            
+            try {
+                const res = await adminRequest(`/admin/deposit/${id}/confirm`, {
+                    method: 'POST',
+                    body: JSON.stringify({ admin_note: note })
+                });
+                
+                if (res.success) {
+                    alert('充值已确认');
+                    closeReviewModal();
+                    loadDeposits();
+                } else {
+                    alert(res.message || '操作失败');
+                }
+            } catch (err) {
+                alert('操作失败');
+            }
+        }
+
+        // 驳回充值
+        async function rejectDeposit() {
+            const id = document.getElementById('reviewId').value;
+            const reason = document.getElementById('rejectReason').value;
+            const note = document.getElementById('adminNote').value;
+            
+            if (!reason) {
+                alert('请输入驳回原因');
+                return;
+            }
+            
+            if (!confirm('确认驳回此充值申请？')) return;
+            
+            try {
+                const res = await adminRequest(`/admin/deposit/${id}/reject`, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        admin_note: note,
+                        reject_reason: reason 
+                    })
+                });
+                
+                if (res.success) {
+                    alert('充值已驳回');
+                    closeReviewModal();
+                    loadDeposits();
+                } else {
+                    alert(res.message || '操作失败');
+                }
+            } catch (err) {
+                alert('操作失败');
+            }
+        }
+
+        // 查看详情（非待审核状态）
+        async function viewDetail(id) {
+            try {
+                const res = await adminRequest(`/admin/deposit/detail/${id}`);
+                if (res.success) {
+                    const d = res.data;
+                    alert(`
+用户: ${d.username} (UID: ${d.uid})
+金额: ${d.amount} USDT
+网络: ${d.network || '-'}
+状态: ${d.status}
+时间: ${new Date(d.created_at).toLocaleString()}
+备注: ${d.admin_note || '无'}
+                    `);
+                }
+            } catch (err) {
+                alert('获取详情失败');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>仪表盘 - FOOTRADAPRO 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- 全局配置 -->
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/time.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+    
+    <!-- 样式文件 -->
+    <link rel="stylesheet" href="/css/admin-base.css">
+    <link rel="stylesheet" href="/css/admin-nav.css">
+    <link rel="stylesheet" href="/css/admin-dashboard.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 侧边导航栏 -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">FOOT<span>RADA</span></div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html" class="admin-nav-item active">
+                    <i class="fas fa-tachometer-alt"></i> <span>仪表盘</span>
+                </a>
+                <a href="/admin/stats.html" class="admin-nav-item">
+                    <i class="fas fa-chart-pie"></i> <span>数据统计</span>
+                </a>
+                <a href="/admin/users.html" class="admin-nav-item">
+                    <i class="fas fa-users"></i> <span>用户管理</span>
+                </a>
+                <a href="/admin/admins.html" class="admin-nav-item">
+                    <i class="fas fa-user-shield"></i> <span>管理员管理</span>
+                </a>
+                <a href="/admin/deposits.html" class="admin-nav-item">
+                    <i class="fas fa-arrow-down"></i> <span>充值审核</span>
+                </a>
+                <a href="/admin/withdrawals.html" class="admin-nav-item">
+                    <i class="fas fa-arrow-up"></i> <span>提现审核</span>
+                </a>
+                <a href="/admin/finance.html" class="admin-nav-item">
+                    <i class="fas fa-chart-line"></i> <span>财务管理</span>
+                </a>
+                <!-- 新增网络地址管理 -->
+                <a href="/admin/network-addresses.html" class="admin-nav-item">
+                    <i class="fas fa-network-wired"></i> <span>网络地址管理</span>
+                </a>
+                <a href="/admin/matches.html" class="admin-nav-item">
+                    <i class="fas fa-futbol"></i> <span>比赛管理</span>
+                </a>
+                <a href="/admin/settle.html" class="admin-nav-item">
+                    <i class="fas fa-calculator"></i> <span>清算管理</span>
+                </a>
+                <a href="/admin/report-editor.html" class="admin-nav-item">
+                    <i class="fas fa-edit"></i> <span>报告编辑</span>
+                </a>
+                <a href="/admin/ticker-manager.html" class="admin-nav-item">
+                    <i class="fas fa-bolt"></i> <span>动态管理</span>
+                </a>
+                <a href="/admin/notifications.html" class="admin-nav-item">
+                    <i class="fas fa-bell"></i> <span>通知管理</span>
+                </a>
+                <a href="/admin/settings/index.html" class="admin-nav-item">
+                    <i class="fas fa-cog"></i> <span>系统设置</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- 主内容 -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1><i class="fas fa-tachometer-alt"></i> 仪表盘</h1>
+                <div class="admin-user">
+                    <span id="adminName">管理员</span>
+                    <button class="icon-btn" id="logoutBtn" title="退出登录">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <!-- 统计卡片 -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">总用户数</span>
+                            <span class="stat-value" id="totalUsers">-</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">总交易额</span>
+                            <span class="stat-value" id="totalVolume">-</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange"><i class="fas fa-gift"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">已领体验金</span>
+                            <span class="stat-value" id="claimedBonus">-</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple"><i class="fas fa-futbol"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">进行中比赛</span>
+                            <span class="stat-value" id="activeMatches">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 最近用户 -->
+                <div class="admin-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-clock"></i> 最近注册用户</h2>
+                        <a href="/admin/users.html" class="view-all">查看全部 <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>用户名</th>
+                                    <th>UID</th>
+                                    <th>余额</th>
+                                    <th>注册时间</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentUsers">
+                                <tr><td colspan="5" class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/admin/dashboard_controller.js"></script>
+</body>
+</html>

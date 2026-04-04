@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Terms of Service · FOOTRADA</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/core/theme.js"></script>
+    
+    <!-- 核心样式系统 -->
+    <link rel="stylesheet" href="/css/core/variables.css">
+    <link rel="stylesheet" href="/css/core/layout.css">
+    <link rel="stylesheet" href="/css/core/components.css">
+    
+    <style>
+        /* 头部 */
+        .header-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-brand-light);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .back-btn:hover {
+            border-color: var(--brand-500);
+            color: var(--brand-500);
+        }
+        
+        .page-title {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--brand-400));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .test-mode-badge {
+            background: #2563EB;
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 30px;
+            margin-left: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .placeholder {
+            width: 40px;
+        }
+        
+        /* 内容容器 */
+        .legal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .last-updated {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-brand-light);
+        }
+        
+        .legal-content h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 24px 0 12px;
+        }
+        
+        .legal-content h2:first-of-type {
+            margin-top: 0;
+        }
+        
+        .legal-content p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        
+        .legal-content ul {
+            margin: 12px 0 16px;
+            padding-left: 24px;
+        }
+        
+        .legal-content li {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .legal-content a {
+            color: var(--brand-500);
+            text-decoration: none;
+        }
+        
+        .legal-content a:hover {
+            text-decoration: underline;
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: transparent;
+            border: 1px solid var(--border-brand-light);
+            border-radius: 40px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+        
+        .back-link:hover {
+            border-color: var(--brand-500);
+            color: var(--brand-500);
+        }
+        
+        @media (max-width: 480px) {
+            .legal-content {
+                padding: 20px;
+            }
+            .legal-content h2 {
+                font-size: 16px;
+            }
+            .legal-content p,
+            .legal-content li {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="header-container">
+            <div class="header-section">
+                <a href="/settings.html" class="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="page-title">
+                    Terms of Service
+                    <span id="testModeBadge" class="test-mode-badge" style="display: none;">
+                        <i class="fas fa-flask"></i> TEST
+                    </span>
+                </h1>
+                <div class="placeholder"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="content-scrollable">
+        <div class="content-container">
+            <div class="legal-content">
+                <p class="last-updated">Last updated: February 26, 2026</p>
+                <!-- i18n: "terms.last_updated" -->
+
+                <p>Welcome to <strong>FOOTRADA</strong>. These Terms of Service ("Terms") govern your access to and use of our website, applications, and related services (collectively, the "Service"). By using the Service, you agree to be bound by these Terms.</p>
+                <!-- i18n: "terms.intro" -->
+
+                <h2>1. Acceptance of Terms</h2>
+                <!-- i18n: "terms.section1.title" -->
+                <p>By creating an account or using the Service, you confirm that you are at least 18 years old and capable of forming a binding contract. If you are using the Service on behalf of an entity, you represent that you have authority to bind that entity.</p>
+                <!-- i18n: "terms.section1.desc" -->
+
+                <h2>2. Changes to Terms</h2>
+                <!-- i18n: "terms.section2.title" -->
+                <p>We may update these Terms from time to time. We will notify you of material changes by posting the new Terms on this page and updating the "Last updated" date. Your continued use of the Service after any changes constitutes acceptance of the revised Terms.</p>
+                <!-- i18n: "terms.section2.desc" -->
+
+                <h2>3. Your Account</h2>
+                <!-- i18n: "terms.section3.title" -->
+                <p>You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to notify us immediately of any unauthorized use. We are not liable for any loss or damage arising from your failure to safeguard your account.</p>
+                <!-- i18n: "terms.section3.desc" -->
+
+                <h2>4. Use of Service</h2>
+                <!-- i18n: "terms.section4.title" -->
+                <p>You agree to use the Service only for lawful purposes and in accordance with these Terms. You may not:</p>
+                <!-- i18n: "terms.section4.desc" -->
+                <ul>
+                    <li>Violate any applicable law or regulation.</li>
+                    <!-- i18n: "terms.section4.item1" -->
+                    <li>Impersonate any person or entity or misrepresent your affiliation.</li>
+                    <!-- i18n: "terms.section4.item2" -->
+                    <li>Interfere with or disrupt the integrity or performance of the Service.</li>
+                    <!-- i18n: "terms.section4.item3" -->
+                    <li>Attempt to gain unauthorized access to the Service or its related systems.</li>
+                    <!-- i18n: "terms.section4.item4" -->
+                    <li>Use the Service to transmit any harmful code or material.</li>
+                    <!-- i18n: "terms.section4.item5" -->
+                </ul>
+
+                <h2>5. Intellectual Property</h2>
+                <!-- i18n: "terms.section5.title" -->
+                <p>The Service and its original content, features, and functionality are owned by <strong>FOOTRADA</strong> and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws. You may not copy, modify, distribute, sell, or lease any part of our Service without our prior written consent.</p>
+                <!-- i18n: "terms.section5.desc" -->
+
+                <h2>6. User Content</h2>
+                <!-- i18n: "terms.section6.title" -->
+                <p>By submitting content (such as comments or feedback) to the Service, you grant us a non-exclusive, worldwide, royalty-free license to use, reproduce, modify, and display that content in connection with the Service. You represent that you have all necessary rights to grant this license.</p>
+                <!-- i18n: "terms.section6.desc" -->
+
+                <h2>7. Third-Party Links</h2>
+                <!-- i18n: "terms.section7.title" -->
+                <p>The Service may contain links to third-party websites or services that are not owned or controlled by us. We have no control over, and assume no responsibility for, the content, privacy policies, or practices of any third-party websites. You acknowledge and agree that we shall not be liable for any loss or damage caused by your use of such websites.</p>
+                <!-- i18n: "terms.section7.desc" -->
+
+                <h2>8. Termination</h2>
+                <!-- i18n: "terms.section8.title" -->
+                <p>We may terminate or suspend your account immediately, without prior notice, for any reason whatsoever, including without limitation if you breach the Terms. Upon termination, your right to use the Service will cease immediately.</p>
+                <!-- i18n: "terms.section8.desc" -->
+
+                <h2>9. Disclaimer of Warranties</h2>
+                <!-- i18n: "terms.section9.title" -->
+                <p>THE SERVICE IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS. WE MAKE NO REPRESENTATIONS OR WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, REGARDING THE OPERATION OR AVAILABILITY OF THE SERVICE, OR THE INFORMATION, CONTENT, AND MATERIALS INCLUDED THEREIN. TO THE FULLEST EXTENT PERMITTED BY LAW, WE DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.</p>
+                <!-- i18n: "terms.section9.desc" -->
+
+                <h2>10. Limitation of Liability</h2>
+                <!-- i18n: "terms.section10.title" -->
+                <p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL <strong>FOOTRADA</strong>, ITS AFFILIATES, DIRECTORS, EMPLOYEES, OR AGENTS BE LIABLE FOR ANY INDIRECT, PUNITIVE, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR EXEMPLARY DAMAGES, INCLUDING WITHOUT LIMITATION DAMAGES FOR LOSS OF PROFITS, GOODWILL, USE, DATA, OR OTHER INTANGIBLE LOSSES, ARISING OUT OF OR RELATING TO THE USE OF, OR INABILITY TO USE, THE SERVICE.</p>
+                <!-- i18n: "terms.section10.desc" -->
+
+                <h2>11. Indemnification</h2>
+                <!-- i18n: "terms.section11.title" -->
+                <p>You agree to defend, indemnify, and hold harmless <strong>FOOTRADA</strong> and its employees, contractors, and agents from and against any claims, damages, obligations, losses, liabilities, costs, or debt, and expenses (including but not limited to attorney's fees) arising from your use of the Service or your violation of these Terms.</p>
+                <!-- i18n: "terms.section11.desc" -->
+
+                <h2>12. Governing Law</h2>
+                <!-- i18n: "terms.section12.title" -->
+                <p>These Terms shall be governed and construed in accordance with the laws of Singapore, without regard to its conflict of law provisions. Any legal suit, action, or proceeding arising out of or relating to these Terms or the Service shall be instituted exclusively in the courts of Singapore.</p>
+                <!-- i18n: "terms.section12.desc" -->
+
+                <h2>13. Contact Us</h2>
+                <!-- i18n: "terms.section13.title" -->
+                <p>If you have any questions about these Terms, please contact us at <a href="mailto:support@footrada.com">support@footrada.com</a>.</p>
+                <!-- i18n: "terms.section13.desc" -->
+
+                <a href="/settings.html" class="back-link">
+                    <i class="fas fa-arrow-left"></i> Back to Settings
+                </a>
+                <!-- i18n: "terms.back_button" -->
+            </div>
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="/match-market.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Markets</span></a>
+            <a href="/support.html" class="nav-item"><i class="fas fa-headset"></i><span>Support</span></a>
+            <a href="/profile.html" class="nav-item active"><i class="fas fa-user"></i><span>Account</span></a>
+        </div>
+    </nav>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (window.ThemeManager) {
+                await ThemeManager.init(true);
+                
+                const testModeBadge = document.getElementById('testModeBadge');
+                if (testModeBadge) {
+                    testModeBadge.style.display = ThemeManager.isTestMode ? 'inline-flex' : 'none';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

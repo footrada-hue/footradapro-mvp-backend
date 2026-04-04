@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>FOOTRADAPRO · Sign in to your account</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="csrf-token" content="{{csrfToken}}">
+    <link rel="stylesheet" href="/css/login.css">
+</head>
+<body>
+    <div class="auth-container">
+        <!-- 品牌區域 -->
+        <div class="brand">
+            <a href="/" class="brand-logo">FOOTRADA</a>
+        </div>
+
+        <!-- 右上角設置欄 -->
+        <div class="settings-bar">
+            <!-- 主題切換按鈕組 -->
+            <div class="btn-group">
+                <button class="btn-option" data-theme="light">Light</button>
+                <button class="btn-option" data-theme="auto">Auto</button>
+                <button class="btn-option" data-theme="dark">Dark</button>
+            </div>
+            
+            <!-- 語言切換按鈕組 -->
+            <div class="btn-group lang-group">
+                <button class="btn-option" id="langBtn">
+                    <span id="currentLang">EN</span> <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="lang-dropdown" id="langDropdown">
+                    <div class="lang-option" data-lang="en">English</div>
+                    <div class="lang-option" data-lang="zh">中文</div>
+                    <div class="lang-option" data-lang="ms">Melayu</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 登錄表單 -->
+        <div class="login-card">
+            <div class="header">
+                <h1>Welcome back</h1>
+                <p>Sign in to your account to continue</p>
+            </div>
+
+            <form id="loginForm" novalidate>
+                <div class="form-group">
+                    <label class="form-label">Email address</label>
+                    <input type="email" class="form-input" id="email" name="email" 
+                           placeholder="name@example.com" autocomplete="username">
+                    <div class="error-message" id="email-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <span>Password</span>
+                        <a href="/forgot.html" class="forgot-link">Forgot?</a>
+                    </label>
+                    <div class="password-wrapper">
+                        <input type="password" class="form-input" id="password" name="password" 
+                               placeholder="Enter your password" autocomplete="current-password">
+                        <button type="button" class="password-toggle" id="passwordToggle">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="error-message" id="password-error"></div>
+                </div>
+
+                <button type="submit" class="btn-primary" id="loginBtn">
+                    <span>Sign in</span>
+                </button>
+
+                <div class="footer-links">
+                    <span>Don't have an account?</span>
+                    <a href="/register.html">Create account</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    // ==================== 主題切換 ====================
+    (function() {
+        let savedTheme = localStorage.getItem('theme') || 'auto';
+        
+        function setTheme(theme) {
+            if (theme === 'auto') {
+                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            } else {
+                document.body.setAttribute('data-theme', theme);
+            }
+            localStorage.setItem('theme', theme);
+            
+            document.querySelectorAll('.btn-option[data-theme]').forEach(btn => {
+                if (btn.getAttribute('data-theme') === theme) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+        
+        document.querySelectorAll('.btn-option[data-theme]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                setTheme(this.getAttribute('data-theme'));
+            });
+        });
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (localStorage.getItem('theme') === 'auto') setTheme('auto');
+        });
+        
+        setTheme(savedTheme);
+    })();
+    
+    // ==================== 語言切換 ====================
+    (function() {
+        const langBtn = document.getElementById('langBtn');
+        const langGroup = document.querySelector('.lang-group');
+        const currentLangSpan = document.getElementById('currentLang');
+        let currentLang = localStorage.getItem('lang') || 'en';
+        const langNames = { en: 'EN', zh: '中文', ms: 'MS' };
+        
+        function setLang(lang) {
+            currentLang = lang;
+            localStorage.setItem('lang', lang);
+            if (currentLangSpan) currentLangSpan.textContent = langNames[lang] || 'EN';
+            document.querySelectorAll('.lang-option').forEach(opt => {
+                if (opt.getAttribute('data-lang') === lang) {
+                    opt.classList.add('active');
+                } else {
+                    opt.classList.remove('active');
+                }
+            });
+            window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang } }));
+        }
+        
+        if (langBtn && langGroup) {
+            langBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                langGroup.classList.toggle('open');
+            });
+        }
+        
+        document.querySelectorAll('.lang-option').forEach(opt => {
+            opt.addEventListener('click', function() {
+                setLang(this.getAttribute('data-lang'));
+                if (langGroup) langGroup.classList.remove('open');
+            });
+        });
+        
+        document.addEventListener('click', function() {
+            if (langGroup) langGroup.classList.remove('open');
+        });
+        
+        setLang(currentLang);
+    })();
+    </script>
+
+    <script src="/js/core/config.js"></script>
+    <script type="module" src="/js/user/login_controller.js"></script>
+</body>
+</html>

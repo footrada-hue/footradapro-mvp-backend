@@ -1,0 +1,787 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员管理 · FOOTRADA 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/admin-settle.css">
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0c10;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            color: #e5e7eb;
+        }
+
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* 侧边栏样式 - 与清算管理页面完全一致 */
+        .admin-sidebar {
+            width: 260px;
+            background: #0f1117;
+            border-right: 1px solid #1f2937;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        /* 主内容区 */
+        .admin-main {
+            flex: 1;
+            margin-left: 260px;
+            padding: 24px 32px;
+        }
+
+        /* 顶部栏 - 与清算管理页面完全一致 */
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #1f2937;
+        }
+
+        .header-left h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .header-left h1 i {
+            color: #f97316;
+            margin-right: 12px;
+        }
+
+        .admin-user {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .admin-user span {
+            color: #e5e7eb;
+            font-size: 14px;
+        }
+
+        .icon-btn {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            border-color: #f97316;
+            color: #f97316;
+        }
+
+        /* 内容卡片 - 与清算管理页面一致 */
+        .admin-content {
+            background: #111827;
+            border-radius: 16px;
+            border: 1px solid #1f2937;
+            overflow: hidden;
+        }
+
+        /* 操作栏 - 与清算管理页面的卡片头部一致 */
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            background: #1f2937;
+            border-bottom: 1px solid #374151;
+        }
+
+        .action-bar h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .action-bar h2 i {
+            color: #f97316;
+            margin-right: 8px;
+        }
+
+        /* 按钮样式 - 与清算管理页面一致 */
+        .btn-primary, .btn-secondary, .btn-danger {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #f97316;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #ea580c;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #1f2937;
+            border: 1px solid #374151;
+            color: #9ca3af;
+        }
+
+        .btn-secondary:hover {
+            border-color: #f97316;
+            color: #f97316;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+            transform: translateY(-1px);
+        }
+
+        /* 表格容器 */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        /* 表格样式 - 与清算管理页面一致 */
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+
+        .admin-table th {
+            padding: 14px 16px;
+            text-align: left;
+            color: #9ca3af;
+            font-weight: 500;
+            font-size: 13px;
+            background: #0f1117;
+            border-bottom: 1px solid #1f2937;
+        }
+
+        .admin-table td {
+            padding: 12px 16px;
+            font-size: 13px;
+            border-bottom: 1px solid #1f2937;
+            color: #e5e7eb;
+        }
+
+        .admin-table tr:hover td {
+            background: #1a1f2e;
+        }
+
+        /* 徽章样式 */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge.super_admin {
+            background: rgba(249, 115, 22, 0.15);
+            color: #f97316;
+        }
+
+        .badge.admin {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+        }
+
+        .badge.operator {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .badge.auditor {
+            background: rgba(139, 92, 246, 0.15);
+            color: #8b5cf6;
+        }
+
+        .badge.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .badge.inactive {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: 48px;
+            color: #6b7280;
+        }
+
+        /* 模态框样式 - 与清算管理页面一致 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-container {
+            background: #111827;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid #1f2937;
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #1f2937;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .modal-header h3 i {
+            color: #f97316;
+            margin-right: 8px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #9ca3af;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: #f97316;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            padding: 20px 24px;
+            border-top: 1px solid #1f2937;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: #9ca3af;
+            margin-bottom: 8px;
+            letter-spacing: 0.3px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #f97316;
+        }
+
+        .form-group input[readonly] {
+            background: #0f1117;
+            cursor: pointer;
+        }
+
+        .password-field {
+            display: flex;
+            gap: 8px;
+        }
+
+        .password-field input {
+            flex: 1;
+        }
+
+        .password-field button {
+            padding: 10px 16px;
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .password-field button:hover {
+            border-color: #f97316;
+            color: #f97316;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 6px;
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        /* 表格内按钮 */
+        .admin-table td .btn-secondary,
+        .admin-table td .btn-danger {
+            margin-right: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .admin-table td .btn-secondary:last-child,
+        .admin-table td .btn-danger:last-child {
+            margin-right: 0;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .admin-main {
+                margin-left: 0;
+                padding: 16px;
+            }
+            
+            .action-bar {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+            
+            .modal-container {
+                width: 95%;
+                margin: 16px;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 侧边导航栏 - 使用与清算管理页面相同的加载方式 -->
+        <aside class="admin-sidebar" id="sidebar-container"></aside>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1><i class="fas fa-users-cog"></i> 管理员管理</h1>
+                </div>
+                <div class="admin-user">
+                    <span id="adminName">管理员</span>
+                    <button class="icon-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <div class="action-bar">
+                    <h2><i class="fas fa-list"></i> 管理员列表</h2>
+                    <button class="btn-primary" id="createAdminBtn">
+                        <i class="fas fa-plus"></i> 创建子管理员
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>用户名</th>
+                                <th>姓名</th>
+                                <th>邮箱</th>
+                                <th>角色</th>
+                                <th>状态</th>
+                                <th>最后登录</th>
+                                <th>登录IP</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTableBody">
+                            <tr><td colspan="9" class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 创建管理员模态框 -->
+    <div class="modal-overlay" id="createAdminModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-plus"></i> 创建子管理员</h3>
+                <button class="modal-close" onclick="closeCreateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createAdminForm">
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input type="text" name="username" required placeholder="例如: operator1">
+                    </div>
+                    <div class="form-group">
+                        <label>姓名</label>
+                        <input type="text" name="name" required placeholder="真实姓名">
+                    </div>
+                    <div class="form-group">
+                        <label>邮箱</label>
+                        <input type="email" name="email" required placeholder="用于接收通知">
+                    </div>
+                    <div class="form-group">
+                        <label>角色</label>
+                        <select name="role" required>
+                            <option value="admin">管理员</option>
+                            <option value="operator">运营人员</option>
+                            <option value="auditor">审计员</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>密码</label>
+                        <div class="password-field">
+                            <input type="text" id="generatedPassword" readonly value="点击生成密码">
+                            <button type="button" onclick="generatePassword()">生成密码</button>
+                        </div>
+                        <small>请保存密码，创建后无法再次查看</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeCreateModal()">取消</button>
+                <button class="btn-primary" onclick="createAdmin()">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const UTILS = FOOTRADAPRO.UTILS;
+
+            let admins = [];
+
+            // DOM元素
+            const tbody = document.getElementById('adminTableBody');
+            const createModal = document.getElementById('createAdminModal');
+            const generatedPassword = document.getElementById('generatedPassword');
+
+            // 生成强密码
+            window.generatePassword = function() {
+                const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+                const numbers = '0123456789';
+                const special = '!@#$%^&*';
+                
+                let password = '';
+                password += uppercase[Math.floor(Math.random() * uppercase.length)];
+                password += lowercase[Math.floor(Math.random() * lowercase.length)];
+                password += numbers[Math.floor(Math.random() * numbers.length)];
+                password += special[Math.floor(Math.random() * special.length)];
+                
+                const allChars = uppercase + lowercase + numbers + special;
+                for (let i = 0; i < 6; i++) {
+                    password += allChars[Math.floor(Math.random() * allChars.length)];
+                }
+                
+                password = password.split('').sort(() => Math.random() - 0.5).join('');
+                generatedPassword.value = password;
+            };
+
+            // 打开创建模态框
+            document.getElementById('createAdminBtn').addEventListener('click', () => {
+                createModal.classList.add('show');
+                generatePassword();
+            });
+
+            // 关闭模态框
+            window.closeCreateModal = function() {
+                createModal.classList.remove('show');
+                document.getElementById('createAdminForm').reset();
+                generatedPassword.value = '点击生成密码';
+            };
+
+            // 点击模态框背景关闭
+            createModal.addEventListener('click', (e) => {
+                if (e.target === createModal) {
+                    closeCreateModal();
+                }
+            });
+
+            // API请求
+            async function adminRequest(endpoint, options = {}) {
+                const defaultOptions = {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                };
+                
+                try {
+                    return await UTILS.request(endpoint, { ...defaultOptions, ...options });
+                } catch (err) {
+                    if (err.message === 'UNAUTHORIZED') {
+                        window.location.href = '/admin/index.html';
+                    }
+                    throw err;
+                }
+            }
+
+            // 加载管理员列表
+            async function loadAdmins() {
+                try {
+                    tbody.innerHTML = '<tr><td colspan="9" class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</td></tr>';
+                    const result = await adminRequest('/admin/admins');
+                    if (result.success) {
+                        admins = result.data;
+                        renderAdmins();
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="9" class="loading">加载失败</td></tr>';
+                    }
+                } catch (err) {
+                    console.error('加载失败:', err);
+                    tbody.innerHTML = '<tr><td colspan="9" class="loading">加载失败</td></tr>';
+                }
+            }
+
+            // 渲染表格
+            function renderAdmins() {
+                if (admins.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="loading">暂无管理员</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                admins.forEach(admin => {
+                    const roleClass = admin.role;
+                    const roleText = {
+                        super_admin: '超级管理员',
+                        admin: '管理员',
+                        operator: '运营人员',
+                        auditor: '审计员'
+                    }[admin.role] || admin.role;
+
+                    const statusClass = admin.is_active ? 'active' : 'inactive';
+                    const statusText = admin.is_active ? '启用' : '禁用';
+                    const lastLogin = admin.last_login_at ? UTILS.formatDateTime(admin.last_login_at) : '-';
+
+                    html += `<tr>
+                        <td>${admin.id}</td>
+                        <td><strong>${escapeHtml(admin.username)}</strong></td>
+                        <td>${escapeHtml(admin.name || '-')}</td>
+                        <td>${escapeHtml(admin.email || '-')}</td>
+                        <td><span class="badge ${roleClass}">${roleText}</span></td>
+                        <td><span class="badge ${statusClass}">${statusText}</span></td>
+                        <td>${lastLogin}</td>
+                        <td>${admin.last_login_ip || '-'}</td>
+                        <td>
+                            <button class="btn-secondary" onclick="toggleAdmin(${admin.id})">
+                                ${admin.is_active ? '禁用' : '启用'}
+                            </button>
+                            <button class="btn-danger" onclick="resetPassword(${admin.id})">重置密码</button>
+                        </td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            }
+
+            // HTML转义
+            function escapeHtml(str) {
+                if (!str) return '';
+                return str.replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                });
+            }
+
+            // 创建管理员
+            window.createAdmin = async function() {
+                const form = document.getElementById('createAdminForm');
+                const formData = new FormData(form);
+                
+                const password = generatedPassword.value;
+                if (!password || password === '点击生成密码') {
+                    alert('请先生成密码');
+                    return;
+                }
+                
+                const data = {
+                    username: formData.get('username'),
+                    name: formData.get('name'),
+                    email: formData.get('email'),
+                    role: formData.get('role'),
+                    password: password
+                };
+
+                if (!data.username || !data.name || !data.email) {
+                    alert('请填写所有必填字段');
+                    return;
+                }
+
+                try {
+                    const result = await adminRequest('/admin/admins', {
+                        method: 'POST',
+                        body: JSON.stringify(data)
+                    });
+
+                    if (result.success) {
+                        alert(`创建成功！\n密码: ${password}\n请保存好密码，关闭后无法再次查看。`);
+                        closeCreateModal();
+                        loadAdmins();
+                    } else {
+                        alert('创建失败：' + (result.error || result.message || '未知错误'));
+                    }
+                } catch (err) {
+                    console.error('创建失败:', err);
+                    alert('创建失败，请稍后重试');
+                }
+            };
+
+            // 启用/禁用
+            window.toggleAdmin = async function(adminId) {
+                if (!confirm('确定要切换该管理员状态吗？')) return;
+                try {
+                    const result = await adminRequest(`/admin/admins/${adminId}/toggle`, {
+                        method: 'POST'
+                    });
+                    if (result.success) {
+                        loadAdmins();
+                        alert('操作成功');
+                    } else {
+                        alert('操作失败：' + (result.error || '未知错误'));
+                    }
+                } catch (err) {
+                    console.error('操作失败:', err);
+                    alert('操作失败');
+                }
+            };
+
+            // 重置密码
+            window.resetPassword = async function(adminId) {
+                if (!confirm('确定要重置该管理员密码吗？')) return;
+                try {
+                    const result = await adminRequest(`/admin/admins/${adminId}/reset-password`, {
+                        method: 'POST'
+                    });
+                    if (result.success && result.password) {
+                        alert(`新密码: ${result.password}\n请立即保存！`);
+                    } else if (result.success) {
+                        alert('密码重置成功');
+                    } else {
+                        alert('重置失败：' + (result.error || '未知错误'));
+                    }
+                    loadAdmins();
+                } catch (err) {
+                    console.error('重置失败:', err);
+                    alert('重置失败');
+                }
+            };
+
+            // 获取管理员名称
+            const storedAdmin = localStorage.getItem('admin_name');
+            if (storedAdmin) {
+                document.getElementById('adminName').textContent = storedAdmin;
+            }
+
+            // 退出登录
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('admin_name');
+                window.location.href = '/admin/index.html';
+            });
+
+            // 加载侧边栏 - 与清算管理页面完全相同的加载方式
+            fetch('/admin/components/sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('sidebar-container').innerHTML = html;
+                    // 高亮当前菜单
+                    const currentPath = window.location.pathname;
+                    document.querySelectorAll('.admin-nav-item').forEach(link => {
+                        if (link.getAttribute('href') === currentPath) {
+                            link.classList.add('active');
+                        }
+                    });
+                })
+                .catch(err => console.error('加载侧边栏失败:', err));
+
+            // 初始化加载
+            loadAdmins();
+        })();
+    </script>
+</body>
+</html>

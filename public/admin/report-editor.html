@@ -1,0 +1,1093 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>报告编辑器 · FOOTRADA 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+    <link rel="stylesheet" href="/css/admin-settle.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .match-score-display {
+            background: #111827;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #f97316;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #374151;
+        }
+
+        body {
+            background: #0a0c10;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            color: #e5e7eb;
+        }
+
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .admin-sidebar {
+            width: 260px;
+            background: #0f1117;
+            border-right: 1px solid #1f2937;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .admin-sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .admin-sidebar::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+
+        .admin-sidebar::-webkit-scrollbar-thumb {
+            background: #f97316;
+            border-radius: 3px;
+        }
+
+        .admin-main {
+            flex: 1;
+            margin-left: 260px;
+            padding: 24px 32px;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #1f2937;
+        }
+
+        .admin-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .admin-header h1 i {
+            color: #f97316;
+            margin-right: 12px;
+        }
+
+        .admin-user {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .admin-user span {
+            color: #e5e7eb;
+            font-size: 14px;
+        }
+
+        .icon-btn {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            border-color: #f97316;
+            color: #f97316;
+        }
+
+        .admin-content {
+            background: #111827;
+            border-radius: 16px;
+            border: 1px solid #1f2937;
+            overflow: hidden;
+            padding: 24px;
+        }
+
+        .report-editor-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .match-selector {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .match-selector h3 {
+            margin-bottom: 16px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .match-selector h3 i {
+            color: #f97316;
+        }
+
+        .selector-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .selector-row select {
+            flex: 1;
+            padding: 12px 16px;
+            background: #111827;
+            border: 1px solid #374151;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .selector-row select:focus {
+            outline: none;
+            border-color: #f97316;
+        }
+
+        .selector-row button {
+            padding: 12px 24px;
+            background: #f97316;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .selector-row button:hover:not(:disabled) {
+            background: #ea580c;
+            transform: translateY(-1px);
+        }
+
+        .selector-row button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .editor-card {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .match-info-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: #111827;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #374151;
+            flex-wrap: wrap;
+        }
+
+        .match-teams {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .match-league {
+            color: #9ca3af;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .match-time {
+            margin-left: auto;
+            color: #6b7280;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .template-badge {
+            background: #111827;
+            border: 1px dashed #374151;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #9ca3af;
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+
+        .template-badge i {
+            color: #f97316;
+            font-size: 16px;
+        }
+
+        .template-badge button {
+            margin-left: auto;
+            padding: 6px 12px;
+            background: transparent;
+            border: 1px solid #374151;
+            border-radius: 30px;
+            color: #9ca3af;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .template-badge button:hover {
+            border-color: #f97316;
+            color: #f97316;
+        }
+
+        .report-textarea {
+            width: 100%;
+            padding: 16px;
+            background: #111827;
+            border: 1px solid #374151;
+            border-radius: 12px;
+            color: #e5e7eb;
+            font-size: 14px;
+            line-height: 1.6;
+            font-family: 'SF Mono', 'JetBrains Mono', monospace;
+            resize: vertical;
+            min-height: 350px;
+            margin-bottom: 16px;
+            transition: all 0.2s;
+        }
+
+        .report-textarea:focus {
+            outline: none;
+            border-color: #f97316;
+        }
+
+        .editor-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary, .btn-secondary {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #f97316;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #ea580c;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #1f2937;
+            border: 1px solid #374151;
+            color: #9ca3af;
+        }
+
+        .btn-secondary:hover {
+            border-color: #f97316;
+            color: #f97316;
+        }
+
+        .recent-reports {
+            margin-top: 24px;
+        }
+
+        .recent-reports h3 {
+            margin-bottom: 16px;
+            color: #9ca3af;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .recent-reports h3 i {
+            color: #f97316;
+        }
+
+        .report-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .report-item:hover {
+            border-color: #f97316;
+            background: #2d3748;
+        }
+
+        .report-item-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .report-item-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .report-item-status.published {
+            background: #10b981;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+        }
+
+        .report-item-status.draft {
+            background: #f97316;
+            box-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
+        }
+
+        .report-item-title {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .report-item-meta {
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .report-item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .report-item-actions button {
+            padding: 6px 12px;
+            background: transparent;
+            border: 1px solid #374151;
+            border-radius: 30px;
+            color: #9ca3af;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .report-item-actions button:hover {
+            border-color: #f97316;
+            color: #f97316;
+        }
+
+        .loading, .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: #6b7280;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: #111827;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            border: 1px solid #1f2937;
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #1f2937;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .modal-header h2 i {
+            color: #f97316;
+            margin-right: 8px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            color: #f97316;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-body pre {
+            background: #1f2937;
+            padding: 20px;
+            border-radius: 12px;
+            color: #e5e7eb;
+            font-family: 'SF Mono', monospace;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            font-size: 13px;
+            border: 1px solid #374151;
+            overflow-x: auto;
+        }
+
+        @media (max-width: 768px) {
+            .admin-main {
+                margin-left: 0;
+                padding: 16px;
+            }
+            
+            .selector-row {
+                flex-direction: column;
+            }
+            
+            .match-info-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .match-time {
+                margin-left: 0;
+            }
+            
+            .editor-actions {
+                flex-direction: column;
+            }
+            
+            .btn-primary, .btn-secondary {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .report-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .report-item-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="admin-sidebar" id="sidebar-container"></aside>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1><i class="fas fa-file-alt"></i> 报告编辑器</h1>
+                <div class="admin-user">
+                    <span id="adminName">管理员</span>
+                    <button class="icon-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <div class="report-editor-container">
+                    <div class="match-selector">
+                        <h3>
+                            <i class="fas fa-futbol"></i>
+                            选择要编辑报告的比赛
+                        </h3>
+                        <div class="selector-row">
+                            <select id="matchSelect">
+                                <option value="">请选择已清算的比赛...</option>
+                            </select>
+                            <button id="newReportBtn" disabled>
+                                <i class="fas fa-plus"></i> 新建报告
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="reportEditor" style="display: none;">
+                        <div class="editor-card">
+                            <div class="match-info-bar" id="matchInfoBar">
+                                <div>
+                                    <div class="match-teams" id="displayTeams"></div>
+                                    <div class="match-league" id="displayLeague"></div>
+                                </div>
+                                <div class="match-score-display" id="displayScore">
+                                    <i class="fas fa-chart-simple"></i>
+                                    <span id="displayScoreText">- : -</span>
+                                </div>
+                                <div class="match-time" id="displayTime"></div>
+                            </div>
+
+                            <div class="template-badge">
+                                <i class="fas fa-lightbulb"></i>
+                                <span>建议使用简洁的文本格式，可从外部编辑器复制粘贴</span>
+                                <button id="showTemplateBtn">
+                                    <i class="fas fa-copy"></i> 查看模板
+                                </button>
+                            </div>
+
+                            <textarea 
+                                class="report-textarea" 
+                                id="reportText" 
+                                placeholder="请粘贴或输入比赛报告内容...
+
+例如：
+🏆 Manchester City vs Liverpool
+📊 Trading Review Report
+
+🎯 System Decision
+────────────────
+✅ Selection: Home Win
+📈 Confidence: 87%
+
+💰 Your Profit
+────────────────
+Authorization: 100 USDT
+Profit: +12.8 USDT
+Received: 112.8 USDT
+
+📌 AI Summary
+────────────────
+Manchester City dominated possession,
+converting control into goals."
+                            ></textarea>
+
+                            <div class="editor-actions">
+                                <button class="btn-secondary" id="cancelEdit">取消</button>
+                                <button class="btn-secondary" id="saveDraftBtn">
+                                    <i class="fas fa-save"></i> 保存草稿
+                                </button>
+                                <button class="btn-primary" id="publishBtn">
+                                    <i class="fas fa-globe"></i> 发布报告
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="recent-reports" id="recentReports">
+                        <h3><i class="fas fa-history"></i> 最近发布的报告</h3>
+                        <div id="reportsList">
+                            <div class="loading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>加载中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="templateModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-copy"></i> 报告模板示例</h2>
+                <button class="modal-close" id="closeTemplateModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <pre>
+🏆 Manchester City vs Liverpool
+📊 Trading Review Report
+
+🎯 System Decision
+────────────────
+✅ Selection: Home Win
+📈 Confidence: 87%
+
+🔍 Key Analysis
+────────────────
+• Possession: 58% vs 42%
+• Shots: 15 vs 8
+• Expected Goals (xG): 2.4 vs 1.1
+• Fund Flow: 65% to Home Win
+
+⚡ Key Moments
+────────────────
+• De Bruyne created 4 chances
+• Haaland: 3 shots on target, 2 goals
+
+💰 Your Profit
+────────────────
+Authorization: 100 USDT
+Profit: +12.8 USDT
+Received: 112.8 USDT
+
+📌 AI Summary
+────────────────
+Manchester City dominated at home,
+fund flow accurately predicted the outcome.
+                </pre>
+                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+                    <button class="btn-secondary" id="closeModalBtn">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const UTILS = window.FOOTRADAPRO?.UTILS || {
+                formatDateTime: (dt) => new Date(dt).toLocaleString('zh-CN'),
+                formatAmount: (num) => num.toFixed(2)
+            };
+
+            const matchSelect = document.getElementById('matchSelect');
+            const newReportBtn = document.getElementById('newReportBtn');
+            const reportEditor = document.getElementById('reportEditor');
+            const recentReportsDiv = document.getElementById('recentReports');
+            const reportsList = document.getElementById('reportsList');
+            const cancelEdit = document.getElementById('cancelEdit');
+            const saveDraftBtn = document.getElementById('saveDraftBtn');
+            const publishBtn = document.getElementById('publishBtn');
+            const reportText = document.getElementById('reportText');
+            const displayTeams = document.getElementById('displayTeams');
+            const displayLeague = document.getElementById('displayLeague');
+            const displayTime = document.getElementById('displayTime');
+            const displayScoreText = document.getElementById('displayScoreText');
+            const showTemplateBtn = document.getElementById('showTemplateBtn');
+            const templateModal = document.getElementById('templateModal');
+            const closeTemplateModal = document.getElementById('closeTemplateModal');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+
+            let matches = [];
+            let currentMatch = null;
+
+            const storedAdmin = localStorage.getItem('admin_name');
+            if (storedAdmin) {
+                document.getElementById('adminName').textContent = storedAdmin;
+            }
+
+            async function adminRequest(endpoint, options = {}) {
+                const token = localStorage.getItem('admin_token');
+                const defaultOptions = {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    },
+                    credentials: 'include'
+                };
+                
+                try {
+                    const response = await fetch(`/api/v1/admin/report${endpoint}`, {
+                        ...defaultOptions,
+                        ...options
+                    });
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            window.location.href = '/admin/index.html';
+                        }
+                        throw new Error(data.error || '请求失败');
+                    }
+                    
+                    return data;
+                } catch (err) {
+                    console.error('API请求失败:', err);
+                    throw err;
+                }
+            }
+
+            async function loadMatches() {
+                try {
+                    const result = await adminRequest('/matches');
+                    if (result.success) {
+                        matches = result.data.filter(m => !m.has_report || m.report_status === 'draft');
+                        renderMatchSelect();
+                    }
+                } catch (err) {
+                    console.error('加载比赛失败:', err);
+                }
+            }
+
+            function renderMatchSelect() {
+                let html = '<option value="">请选择已清算的比赛...</option>';
+                matches.forEach(match => {
+                    const statusText = match.has_report ? ' [草稿]' : '';
+                    html += `<option value="${match.match_id}">
+                        ${escapeHtml(match.home_team)} vs ${escapeHtml(match.away_team)} (${UTILS.formatDateTime(match.match_time)})${statusText}
+                    </option>`;
+                });
+                matchSelect.innerHTML = html;
+            }
+
+            async function loadRecentReports() {
+                try {
+                    const result = await adminRequest('/');
+                    if (result.success) {
+                        renderRecentReports(result.data);
+                    }
+                } catch (err) {
+                    console.error('加载报告失败:', err);
+                    reportsList.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>加载失败</p></div>';
+                }
+            }
+
+            function renderRecentReports(reports) {
+                if (reports.length === 0) {
+                    reportsList.innerHTML = '<div class="empty-state"><i class="fas fa-file-alt"></i><p>暂无报告</p></div>';
+                    return;
+                }
+
+                let html = '';
+                reports.slice(0, 5).forEach(report => {
+                    const statusClass = report.status === 'published' ? 'published' : 'draft';
+                    const statusText = report.status === 'published' ? '已发布' : '草稿';
+                    
+                    html += `
+                        <div class="report-item">
+                            <div class="report-item-info">
+                                <span class="report-item-status ${statusClass}"></span>
+                                <span class="report-item-title">${escapeHtml(report.home_team)} vs ${escapeHtml(report.away_team)}</span>
+                                <span class="report-item-meta">${report.home_score || '-'} : ${report.away_score || '-'}</span>
+                            </div>
+                            <div class="report-item-actions">
+                                <span class="report-item-meta">${UTILS.formatDateTime(report.published_at || report.created_at)}</span>
+                                <button onclick="window.editReport('${report.match_id}')">
+                                    <i class="fas fa-edit"></i> 编辑
+                                </button>
+                                <button onclick="window.viewReport('${report.match_id}')">
+                                    <i class="fas fa-eye"></i> 查看
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                reportsList.innerHTML = html;
+            }
+
+            function escapeHtml(str) {
+                if (!str) return '';
+                return str.replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                });
+            }
+
+            function updateScoreDisplay(homeScore, awayScore) {
+                if (displayScoreText) {
+                    if (homeScore !== null && homeScore !== undefined && awayScore !== null && awayScore !== undefined) {
+                        displayScoreText.textContent = `${homeScore} : ${awayScore}`;
+                    } else {
+                        displayScoreText.textContent = '比分待获取';
+                    }
+                }
+            }
+
+            function loadReportData(report) {
+                currentMatch = report;
+                
+                displayTeams.textContent = `${report.home_team} vs ${report.away_team}`;
+                displayLeague.textContent = report.league || '未知联赛';
+                displayTime.innerHTML = `<i class="fas fa-calendar"></i> ${UTILS.formatDateTime(report.match_time)}`;
+                
+                updateScoreDisplay(report.home_score, report.away_score);
+                
+                reportText.value = report.ai_deepdive || '';
+                
+                reportEditor.style.display = 'block';
+                recentReportsDiv.style.display = 'none';
+            }
+
+            matchSelect.addEventListener('change', () => {
+                newReportBtn.disabled = !matchSelect.value;
+            });
+
+            newReportBtn.addEventListener('click', async () => {
+                const matchId = matchSelect.value;
+                if (!matchId) return;
+
+                try {
+                    try {
+                        const existing = await adminRequest(`/${matchId}`);
+                        if (existing.success) {
+                            loadReportData(existing.data);
+                            return;
+                        }
+                    } catch (err) {}
+
+                    const match = matches.find(m => m.match_id === matchId);
+                    if (!match) return;
+
+                    currentMatch = match;
+                    
+                    displayTeams.textContent = `${match.home_team} vs ${match.away_team}`;
+                    displayLeague.textContent = match.league || '未知联赛';
+                    displayTime.innerHTML = `<i class="fas fa-calendar"></i> ${UTILS.formatDateTime(match.match_time)}`;
+                    
+                    updateScoreDisplay(match.home_score, match.away_score);
+                    
+                    reportText.value = '';
+                    
+                    reportEditor.style.display = 'block';
+                    recentReportsDiv.style.display = 'none';
+                } catch (err) {
+                    alert('加载比赛信息失败');
+                }
+            });
+
+            cancelEdit.addEventListener('click', () => {
+                reportEditor.style.display = 'none';
+                recentReportsDiv.style.display = 'block';
+                currentMatch = null;
+                matchSelect.value = '';
+                newReportBtn.disabled = true;
+            });
+
+            saveDraftBtn.addEventListener('click', async () => {
+                await saveReport('draft');
+            });
+
+            publishBtn.addEventListener('click', async () => {
+                await saveReport('published');
+            });
+
+            async function saveReport(status) {
+                if (!currentMatch) return;
+
+                const data = {
+                    match_id: currentMatch.match_id,
+                    match_time: currentMatch.match_time,
+                    league: currentMatch.league,
+                    home_team: currentMatch.home_team,
+                    away_team: currentMatch.away_team,
+                    home_score: currentMatch.home_score || null,
+                    away_score: currentMatch.away_score || null,
+                    ai_deepdive: reportText.value,
+                    status: status
+                };
+
+                try {
+                    const result = await adminRequest('/save', {
+                        method: 'POST',
+                        body: JSON.stringify(data)
+                    });
+
+                    if (result.success) {
+                        alert(status === 'published' ? '✅ 报告发布成功！' : '✅ 草稿保存成功！');
+                        
+                        if (status === 'published') {
+                            if (confirm('报告发布成功！是否立即查看？')) {
+                                window.open(`/report-detail.html?match_id=${currentMatch.match_id}`, '_blank');
+                            }
+                        }
+                        
+                        cancelEdit.click();
+                        await loadRecentReports();
+                        await loadMatches();
+                    }
+                } catch (err) {
+                    alert('保存失败：' + (err.message || '未知错误'));
+                }
+            }
+
+            window.editReport = async function(matchId) {
+                try {
+                    const result = await adminRequest(`/${matchId}`);
+                    if (result.success) {
+                        loadReportData(result.data);
+                    }
+                } catch (err) {
+                    alert('加载报告失败');
+                }
+            };
+
+            window.viewReport = function(matchId) {
+                window.open(`/report-detail.html?match_id=${matchId}`, '_blank');
+            };
+
+            function showTemplate() {
+                templateModal.classList.add('show');
+            }
+
+            function hideTemplate() {
+                templateModal.classList.remove('show');
+            }
+
+            showTemplateBtn.addEventListener('click', showTemplate);
+            closeTemplateModal.addEventListener('click', hideTemplate);
+            closeModalBtn.addEventListener('click', hideTemplate);
+
+            templateModal.addEventListener('click', (e) => {
+                if (e.target === templateModal) {
+                    hideTemplate();
+                }
+            });
+
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('admin_name');
+                window.location.href = '/admin/index.html';
+            });
+
+            fetch('/admin/components/sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('sidebar-container').innerHTML = html;
+                    const currentPath = window.location.pathname;
+                    document.querySelectorAll('.admin-nav-item').forEach(link => {
+                        if (link.getAttribute('href') === currentPath) {
+                            link.classList.add('active');
+                        }
+                    });
+                })
+                .catch(err => console.error('加载侧边栏失败:', err));
+
+            async function handleUrlParams() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlMatchId = urlParams.get('matchId');
+                
+                if (urlMatchId) {
+                    console.log('从 URL 获取到比赛 ID:', urlMatchId);
+                    
+                    if (matches.length === 0) {
+                        await loadMatches();
+                    }
+                    
+                    const match = matches.find(m => m.match_id === urlMatchId);
+                    
+                    if (match) {
+                        matchSelect.value = urlMatchId;
+                        newReportBtn.disabled = false;
+                        setTimeout(() => {
+                            newReportBtn.click();
+                        }, 100);
+                    } else {
+                        try {
+                            const response = await fetch(`/api/v1/admin/report/match/${urlMatchId}`, {
+                                credentials: 'include'
+                            });
+                            const result = await response.json();
+                            
+                            if (result.success) {
+                                const match = result.data;
+                                currentMatch = match;
+                                reportEditor.style.display = 'block';
+                                recentReportsDiv.style.display = 'none';
+                                displayTeams.textContent = `${match.home_team} vs ${match.away_team}`;
+                                displayLeague.textContent = match.league || '未知联赛';
+                                displayTime.innerHTML = `<i class="fas fa-calendar"></i> ${UTILS.formatDateTime(match.match_time)}`;
+                                updateScoreDisplay(match.home_score, match.away_score);
+                                reportText.value = '';
+                                console.log('✅ 比赛已手动加载:', match);
+                            } else {
+                                console.error('加载比赛失败:', result);
+                                alert('无法加载比赛信息：' + (result.error || '未知错误'));
+                            }
+                        } catch (err) {
+                            console.error('加载比赛失败:', err);
+                            alert('无法加载比赛信息');
+                        }
+                    }
+                }
+            }
+
+            (async function() {
+                await loadMatches();
+                await loadRecentReports();
+                await handleUrlParams();
+            })();
+        })();
+    </script>
+</body>
+</html>

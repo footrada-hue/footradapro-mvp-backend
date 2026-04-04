@@ -1,0 +1,319 @@
+/**
+ * FOOTRADAPRO MVP - Authentication Routes
+ * @description 用户认证路由（包含邮件验证码）
+ */
+
+import express from 'express';
+import bcrypt from 'bcrypt';
+import { body, validationResult } from 'express-validator';
+import { v4 as uuidv4 } from 'uuid';
+
+import { getDb } from '../../database/connection.js';
+import logger from '../../utils/logger.js';
+import config from '../../../config/index.js';
+import { sendVerificationEmail } from '../../services/emailservice.js';
+
+const router = express.Router();
+
+// ==================== 验证码存储（内存）====================
+const verificationCodes = new Map();
+const CODE_EXPIRY = 10 * 60 * 1000; // 10分钟
+
+// 定期清理过期验证码
+const CLEANUP_INTERVAL = 60 * 60 * 1000;
+setInterval(() => {
+    const now = Date.now();
+    for (const [email, data] of verificationCodes) {
+        if (data.expires < now) {
+            verificationCodes.delete(email);
+        }
+    }
+    logger.debug('Cleaned up expired verification codes');
+}, CLEANUP_INTERVAL);
+
+// ==================== 验证规则 ====================
+const registerValidation = [
+    body('username')
+        .isLength({ min: 3, max: 20 })
+        .withMessage('用户名长度3-20字符')
+        .matches(/^[a-zA-Z0-9_]+$/)
+        .withMessage('用户名只能包含字母、数字和下划线'),
+    body('password')
+        .isLength({ min: 6 })
+        .withMessage('密码至少6位'),
+    body('code')
+        .isLength({ min: 6, max: 6 })
+        .isNumeric()
+        .withMessage('验证码必须是6位数字')
+];
+
+const loginValidation = [
+    body('username').notEmpty().withMessage('用户名不能为空'),
+    body('password').notEmpty().withMessage('密码不能为空')
+];
+
+const sendCodeValidation = [
+    body('email').isEmail().withMessage('请输入有效的邮箱地址')
+];
+
+// ==================== 发送验证码 ====================
+router.post('/send-code', sendCodeValidation, async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            success: false,
+            error: 'VALIDATION_ERROR',
+            details: errors.array()
+        });
+    }
+
+    const { email } = req.body;
+
+    // 检查是否已有有效验证码
+    const existing = verificationCodes.get(email);
+    if (existing && existing.expires > Date.now()) {
+        return res.status(429).json({
+            success: false,
+            error: 'CODE_STILL_VALID',
+            message: '验证码仍然有效，请勿重复发送'
+        });
+    }
+
+    // 生成6位验证码
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = Date.now() + CODE_EXPIRY;
+    
+    // 存储验证码
+    verificationCodes.set(email, { code, expires });
+
+    try {
+        // 发送邮件
+        const sent = await sendVerificationEmail(email, code);
+        
+        if (!sent) {
+            verificationCodes.delete(email);
+            return res.status(500).json({
+                success: false,
+                error: 'SEND_FAILED',
+                message: '验证码发送失败'
+            });
+        }
+
+        logger.info(`Verification code sent to ${email}`);
+        
+        res.json({
+            success: true,
+            message: '验证码已发送'
+        });
+    } catch (err) {
+        logger.error(`Failed to send verification code to ${email}:`, err);
+        verificationCodes.delete(email);
+        res.status(500).json({
+            success: false,
+            error: 'SEND_FAILED',
+            message: '验证码发送失败'
+        });
+    }
+});
+
+// ==================== 注册 ====================
+router.post('/register', registerValidation, async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            success: false,
+            error: 'VALIDATION_ERROR',
+            details: errors.array()
+        });
+    }
+
+    const { username, password, code } = req.body;
+    const db = getDb();
+
+    // 验证验证码
+    const storedCode = verificationCodes.get(username);
+    if (!storedCode || storedCode.code !== code || storedCode.expires < Date.now()) {
+        return res.status(400).json({
+            success: false,
+            error: 'INVALID_OR_EXPIRED_CODE',
+            message: '验证码无效或已过期'
+        });
+    }
+
+    // 验证码使用后删除
+    verificationCodes.delete(username);
+
+    try {
+        // 检查用户名是否已存在
+        const existingUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+        if (existingUser) {
+            return res.status(409).json({
+                success: false,
+                error: 'USERNAME_EXISTS',
+                message: '用户名已存在'
+            });
+        }
+
+        // 加密密码
+        const hashedPassword = await bcrypt.hash(password, config.SALT_ROUNDS);
+        
+        // 生成唯一UID
+        const uid = 'U' + Date.now().toString().slice(-8) + Math.random().toString(36).substring(2, 5).toUpperCase();
+        
+        // 插入用户
+        const result = db.prepare(`
+            INSERT INTO users (uid, username, password, balance, role, status)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `).run(uid, username, hashedPassword, 100.00, 'user', 'active'); // 新用户赠送100
+
+        logger.info(`User registered: ${username} (${uid})`, { ip: req.ip });
+
+        res.json({
+            success: true,
+            data: {
+                uid,
+                username,
+                balance: 100.00,
+                role: 'user'
+            }
+        });
+
+    } catch (error) {
+        logger.error('Registration error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'INTERNAL_ERROR'
+        });
+    }
+});
+
+// ==================== 登录 ====================
+router.post('/login', loginValidation, async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            success: false,
+            error: 'VALIDATION_ERROR',
+            details: errors.array()
+        });
+    }
+
+    const { username, password } = req.body;
+    const db = getDb();
+
+    try {
+        // 查找用户
+        const user = db.prepare(`
+            SELECT id, uid, username, password, balance, role, status 
+            FROM users WHERE username = ?
+        `).get(username);
+
+        if (!user) {
+            logger.warn(`Login failed: user not found - ${username}`, { ip: req.ip });
+            return res.status(401).json({
+                success: false,
+                error: 'INVALID_CREDENTIALS'
+            });
+        }
+
+        // 检查用户状态
+        if (user.status !== 'active') {
+            logger.warn(`Login failed: account disabled - ${username}`, { ip: req.ip });
+            return res.status(403).json({
+                success: false,
+                error: 'ACCOUNT_DISABLED'
+            });
+        }
+
+        // 验证密码
+        const validPassword = await bcrypt.compare(password, user.password);
+        if (!validPassword) {
+            logger.warn(`Login failed: wrong password - ${username}`, { ip: req.ip });
+            return res.status(401).json({
+                success: false,
+                error: 'INVALID_CREDENTIALS'
+            });
+        }
+
+        // 设置 session
+        req.session.userId = user.id;
+        req.session.uid = user.uid;
+        req.session.role = user.role;
+
+        logger.info(`User logged in: ${username} (${user.uid})`, { ip: req.ip });
+
+        // 返回用户信息（不包含密码）
+        res.json({
+            success: true,
+            data: {
+                uid: user.uid,
+                username: user.username,
+                balance: user.balance,
+                role: user.role
+            }
+        });
+
+    } catch (error) {
+        logger.error('Login error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'INTERNAL_ERROR'
+        });
+    }
+});
+
+// ==================== 登出 ====================
+router.post('/logout', (req, res) => {
+    const uid = req.session.uid;
+    
+    req.session.destroy((err) => {
+        if (err) {
+            logger.error('Logout error:', err);
+            return res.status(500).json({
+                success: false,
+                error: 'LOGOUT_FAILED'
+            });
+        }
+
+        res.clearCookie('footradapro.sid');
+        
+        if (uid) {
+            logger.info(`User logged out: ${uid}`, { ip: req.ip });
+        }
+
+        res.json({
+            success: true
+        });
+    });
+});
+
+// ==================== 获取当前会话 ====================
+router.get('/session', (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({
+            success: false,
+            error: 'NOT_AUTHENTICATED'
+        });
+    }
+
+    const db = getDb();
+    const user = db.prepare(`
+        SELECT uid, username, balance, role FROM users WHERE id = ?
+    `).get(req.session.userId);
+
+    if (!user) {
+        // session有效但用户不存在，销毁session
+        req.session.destroy();
+        return res.status(401).json({
+            success: false,
+            error: 'USER_NOT_FOUND'
+        });
+    }
+
+    res.json({
+        success: true,
+        data: user
+    });
+});
+
+export default router;

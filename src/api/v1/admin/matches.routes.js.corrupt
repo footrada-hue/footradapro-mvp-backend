@@ -1,0 +1,775 @@
+/**
+ * FOOTRADAPRO MVP - Admin Match Management Routes
+ * @description 管理员比赛管理接口（增删改查）- 新增 is_active 切换功能
+ */
+
+import express from 'express';
+import { body, param, validationResult } from 'express-validator';
+import { getDb } from '../../../database/connection.js';
+import { adminAuth } from '../../../middlewares/admin.middleware.js';
+import logger from '../../../utils/logger.js';
+import fetch from 'node-fetch';
+
+const router = express.Router();
+
+// ==================== 所有路由需要管理员认证 ====================
+router.use(adminAuth);
+
+// ==================== 获取比赛列表（兼容根路径）====================
+router.get('/', (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+    const status = req.query.status;
+    const db = getDb();
+
+    try {
+        let query = 'SELECT * FROM matches';
+        let countQuery = 'SELECT COUNT(*) as total FROM matches';
+        const params = [];
+
+        if (status && status !== 'all') {
+            query += ' WHERE status = ?';
+            countQuery += ' WHERE status = ?';
+            params.push(status);
+        }
+
+        query += ' ORDER BY match_time DESC LIMIT ? OFFSET ?';
+        
+        const { total } = db.prepare(countQuery).get(...params);
+        const matches = db.prepare(query).all(...params, limit, offset);
+
+        res.json({
+            success: true,
+            data: matches,
+            pagination: {
+                page,
+                limit,
+                total,
+                pages: Math.ceil(total / limit)
+            }
+        });
+    } catch (error) {
+        logger.error('Fetch matches list error:', error);
+        res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
+    }
+});
+
+// ==================== 获取比赛列表（分页）- 保留原接口兼容 ====================
+router.get('/list', (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+    const status = req.query.status;
+    const db = getDb();
+
+    try {
+        let query = 'SELECT * FROM matches';
+        let countQuery = 'SELECT COUNT(*) as total FROM matches';
+        const params = [];
+
+        if (status && status !== 'all') {
+            query += ' WHERE status = ?';
+            countQuery += ' WHERE status = ?';
+            params.push(status);
+        }
+
+        query += ' ORDER BY match_time DESC LIMIT ? OFFSET ?';
+        
+        const { total } = db.prepare(countQuery).get(...params);
+        const matches = db.prepare(query).all(...params, limit, offset);
+
+        res.json({
+            success: true,
+            data: matches,
+            pagination: {
+                page,
+                limit,
+                total,
+                pages: Math.ceil(total / limit)
+            }
+        });
+    } catch (error) {
+        logger.error('Fetch matches list error:', error);
+        res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
+    }
+});
+
+// ==================== 获取单个比赛 ====================
+router.get('/:id',
+    [param('id').notEmpty()],
+    (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ success: false, error: 'VALIDATION_ERROR' });
+        }
+
+        const { id } = req.params;
+        const db = getDb();
+
+        try {
+            const match = db.prepare('SELECT * FROM matches WHERE id = ?').get(id);
+            
+            if (!match) {
+                return res.status(404).json({ success: false, error: 'MATCH_NOT_FOUND' });
+            }
+
+            res.json({ success: true, data: match });
+        } catch (error) {
+            logger.error(`Fetch match ${id} error:`, error);
+            res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
+        }
+    }
+);
+
+// ==================== 添加比赛 ====================
+router.post('/add', [
+    body('match_id').notEmpty(),
+    body('home_team').notEmpty(),
+    body('away_team').notEmpty(),
+    body('match_time').isISO8601(),
+    body('cutoff_time').isISO8601(),
+    body('odds_home').optional().isFloat({ min: 0 }),
+    body('odds_draw').optional().isFloat({ min: 0 }),
+    body('odds_away').optional().isFloat({ min: 0 }),
+    body('execution_rate').optional().isInt({ min: 0, max: 100 }),
+    body('min_authorization').optional().isFloat({ min: 0 }),
+    body('match_limit').optional().isFloat({ min: 0 })
+], (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ success: false, error: 'VALIDATION_ERROR' });
+    }
+
+    const {
+        match_id, home_team, away_team, league,
+        match_time, cutoff_time,
+        odds_home, odds_draw, odds_away,
+        execution_rate = 30,
+        min_authorization = 100,
+        match_limit = 500
+    } = req.body;
+
+    const db = getDb();
+
+    try {
+        const existing = db.prepare('SELECT id FROM matches WHERE match_id = ?').get(match_id);
+        if (existing) {
+            return res.status(409).json({ success: false, error: 'MATCH_ID_EXISTS' });
+        }
+
+        const tableInfo = db.prepare("PRAGMA table_info(matches)").all();
+        const hasIsActive = tableInfo.some(col => col.name === 'is_active');
+
+        if (hasIsActive) {
+            db.prepare(`
+                INSERT INTO matches (
+                    match_id, home_team, away_team, league, 
+                    match_time, cutoff_time, 
+                    odds_home, odds_draw, odds_away,
+                    execution_rate, min_authorization, match_limit,
+                    status, is_active
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(
+                match_id, home_team, away_team, league || 'Unknown',
+                match_time, cutoff_time,
+                odds_home || null, odds_draw || null, odds_away || null,
+                execution_rate, min_authorization, match_limit,
+                'upcoming', 0
+            );
+        } else {
+            db.prepare(`
+                INSERT INTO matches (
+                    match_id, home_team, away_team, league, 
+                    match_time, cutoff_time, 
+                    odds_home, odds_draw, odds_away,
+                    execution_rate, min_authorization, match_limit,
+                    status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(
+                match_id, home_team, away_team, league || 'Unknown',
+                match_time, cutoff_time,
+                odds_home || null, odds_draw || null, odds_away || null,
+                execution_rate, min_authorization, match_limit,
+                'upcoming'
+            );
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        logger.error('Add match error:', error);
+        res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
+    }
+});
+
+// ==================== 更新比赛 ====================
+router.put('/:id', (req, res) => {
+    const { id } = req.params;
+    const updates = req.body;
+    const db = getDb();
+
+    try {
+        const existing = db.prepare('SELECT id FROM matches WHERE id = ?').get(id);
+        if (!existing) {
+            return res.status(404).json({ success: false, error: 'MATCH_NOT_FOUND' });
+        }
+
+        const fields = [];
+        const values = [];
+        const allowedFields = [
+            'home_team', 'away_team', 'league', 
+            'match_time', 'cutoff_time',
+            'odds_home', 'odds_draw', 'odds_away',
+            'execution_rate', 'min_authorization', 'match_limit',
+            'status', 'result', 'report', 'is_active'
+        ];
+
+        for (const field of allowedFields) {
+            if (updates[field] !== undefined) {
+                fields.push(`${field} = ?`);
+                values.push(updates[field]);
+            }
+        }
+
+        if (fields.length === 0) {
+            return res.status(400).json({ success: false, error: 'NO_FIELDS_TO_UPDATE' });
+        }
+
+        values.push(id);
+        db.prepare(`UPDATE matches SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+
+        res.json({ success: true });
+    } catch (error) {
+        logger.error(`Update match ${id} error:`, error);
+        res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
+    }
+});
+
+// ==================== 切换前台显示状态 ====================
+router.put('/:id/toggle-active', (req, res) => {
+    const { id } = req.params;
+    const { is_active } = req.body;
+
+    if (is_active === undefined || (is_active !== 0 && is_active !== 1)) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'INVALID_PARAMETERS',
+            message: 'is_active must be 0 or 1'
+        });
+    }
+
+    const db = getDb();
+
+    try {
+        const existing = db.prepare('SELECT id, is_active FROM matches WHERE id = ?').get(id);
+        
+        if (!existing) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'MATCH_NOT_FOUND' 
+            });
+        }
+
+        const result = db.prepare('UPDATE matches SET is_active = ? WHERE id = ?').run(is_active, id);
+        
+        if (result.changes === 0) {
+            return res.status(500).json({ 
+                success: false, 
+                error: 'UPDATE_FAILED' 
+            });
+        }
+
+        logger.info(`Match ${id} active status changed from ${existing.is_active} to ${is_active}`);
+        
+        res.json({ 
+            success: true,
+            message: is_active ? '比赛已在前台显示' : '比赛已隐藏'
+        });
+    } catch (error) {
+        logger.error('Toggle active error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'INTERNAL_ERROR',
+            message: error.message 
+        });
+    }
+});
+
+// ==================== 批量切换显示状态 ====================
+router.post('/batch-toggle', (req, res) => {
+    const { ids, is_active } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'INVALID_PARAMETERS',
+            message: 'ids must be a non-empty array'
+        });
+    }
+
+    if (is_active === undefined || (is_active !== 0 && is_active !== 1)) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'INVALID_PARAMETERS',
+            message: 'is_active must be 0 or 1'
+        });
+    }
+
+    const db = getDb();
+
+    try {
+        db.prepare('BEGIN TRANSACTION').run();
+
+        const placeholders = ids.map(() => '?').join(',');
+        const result = db.prepare(`UPDATE matches SET is_active = ? WHERE id IN (${placeholders})`).run(is_active, ...ids);
+
+        db.prepare('COMMIT').run();
+
+        logger.info(`Batch updated ${result.changes} matches to is_active=${is_active}`);
+
+        res.json({ 
+            success: true, 
+            updated: result.changes,
+            message: `已更新 ${result.changes} 场比赛`
+        });
+    } catch (error) {
+        db.prepare('ROLLBACK').run();
+        
+        logger.error('Batch toggle error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'INTERNAL_ERROR',
+            message: error.message 
+        });
+    }
+});
+
+// ==================== 获取前台显示统计 ====================
+router.get('/stats/active', (req, res) => {
+    const db = getDb();
+
+    try {
+        const stats = db.prepare(`
+            SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active,
+                SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) as inactive,
+                SUM(CASE WHEN is_active = 1 AND status = 'upcoming' THEN 1 ELSE 0 END) as upcoming_active
+            FROM matches
+        `).get();
+
+        res.json({
+            success: true,
+            data: stats
+        });
+    } catch (error) {
+        logger.error('Get active stats error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'INTERNAL_ERROR' 
+        });
+    }
+});
+
+// ==================== 删除比赛 ====================
+router.delete('/:id',
+    [param('id').notEmpty()],
+    (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ success: false, error: 'VALIDATION_ERROR' });
+        }
+
+        const { id } = req.params;
+        const db = getDb();
+
+        try {
+            const result = db.prepare('DELETE FROM matches WHERE id = ?').run(id);
+            
+            if (result.changes === 0) {
+                return res.status(404).json({ success: false, error: 'MATCH_NOT_FOUND' });
+            }
+
+            res.json({ success: true });
+        } catch (error) {
+            logger.error(`Delete match ${id} error:`, error);
+            res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
+        }
+    }
+);
+
+// ==================== 从 football-data.org 同步比赛数据 ====================
+router.post('/sync', async (req, res) => {
+    const db = getDb();
+    
+    try {
+        console.log('🔄 开始从 football-data.org 同步比赛数据...');
+        
+        const API_KEY = process.env.FOOTBALL_API_KEY || '9ce49fba19244b69928ca28ce8486295';
+        
+        const today = new Date();
+        const nextWeek = new Date();
+        nextWeek.setDate(today.getDate() + 7);
+        
+        const dateFrom = today.toISOString().split('T')[0];
+        const dateTo = nextWeek.toISOString().split('T')[0];
+        
+        const competitions = ['PL', 'PD', 'SA', 'BL1', 'FL1', 'CL'];
+        
+        let allMatches = [];
+        
+        for (const comp of competitions) {
+            const url = `https://api.football-data.org/v4/competitions/${comp}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}&status=SCHEDULED`;
+            
+            console.log(`📡 请求: ${url}`);
+            
+            const response = await fetch(url, {
+                headers: {
+                    'X-Auth-Token': API_KEY
+                }
+            });
+            
+            if (!response.ok) {
+                console.warn(`获取 ${comp} 比赛失败: ${response.status}`);
+                continue;
+            }
+            
+            const data = await response.json();
+            
+            if (data.matches && data.matches.length > 0) {
+                allMatches = [...allMatches, ...data.matches];
+            }
+        }
+        
+        console.log(`📊 从API获取到 ${allMatches.length} 场比赛`);
+        
+        if (allMatches.length === 0) {
+            return res.json({
+                success: true,
+                added: 0,
+                updated: 0,
+                message: '没有找到未来的比赛数据'
+            });
+        }
+        
+        const tableInfo = db.prepare("PRAGMA table_info(matches)").all();
+        const hasIsActive = tableInfo.some(col => col.name === 'is_active');
+        
+        let added = 0;
+        let updated = 0;
+        
+        for (const match of allMatches) {
+            const matchTime = new Date(match.utcDate).toISOString();
+            const cutoffTime = new Date(new Date(match.utcDate).getTime() - 5 * 60 * 1000).toISOString();
+            
+            const leagueMap = {
+                'PL': 'Premier League',
+                'PD': 'La Liga',
+                'SA': 'Serie A',
+                'BL1': 'Bundesliga',
+                'FL1': 'Ligue 1',
+                'CL': 'Champions League'
+            };
+            
+            const league = leagueMap[match.competition.code] || match.competition.name;
+            
+            // 获取球队图标
+            const homeLogo = match.homeTeam?.crest || null;
+            const awayLogo = match.awayTeam?.crest || null;
+            
+            // 检查比赛是否已存在（按 match_id）
+            const existing = db.prepare('SELECT id, is_active FROM matches WHERE match_id = ?').get(match.id.toString());
+            
+            if (existing) {
+                // 更新已有比赛（保留原有的 is_active 值）
+                if (hasIsActive) {
+                    db.prepare(`
+                        UPDATE matches SET
+                            home_team = ?,
+                            away_team = ?,
+                            league = ?,
+                            match_time = ?,
+                            cutoff_time = ?,
+                            execution_rate = ?,
+                            min_authorization = ?,
+                            match_limit = ?,
+                            home_logo = ?,
+                            away_logo = ?,
+                            status = ?,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE match_id = ?
+                    `).run(
+                        match.homeTeam.name,
+                        match.awayTeam.name,
+                        league,
+                        matchTime,
+                        cutoffTime,
+                        30,
+                        100,
+                        500,
+                        homeLogo,
+                        awayLogo,
+                        'upcoming',
+                        match.id.toString()
+                    );
+                } else {
+                    db.prepare(`
+                        UPDATE matches SET
+                            home_team = ?,
+                            away_team = ?,
+                            league = ?,
+                            match_time = ?,
+                            cutoff_time = ?,
+                            execution_rate = ?,
+                            min_authorization = ?,
+                            match_limit = ?,
+                            home_logo = ?,
+                            away_logo = ?,
+                            status = ?
+                        WHERE match_id = ?
+                    `).run(
+                        match.homeTeam.name,
+                        match.awayTeam.name,
+                        league,
+                        matchTime,
+                        cutoffTime,
+                        30,
+                        100,
+                        500,
+                        homeLogo,
+                        awayLogo,
+                        'upcoming',
+                        match.id.toString()
+                    );
+                }
+                updated++;
+                console.log(`📝 更新比赛: ${match.homeTeam.name} vs ${match.awayTeam.name} (ID: ${match.id})`);
+            } else {
+                // 新增比赛
+                if (hasIsActive) {
+                    db.prepare(`
+                        INSERT INTO matches (
+                            match_id, home_team, away_team, league,
+                            match_time, cutoff_time,
+                            execution_rate, min_authorization, match_limit,
+                            home_logo, away_logo,
+                            status, is_active
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    `).run(
+                        match.id.toString(),
+                        match.homeTeam.name,
+                        match.awayTeam.name,
+                        league,
+                        matchTime,
+                        cutoffTime,
+                        30,
+                        100,
+                        500,
+                        homeLogo,
+                        awayLogo,
+                        'upcoming',
+                        0
+                    );
+                } else {
+                    db.prepare(`
+                        INSERT INTO matches (
+                            match_id, home_team, away_team, league,
+                            match_time, cutoff_time,
+                            execution_rate, min_authorization, match_limit,
+                            home_logo, away_logo,
+                            status
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    `).run(
+                        match.id.toString(),
+                        match.homeTeam.name,
+                        match.awayTeam.name,
+                        league,
+                        matchTime,
+                        cutoffTime,
+                        30,
+                        100,
+                        500,
+                        homeLogo,
+                        awayLogo,
+                        'upcoming'
+                    );
+                }
+                added++;
+                console.log(`➕ 新增比赛: ${match.homeTeam.name} vs ${match.awayTeam.name} (ID: ${match.id})`);
+            }
+        }
+        
+        console.log(`✅ 同步完成: 新增 ${added} 场, 更新 ${updated} 场`);
+        
+        res.json({
+            success: true,
+            added: added,
+            updated: updated,
+            total: allMatches.length,
+            message: `成功同步 ${added + updated} 场比赛 (新增 ${added}, 更新 ${updated})`
+        });
+        
+    } catch (error) {
+        console.error('同步比赛失败:', error);
+        logger.error('Sync matches error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'SYNC_FAILED',
+            message: error.message 
+        });
+    }
+});
+
+
+// ==================== 获取缺少队徽的球队列表 ====================
+router.get('/missing-logos', (req, res) => {
+    const { league, search } = req.query;
+    const db = getDb();
+    try {
+        let sql = `
+            SELECT 
+                tl.team_name,
+                tl.involved_matches,
+                tl.logo_status,
+                COALESCE(
+                    (SELECT league FROM matches WHERE home_team = tl.team_name OR away_team = tl.team_name LIMIT 1),
+                    'Unknown'
+                ) as league
+            FROM team_logos tl
+            WHERE tl.logo_status = 'missing'
+        `;
+        const params = [];
+        if (league && league !== 'all') {
+            sql += ` AND league = ?`;
+            params.push(league);
+        }
+        if (search) {
+            sql += ` AND tl.team_name LIKE ?`;
+            params.push(`%${search}%`);
+        }
+        sql += ` ORDER BY tl.involved_matches DESC, tl.team_name`;
+        const teams = db.prepare(sql).all(...params);
+        res.json({ success: true, data: teams });
+    } catch (error) {
+        logger.error('Get missing logos error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ==================== 上传球队队徽 ====================
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'teams');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+const logoStorage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadDir),
+    filename: (req, file, cb) => {
+        const teamName = req.body.team_name || 'unknown';
+        const safeName = teamName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        const ext = path.extname(file.originalname);
+        cb(null, `${safeName}${ext}`);
+    }
+});
+const uploadLogo = multer({ storage: logoStorage, limits: { fileSize: 2 * 1024 * 1024 } }).single('logo');
+
+router.post('/upload-logo', (req, res) => {
+    uploadLogo(req, res, async (err) => {
+        if (err) return res.status(400).json({ success: false, error: err.message });
+        const { team_name } = req.body;
+        if (!team_name || !req.file) {
+            return res.status(400).json({ success: false, error: '缺少球队名称或图片' });
+        }
+        const logoUrl = `/uploads/teams/${req.file.filename}`;
+        const db = getDb();
+        try {
+            db.prepare('BEGIN TRANSACTION').run();
+            db.prepare(`UPDATE team_logos SET logo_url = ?, logo_status = 'ok', last_updated = CURRENT_TIMESTAMP WHERE team_name = ?`).run(logoUrl, team_name);
+            const homeResult = db.prepare(`UPDATE matches SET home_logo = ? WHERE home_team = ?`).run(logoUrl, team_name);
+            db.prepare(`UPDATE matches SET away_logo = ? WHERE away_team = ?`).run(logoUrl, team_name);
+            db.prepare('COMMIT').run();
+            const totalUpdated = homeResult.changes;
+            logger.info(`✅ 队徽已上传: ${team_name} -> ${logoUrl}, 影响 ${totalUpdated} 场比赛`);
+            res.json({ success: true, updated_matches: totalUpdated, logo_url: logoUrl });
+        } catch (error) {
+            db.prepare('ROLLBACK').run();
+            logger.error('Upload logo error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+});
+
+
+// ==================== 获取联赛列表（用于筛选）====================
+router.get('/leagues', (req, res) => {
+    const db = getDb();
+    try {
+        const leagues = db.prepare(`
+            SELECT 
+                league,
+                COUNT(*) as match_count,
+                SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active_count,
+                MIN(match_time) as earliest_match,
+                MAX(match_time) as latest_match
+            FROM matches 
+            WHERE league IS NOT NULL AND league != ''
+            GROUP BY league
+            ORDER BY match_count DESC
+        `).all();
+        res.json({ success: true, data: leagues });
+    } catch (error) {
+        logger.error('Fetch leagues error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+
+// ==================== 获取比赛统计概览 ====================
+router.get('/stats/overview', (req, res) => {
+    const db = getDb();
+    try {
+        const stats = db.prepare(`
+            SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 'upcoming' THEN 1 ELSE 0 END) as upcoming,
+                SUM(CASE WHEN status = 'live' THEN 1 ELSE 0 END) as live,
+                SUM(CASE WHEN status = 'finished' THEN 1 ELSE 0 END) as finished,
+                COUNT(DISTINCT source) as sources,
+                MIN(match_time) as oldest_match,
+                MAX(match_time) as newest_match
+            FROM matches
+        `).get();
+        res.json({ success: true, data: stats });
+    } catch (error) {
+        logger.error('Get stats error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+
+// ==================== 清理过期数据 ====================
+router.post('/cleanup', (req, res) => {
+    const db = getDb();
+    try {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - 30);
+        const result = db.prepare(`
+            DELETE FROM matches 
+            WHERE status = 'finished' 
+            AND match_time < ?
+        `).run(cutoffDate.toISOString());
+        
+        res.json({ 
+            success: true, 
+            message: `已清理 ${result.changes} 场过期比赛`,
+            deleted: result.changes
+        });
+    } catch (error) {
+        logger.error('Cleanup error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+export default router;

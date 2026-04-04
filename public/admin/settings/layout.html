@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首页布局配置 · FOOTRADA 管理后台</title>
+    <!-- 只引用存在的CSS -->
+    <link rel="stylesheet" href="/css/nav.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ==================== 从首页复制的变量 ==================== */
+        :root {
+            --accent: #FF6B00;
+            --accent-rgb: 255, 107, 0;
+            --accent-soft: rgba(255, 107, 0, 0.1);
+            --accent-glow: rgba(255, 107, 0, 0.4);
+            --accent-gradient: linear-gradient(135deg, #FF6B00 0%, #FF8A3C 100%);
+            
+            --danger: #EF4444;
+            --success: #10B981;
+            --warning: #F59E0B;
+            
+            --bg-primary: #0A0C10;
+            --bg-secondary: #0F1422;
+            --bg-card: #151A28;
+            --bg-card-hover: #1E2335;
+            --bg-surface: #1A1F2E;
+            
+            --border-subtle: rgba(255, 255, 255, 0.05);
+            --border-strong: rgba(255, 255, 255, 0.1);
+            
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --text-tertiary: #64748B;
+            
+            --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.4);
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --radius-xl: 32px;
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* 亮色主题 */
+        [data-theme="light"] {
+            --bg-primary: #F8FAFC;
+            --bg-secondary: #F1F5F9;
+            --bg-card: #FFFFFF;
+            --bg-card-hover: #F8FAFC;
+            --bg-surface: #F1F5F9;
+            --border-subtle: rgba(0, 0, 0, 0.05);
+            --border-strong: rgba(0, 0, 0, 0.08);
+            --text-primary: #0F172A;
+            --text-secondary: #475569;
+            --text-tertiary: #94A3B8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .admin-sidebar {
+            width: 260px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-strong);
+            padding: 24px 0;
+            position: fixed;
+            height: 100vh;
+        }
+
+        .admin-sidebar-logo {
+            font-size: 24px;
+            font-weight: 700;
+            padding: 0 24px;
+            margin-bottom: 32px;
+            color: var(--text-primary);
+        }
+
+        .admin-sidebar-logo span {
+            color: var(--accent);
+        }
+
+        .admin-nav {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .admin-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: var(--transition);
+            border-left: 3px solid transparent;
+        }
+
+        .admin-nav-item:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .admin-nav-item.active {
+            background: rgba(255, 107, 0, 0.1);
+            color: var(--accent);
+            border-left-color: var(--accent);
+        }
+
+        .admin-main {
+            flex: 1;
+            margin-left: 260px;
+            padding: 32px;
+            background: var(--bg-primary);
+            min-height: 100vh;
+        }
+
+        .settings-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* 配置卡片 */
+        .config-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-lg);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-strong);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-secondary);
+        }
+
+        .card-header i {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 20px;
+        }
+
+        .card-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        /* 模块开关项 */
+        .module-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-md);
+            margin-bottom: 12px;
+            transition: var(--transition);
+        }
+
+        .module-item:hover {
+            border-color: var(--accent);
+            transform: translateX(4px);
+        }
+
+        .module-info h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .module-info h4 i {
+            color: var(--accent);
+            font-size: 14px;
+        }
+
+        .module-info p {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        /* 开关样式 - 与首页一致 */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 28px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border-strong);
+            transition: var(--transition);
+            border-radius: 28px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: var(--transition);
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--accent);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent);
+            margin: 8px 0 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* 网络选项 */
+        .network-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .network-card {
+            padding: 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .network-card:hover {
+            border-color: var(--accent);
+        }
+
+        .network-card.active {
+            border-color: var(--accent);
+            background: rgba(255, 107, 0, 0.1);
+        }
+
+        .network-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .network-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: var(--bg-card);
+            border-radius: 30px;
+            font-size: 10px;
+            color: var(--text-tertiary);
+        }
+
+        /* 预览手机 */
+        .preview-phone {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-strong);
+            border-radius: 40px;
+            padding: 12px;
+            max-width: 360px;
+            margin: 0 auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        .preview-screen {
+            background: var(--bg-primary);
+            border-radius: 32px;
+            overflow: hidden;
+            min-height: 600px;
+        }
+
+        /* 表单控件 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg-primary);
+        }
+
+        .btn-primary:hover {
+            background: #FF8A3C;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-strong);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-strong);
+        }
+
+        /* 拖拽排序 */
+        .sortable-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-md);
+            margin-bottom: 8px;
+            cursor: move;
+        }
+
+        .drag-handle {
+            color: var(--text-tertiary);
+            cursor: move;
+        }
+
+        .sortable-item.dragging {
+            opacity: 0.5;
+            border-style: dashed;
+        }
+
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .network-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <script src="/js/core/timezone.js"></script>
+    <link rel="stylesheet" href="/css/admin-base.css">
+    <link rel="stylesheet" href="/css/admin-nav.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/admin-settings.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 侧边导航 -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">FOOT<span>RADA</span></div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html" class="admin-nav-item"><i class="fas fa-tachometer-alt"></i> 仪表盘</a>
+                <a href="/admin/settings/index.html" class="admin-nav-item active"><i class="fas fa-cog"></i> 系统设置</a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h1 style="font-size: 24px;">首页布局配置</h1>
+                <div>
+                    <button class="btn btn-secondary" onclick="location.href='/admin/settings/index.html'">取消</button>
+                    <button class="btn btn-primary" id="saveBtn" style="margin-left: 12px;">保存配置</button>
+                </div>
+            </header>
+
+            <div class="settings-container">
+                <!-- 统计卡片 -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div style="color: var(--text-secondary);">已启用模块</div>
+                        <div class="stat-value" id="enabledCount">6</div>
+                        <div style="color: var(--text-tertiary);">共 6 个模块</div>
+                    </div>
+                    <div class="stat-card">
+                        <div style="color: var(--text-secondary);">闸门数量</div>
+                        <div class="stat-value">3</div>
+                        <div style="color: var(--text-tertiary);">正在展示</div>
+                    </div>
+                    <div class="stat-card">
+                        <div style="color: var(--text-secondary);">默认网络</div>
+                        <div class="stat-value" id="networkStat">Test</div>
+                        <div style="color: var(--text-tertiary);">tUSDT</div>
+                    </div>
+                </div>
+
+                <!-- 双列布局 -->
+                <div style="display: grid; grid-template-columns: 1fr 380px; gap: 24px;">
+                    <!-- 左侧配置 -->
+                    <div>
+                        <!-- 模块开关 -->
+                        <div class="config-card">
+                            <div class="card-header">
+                                <i class="fas fa-puzzle-piece"></i>
+                                <h2>首页模块开关</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="module-item">
+                                    <div class="module-info">
+                                        <h4><i class="fas fa-circle-nodes"></i> 实时动态条 (Ticker Bar)</h4>
+                                        <p>显示实时授权和盈利动态，对应 .ticker-bar 元素</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" class="module-toggle" data-module="ticker" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="module-item">
+                                    <div class="module-info">
+                                        <h4><i class="fas fa-fingerprint"></i> 身份权限卡 (Authority Card)</h4>
+                                        <p>显示用户余额和网络状态，对应 .authority-card 元素</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" class="module-toggle" data-module="authority" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="module-item">
+                                    <div class="module-info">
+                                        <h4><i class="fas fa-gate"></i> 闸门列表 (Gates List)</h4>
+                                        <p>展示比赛卡片，对应 .gate-list 元素</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" class="module-toggle" data-module="gates" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="module-item">
+                                    <div class="module-info">
+                                        <h4><i class="fas fa-home"></i> 底部导航 (Bottom Nav)</h4>
+                                        <p>底部导航栏，对应 .bottom-nav 元素</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" class="module-toggle" data-module="nav" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="module-item">
+                                    <div class="module-info">
+                                        <h4><i class="fas fa-comment-dots"></i> 客服悬浮按钮</h4>
+                                        <p>右下角客服入口，对应 .chat-widget 元素</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" class="module-toggle" data-module="chat" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="module-item">
+                                    <div class="module-info">
+                                        <h4><i class="fas fa-bell"></i> 通知弹窗</h4>
+                                        <p>系统通知，对应 .modal-overlay 元素</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" class="module-toggle" data-module="notification" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 网络配置 -->
+                        <div class="config-card">
+                            <div class="card-header">
+                                <i class="fas fa-network-wired"></i>
+                                <h2>网络模式配置</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="network-grid">
+                                    <div class="network-card active" data-network="sandbox">
+                                        <div class="network-name">
+                                            测试网
+                                            <span class="network-badge">默认</span>
+                                        </div>
+                                        <div style="color: var(--text-tertiary); font-size: 13px;">使用 tUSDT，适合测试</div>
+                                    </div>
+                                    <div class="network-card" data-network="mainnet">
+                                        <div class="network-name">
+                                            主网
+                                            <span class="network-badge">正式</span>
+                                        </div>
+                                        <div style="color: var(--text-tertiary); font-size: 13px;">使用 USDT，真实交易</div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group" style="margin-top: 20px;">
+                                    <label class="form-label">测试网初始余额</label>
+                                    <input type="number" class="form-control" value="10000" step="1000">
+                                    <div class="form-hint" style="color: var(--text-tertiary); font-size: 12px; margin-top: 4px;">新用户测试网默认余额</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 闸门排序 -->
+                        <div class="config-card">
+                            <div class="card-header">
+                                <i class="fas fa-sort-amount-down"></i>
+                                <h2>闸门排序</h2>
+                            </div>
+                            <div class="card-body" id="sortableList">
+                                <div class="sortable-item" draggable="true">
+                                    <div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>
+                                    <span><i class="fas fa-trophy" style="color: var(--warning);"></i> 英超 - 曼联 vs 利物浦</span>
+                                </div>
+                                <div class="sortable-item" draggable="true">
+                                    <div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>
+                                    <span><i class="fas fa-trophy" style="color: var(--warning);"></i> 欧冠 - 皇马 vs 拜仁</span>
+                                </div>
+                                <div class="sortable-item" draggable="true">
+                                    <div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>
+                                    <span><i class="fas fa-trophy" style="color: var(--warning);"></i> 西甲 - 巴萨 vs 马竞</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右侧预览 -->
+                    <div>
+                        <div class="config-card" style="position: sticky; top: 24px;">
+                            <div class="card-header">
+                                <i class="fas fa-mobile-alt"></i>
+                                <h2>手机预览</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="preview-phone">
+                                    <div class="preview-screen" id="phonePreview">
+                                        <!-- 实时动态条 -->
+                                        <div id="previewTicker" class="ticker-bar" style="display: flex; margin: 8px; background: var(--bg-card); padding: 10px; border-radius: var(--radius-md);">
+                                            <i class="fas fa-circle-nodes" style="color: var(--accent); margin-right: 8px;"></i>
+                                            <span style="color: var(--text-secondary); font-size: 12px;">[AUTH] 0x8A...3F authorized 5000 USDT</span>
+                                        </div>
+
+                                        <!-- 身份卡片 -->
+                                        <div id="previewAuthority" class="authority-card" style="margin: 8px; background: var(--bg-card); padding: 20px; border-radius: var(--radius-xl);">
+                                            <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 8px;">
+                                                <i class="fas fa-fingerprint" style="color: var(--accent);"></i> Authority
+                                            </div>
+                                            <div style="font-size: 32px; font-weight: 700; color: var(--text-primary);">10,000.00</div>
+                                            <div style="color: var(--accent); font-size: 14px;">tUSDT</div>
+                                        </div>
+
+                                        <!-- 闸门列表 -->
+                                        <div id="previewGates" style="margin: 8px;">
+                                            <div class="gate-card" style="background: var(--bg-card); border-radius: var(--radius-xl); overflow: hidden;">
+                                                <div style="padding: 16px; border-bottom: 1px solid var(--border-subtle);">
+                                                    <span style="color: var(--accent);"><i class="fas fa-trophy"></i> 英超</span>
+                                                </div>
+                                                <div style="padding: 16px; display: flex; justify-content: space-between;">
+                                                    <div style="text-align: center;">
+                                                        <div style="width: 48px; height: 48px; background: var(--bg-secondary); border-radius: 50%; margin-bottom: 8px;"></div>
+                                                        <div style="color: var(--text-primary);">曼联</div>
+                                                    </div>
+                                                    <div style="color: var(--text-tertiary); align-self: center;">VS</div>
+                                                    <div style="text-align: center;">
+                                                        <div style="width: 48px; height: 48px; background: var(--bg-secondary); border-radius: 50%; margin-bottom: 8px;"></div>
+                                                        <div style="color: var(--text-primary);">利物浦</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 底部导航 -->
+                                        <div id="previewNav" class="bottom-nav" style="display: flex; justify-content: space-around; padding: 12px; background: var(--bg-card); margin-top: 16px;">
+                                            <a style="color: var(--accent);"><i class="fas fa-home"></i></a>
+                                            <a style="color: var(--text-tertiary);"><i class="fas fa-chart-line"></i></a>
+                                            <a style="color: var(--text-tertiary);"><i class="fas fa-headset"></i></a>
+                                            <a style="color: var(--text-tertiary);"><i class="fas fa-user"></i></a>
+                                        </div>
+
+                                        <!-- 客服悬浮 -->
+                                        <div id="previewChat" class="chat-widget" style="position: fixed; bottom: 90px; right: 20px;">
+                                            <button class="chat-button" style="width: 56px; height: 56px; background: var(--accent-gradient); border-radius: 50%; border: none; color: var(--bg-primary);">
+                                                <i class="fas fa-comment-dots"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 20px; padding: 16px; background: var(--bg-secondary); border-radius: var(--radius-md);">
+                                    <div style="display: flex; gap: 12px; align-items: center;">
+                                        <div style="width: 40px; height: 40px; background: var(--accent); border-radius: 8px;"></div>
+                                        <div>
+                                            <div style="font-weight: 600;">强调色: #FF6B00</div>
+                                            <div style="font-size: 12px; color: var(--text-tertiary);">当前主题色</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 模块开关控制预览
+            const toggles = document.querySelectorAll('.module-toggle');
+            const enabledCount = document.getElementById('enabledCount');
+            
+            function updateEnabledCount() {
+                const checked = document.querySelectorAll('.module-toggle:checked').length;
+                enabledCount.textContent = checked;
+            }
+
+            toggles.forEach(toggle => {
+                toggle.addEventListener('change', function(e) {
+                    const module = this.dataset.module;
+                    const preview = document.getElementById('preview' + module.charAt(0).toUpperCase() + module.slice(1));
+                    if (preview) {
+                        preview.style.display = this.checked ? 'block' : 'none';
+                    }
+                    updateEnabledCount();
+                });
+            });
+
+            // 网络切换
+            document.querySelectorAll('.network-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    document.querySelectorAll('.network-card').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const network = this.dataset.network;
+                    document.getElementById('networkStat').textContent = network === 'sandbox' ? 'Test' : 'Live';
+                });
+            });
+
+            // 拖拽排序
+            const sortableList = document.getElementById('sortableList');
+            let draggingItem = null;
+
+            sortableList.addEventListener('dragstart', (e) => {
+                draggingItem = e.target.closest('.sortable-item');
+                if (draggingItem) {
+                    draggingItem.classList.add('dragging');
+                }
+            });
+
+            sortableList.addEventListener('dragend', (e) => {
+                if (draggingItem) {
+                    draggingItem.classList.remove('dragging');
+                    draggingItem = null;
+                }
+            });
+
+            sortableList.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(sortableList, e.clientY);
+                const draggable = draggingItem;
+                
+                if (afterElement == null) {
+                    sortableList.appendChild(draggable);
+                } else {
+                    sortableList.insertBefore(draggable, afterElement);
+                }
+            });
+
+            function getDragAfterElement(container, y) {
+                const draggableElements = [...container.querySelectorAll('.sortable-item:not(.dragging)')];
+                
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+
+            // 保存配置
+            document.getElementById('saveBtn').addEventListener('click', function() {
+                const modules = {};
+                document.querySelectorAll('.module-toggle').forEach(t => {
+                    modules[t.dataset.module] = t.checked;
+                });
+
+                const network = document.querySelector('.network-card.active').dataset.network;
+                const balance = document.querySelector('input[type="number"]').value;
+
+                const gateOrder = [...document.querySelectorAll('.sortable-item')].map(item => 
+                    item.textContent.trim()
+                );
+
+                const config = {
+                    modules: modules,
+                    network: {
+                        default: network,
+                        testBalance: parseFloat(balance)
+                    },
+                    gateOrder: gateOrder,
+                    updatedAt: new Date().toISOString()
+                };
+
+                console.log('保存配置:', config);
+                alert('✅ 首页布局配置已保存');
+            });
+
+            // 初始化计数
+            updateEnabledCount();
+        });
+    </script>
+</body>
+</html>

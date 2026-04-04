@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Fund Details · FOOTRADA</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/core/theme.js"></script>
+    
+    <!-- 核心样式系统 -->
+    <link rel="stylesheet" href="/css/core/variables.css">
+    <link rel="stylesheet" href="/css/core/layout.css">
+    <link rel="stylesheet" href="/css/core/components.css">
+    
+    <style>
+        /* 头部 */
+        .header-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-brand-light);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .back-btn:hover {
+            border-color: var(--brand-500);
+            color: var(--brand-500);
+        }
+        
+        .page-title {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--brand-400));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .test-badge {
+            background: rgba(37, 99, 235, 0.1);
+            border: 1px solid rgba(37, 99, 235, 0.25);
+            border-radius: 40px;
+            padding: 6px 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #3b82f6;
+            margin-top: 12px;
+        }
+        
+        /* 资金卡片 - 双卡片布局 */
+        .fund-cards {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .fund-card {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 24px;
+            padding: 20px 16px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        .fund-card:hover {
+            border-color: var(--brand-500);
+            transform: translateY(-2px);
+        }
+        
+        .fund-card.available {
+            background: linear-gradient(135deg, var(--bg-card), rgba(var(--brand-rgb), 0.05));
+        }
+        
+        .fund-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(var(--brand-rgb), 0.1);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+        }
+        
+        .fund-icon i {
+            font-size: 24px;
+            color: var(--brand-500);
+        }
+        
+        .fund-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .fund-value {
+            font-size: 32px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .fund-currency {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+        
+        /* 筛选标签 */
+        .filter-section {
+            margin-bottom: 20px;
+        }
+        
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 48px;
+            padding: 4px;
+        }
+        
+        .filter-tab {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 8px 0;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .filter-tab.active {
+            background: var(--gradient-primary);
+            color: white;
+        }
+        
+        /* 记录列表 */
+        .fund-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .fund-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-brand-light);
+            border-radius: 18px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .fund-item:hover {
+            border-color: var(--brand-500);
+            transform: translateX(4px);
+        }
+        
+        .fund-item.highlight {
+            border-color: var(--brand-500);
+            background: rgba(var(--brand-rgb), 0.05);
+            box-shadow: var(--neon-glow);
+            animation: highlightPulse 0.5s ease;
+        }
+        
+        @keyframes highlightPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.01); }
+            100% { transform: scale(1); }
+        }
+        
+        .fund-icon-small {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .fund-icon-small.deposit {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-500);
+        }
+        
+        .fund-icon-small.withdraw {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger-500);
+        }
+        
+        .fund-icon-small i {
+            font-size: 20px;
+        }
+        
+        .fund-info {
+            flex: 1;
+        }
+        
+        .fund-type {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .fund-type.deposit {
+            color: var(--success-500);
+        }
+        
+        .fund-type.withdraw {
+            color: var(--danger-500);
+        }
+        
+        .fund-desc {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 2px;
+        }
+        
+        .fund-right {
+            text-align: right;
+        }
+        
+        .fund-amount {
+            font-size: 15px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            margin-bottom: 4px;
+        }
+        
+        .fund-amount.deposit {
+            color: var(--success-500);
+        }
+        
+        .fund-amount.withdraw {
+            color: var(--danger-500);
+        }
+        
+        .fund-time {
+            font-size: 9px;
+            color: var(--text-tertiary);
+        }
+        
+        /* 加载状态 */
+        .loading-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .loading-state i {
+            font-size: 40px;
+            color: var(--brand-500);
+            margin-bottom: 16px;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-state p {
+            font-size: 14px;
+            color: var(--text-tertiary);
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .empty-state i {
+            font-size: 56px;
+            color: var(--text-tertiary);
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .empty-state p {
+            margin-bottom: 20px;
+            color: var(--text-secondary);
+        }
+        
+        /* 加载更多 */
+        .load-more {
+            text-align: center;
+            padding: 16px 0;
+        }
+        
+        .load-more-btn {
+            background: transparent;
+            border: 1px solid var(--border-brand-light);
+            border-radius: 40px;
+            padding: 10px 24px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .load-more-btn:hover {
+            border-color: var(--brand-500);
+            color: var(--brand-500);
+        }
+        
+        @media (max-width: 480px) {
+            .fund-value {
+                font-size: 26px;
+            }
+            .fund-icon {
+                width: 40px;
+                height: 40px;
+            }
+            .fund-icon i {
+                font-size: 20px;
+            }
+            .fund-icon-small {
+                width: 40px;
+                height: 40px;
+            }
+            .fund-icon-small i {
+                font-size: 18px;
+            }
+            .fund-type {
+                font-size: 13px;
+            }
+            .fund-amount {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="header-container">
+            <div class="header-section">
+                <a href="/profile.html" class="back-btn" id="backBtn">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="page-title">Fund Details</h1>
+                <div style="width: 40px;"></div>
+            </div>
+            
+            <!-- 测试模式提示 -->
+            <div id="testModeBadge" class="test-badge" style="display: none;">
+                <i class="fas fa-flask"></i> TEST MODE
+            </div>
+        </div>
+    </header>
+
+    <main class="content-scrollable">
+        <div class="content-container">
+
+
+            <!-- 筛选标签 -->
+            <div class="filter-section">
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-type="all">All</button>
+                    <button class="filter-tab" data-type="deposit">Deposit</button>
+                    <button class="filter-tab" data-type="withdraw">Withdraw</button>
+                </div>
+            </div>
+
+            <!-- 加载状态 -->
+            <div id="loadingState" class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading transactions...</p>
+            </div>
+
+            <!-- 记录列表 -->
+            <div id="fundList" class="fund-list" style="display: none;"></div>
+
+            <!-- 空状态 -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="fas fa-receipt"></i>
+                <p>No transactions yet</p>
+                <a href="/deposit.html" class="btn-primary">Make a Deposit</a>
+            </div>
+
+            <!-- 加载更多 -->
+            <div class="load-more" id="loadMore" style="display: none;">
+                <button class="load-more-btn" id="loadMoreBtn">
+                    Load More <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+            <a href="/match-market.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Markets</span></a>
+            <a href="/support.html" class="nav-item"><i class="fas fa-headset"></i><span>Support</span></a>
+            <a href="/profile.html" class="nav-item active"><i class="fas fa-user"></i><span>Account</span></a>
+        </div>
+    </nav>
+
+    <script src="/js/user/fund-detail.js"></script>
+    
+    <script>
+        // 返回按钮
+        document.getElementById('backBtn')?.addEventListener('click', function() {
+            window.location.href = '/profile.html';
+        });
+        
+        // 筛选标签点击事件
+        const filterTabs = document.querySelectorAll('.filter-tab');
+        filterTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                filterTabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                const event = new CustomEvent('filterChange', { 
+                    detail: { type: this.dataset.type } 
+                });
+                window.dispatchEvent(event);
+            });
+        });
+        
+        // 主题初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (window.ThemeManager) {
+                await ThemeManager.init(true);
+                const testBadge = document.getElementById('testModeBadge');
+                if (testBadge) {
+                    testBadge.style.display = ThemeManager.isTestMode ? 'flex' : 'none';
+                }
+                const currency = ThemeManager.isTestMode ? 'tUSDT' : 'USDT';
+                //document.getElementById('availableCurrency').textContent = currency;
+                //document.getElementById('lockedCurrency').textContent = currency;
+            }
+        });
+    </script>
+</body>
+</html>

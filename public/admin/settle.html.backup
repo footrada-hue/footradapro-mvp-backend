@@ -1,0 +1,1260 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>清算管理 · FOOTRADA 後台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/time.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+    <link rel="stylesheet" href="/css/admin-base.css">
+    <link rel="stylesheet" href="/css/admin-nav.css">
+    <style>
+        /* 清算管理专用样式 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .admin-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-strong);
+            padding-bottom: 10px;
+        }
+
+        .tab-btn {
+            padding: 8px 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-strong);
+            border-radius: 30px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            border-radius: 16px;
+            overflow-x: auto;
+            margin-bottom: 24px;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .admin-table th {
+            text-align: left;
+            padding: 16px;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-strong);
+        }
+
+        .admin-table td {
+            padding: 16px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-strong);
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border-strong);
+            background: var(--bg-card);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* 清算模态框 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: 24px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-strong);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-strong);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-secondary);
+            border-radius: 24px 24px 0 0;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        /* 比赛信息卡片 */
+        .match-info-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-strong);
+        }
+
+        .match-teams {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .match-detail {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        /* 清算配置面板 */
+        .settle-config {
+            background: rgba(255, 107, 0, 0.05);
+            border: 1px solid rgba(255, 107, 0, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .config-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .config-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 16px;
+        }
+
+        .config-item {
+            flex: 1;
+        }
+
+        .config-label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .config-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            background: var(--bg-card);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-strong);
+        }
+
+        .status-selector {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .status-btn {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border-strong);
+            background: var(--bg-card);
+            border-radius: 30px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .status-btn.active.win {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: #10B981;
+            color: #10B981;
+        }
+
+        .status-btn.active.loss {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #EF4444;
+            color: #EF4444;
+        }
+
+        .percentage-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-strong);
+            border-radius: 8px;
+            padding: 0 12px;
+        }
+
+        .percentage-input input {
+            flex: 1;
+            padding: 12px 0;
+            border: none;
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .percentage-input input:focus {
+            outline: none;
+        }
+
+        .percentage-input span {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* 预览计算 - 新增總金額樣式 */
+        .preview-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+
+        .preview-title {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-bottom: 12px;
+        }
+
+        .preview-title-small {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin: 16px 0 8px 0;
+            padding-top: 8px;
+            border-top: 1px dashed var(--border-strong);
+        }
+
+        .preview-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-strong);
+            font-size: 14px;
+        }
+
+        .preview-row.total-preview {
+            background: rgba(255, 107, 0, 0.05);
+            margin: 0 -16px;
+            padding: 12px 16px;
+            border-bottom: 2px solid var(--accent);
+            font-weight: 700;
+        }
+
+        .preview-row.total-preview .preview-label {
+            color: var(--accent);
+        }
+
+        .preview-row.total-preview .preview-value {
+            color: var(--accent);
+            font-size: 16px;
+        }
+
+        .preview-row:last-child {
+            border-bottom: none;
+        }
+
+        .preview-label {
+            color: var(--text-secondary);
+        }
+
+        .preview-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .preview-value.win {
+            color: #10B981;
+        }
+
+        .preview-value.loss {
+            color: #EF4444;
+        }
+
+        .preview-value.highlight {
+            color: var(--accent);
+            font-size: 18px;
+        }
+
+        .total-row {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 2px solid var(--border-strong);
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .total-row .preview-value {
+            color: var(--accent);
+        }
+
+        .preview-divider {
+            height: 1px;
+            background: var(--border-strong);
+            margin: 16px 0 8px 0;
+        }
+
+        /* 授權明細展開表格 */
+        .auth-details-section {
+            margin: 20px 0;
+            border: 1px solid var(--border-strong);
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--bg-card);
+        }
+
+        .auth-details-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .auth-details-header:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .auth-details-header i {
+            transition: transform 0.2s;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .auth-details-header i.expanded {
+            transform: rotate(90deg);
+        }
+
+        .btn-export {
+            margin-left: auto;
+            padding: 4px 12px;
+            background: transparent;
+            border: 1px solid var(--border-strong);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-export:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .auth-details-content {
+            max-height: 300px;
+            overflow-y: auto;
+            border-top: 1px solid var(--border-strong);
+        }
+
+        .auth-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .auth-table th {
+            text-align: left;
+            padding: 12px;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-strong);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .auth-table td {
+            padding: 10px 12px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .auth-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .auth-table tr:hover td {
+            background: var(--bg-secondary);
+        }
+
+        .auth-summary {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-strong);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .auth-summary span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-strong);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-tertiary);
+        }
+    </style>
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/admin-settle.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 侧边导航栏 -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-logo">FOOT<span>RADA</span></div>
+            <nav class="admin-nav">
+                <a href="/admin/dashboard.html" class="admin-nav-item">仪表盘</a>
+                <a href="/admin/matches.html" class="admin-nav-item">比赛管理</a>
+                <a href="/admin/settle.html" class="admin-nav-item active">清算管理</a>
+                <a href="/admin/report-editor.html" class="admin-nav-item">报告编辑</a>
+                <a href="/admin/settings/index.html" class="admin-nav-item">系统设置</a>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>清算管理</h1>
+                <div class="admin-user">
+                    <span id="adminName">管理员</span>
+                    <button class="icon-btn" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <!-- 统计卡片 -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">待结算比赛</div>
+                        <div class="stat-value" id="pendingCount">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">今日清算</div>
+                        <div class="stat-value" id="todayCount">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">总清算金额</div>
+                        <div class="stat-value" id="totalAmount">0</div>
+                    </div>
+                </div>
+
+                <!-- 标签页 -->
+                <div class="admin-tabs">
+                    <button class="tab-btn active" data-tab="pending">待结算</button>
+                    <button class="tab-btn" data-tab="history">清算历史</button>
+                </div>
+
+                <!-- 待结算列表 -->
+                <div class="tab-content active" id="pendingTab">
+                    <div class="table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>比赛</th>
+                                    <th>联赛</th>
+                                    <th>比赛时间</th>
+                                    <th>执行比例</th>
+                                    <th>授权人数</th>
+                                    <th>总金额</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingList">
+                                <tr><td colspan="7" class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 清算历史 -->
+                <div class="tab-content" id="historyTab">
+                    <div class="table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>比赛</th>
+                                    <th>赛果</th>
+                                    <th>收益率</th>
+                                    <th>授权人数</th>
+                                    <th>总金额</th>
+                                    <th>用户总收益</th>
+                                    <th>清算时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyList">
+                                <tr><td colspan="8" class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 清算模态框 -->
+    <div class="modal-overlay" id="settleModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-calculator"></i> 执行清算</h2>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- 比赛信息 -->
+                <div class="match-info-card" id="matchInfo">
+                    <div class="match-teams" id="matchTeams">Loading...</div>
+                    <div class="match-detail">
+                        <span id="matchLeague">Loading...</span>
+                        <span id="matchTime">Loading...</span>
+                    </div>
+                </div>
+
+                <!-- 清算配置 -->
+                <div class="settle-config">
+                    <div class="config-title">
+                        <i class="fas fa-sliders-h"></i> 清算参数配置
+                    </div>
+                    
+                    <div class="config-row">
+                        <div class="config-item">
+                            <div class="config-label">执行比例</div>
+                            <div class="config-value" id="executionRate">30%</div>
+                        </div>
+                        <div class="config-item">
+                            <div class="config-label">授权总金额</div>
+                            <div class="config-value" id="totalAuth">0 USDT</div>
+                        </div>
+                    </div>
+
+                    <!-- 盈亏状态选择 -->
+                    <div class="status-selector">
+                        <button class="status-btn" id="winBtn" data-status="win">
+                            <i class="fas fa-arrow-up"></i> 盈利
+                        </button>
+                        <button class="status-btn" id="lossBtn" data-status="loss">
+                            <i class="fas fa-arrow-down"></i> 亏损
+                        </button>
+                    </div>
+
+                    <!-- 收益率设定（盈利时显示） -->
+                    <div id="profitConfig">
+                        <div class="config-label">收益率 (%)</div>
+                        <div class="percentage-input">
+                            <input type="number" id="profitRate" value="40" min="0" max="1000" step="1">
+                            <span>%</span>
+                        </div>
+                        <div class="form-hint">设置该场比赛的盈利百分比</div>
+                    </div>
+                </div>
+
+                <!-- 授權明細展開區塊 -->
+                <div class="auth-details-section">
+                    <div class="auth-details-header" id="toggleAuthDetails">
+                        <i class="fas fa-chevron-right" id="authDetailsIcon"></i>
+                        <span>查看授權明細 (共 <span id="authCount">0</span> 筆)</span>
+                        <button class="btn-export" id="exportAuthBtn" title="導出CSV">
+                            <i class="fas fa-download"></i> 導出
+                        </button>
+                    </div>
+                    <div class="auth-details-content" id="authDetailsContent" style="display: none;">
+                        <table class="auth-table">
+                            <thead>
+                                <tr>
+                                    <th>用戶ID</th>
+                                    <th>用戶名</th>
+                                    <th>授權金額</th>
+                                    <th>預測</th>
+                                    <th>授權時間</th>
+                                </tr>
+                            </thead>
+                            <tbody id="authTableBody">
+                                <!-- 動態加載 -->
+                            </tbody>
+                        </table>
+                        <div class="auth-summary">
+                            <span>總筆數: <span id="totalAuthCount">0</span></span>
+                            <span>總金額: <span id="totalAuthAmount">0.00</span> USDT</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 计算预览 - 新增總金額預覽 -->
+                <div class="preview-card">
+                    <div class="preview-title">📊 清算總覽</div>
+                    
+                    <!-- 總金額預覽區塊 -->
+                    <div class="preview-row total-preview">
+                        <span class="preview-label">💰 平台總支出</span>
+                        <span class="preview-value highlight" id="previewTotalPayout">0.00 USDT</span>
+                    </div>
+                    <div class="preview-row">
+                        <span class="preview-label">總授權金額</span>
+                        <span class="preview-value" id="previewTotalAmount">0 USDT</span>
+                    </div>
+                    <div class="preview-row">
+                        <span class="preview-label">總實際部署</span>
+                        <span class="preview-value" id="previewTotalDeployed">0.00 USDT</span>
+                    </div>
+                    <div class="preview-row">
+                        <span class="preview-label">總策略儲備</span>
+                        <span class="preview-value" id="previewTotalReserved">0.00 USDT</span>
+                    </div>
+                    
+                    <div class="preview-divider"></div>
+                    
+                    <!-- 單用戶示例區塊（保留用於驗證公式） -->
+                    <div class="preview-title-small">📋 單用戶示例</div>
+                    <div class="preview-row">
+                        <span class="preview-label">授权金额</span>
+                        <span class="preview-value" id="previewAuth">100 USDT</span>
+                    </div>
+                    <div class="preview-row">
+                        <span class="preview-label">实际部署</span>
+                        <span class="preview-value" id="previewDeployed">40 USDT</span>
+                    </div>
+                    <div class="preview-row">
+                        <span class="preview-label">策略储备</span>
+                        <span class="preview-value" id="previewReserved">60 USDT</span>
+                    </div>
+                    <div class="preview-row" id="previewProfitRow">
+                        <span class="preview-label">部署收益</span>
+                        <span class="preview-value win" id="previewProfit">+16 USDT</span>
+                    </div>
+                    <div class="preview-row" id="previewFeeRow">
+                        <span class="preview-label">平台抽成 (20%)</span>
+                        <span class="preview-value" id="previewFee">-3.2 USDT</span>
+                    </div>
+                    <div class="preview-row" id="previewNetRow">
+                        <span class="preview-label">用户净收益</span>
+                        <span class="preview-value win" id="previewNet">+12.8 USDT</span>
+                    </div>
+                    <div class="preview-row total-row">
+                        <span class="preview-label">用户实际到账</span>
+                        <span class="preview-value" id="previewTotal">112.8 USDT</span>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="form-actions">
+                    <button class="btn-secondary" id="cancelSettle">取消</button>
+                    <button class="btn-primary" id="confirmSettle">
+                        <i class="fas fa-check"></i> 确认清算
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        const UTILS = window.FOOTRADAPRO?.UTILS || {
+            formatDateTime: (dt) => new Date(dt).toLocaleString('zh-CN'),
+            formatAmount: (num) => num.toFixed(2)
+        };
+
+        // DOM 元素
+        const pendingList = document.getElementById('pendingList');
+        const historyList = document.getElementById('historyList');
+        const settleModal = document.getElementById('settleModal');
+        const closeModal = document.getElementById('closeModal');
+        const cancelSettle = document.getElementById('cancelSettle');
+        const winBtn = document.getElementById('winBtn');
+        const lossBtn = document.getElementById('lossBtn');
+        const profitRate = document.getElementById('profitRate');
+        const confirmBtn = document.getElementById('confirmSettle');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        // 预览元素 - 新增總金額相關
+        const previewAuth = document.getElementById('previewAuth');
+        const previewDeployed = document.getElementById('previewDeployed');
+        const previewReserved = document.getElementById('previewReserved');
+        const previewProfit = document.getElementById('previewProfit');
+        const previewFee = document.getElementById('previewFee');
+        const previewNet = document.getElementById('previewNet');
+        const previewTotal = document.getElementById('previewTotal');
+        
+        // 新增總金額預覽元素
+        const previewTotalPayout = document.getElementById('previewTotalPayout');
+        const previewTotalAmount = document.getElementById('previewTotalAmount');
+        const previewTotalDeployed = document.getElementById('previewTotalDeployed');
+        const previewTotalReserved = document.getElementById('previewTotalReserved');
+
+        // 授權明細元素
+        const toggleAuthDetails = document.getElementById('toggleAuthDetails');
+        const authDetailsIcon = document.getElementById('authDetailsIcon');
+        const authDetailsContent = document.getElementById('authDetailsContent');
+        const authCount = document.getElementById('authCount');
+        const authTableBody = document.getElementById('authTableBody');
+        const totalAuthCount = document.getElementById('totalAuthCount');
+        const totalAuthAmount = document.getElementById('totalAuthAmount');
+        const exportAuthBtn = document.getElementById('exportAuthBtn');
+
+        // 数据存储
+        let currentMatch = null;
+        let currentStatus = 'win'; // win 或 loss
+
+        // API请求
+        async function adminRequest(endpoint, options = {}) {
+            const token = localStorage.getItem('admin_token');
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'include'
+            };
+            
+            try {
+                const response = await fetch(`/api/v1/admin/settle${endpoint}`, {
+                    ...defaultOptions,
+                    ...options
+                });
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/admin/index.html';
+                    }
+                    throw new Error(data.error || '請求失敗');
+                }
+                
+                return data;
+            } catch (err) {
+                console.error('API請求失敗:', err);
+                throw err;
+            }
+        }
+
+        // 加载待结算列表
+        async function loadPendingMatches() {
+            try {
+                pendingList.innerHTML = '<tr><td colspan="7" class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</td></tr>';
+                const result = await adminRequest('/pending');
+                
+                if (result.success) {
+                    const matches = result.data;
+                    renderPendingMatches(matches);
+                    document.getElementById('pendingCount').textContent = matches.length;
+                }
+            } catch (err) {
+                pendingList.innerHTML = '<tr><td colspan="7" class="loading" style="color: #ef4444;">加载失败</td></tr>';
+            }
+        }
+
+        // 渲染待结算列表
+        function renderPendingMatches(matches) {
+            if (matches.length === 0) {
+                pendingList.innerHTML = '<tr><td colspan="7" class="loading">暂无待结算比赛</td></tr>';
+                return;
+            }
+
+            let html = '';
+            matches.forEach(match => {
+                html += `
+                    <tr>
+                        <td>${match.home_team} vs ${match.away_team}</td>
+                        <td>${match.league || '-'}</td>
+                        <td>${UTILS.formatDateTime(match.match_time)}</td>
+                        <td>${match.execution_rate || 30}%</td>
+                        <td>${match.auth_count || 0}</td>
+                        <td>${UTILS.formatAmount(match.total_amount || 0)} USDT</td>
+                        <td>
+                            <button class="action-btn" onclick="window.openSettleModal('${match.id}')">
+                                <i class="fas fa-calculator"></i> 清算
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            pendingList.innerHTML = html;
+        }
+
+        // 加载清算历史
+        async function loadSettledHistory() {
+            try {
+                historyList.innerHTML = '<tr><td colspan="8" class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</td></tr>';
+                const result = await adminRequest('/history');
+                
+                if (result.success) {
+                    const history = result.data;
+                    renderSettledHistory(history);
+                    document.getElementById('todayCount').textContent = history.length;
+                    
+                    const total = history.reduce((sum, h) => sum + (h.total_amount || 0), 0);
+                    document.getElementById('totalAmount').textContent = UTILS.formatAmount(total) + ' USDT';
+                }
+            } catch (err) {
+                historyList.innerHTML = '<tr><td colspan="8" class="loading" style="color: #ef4444;">加载失败</td></tr>';
+            }
+        }
+
+        // 渲染清算历史
+        function renderSettledHistory(history) {
+            if (history.length === 0) {
+                historyList.innerHTML = '<tr><td colspan="8" class="loading">暂无清算历史</td></tr>';
+                return;
+            }
+
+            let html = '';
+            history.forEach(item => {
+                const resultText = item.result === 'win' ? '盈利' : '亏损';
+                const resultClass = item.result === 'win' ? 'win' : 'loss';
+                
+                html += `
+                    <tr>
+                        <td>${item.home_team} vs ${item.away_team}</td>
+                        <td><span class="status-badge ${resultClass}">${resultText}</span></td>
+                        <td>${item.profit_rate || 0}%</td>
+                        <td>${item.auth_count || 0}</td>
+                        <td>${UTILS.formatAmount(item.total_amount || 0)} USDT</td>
+                        <td class="${item.total_profit > 0 ? 'text-success' : 'text-danger'}">
+                            ${item.total_profit > 0 ? '+' : ''}${UTILS.formatAmount(item.total_profit || 0)} USDT
+                        </td>
+                        <td>${UTILS.formatDateTime(item.settled_at)}</td>
+                        <td>
+                            <button class="action-btn" onclick="window.viewReport('${item.match_id}')">
+                                <i class="fas fa-file-alt"></i> 报告
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            historyList.innerHTML = html;
+        }
+
+        // 打開清算模態框
+        window.openSettleModal = async function(matchId) {
+            try {
+                const result = await adminRequest(`/preview/${matchId}`);
+                
+                if (result.success) {
+                    currentMatch = result.data;
+                    
+                    // 填充比赛信息
+                    document.getElementById('matchTeams').textContent = `${currentMatch.home_team} vs ${currentMatch.away_team}`;
+                    document.getElementById('matchLeague').textContent = currentMatch.league || '-';
+                    document.getElementById('matchTime').textContent = UTILS.formatDateTime(currentMatch.match_time);
+                    document.getElementById('executionRate').textContent = (currentMatch.execution_rate || 30) + '%';
+                    document.getElementById('totalAuth').textContent = UTILS.formatAmount(currentMatch.total_amount || 0) + ' USDT';
+                    
+                    // 設置授權明細
+                    if (currentMatch.authorizations && currentMatch.authorizations.length > 0) {
+                        authCount.textContent = currentMatch.authorizations.length;
+                        renderAuthTable(currentMatch.authorizations);
+                    } else {
+                        authCount.textContent = '0';
+                        authTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">暫無授權記錄</td></tr>';
+                        totalAuthCount.textContent = '0';
+                        totalAuthAmount.textContent = '0.00';
+                    }
+                    
+                    // 設置總金額預覽
+                    if (previewTotalAmount) {
+                        previewTotalAmount.textContent = UTILS.formatAmount(currentMatch.total_amount || 0) + ' USDT';
+                    }
+                    if (previewTotalDeployed) {
+                        previewTotalDeployed.textContent = UTILS.formatAmount(currentMatch.total_deployed || 0) + ' USDT';
+                    }
+                    if (previewTotalReserved) {
+                        previewTotalReserved.textContent = UTILS.formatAmount(currentMatch.total_reserved || 0) + ' USDT';
+                    }
+                    
+                    // 設置單用戶示例預覽
+                    const exampleAuth = currentMatch.sample_auth || 100;
+                    previewAuth.textContent = exampleAuth + ' USDT';
+                    
+                    if (previewDeployed) {
+                        previewDeployed.textContent = (currentMatch.deployed_sample || 0).toFixed(2) + ' USDT';
+                    }
+                    if (previewReserved) {
+                        previewReserved.textContent = (currentMatch.reserved_sample || 0).toFixed(2) + ' USDT';
+                    }
+                    
+                    // 更新所有预览计算
+                    updatePreview();
+                    
+                    settleModal.classList.add('show');
+                }
+            } catch (err) {
+                alert('加载清算数据失败');
+            }
+        };
+
+        // 渲染授權明細表格
+        function renderAuthTable(authorizations) {
+            let total = 0;
+            let html = '';
+            
+            authorizations.forEach(auth => {
+                total += auth.amount || 0;
+                html += `
+                    <tr>
+                        <td>${auth.user_id}</td>
+                        <td>${auth.username || '-'}</td>
+                        <td>${UTILS.formatAmount(auth.amount || 0)} USDT</td>
+                        <td>${auth.prediction || '-'}</td>
+                        <td>${auth.created_at ? UTILS.formatDateTime(auth.created_at) : '-'}</td>
+                    </tr>
+                `;
+            });
+            
+            authTableBody.innerHTML = html;
+            totalAuthCount.textContent = authorizations.length;
+            totalAuthAmount.textContent = UTILS.formatAmount(total);
+        }
+
+        // 切換授權明細顯示
+        toggleAuthDetails.addEventListener('click', () => {
+            const isHidden = authDetailsContent.style.display === 'none';
+            authDetailsContent.style.display = isHidden ? 'block' : 'none';
+            authDetailsIcon.classList.toggle('expanded', isHidden);
+        });
+
+        // 導出 CSV
+        exportAuthBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!currentMatch || !currentMatch.authorizations) return;
+            
+            const headers = ['用戶ID', '用戶名', '授權金額', '預測', '授權時間'];
+            const rows = currentMatch.authorizations.map(auth => [
+                auth.user_id,
+                auth.username || '-',
+                auth.amount || 0,
+                auth.prediction || '-',
+                auth.created_at || '-'
+            ]);
+            
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.join(','))
+            ].join('\n');
+            
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.setAttribute('download', `授權明細_${currentMatch.home_team}_vs_${currentMatch.away_team}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        });
+
+        // 更新预览计算 - 同時更新總金額和單用戶示例
+        function updatePreview() {
+            if (!currentMatch) return;
+            
+            // 使用后端返回的預計算值
+            const deployed = currentMatch.deployed_sample || 0;
+            const reserved = currentMatch.reserved_sample || 0;
+            const totalDeployed = currentMatch.total_deployed || 0;
+            const totalReserved = currentMatch.total_reserved || 0;
+            const totalAmount = currentMatch.total_amount || 0;
+            
+            // 更新總金額預覽
+            if (currentStatus === 'win') {
+                const profitPercent = parseInt(profitRate.value) || 40;
+                
+                // 總金額計算
+                const totalProfit = totalDeployed * (profitPercent / 100);
+                const totalFee = totalProfit * 0.2;
+                const totalNetProfit = totalProfit - totalFee;
+                const totalPayout = totalDeployed + totalReserved + totalNetProfit;
+                
+                if (previewTotalPayout) {
+                    previewTotalPayout.textContent = UTILS.formatAmount(totalPayout) + ' USDT';
+                }
+                
+                // 單用戶示例計算
+                const profit = deployed * (profitPercent / 100);
+                const fee = profit * 0.2;
+                const netProfit = profit - fee;
+                const total = deployed + reserved + netProfit;
+                
+                previewProfit.textContent = '+' + profit.toFixed(2) + ' USDT';
+                previewFee.textContent = '-' + fee.toFixed(2) + ' USDT';
+                previewNet.textContent = '+' + netProfit.toFixed(2) + ' USDT';
+                previewTotal.textContent = total.toFixed(2) + ' USDT';
+                
+                previewProfit.className = 'preview-value win';
+                previewNet.className = 'preview-value win';
+            } else {
+                // 虧損：總金額 = 總策略儲備
+                if (previewTotalPayout) {
+                    previewTotalPayout.textContent = UTILS.formatAmount(totalReserved) + ' USDT';
+                }
+                
+                // 單用戶示例計算
+                const total = reserved;
+                
+                previewProfit.textContent = '-' + deployed.toFixed(2) + ' USDT';
+                previewFee.textContent = '0.00 USDT';
+                previewNet.textContent = '-' + deployed.toFixed(2) + ' USDT';
+                previewTotal.textContent = total.toFixed(2) + ' USDT';
+                
+                previewProfit.className = 'preview-value loss';
+                previewNet.className = 'preview-value loss';
+            }
+        }
+
+        // 切换盈亏状态
+        winBtn.addEventListener('click', () => {
+            winBtn.classList.add('active', 'win');
+            lossBtn.classList.remove('active', 'loss');
+            currentStatus = 'win';
+            document.getElementById('profitConfig').style.display = 'block';
+            updatePreview();
+        });
+
+        lossBtn.addEventListener('click', () => {
+            lossBtn.classList.add('active', 'loss');
+            winBtn.classList.remove('active', 'win');
+            currentStatus = 'loss';
+            document.getElementById('profitConfig').style.display = 'none';
+            updatePreview();
+        });
+
+        // 收益率变化时更新预览
+        profitRate.addEventListener('input', updatePreview);
+
+        // 确认清算
+        confirmBtn.addEventListener('click', async () => {
+            if (!currentMatch) return;
+
+            const data = {
+                matchId: currentMatch.id,
+                status: currentStatus,
+                profitRate: currentStatus === 'win' ? parseInt(profitRate.value) : -100
+            };
+
+            try {
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 清算中...';
+
+                const result = await adminRequest('/execute', {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+
+                if (result.success) {
+                    alert('清算成功！');
+                    settleModal.classList.remove('show');
+                    loadPendingMatches();
+                    loadSettledHistory();
+                    
+                    // 詢問是否編輯報告 - 使用 match_id 而不是數字 ID
+                    if (confirm('清算成功！是否立即編輯復盤報告？')) {
+                        if (currentMatch && currentMatch.match_id) {
+                            window.location.href = `/admin/report-editor.html?matchId=${currentMatch.match_id}`;
+                        } else {
+                            console.error('無法獲取 match_id', currentMatch);
+                            alert('無法獲取比賽ID，請手動前往報告編輯器');
+                        }
+                    }
+                }
+            } catch (err) {
+                alert('清算失敗：' + err.message);
+            } finally {
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = '<i class="fas fa-check"></i> 确认清算';
+            }
+        });
+
+        // 关闭模态框
+        function closeModalHandler() {
+            settleModal.classList.remove('show');
+        }
+
+        closeModal.addEventListener('click', closeModalHandler);
+        cancelSettle.addEventListener('click', closeModalHandler);
+
+        // 标签页切换
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(tab + 'Tab').classList.add('active');
+                
+                if (tab === 'history') {
+                    loadSettledHistory();
+                }
+            });
+        });
+
+        // 查看报告
+        window.viewReport = function(matchId) {
+            window.location.href = `/admin/report-editor.html?matchId=${matchId}`;
+        };
+
+        // 退出登录
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            window.location.href = '/admin/index.html';
+        });
+
+        // 设置管理员名称
+        const adminNameSpan = document.getElementById('adminName');
+        const storedAdmin = localStorage.getItem('admin_name');
+        if (storedAdmin) {
+            adminNameSpan.textContent = storedAdmin;
+        }
+
+        // 初始化
+        loadPendingMatches();
+        
+        // 默认选中盈利状态
+        winBtn.classList.add('active', 'win');
+        currentStatus = 'win';
+    })();
+</script>
+</body>
+</html>
