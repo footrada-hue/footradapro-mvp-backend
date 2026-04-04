@@ -205,7 +205,14 @@ app.use(morgan(NODE_ENV === 'production' ? 'combined' : 'dev', {
 
 // ==================== 静态文件服务 ====================
 app.use(express.static(path.join(process.cwd(), 'public'), config.staticOptions));
+// ==================== 显式 JS 文件路由（解决 500 错误） ====================
+app.get('/js/core/config.js', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'js', 'core', 'config.js'));
+});
 
+app.get('/js/user/register_controller.js', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'js', 'user', 'register_controller.js'));
+});
 // ==================== 多页面应用路由 ====================
 
 // 官网首页
