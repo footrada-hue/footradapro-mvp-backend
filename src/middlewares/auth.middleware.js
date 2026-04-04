@@ -1,21 +1,20 @@
-/**
- * FOOTRADAPRO MVP - Authentication Middleware
- * @description 用户认证中间件（基于session）
- */
-
+import jwt from 'jsonwebtoken';
 import logger from '../utils/logger.js';
 import database from '../database/connection.js';
 
+const JWT_SECRET = process.env.JWT_SECRET || 'footradapro-jwt-secret-key-2024';
+
 /**
- * 用户认证中间件
- * 检查用户是否已登录（session中有userId）
- * 並附帶用戶的測試模式狀態
+ * 用户认证中间件（基于 JWT）
+ * 检查用户是否已登录（Cookie 中的 footradapro_token）
  */
 export const auth = (req, res, next) => {
     try {
-        // 检查session中是否有用户ID
-        if (!req.session || !req.session.userId) {
-            logger.debug('Auth failed: No session or userId', { 
+        // 从 Cookie 获取 JWT token
+        const token = req.cookies.footradapro_token;
+        
+        if (!token) {
+            logger.debug('Auth failed: No token', { 
                 path: req.path,
                 ip: req.ip 
             });
@@ -26,26 +25,28 @@ export const auth = (req, res, next) => {
             });
         }
 
-        // 從數據庫獲取用戶的測試模式狀態（異步處理，不阻塞）
-        setImmediate(() => {
-            try {
-                const db = database.get();
-                const user = db.prepare('SELECT is_test_mode FROM users WHERE id = ?').get(req.session.userId);
-                if (user) {
-                    req.session.isTestMode = user.is_test_mode === 1;
-                }
-            } catch (err) {
-                logger.error('Failed to fetch user test mode:', err);
-            }
-        });
+        // 验证 JWT
+        let decoded;
+        try {
+            decoded = jwt.verify(token, JWT_SECRET);
+        } catch (err) {
+            logger.debug('Auth failed: Invalid token', { 
+                path: req.path,
+                error: err.message
+            });
+            return res.status(401).json({
+                success: false,
+                error: 'UNAUTHORIZED',
+                message: 'Invalid or expired token'
+            });
+        }
 
-        // 將用戶信息附加到req對象，方便後續使用
-        req.user = {
-            id: req.session.userId,
-            uid: req.session.uid,
-            role: req.session.role,
-            isTestMode: req.session.isTestMode ?? true // 默認為測試模式
-        };
+        // 将用户信息附加到 req 对象
+        req.user = decoded;
+        req.session = req.session || {};
+        req.session.userId = decoded.id;
+        req.session.uid = decoded.uid;
+        req.session.role = decoded.role;
 
         next();
     } catch (err) {
@@ -60,28 +61,13 @@ export const auth = (req, res, next) => {
 
 /**
  * 管理员认证中间件
- * 检查用户是否已登录且角色为admin
  */
 export const adminAuth = (req, res, next) => {
-    try {
-        // 先检查登录状态
-        if (!req.session || !req.session.userId) {
-            logger.warn('Admin auth failed: Not logged in', { 
-                path: req.path,
-                ip: req.ip 
-            });
-            return res.status(401).json({
-                success: false,
-                error: 'UNAUTHORIZED',
-                message: 'Please log in as admin'
-            });
-        }
-
-        // 检查角色是否为admin
-        if (req.session.role !== 'admin') {
+    auth(req, res, () => {
+        if (req.user.role !== 'admin') {
             logger.warn('Admin auth failed: Insufficient permissions', {
-                userId: req.session.userId,
-                role: req.session.role,
+                userId: req.user.id,
+                role: req.user.role,
                 path: req.path
             });
             return res.status(403).json({
@@ -90,62 +76,32 @@ export const adminAuth = (req, res, next) => {
                 message: 'Admin access required'
             });
         }
-
-        // 將用戶信息附加到req對象
-        req.user = {
-            id: req.session.userId,
-            uid: req.session.uid,
-            role: req.session.role,
-            isTestMode: req.session.isTestMode ?? true
-        };
-
         next();
-    } catch (err) {
-        logger.error('Admin auth middleware error:', err);
-        return res.status(500).json({
-            success: false,
-            error: 'INTERNAL_ERROR',
-            message: 'Authentication failed due to server error'
-        });
-    }
+    });
 };
 
 /**
  * 可选认证中间件
- * 如果有登录信息则附加到req，没有也不报错
  */
 export const optionalAuth = (req, res, next) => {
-    try {
-        if (req.session && req.session.userId) {
-            req.user = {
-                id: req.session.userId,
-                uid: req.session.uid,
-                role: req.session.role,
-                isTestMode: req.session.isTestMode ?? true
-            };
+    const token = req.cookies.footradapro_token;
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET);
+            req.user = decoded;
+        } catch (err) {
+            // token 无效，忽略
         }
-        next();
-    } catch (err) {
-        // 出错时也不阻断，只是不加用户信息
-        logger.error('Optional auth error:', err);
-        next();
     }
+    next();
 };
 
 /**
- * ======================================================
- * 測試模式專用中間件
- * ======================================================
- */
-
-/**
- * 檢查用戶是否為測試模式
- * 直接从数据库获取，确保准确性
- * 如果不是測試模式，返回403
+ * 检查用户是否为测试模式
  */
 export const requireTestMode = (req, res, next) => {
     try {
-        const userId = req.session?.userId;
+        const userId = req.user?.id;
         if (!userId) {
             return res.status(401).json({
                 success: false,
@@ -181,13 +137,11 @@ export const requireTestMode = (req, res, next) => {
 };
 
 /**
- * 檢查用戶是否為真實模式
- * 直接从数据库获取，确保准确性
- * 如果不是真實模式，返回403
+ * 检查用户是否为真实模式
  */
 export const requireLiveMode = (req, res, next) => {
     try {
-        const userId = req.session?.userId;
+        const userId = req.user?.id;
         if (!userId) {
             return res.status(401).json({
                 success: false,
@@ -223,12 +177,11 @@ export const requireLiveMode = (req, res, next) => {
 };
 
 /**
- * 根據模式過濾數據的中間件
- * 在查詢數據庫時自動添加 is_test 條件
+ * 根据模式过滤数据的中间件
  */
 export const filterByMode = (req, res, next) => {
     try {
-        const userId = req.session?.userId;
+        const userId = req.user?.id;
         let isTestMode = true;
         
         if (userId) {
@@ -241,7 +194,6 @@ export const filterByMode = (req, res, next) => {
             }
         }
         
-        // 將模式信息附加到 req 上，供後續路由使用
         req.mode = {
             isTest: isTestMode,
             isLive: !isTestMode,
@@ -257,8 +209,7 @@ export const filterByMode = (req, res, next) => {
 };
 
 /**
- * 記錄模式切換的日誌
- * 用於 mode.routes.js 中調用
+ * 记录模式切换的日志
  */
 export const logModeSwitch = async (userId, fromMode, toMode, req) => {
     try {
@@ -270,11 +221,6 @@ export const logModeSwitch = async (userId, fromMode, toMode, req) => {
             INSERT INTO mode_switch_logs (user_id, from_mode, to_mode, ip_address, user_agent)
             VALUES (?, ?, ?, ?, ?)
         `).run(userId, fromMode ? 1 : 0, toMode ? 1 : 0, ip, userAgent);
-        
-        // 更新 session 中的模式
-        if (req.session) {
-            req.session.isTestMode = toMode;
-        }
         
         logger.info(`👤 User ${userId} switched to ${toMode ? 'TEST' : 'LIVE'} mode`, {
             fromMode,
@@ -288,7 +234,7 @@ export const logModeSwitch = async (userId, fromMode, toMode, req) => {
 };
 
 /**
- * 獲取用戶當前模式
+ * 获取用户当前模式
  */
 export const getUserMode = (userId) => {
     try {
@@ -297,11 +243,10 @@ export const getUserMode = (userId) => {
         return user ? user.is_test_mode === 1 : true;
     } catch (err) {
         logger.error('Failed to get user mode:', err);
-        return true; // 默認測試模式
+        return true;
     }
 };
 
-// 導出所有中間件
 export default {
     auth,
     adminAuth,
