@@ -300,27 +300,24 @@
         }
     }
 
-    async function loadTicker() {
-        try {
-            const res = await fetch('/api/v1/ticker/recent', { credentials: 'include' });
-            const data = await res.json();
-            if (data.success && data.data && data.data.length > 0) {
-                const messages = data.data.map(msg => {
-                    if (msg.type === 'auth') {
-                        return `<span class="ticker-auth">[Auth]</span> <span class="ticker-highlight">${escapeHtml(msg.display_name || msg.user_id)}</span> authorized <span class="ticker-highlight">${msg.amount} USDT</span>`;
-                    } else if (msg.type === 'profit') {
-                        return `<span class="ticker-settle">[Settle]</span> <span class="ticker-highlight">${escapeHtml(msg.display_name || msg.user_id)}</span> profit <span class="ticker-profit">+${msg.profit} USDT</span>`;
-                    } else {
-                        return `<span class="ticker-system">[System]</span> ${escapeHtml(msg.message)}`;
-                    }
-                }).join(' // ');
-                DOM.tickerMessages.innerHTML = messages + ' // ' + messages;
-                DOM.tickerBar.style.display = 'flex';
-            }
-        } catch (err) {
-            console.warn('Ticker error');
+async function loadTicker() {
+    try {
+        const res = await fetch('/api/v1/ticker/messages?limit=20', { credentials: 'include' });
+        const data = await res.json();
+        if (data.success && data.data && data.data.length > 0) {
+            const messages = data.data.map(msg => msg.message).join(' // ');
+            DOM.tickerMessages.innerHTML = messages + ' // ' + messages;
+            DOM.tickerBar.style.display = 'flex';
+        } else {
+            DOM.tickerMessages.innerHTML = '🎉 Welcome to FOOTRADA // ⚡ AI-powered football trading platform';
+            DOM.tickerBar.style.display = 'flex';
         }
+    } catch (err) {
+        console.warn('Ticker error:', err);
+        DOM.tickerMessages.innerHTML = '🎉 Welcome to FOOTRADA // ⚡ AI-powered football trading platform';
+        DOM.tickerBar.style.display = 'flex';
     }
+}
 
     async function loadTickerStats() {
         try {
