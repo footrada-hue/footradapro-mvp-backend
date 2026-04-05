@@ -410,7 +410,7 @@
                                     <div class="chart-tooltip">
                                         ${day.dateStr}<br>
                                         Auth: ${formatAmount(day.authorized)} USDT<br>
-                                        P&L: ${profitSymbol} ${profitDisplay} USDT
+                                        PP&L:amp;L: ${profitSymbol} ${profitDisplay} USDT
                                     </div>
                                 </div>
                                 <div class="chart-label">${day.dateStr}</div>
