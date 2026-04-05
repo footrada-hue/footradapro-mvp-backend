@@ -6,8 +6,41 @@ import logger from '../../../utils/logger.js';
 
 const router = express.Router();
 
-// 所有路由需要管理员认证
+// ==================== 所有路由需要管理员认证 ====================
 router.use(adminAuth);
+
+// ==================== 根路径处理（dashboard 需要的 /stats 端点）====================
+router.get('/', adminAuth, (req, res) => {
+    const db = getDb();
+    
+    try {
+        // 基礎統計數據 - 用於 dashboard 首頁加載
+        const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get();
+        const totalMatches = db.prepare('SELECT COUNT(*) as count FROM matches').get();
+        const totalAuthorizations = db.prepare('SELECT COUNT(*) as count FROM authorizations').get();
+        const todayUsers = db.prepare(`
+            SELECT COUNT(*) as count FROM users WHERE date(created_at) = date('now')
+        `).get();
+        
+        res.json({
+            success: true,
+            data: {
+                total_users: totalUsers?.count || 0,
+                total_matches: totalMatches?.count || 0,
+                total_authorizations: totalAuthorizations?.count || 0,
+                today_new_users: todayUsers?.count || 0,
+                mode: 'all'
+            }
+        });
+    } catch (error) {
+        logger.error('Stats root endpoint error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'INTERNAL_ERROR',
+            message: 'Failed to fetch statistics'
+        });
+    }
+});
 
 // ==================== 辅助函数：获取模式过滤条件 ====================
 function getModeFilter(mode) {
@@ -18,53 +51,6 @@ function getModeFilter(mode) {
     }
     return ''; // 全部
 }
-
-// ==================== 获取仪表盘基础数据（支持模式）====================
-router.get('/', hasPermission('stats.view'), (req, res) => {
-    const { mode = 'all' } = req.query; // all, test, live
-    const db = getDb();
-    const modeFilter = getModeFilter(mode);
-    
-    try {
-        // 总用户数
-        const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get();
-        
-        // 已领取体验金人数
-        const claimedBonus = db.prepare('SELECT COUNT(*) as count FROM users WHERE has_claimed_bonus = 1').get();
-        
-        // 总交易额（从 settlements 表，根据模式过滤）
-        let totalVolume = 0;
-        try {
-            const volume = db.prepare(`
-                SELECT COALESCE(SUM(profit), 0) as total 
-                FROM settlements 
-                WHERE 1=1 ${modeFilter}
-            `).get();
-            totalVolume = volume.total || 0;
-        } catch (err) {}
-        
-        // 进行中比赛
-        let activeMatches = 0;
-        try {
-            const matches = db.prepare('SELECT COUNT(*) as count FROM matches WHERE status IN ("upcoming", "open", "pending")').get();
-            activeMatches = matches.count || 0;
-        } catch (err) {}
-        
-        res.json({
-            success: true,
-            data: {
-                totalUsers: totalUsers.count,
-                claimedBonus: claimedBonus.count,
-                totalVolume: totalVolume,
-                activeMatches: activeMatches,
-                mode: mode
-            }
-        });
-    } catch (error) {
-        logger.error('获取统计数据失败:', error);
-        res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
-    }
-});
 
 // ==================== 获取今日统计数据（支持模式）====================
 router.get('/today', hasPermission('stats.view'), (req, res) => {
@@ -584,37 +570,5 @@ router.get('/retention', hasPermission('stats.view'), (req, res) => {
         res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
     }
 });
-// 添加 /stats 端點（dashboard 需要的接口）
-router.get('/stats', adminAuth, (req, res) => {
-    const db = getDb();
-    
-    try {
-        // 基礎統計數據
-        const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get();
-        const totalMatches = db.prepare('SELECT COUNT(*) as count FROM matches').get();
-        const totalAuthorizations = db.prepare('SELECT COUNT(*) as count FROM authorizations').get();
-        
-        // 今日新用戶
-        const todayUsers = db.prepare(`
-            SELECT COUNT(*) as count FROM users WHERE date(created_at) = date('now')
-        `).get();
-        
-        res.json({
-            success: true,
-            data: {
-                total_users: totalUsers?.count || 0,
-                total_matches: totalMatches?.count || 0,
-                total_authorizations: totalAuthorizations?.count || 0,
-                today_new_users: todayUsers?.count || 0,
-                mode: 'all'
-            }
-        });
-    } catch (error) {
-        console.error('Stats error:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'INTERNAL_ERROR'
-        });
-    }
-});
+
 export default router;
