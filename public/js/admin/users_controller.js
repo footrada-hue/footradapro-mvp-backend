@@ -1,9 +1,13 @@
 /**
  * 用户管理控制器
  * 负责用户列表展示、筛选、分页、状态切换、批量操作等功能
+ * @version 2.0.0
+ * @description 生产环境标准 - 使用相对路径 API
  */
 
 (function() {
+    'use strict';
+
     if (typeof FOOTRADAPRO === 'undefined') {
         console.error('FOOTRADAPRO config not loaded');
         return;
@@ -11,12 +15,14 @@
 
     const UTILS = FOOTRADAPRO.UTILS;
 
+    // ==================== 状态变量 ====================
     let allUsers = [];
     let filteredUsers = [];
     let currentPage = 1;
     const pageSize = 10;
     let selectedUsers = new Set();
 
+    // ==================== DOM 元素 ====================
     const tbody = document.getElementById('userTableBody');
     const searchInput = document.getElementById('searchInput');
     const modeFilter = document.getElementById('modeFilter');
@@ -32,41 +38,77 @@
     const bulkActions = document.getElementById('bulkActions');
     const selectedCountSpan = document.getElementById('selectedCount');
 
+    // 统计卡片
     const totalUsersSpan = document.getElementById('totalUsers');
     const testUsersSpan = document.getElementById('testUsers');
     const liveUsersSpan = document.getElementById('liveUsers');
     const onlineUsersSpan = document.getElementById('onlineUsers');
 
+    // ==================== 辅助函数 ====================
+    
+    /**
+     * 解析 UTC 日期字符串
+     */
     function parseUTCDate(dateStr) {
         if (!dateStr) return null;
-        return new Date(dateStr.replace(' ', 'T') + 'Z');
+        try {
+            return new Date(dateStr.replace(' ', 'T') + 'Z');
+        } catch {
+            return null;
+        }
     }
 
+    /**
+     * 显示提示消息
+     */
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: ${type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#3b82f6'};
+            color: white;
+            border-radius: 8px;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'fadeOut 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    /**
+     * 管理员 API 请求封装
+     * 使用相对路径，确保 Cookie 正确发送
+     */
     async function adminRequest(endpoint, options = {}) {
         const defaultOptions = {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include'
         };
         const mergedOptions = { ...defaultOptions, ...options };
+        
         try {
             const result = await UTILS.request(endpoint, mergedOptions);
             return result;
         } catch (err) {
             if (err.message === 'UNAUTHORIZED') {
+                // 未授权，跳转到登录页
                 window.location.href = '/admin/index.html';
             }
             throw err;
         }
     }
 
-    function showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
-
+    /**
+     * 更新统计卡片
+     */
     function updateStats() {
         const now = new Date();
         const onlineCount = allUsers.filter(u => {
@@ -76,185 +118,58 @@
             return (now - lastActive) < 300000;
         }).length;
 
-        totalUsersSpan.textContent = allUsers.length;
-        testUsersSpan.textContent = allUsers.filter(u => u.is_test_mode === 1).length;
-        liveUsersSpan.textContent = allUsers.filter(u => u.is_test_mode === 0).length;
-        onlineUsersSpan.textContent = onlineCount;
+        if (totalUsersSpan) totalUsersSpan.textContent = allUsers.length;
+        if (testUsersSpan) testUsersSpan.textContent = allUsers.filter(u => u.is_test_mode === 1).length;
+        if (liveUsersSpan) liveUsersSpan.textContent = allUsers.filter(u => u.is_test_mode === 0).length;
+        if (onlineUsersSpan) onlineUsersSpan.textContent = onlineCount;
     }
 
-    window.toggleUserStatus = async function(userId, currentStatus) {
-        const action = currentStatus === 'active' ? '禁用' : '启用';
-        if (!confirm(`确定要${action}该用户吗？`)) return;
-        
-        const button = event.target.closest('button');
-        const originalHtml = button.innerHTML;
-        button.classList.add('button-loading');
-        button.disabled = true;
-        button.innerHTML = '';
-        
-        try {
-            const result = await adminRequest(`/admin/users/${userId}/toggle`, { method: 'POST' });
-            if (result.success) {
-                showToast(`用户已${action}`, 'success');
-                loadUsers();
-            }
-        } catch (err) {
-            button.classList.remove('button-loading');
-            button.disabled = false;
-            button.innerHTML = originalHtml;
-            showToast('操作失败：' + (err.message || '未知错误'), 'error');
-        }
-    };
-
-    window.toggleUserMode = async function(userId, currentMode, button) {
-        const targetMode = currentMode === 1 ? 'live' : 'test';
-        const actionText = targetMode === 'live' ? '切换到主网' : '切换到测试';
-        if (!confirm(`确定要将该用户${actionText}模式吗？`)) return;
-        
-        const originalHtml = button.innerHTML;
-        button.classList.add('button-loading');
-        button.disabled = true;
-        button.innerHTML = '';
-        
-        try {
-            const result = await adminRequest(`/admin/users/${userId}/toggle-mode`, {
-                method: 'POST',
-                body: JSON.stringify({ mode: targetMode })
-            });
-            if (result.success) {
-                showToast(`用户已成功${actionText}`, 'success');
-                loadUsers();
-            } else {
-                throw new Error(result.error || '切换失败');
-            }
-        } catch (err) {
-            button.classList.remove('button-loading');
-            button.disabled = false;
-            button.innerHTML = originalHtml;
-            showToast('操作失败：' + (err.message || '未知错误'), 'error');
-        }
-    };
-
-    window.batchSwitchToLive = async function() {
-        if (selectedUsers.size === 0) {
-            showToast('请先选择用户', 'info');
-            return;
-        }
-        if (!confirm(`确定要将选中的 ${selectedUsers.size} 个用户切换到主网模式吗？`)) return;
-
-        const userIds = Array.from(selectedUsers);
-        try {
-            const result = await adminRequest('/admin/users/bulk/switch-to-live', {
-                method: 'POST',
-                body: JSON.stringify({ userIds })
-            });
-            if (result.success) {
-                showToast(`成功将 ${result.updated} 个用户切换到主网`, 'success');
-                selectedUsers.clear();
-                updateSelectionUI();
-                loadUsers();
-            }
-        } catch (err) {
-            showToast('批量操作失败：' + (err.message || '未知错误'), 'error');
-        }
-    };
-
-    window.toggleUserSelection = function(userId) {
-        if (selectedUsers.has(userId)) {
-            selectedUsers.delete(userId);
-        } else {
-            selectedUsers.add(userId);
-        }
-        updateSelectionUI();
-    };
-
-    window.toggleSelectAll = function() {
-        const checkboxes = document.querySelectorAll('.user-select');
-        if (selectAllCheckbox.checked) {
-            filteredUsers.forEach(user => selectedUsers.add(user.id));
-        } else {
-            selectedUsers.clear();
-        }
-        updateSelectionUI();
-    };
-
-    window.clearSelection = function() {
-        selectedUsers.clear();
-        updateSelectionUI();
-    };
-
-    function updateSelectionUI() {
-        const checkboxes = document.querySelectorAll('.user-select');
-        checkboxes.forEach(cb => {
-            cb.checked = selectedUsers.has(parseInt(cb.value));
-        });
-
-        if (selectAllCheckbox) {
-            const visibleUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-            const allVisibleSelected = visibleUsers.every(u => selectedUsers.has(u.id));
-            selectAllCheckbox.checked = allVisibleSelected;
-            selectAllCheckbox.indeterminate = !allVisibleSelected && visibleUsers.some(u => selectedUsers.has(u.id));
-        }
-
-        if (selectedUsers.size > 0) {
-            bulkActions.style.display = 'flex';
-            selectedCountSpan.textContent = selectedUsers.size;
-        } else {
-            bulkActions.style.display = 'none';
-        }
-    }
-
-    async function loadUsers() {
-        try {
-            tbody.innerHTML = '<tr><td colspan="12" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr>';
-            const result = await adminRequest('/admin/users');
-            if (result.success && Array.isArray(result.data)) {
-                allUsers = result.data;
-                updateStats();
-                applyFilters();
-            } else {
-                throw new Error(result.error || '加载失败');
-            }
-        } catch (err) {
-            console.error('加载用户列表失败:', err);
-            tbody.innerHTML = '<tr><td colspan="12" class="loading" style="color: #ef4444;">加载失败，请重试</td></tr>';
-        }
-    }
-
+    /**
+     * 获取在线状态 HTML
+     */
     function getOnlineStatus(lastActive) {
         if (!lastActive) return '<span style="color: #8e95a3;">⚪ 从未登录</span>';
         const last = parseUTCDate(lastActive);
         if (!last) return '<span style="color: #8e95a3;">⚪ 时间格式错误</span>';
         const now = new Date();
         const diffSeconds = Math.floor((now - last) / 1000);
+        
         if (diffSeconds < 300) return '<span style="color: #10b981;">🟢 在线</span>';
         if (diffSeconds < 3600) return `<span style="color: #8e95a3;">⚪ ${Math.floor(diffSeconds / 60)}分钟前</span>`;
         if (diffSeconds < 86400) return `<span style="color: #8e95a3;">⚪ ${Math.floor(diffSeconds / 3600)}小时前</span>`;
         return `<span style="color: #8e95a3;">⚪ ${Math.floor(diffSeconds / 86400)}天前</span>`;
     }
 
+    /**
+     * 获取锁定状态 HTML
+     */
     function getLockedStatus(user) {
         const isLocked = user.is_mode_locked === 1;
         if (isLocked) return '<span style="color: #ef4444;">🔒 已锁定</span>';
         return '<span style="color: #10b981;">🔓 可切换</span>';
     }
 
+    /**
+     * 应用筛选条件
+     */
     function applyFilters() {
-        const keyword = searchInput.value.trim().toLowerCase();
-        const mode = modeFilter.value;
+        const keyword = searchInput?.value.trim().toLowerCase() || '';
+        const mode = modeFilter?.value || '';
         const onlineOnly = onlineOnlyCheck?.checked || false;
         const sortBy = sortFilter?.value || 'id_desc';
 
         filteredUsers = allUsers.filter(user => {
+            // 关键词搜索
             if (keyword) {
-                if (!(user.username?.toLowerCase().includes(keyword) ||
-                      user.uid?.toLowerCase().includes(keyword) ||
-                      String(user.id).includes(keyword))) {
-                    return false;
-                }
+                const matchKeyword = (user.username?.toLowerCase().includes(keyword)) ||
+                                    (user.uid?.toLowerCase().includes(keyword)) ||
+                                    String(user.id).includes(keyword);
+                if (!matchKeyword) return false;
             }
+            // 模式筛选
             if (mode === 'test' && user.is_test_mode !== 1) return false;
             if (mode === 'live' && user.is_test_mode !== 0) return false;
+            // 在线筛选
             if (onlineOnly) {
                 if (!user.last_active_at) return false;
                 const lastActive = parseUTCDate(user.last_active_at);
@@ -265,6 +180,7 @@
             return true;
         });
 
+        // 排序
         filteredUsers.sort((a, b) => {
             switch(sortBy) {
                 case 'id_asc': return a.id - b.id;
@@ -286,16 +202,21 @@
         renderTable();
     }
 
+    /**
+     * 渲染表格
+     */
     function renderTable() {
         const start = (currentPage - 1) * pageSize;
         const end = start + pageSize;
         const pageUsers = filteredUsers.slice(start, end);
 
+        if (!tbody) return;
+
         if (pageUsers.length === 0) {
             tbody.innerHTML = '<tr><td colspan="12" class="loading">暂无用户</td></tr>';
         } else {
             let html = '';
-            pageUsers.forEach(user => {
+            for (const user of pageUsers) {
                 const modeClass = user.is_test_mode === 1 ? 'test' : 'live';
                 const modeText = user.is_test_mode === 1 ? '测试' : '主网';
                 const created = UTILS.formatDateTime(user.created_at).split(',')[0];
@@ -309,10 +230,10 @@
                 const lockedStatus = getLockedStatus(user);
 
                 html += `<tr class="${rowClass}">
-                    <td><input type="checkbox" class="user-select" value="${user.id}" ${isSelected ? 'checked' : ''} onchange="toggleUserSelection(${user.id})"></td>
+                    <td><input type="checkbox" class="user-select" value="${user.id}" ${isSelected ? 'checked' : ''} onchange="window.toggleUserSelection(${user.id})"></td>
                     <td>${user.id}</td>
-                    <td>${user.username || '-'}</td>
-                    <td>${user.uid || '-'}</td>
+                    <td>${escapeHtml(user.username) || '-'}</td>
+                    <td>${escapeHtml(user.uid) || '-'}</td>
                     <td class="balance-live">${liveBalance} USDT</td>
                     <td class="balance-test">${testBalance} tUSDT</td>
                     <td><span class="mode-badge ${modeClass}">${modeText}</span></td>
@@ -325,7 +246,7 @@
                             <button class="action-btn" onclick="window.viewUserDetail(${user.id})" title="查看详情">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <button class="action-btn" onclick="window.toggleUserMode('${user.uid}', ${user.is_test_mode}, this)" title="${user.is_test_mode === 1 ? '切换到主网' : '切换到测试'}">
+                            <button class="action-btn" onclick="window.toggleUserMode('${escapeHtml(user.uid)}', ${user.is_test_mode}, this)" title="${user.is_test_mode === 1 ? '切换到主网' : '切换到测试'}">
                                 <i class="fas fa-${user.is_test_mode === 1 ? 'rocket' : 'flask'}"></i>
                                 ${user.is_test_mode === 1 ? '切主网' : '切测试'}
                             </button>
@@ -335,7 +256,7 @@
                         </div>
                     </td>
                 </tr>`;
-            });
+            }
             tbody.innerHTML = html;
         }
 
@@ -343,7 +264,25 @@
         updateSelectionUI();
     }
 
+    /**
+     * HTML 转义（防止 XSS）
+     */
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    /**
+     * 渲染分页
+     */
     function renderPagination() {
+        if (!paginationDiv) return;
+        
         const totalPages = Math.ceil(filteredUsers.length / pageSize);
         if (totalPages <= 1) {
             paginationDiv.innerHTML = '';
@@ -369,6 +308,57 @@
         paginationDiv.innerHTML = html;
     }
 
+    /**
+     * 更新选择 UI
+     */
+    function updateSelectionUI() {
+        const checkboxes = document.querySelectorAll('.user-select');
+        for (const cb of checkboxes) {
+            cb.checked = selectedUsers.has(parseInt(cb.value));
+        }
+
+        if (selectAllCheckbox) {
+            const visibleUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+            const allVisibleSelected = visibleUsers.every(u => selectedUsers.has(u.id));
+            selectAllCheckbox.checked = allVisibleSelected;
+            selectAllCheckbox.indeterminate = !allVisibleSelected && visibleUsers.some(u => selectedUsers.has(u.id));
+        }
+
+        if (bulkActions && selectedCountSpan) {
+            if (selectedUsers.size > 0) {
+                bulkActions.style.display = 'flex';
+                selectedCountSpan.textContent = selectedUsers.size;
+            } else {
+                bulkActions.style.display = 'none';
+            }
+        }
+    }
+
+    /**
+     * 加载用户列表
+     */
+    async function loadUsers() {
+        if (!tbody) return;
+        
+        try {
+            tbody.innerHTML = '<tr><td colspan="12" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr>';
+            // ✅ 使用正确的 API 路径
+            const result = await adminRequest('/api/v1/admin/users');
+            if (result.success && Array.isArray(result.data)) {
+                allUsers = result.data;
+                updateStats();
+                applyFilters();
+            } else {
+                throw new Error(result.error || '加载失败');
+            }
+        } catch (err) {
+            console.error('加载用户列表失败:', err);
+            tbody.innerHTML = '<tr><td colspan="12" class="loading" style="color: #ef4444;">加载失败，请重试</td></tr>';
+        }
+    }
+
+    // ==================== 全局函数（供 HTML 调用） ====================
+    
     window.changePage = function(page) {
         if (page < 1 || page > Math.ceil(filteredUsers.length / pageSize)) return;
         currentPage = page;
@@ -376,12 +366,15 @@
     };
 
     window.viewUserDetail = async function(userId) {
+        if (!modal || !modalBody || !detailUsernameSpan) return;
+        
         modal.classList.add('show');
         modalBody.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-pulse"></i>加载详情中...</div>';
         detailUsernameSpan.textContent = '';
 
         try {
-            const result = await adminRequest(`/admin/users/${userId}`);
+            // ✅ 使用正确的 API 路径
+            const result = await adminRequest(`/api/v1/admin/users/${userId}`);
             if (result.success && result.data) {
                 renderUserDetail(result.data);
             } else {
@@ -393,8 +386,127 @@
         }
     };
 
+    window.toggleUserStatus = async function(userId, currentStatus) {
+        const action = currentStatus === 'active' ? '禁用' : '启用';
+        if (!confirm(`确定要${action}该用户吗？`)) return;
+        
+        const button = event?.target?.closest('button');
+        const originalHtml = button?.innerHTML || '';
+        if (button) {
+            button.classList.add('button-loading');
+            button.disabled = true;
+            button.innerHTML = '';
+        }
+        
+        try {
+            // ✅ 使用正确的 API 路径
+            const result = await adminRequest(`/api/v1/admin/users/${userId}/toggle`, { method: 'POST' });
+            if (result.success) {
+                showToast(`用户已${action}`, 'success');
+                loadUsers();
+            } else {
+                throw new Error(result.error || '操作失败');
+            }
+        } catch (err) {
+            if (button) {
+                button.classList.remove('button-loading');
+                button.disabled = false;
+                button.innerHTML = originalHtml;
+            }
+            showToast('操作失败：' + (err.message || '未知错误'), 'error');
+        }
+    };
+
+    window.toggleUserMode = async function(userId, currentMode, button) {
+        const targetMode = currentMode === 1 ? 'live' : 'test';
+        const actionText = targetMode === 'live' ? '切换到主网' : '切换到测试';
+        if (!confirm(`确定要将该用户${actionText}模式吗？`)) return;
+        
+        const originalHtml = button?.innerHTML || '';
+        if (button) {
+            button.classList.add('button-loading');
+            button.disabled = true;
+            button.innerHTML = '';
+        }
+        
+        try {
+            // ✅ 使用正确的 API 路径
+            const result = await adminRequest(`/api/v1/admin/users/${userId}/toggle-mode`, {
+                method: 'POST',
+                body: JSON.stringify({ mode: targetMode })
+            });
+            if (result.success) {
+                showToast(`用户已成功${actionText}`, 'success');
+                loadUsers();
+            } else {
+                throw new Error(result.error || '切换失败');
+            }
+        } catch (err) {
+            if (button) {
+                button.classList.remove('button-loading');
+                button.disabled = false;
+                button.innerHTML = originalHtml;
+            }
+            showToast('操作失败：' + (err.message || '未知错误'), 'error');
+        }
+    };
+
+    window.toggleUserSelection = function(userId) {
+        if (selectedUsers.has(userId)) {
+            selectedUsers.delete(userId);
+        } else {
+            selectedUsers.add(userId);
+        }
+        updateSelectionUI();
+    };
+
+    window.toggleSelectAll = function() {
+        if (selectAllCheckbox?.checked) {
+            const visibleUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+            for (const user of visibleUsers) {
+                selectedUsers.add(user.id);
+            }
+        } else {
+            selectedUsers.clear();
+        }
+        updateSelectionUI();
+    };
+
+    window.clearSelection = function() {
+        selectedUsers.clear();
+        updateSelectionUI();
+    };
+
+    window.batchSwitchToLive = async function() {
+        if (selectedUsers.size === 0) {
+            showToast('请先选择用户', 'info');
+            return;
+        }
+        if (!confirm(`确定要将选中的 ${selectedUsers.size} 个用户切换到主网模式吗？`)) return;
+
+        const userIds = Array.from(selectedUsers);
+        try {
+            // ✅ 使用正确的 API 路径
+            const result = await adminRequest('/api/v1/admin/users/bulk/switch-to-live', {
+                method: 'POST',
+                body: JSON.stringify({ userIds })
+            });
+            if (result.success) {
+                showToast(`成功将 ${result.updated} 个用户切换到主网`, 'success');
+                selectedUsers.clear();
+                updateSelectionUI();
+                loadUsers();
+            } else {
+                throw new Error(result.error || '批量操作失败');
+            }
+        } catch (err) {
+            showToast('批量操作失败：' + (err.message || '未知错误'), 'error');
+        }
+    };
+
     function renderUserDetail(data) {
         const user = data.user;
+        if (!detailUsernameSpan) return;
         detailUsernameSpan.textContent = user.username || user.uid;
 
         const modeText = user.is_test_mode === 1 ? '测试模式' : '主网模式';
@@ -405,8 +517,8 @@
         let html = `
             <div class="info-grid">
                 <div class="info-item"><span class="info-label">用户ID</span><span class="info-value">${user.id}</span></div>
-                <div class="info-item"><span class="info-label">UID</span><span class="info-value">${user.uid || '-'}</span></div>
-                <div class="info-item"><span class="info-label">用户名</span><span class="info-value">${user.username || '-'}</span></div>
+                <div class="info-item"><span class="info-label">UID</span><span class="info-value">${escapeHtml(user.uid) || '-'}</span></div>
+                <div class="info-item"><span class="info-label">用户名</span><span class="info-value">${escapeHtml(user.username) || '-'}</span></div>
                 <div class="info-item"><span class="info-label">主网余额</span><span class="info-value">${liveBalance} USDT</span></div>
                 <div class="info-item"><span class="info-label">测试余额</span><span class="info-value">${testBalance} tUSDT</span></div>
                 <div class="info-item"><span class="info-label">当前模式</span><span class="info-value"><span class="mode-badge ${modeClass}">${modeText}</span></span></div>
@@ -417,13 +529,14 @@
             </div>
         `;
 
-        modalBody.innerHTML = html;
+        if (modalBody) modalBody.innerHTML = html;
     }
 
     function closeModal() {
-        modal.classList.remove('show');
+        if (modal) modal.classList.remove('show');
     }
 
+    // ==================== 事件绑定 ====================
     if (searchInput) searchInput.addEventListener('input', UTILS.debounce ? UTILS.debounce(applyFilters, 500) : applyFilters);
     if (modeFilter) modeFilter.addEventListener('change', applyFilters);
     if (sortFilter) sortFilter.addEventListener('change', applyFilters);
@@ -453,12 +566,15 @@
     if (clearSelectionBtn) clearSelectionBtn.addEventListener('click', window.clearSelection);
     if (selectAllCheckbox) selectAllCheckbox.addEventListener('change', window.toggleSelectAll);
 
+    // ==================== 初始化 ====================
     loadUsers();
 
+    // 显示管理员名称
     const adminNameSpan = document.getElementById('adminName');
     const storedAdmin = localStorage.getItem('admin_name');
     if (adminNameSpan && storedAdmin) adminNameSpan.textContent = storedAdmin;
 
+    // 退出登录
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
