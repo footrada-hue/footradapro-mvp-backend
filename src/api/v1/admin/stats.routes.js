@@ -584,5 +584,37 @@ router.get('/retention', hasPermission('stats.view'), (req, res) => {
         res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
     }
 });
-
+// 添加 /stats 端點（dashboard 需要的接口）
+router.get('/stats', adminAuth, (req, res) => {
+    const db = getDb();
+    
+    try {
+        // 基礎統計數據
+        const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get();
+        const totalMatches = db.prepare('SELECT COUNT(*) as count FROM matches').get();
+        const totalAuthorizations = db.prepare('SELECT COUNT(*) as count FROM authorizations').get();
+        
+        // 今日新用戶
+        const todayUsers = db.prepare(`
+            SELECT COUNT(*) as count FROM users WHERE date(created_at) = date('now')
+        `).get();
+        
+        res.json({
+            success: true,
+            data: {
+                total_users: totalUsers?.count || 0,
+                total_matches: totalMatches?.count || 0,
+                total_authorizations: totalAuthorizations?.count || 0,
+                today_new_users: todayUsers?.count || 0,
+                mode: 'all'
+            }
+        });
+    } catch (error) {
+        console.error('Stats error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'INTERNAL_ERROR'
+        });
+    }
+});
 export default router;
