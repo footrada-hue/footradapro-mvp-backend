@@ -46,10 +46,12 @@ router.post('/login', (req, res) => {
             });
         }
         
-        // 生成简单的会话 token
+        // ==================== 设置认证信息 ====================
+        
+        // 1. 生成 Cookie Token（用于前端可能的用途）
         const token = Buffer.from(admin.id + ':' + Date.now()).toString('base64');
         
-        // 设置 HttpOnly Cookie（生产环境安全配置）
+        // Cookie 配置（生产环境安全配置）
         const cookieOptions = {
             httpOnly: true,                           // 防止 XSS 攻击
             secure: NODE_ENV === 'production',        // 生产环境强制 HTTPS
@@ -65,7 +67,7 @@ router.post('/login', (req, res) => {
         
         res.cookie('admin_token', token, cookieOptions);
         
-        // 设置 session（用于权限验证）
+        // 2. 设置 Session（中间件 adminAuth 需要）
         req.session.userId = admin.id;
         req.session.adminId = admin.id;
         req.session.adminRole = admin.role;
@@ -73,16 +75,18 @@ router.post('/login', (req, res) => {
         
         logger.info('管理员登录成功: ' + username, { 
             adminId: admin.id, 
-            role: admin.role 
+            role: admin.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent']
         });
         
-        // 返回用户信息（前端不需要手动处理 token，HttpOnly Cookie 会自动携带）
+        // 3. 返回用户信息（不包含敏感数据）
         res.json({
             success: true,
             data: {
                 id: admin.id,
                 username: admin.username,
-                name: admin.name,
+                name: admin.name || admin.username,
                 role: admin.role
             }
         });
@@ -96,13 +100,48 @@ router.post('/login', (req, res) => {
     }
 });
 
-// ==================== 验证 Cookie ====================
+// ==================== 验证当前登录状态 ====================
 router.get('/verify', (req, res) => {
-    // 直接从 cookie 获取 token
+    // 添加防快取頭
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
+    // 优先检查 Session（中间件使用的方式）
+    if (req.session && req.session.adminId) {
+        const db = getDb();
+        const admin = db.prepare(`
+            SELECT id, username, name, role 
+            FROM admins 
+            WHERE id = ? AND is_active = 1 AND is_locked = 0
+        `).get(req.session.adminId);
+        
+        if (admin) {
+            // 更新 session 信息
+            req.session.adminName = admin.name;
+            req.session.adminRole = admin.role;
+            
+            return res.json({
+                success: true,
+                data: {
+                    id: admin.id,
+                    username: admin.username,
+                    name: admin.name || admin.username,
+                    role: admin.role
+                }
+            });
+        }
+    }
+    
+    // 回退：检查 Cookie Token
     const token = req.cookies.admin_token;
     
     if (!token) {
-        return res.status(401).json({ success: false, error: 'UNAUTHORIZED' });
+        return res.status(401).json({ 
+            success: false, 
+            error: 'UNAUTHORIZED',
+            message: '未登录或会话已过期'
+        });
     }
     
     try {
@@ -111,29 +150,49 @@ router.get('/verify', (req, res) => {
         const adminId = parts[0];
         
         const db = getDb();
-        const admin = db.prepare('SELECT id, username, name, role FROM admins WHERE id = ?').get(adminId);
+        const admin = db.prepare(`
+            SELECT id, username, name, role 
+            FROM admins 
+            WHERE id = ? AND is_active = 1 AND is_locked = 0
+        `).get(adminId);
         
         if (!admin) {
-            return res.status(401).json({ success: false, error: 'UNAUTHORIZED' });
+            return res.status(401).json({ 
+                success: false, 
+                error: 'UNAUTHORIZED',
+                message: '管理员账号不存在或已被禁用'
+            });
         }
         
-        // 更新 session
+        // 同步设置 Session
         req.session.userId = admin.id;
         req.session.adminId = admin.id;
         req.session.adminRole = admin.role;
         req.session.adminName = admin.username;
         
-        res.json({ success: true, data: admin });
+        res.json({
+            success: true,
+            data: {
+                id: admin.id,
+                username: admin.username,
+                name: admin.name || admin.username,
+                role: admin.role
+            }
+        });
         
     } catch (error) {
         logger.error('Token验证错误:', error);
-        res.status(401).json({ success: false, error: 'UNAUTHORIZED' });
+        res.status(401).json({ 
+            success: false, 
+            error: 'UNAUTHORIZED',
+            message: '会话验证失败，请重新登录'
+        });
     }
 });
 
 // ==================== 退出登录 ====================
 router.post('/logout', (req, res) => {
-    // 清除 cookie（使用相同的配置确保能正确清除）
+    // 清除 Cookie
     const cookieOptions = {
         httpOnly: true,
         secure: NODE_ENV === 'production',
@@ -147,11 +206,92 @@ router.post('/logout', (req, res) => {
     
     res.clearCookie('admin_token', cookieOptions);
     
+    // 销毁 Session
     if (req.session) {
-        req.session.destroy();
+        req.session.destroy((err) => {
+            if (err) {
+                logger.error('Session销毁错误:', err);
+            }
+        });
     }
     
-    res.json({ success: true });
+    logger.info('管理员退出登录', { 
+        adminId: req.session?.adminId,
+        ip: req.ip 
+    });
+    
+    res.json({ 
+        success: true, 
+        message: '已安全退出登录'
+    });
+});
+
+// ==================== 修改密码（可选） ====================
+router.post('/change-password', async (req, res) => {
+    // 先验证登录状态
+    if (!req.session || !req.session.adminId) {
+        return res.status(401).json({
+            success: false,
+            error: 'UNAUTHORIZED',
+            message: '请先登录'
+        });
+    }
+    
+    const { oldPassword, newPassword } = req.body;
+    
+    if (!oldPassword || !newPassword) {
+        return res.status(400).json({
+            success: false,
+            error: '旧密码和新密码不能为空'
+        });
+    }
+    
+    if (newPassword.length < 6) {
+        return res.status(400).json({
+            success: false,
+            error: '新密码长度不能少于6位'
+        });
+    }
+    
+    const db = getDb();
+    
+    try {
+        const admin = db.prepare('SELECT password FROM admins WHERE id = ?').get(req.session.adminId);
+        
+        if (!admin) {
+            return res.status(404).json({
+                success: false,
+                error: '管理员账号不存在'
+            });
+        }
+        
+        const validPassword = bcrypt.compareSync(oldPassword, admin.password);
+        
+        if (!validPassword) {
+            return res.status(401).json({
+                success: false,
+                error: '原密码错误'
+            });
+        }
+        
+        const hashedNewPassword = bcrypt.hashSync(newPassword, 10);
+        
+        db.prepare('UPDATE admins SET password = ? WHERE id = ?').run(hashedNewPassword, req.session.adminId);
+        
+        logger.info('管理员密码已修改', { adminId: req.session.adminId });
+        
+        res.json({
+            success: true,
+            message: '密码修改成功，请重新登录'
+        });
+        
+    } catch (error) {
+        logger.error('修改密码错误:', error);
+        res.status(500).json({
+            success: false,
+            error: '服务器错误，请稍后重试'
+        });
+    }
 });
 
 export default router;
