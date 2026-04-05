@@ -242,7 +242,12 @@ app.use(morgan(NODE_ENV === 'production' ? 'combined' : 'dev', {
         write: (message) => logger.info(message.trim())
     }
 }));
+// 仪表盘页面
+app.get('/index.html', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
+});
 // 官网首页
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'home.html'));
 });
