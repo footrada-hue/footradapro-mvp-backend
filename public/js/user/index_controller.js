@@ -1,7 +1,8 @@
 /**
- * FOOTRADAPRO - Homepage Controller v6.0
+ * FOOTRADAPRO - Homepage Controller v7.0 (Performance Optimized)
  * 布局：桌面端 2x2 网格，移动端单列
  * 模块4：2x2 正方形网格推荐比赛
+ * 性能优化：并行API请求、减少重绘、懒加载新闻
  */
 (function() {
     'use strict';
@@ -39,7 +40,8 @@
             contractAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7'
         },
         selectedAmount: 200,
-        userName: 'Trader'
+        userName: 'Trader',
+        isRendering: false
     };
 
     // DOM Elements
@@ -184,7 +186,7 @@
         return `/uploads/teams/${filename}`;
     }
 
-    // ==================== Data Fetching ====================
+    // ==================== Data Fetching (并行优化) ====================
     async function fetchUserName() {
         try {
             const res = await fetch('/api/v1/user/status', { credentials: 'include' });
@@ -271,11 +273,22 @@
         }
     }
 
+    let newsCache = null;
+    let newsCacheTime = 0;
+    const NEWS_CACHE_TTL = 5 * 60 * 1000; // 5分钟缓存
+
     async function loadNews() {
+        // 检查缓存
+        if (newsCache && (Date.now() - newsCacheTime) < NEWS_CACHE_TTL) {
+            return newsCache;
+        }
+        
         try {
             const res = await fetch(`/api/v1/news/news?category=all&limit=4&t=${Date.now()}`, { credentials: 'include' });
             const result = await res.json();
             if (result.success && result.data && result.data.length > 0) {
+                newsCache = result.data;
+                newsCacheTime = Date.now();
                 return result.data;
             }
             return null;
@@ -300,26 +313,30 @@
         }
     }
 
-async function loadTicker() {
-    try {
-        const res = await fetch('/api/v1/ticker/messages?limit=20', { credentials: 'include' });
-        const data = await res.json();
-        if (data.success && data.data && data.data.length > 0) {
-            const messages = data.data.map(msg => msg.message).join(' // ');
-            DOM.tickerMessages.innerHTML = messages + ' // ' + messages;
-            DOM.tickerBar.style.display = 'flex';
-        } else {
+    async function loadTicker() {
+        if (!DOM.tickerMessages || !DOM.tickerBar) return;
+        
+        try {
+            const res = await fetch('/api/v1/ticker/messages?limit=20', { credentials: 'include' });
+            const data = await res.json();
+            if (data.success && data.data && data.data.length > 0) {
+                const messages = data.data.map(msg => msg.message).join(' // ');
+                DOM.tickerMessages.innerHTML = messages + ' // ' + messages;
+                DOM.tickerBar.style.display = 'flex';
+            } else {
+                DOM.tickerMessages.innerHTML = '🎉 Welcome to FOOTRADA // ⚡ AI-powered football trading platform';
+                DOM.tickerBar.style.display = 'flex';
+            }
+        } catch (err) {
+            console.warn('Ticker error:', err);
             DOM.tickerMessages.innerHTML = '🎉 Welcome to FOOTRADA // ⚡ AI-powered football trading platform';
             DOM.tickerBar.style.display = 'flex';
         }
-    } catch (err) {
-        console.warn('Ticker error:', err);
-        DOM.tickerMessages.innerHTML = '🎉 Welcome to FOOTRADA // ⚡ AI-powered football trading platform';
-        DOM.tickerBar.style.display = 'flex';
     }
-}
 
     async function loadTickerStats() {
+        if (!DOM.tickerVolume) return;
+        
         try {
             const res = await fetch('/api/v1/ticker/stats', { credentials: 'include' });
             const data = await res.json();
@@ -459,50 +476,45 @@ async function loadTicker() {
         return confidenceMap[league] || 68;
     }
 
-function getTodayMatchesForRecommend() {
-    const today = new Date();
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const todayEnd = new Date(todayStart);
-    todayEnd.setDate(todayStart.getDate() + 1);
-    
-    // 明日范围
-    const tomorrowStart = new Date(todayEnd);
-    const tomorrowEnd = new Date(tomorrowStart);
-    tomorrowEnd.setDate(tomorrowStart.getDate() + 1);
-    
-    const mainMatch = getAIRecommendedMatch();
-    const mainMatchId = mainMatch ? mainMatch.id : null;
-    
-    // 获取今日 + 明日的比赛
-    const upcomingMatches = AppState.matches.filter(m => {
-        const matchDate = new Date(m.match_time);
-        const realStatus = m.calculated_status || m.status;
-        return (matchDate >= todayStart && matchDate < tomorrowEnd) &&  // 今日 + 明日
-               (realStatus === 'upcoming' || realStatus === 'pending') &&
-               m.id !== mainMatchId;
-    });
-    
-    const priority = {
-        'UEFA Champions League': 1,
-        'UEFA Europa League': 2,
-        'Premier League': 3,
-        'La Liga': 4,
-        'Serie A': 5,
-        'Bundesliga': 6,
-        'Ligue 1': 7,
-        'default': 100
-    };
-    
-    // 按优先级排序，同优先级按时间排序
-    const sorted = upcomingMatches.sort((a, b) => {
-        const aPri = priority[a.league] || priority.default;
-        const bPri = priority[b.league] || priority.default;
-        if (aPri !== bPri) return aPri - bPri;
-        return new Date(a.match_time) - new Date(b.match_time);
-    });
-    
-    return sorted;
-}
+    function getTodayMatchesForRecommend() {
+        const today = new Date();
+        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const todayEnd = new Date(todayStart);
+        todayEnd.setDate(todayStart.getDate() + 1);
+        
+        const tomorrowStart = new Date(todayEnd);
+        const tomorrowEnd = new Date(tomorrowStart);
+        tomorrowEnd.setDate(tomorrowStart.getDate() + 1);
+        
+        const mainMatch = getAIRecommendedMatch();
+        const mainMatchId = mainMatch ? mainMatch.id : null;
+        
+        const upcomingMatches = AppState.matches.filter(m => {
+            const matchDate = new Date(m.match_time);
+            const realStatus = m.calculated_status || m.status;
+            return (matchDate >= todayStart && matchDate < tomorrowEnd) &&
+                   (realStatus === 'upcoming' || realStatus === 'pending') &&
+                   m.id !== mainMatchId;
+        });
+        
+        const priority = {
+            'UEFA Champions League': 1,
+            'UEFA Europa League': 2,
+            'Premier League': 3,
+            'La Liga': 4,
+            'Serie A': 5,
+            'Bundesliga': 6,
+            'Ligue 1': 7,
+            'default': 100
+        };
+        
+        return upcomingMatches.sort((a, b) => {
+            const aPri = priority[a.league] || priority.default;
+            const bPri = priority[b.league] || priority.default;
+            if (aPri !== bPri) return aPri - bPri;
+            return new Date(a.match_time) - new Date(b.match_time);
+        });
+    }
 
     // ==================== UI Updates ====================
     function updateModeUI() {
@@ -535,22 +547,25 @@ function getTodayMatchesForRecommend() {
         }
     }
 
-    // ==================== Render ====================
+    // ==================== Render (优化版本) ====================
     async function render() {
-        if (!DOM.appRoot) return;
+        if (!DOM.appRoot || AppState.isRendering) return;
+        AppState.isRendering = true;
 
         const isTestMode = AppState.userMode === 'test';
         const currency = isTestMode ? 'tUSDT' : 'USDT';
         
         const aiMatch = getAIRecommendedMatch();
         const recommendMatches = getTodayMatchesForRecommend();
-
         const displayMatches = recommendMatches.slice(0, 4);
         
-        const authorizations = await fetchUserStats();
-        const weekData = getWeeklyChartData(authorizations);
-        const recentTransactions = await loadRecentTransactions();
-        const newsArticles = await loadNews();
+        // 并行获取数据
+        const [authorizations, weekData, recentTransactions, newsArticles] = await Promise.all([
+            fetchUserStats(),
+            Promise.resolve().then(() => getWeeklyChartData(await fetchUserStats())),
+            loadRecentTransactions(),
+            loadNews()
+        ]);
         
         if (AppState.userName === 'Trader') {
             await fetchUserName();
@@ -575,6 +590,7 @@ function getTodayMatchesForRecommend() {
                             <div class="ai-team-logo">
                                 <img src="${getTeamLogoUrl(aiMatch.home_logo, aiMatch.home_team)}" 
                                      alt="${escapeHtml(aiMatch.home_team)}"
+                                     loading="lazy"
                                      onerror="this.src='/uploads/teams/default.png'">
                             </div>
                             <div class="ai-team-name">${escapeHtml(aiMatch.home_team)}</div>
@@ -584,6 +600,7 @@ function getTodayMatchesForRecommend() {
                             <div class="ai-team-logo">
                                 <img src="${getTeamLogoUrl(aiMatch.away_logo, aiMatch.away_team)}" 
                                      alt="${escapeHtml(aiMatch.away_team)}"
+                                     loading="lazy"
                                      onerror="this.src='/uploads/teams/default.png'">
                             </div>
                             <div class="ai-team-name">${escapeHtml(aiMatch.away_team)}</div>
@@ -639,7 +656,7 @@ function getTodayMatchesForRecommend() {
             `;
         }
         
-        const hasChartData = weekData.some(d => d.authorized > 0);
+        const hasChartData = weekData && weekData.some(d => d.authorized > 0);
         const chartHtml = hasChartData ? renderChart(weekData) : '';
         const showChartSection = hasChartData;
         
@@ -692,7 +709,7 @@ function getTodayMatchesForRecommend() {
         }
         
         // ===== 模块3：平台统计卡片 =====
-        const hasTransactions = recentTransactions.length > 0;
+        const hasTransactions = recentTransactions && recentTransactions.length > 0;
         let historyItemsHtml = '';
         if (hasTransactions) {
             historyItemsHtml = recentTransactions.map(t => `
@@ -787,7 +804,7 @@ function getTodayMatchesForRecommend() {
             </div>
         `;
         
-        // ===== 模块4：推荐比赛卡片 (2x2 正方形网格) =====
+        // ===== 模块4：推荐比赛卡片 =====
         let matchesHtml = '';
         if (displayMatches.length > 0) {
             matchesHtml = `
@@ -861,7 +878,7 @@ function getTodayMatchesForRecommend() {
             </div>
         `;
         
-        // ===== Complete Layout (2x2 网格) =====
+        // ===== Complete Layout =====
         const fullHtml = `
             ${greetingHtml}
             <div class="dashboard-grid">
@@ -874,8 +891,12 @@ function getTodayMatchesForRecommend() {
             </div>
         `;
         
-        DOM.appRoot.innerHTML = fullHtml;
-        bindEvents();
+        // 使用 requestAnimationFrame 优化渲染
+        requestAnimationFrame(() => {
+            DOM.appRoot.innerHTML = fullHtml;
+            bindEvents();
+            AppState.isRendering = false;
+        });
         
         window.copyToClipboard = copyToClipboard;
     }
@@ -962,7 +983,6 @@ function getTodayMatchesForRecommend() {
             });
         }
         
-        // 推荐比赛按钮事件
         document.querySelectorAll('.more-match-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -973,7 +993,6 @@ function getTodayMatchesForRecommend() {
             });
         });
         
-        // 卡片点击事件（移动端）
         document.querySelectorAll('.more-match-card[data-clickable="true"]').forEach(card => {
             card.addEventListener('click', () => {
                 const matchId = card.dataset.matchId;
@@ -1122,25 +1141,24 @@ function getTodayMatchesForRecommend() {
         localStorage.setItem('footrada_guide_completed', 'true');
     }
     
-    // ==================== Intervals ====================
+    // ==================== Intervals (优化版) ====================
     function startIntervals() {
+        // 合并定时器，减少后台任务
         setInterval(() => {
             loadMatches();
             fetchUserStats();
+            loadTicker();
+            loadTickerStats();
             render();
         }, 60000);
         
-        setInterval(() => {
-            loadTicker();
-            loadTickerStats();
-        }, 30000);
-        
+        // 新闻单独，间隔更长
         setInterval(() => {
             loadNews();
         }, 300000);
     }
     
-    // ==================== Initialization ====================
+    // ==================== Initialization (并行优化) ====================
     async function init() {
         if (!DOM.appRoot) {
             console.error('appRoot element not found');
@@ -1148,11 +1166,16 @@ function getTodayMatchesForRecommend() {
         }
         
         if (window.ThemeManager) await ThemeManager.init(true);
-        await fetchUserAuthority();
-        await fetchUserMode();
-        await fetchUserStats();
-        await fetchUserName();
-        await loadMatches();
+        
+        // 并行请求所有数据
+        await Promise.all([
+            fetchUserAuthority(),
+            fetchUserMode(),
+            fetchUserStats(),
+            fetchUserName(),
+            loadMatches()
+        ]);
+        
         loadTicker();
         loadTickerStats();
         
