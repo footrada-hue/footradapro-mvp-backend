@@ -351,16 +351,17 @@ router.post('/login', loginValidation, async (req, res) => {
             });
         }
 
-        // 生成 JWT token
-        const jwtToken = generateToken(user);
+// 生成 JWT token
+const jwtToken = generateToken(user);
 
-        // 设置 Cookie
-        res.cookie('footradapro_token', jwtToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        });
+// 设置 Cookie - 与注册保持一致
+res.cookie('footradapro_token', jwtToken, {
+    httpOnly: true,
+    secure: false,      // 改为 false 与注册一致
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    domain: '.footradapro.com'  // 添加 domain
+});
 
         // 设置 session（兼容旧代码）
         req.session.userId = user.id;

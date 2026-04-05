@@ -10,8 +10,14 @@ const JWT_SECRET = process.env.JWT_SECRET || 'footradapro-jwt-secret-key-2024';
  */
 export const auth = (req, res, next) => {
     try {
+        // 调试日志（生产环境可移除）
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('=== AUTH DEBUG ===');
+            console.log('Cookies:', req.cookies);
+        }
+        
         // 从 Cookie 获取 JWT token
-        const token = req.cookies.footradapro_token;
+        const token = req.cookies?.footradapro_token;
         
         if (!token) {
             logger.debug('Auth failed: No token', { 
@@ -84,7 +90,7 @@ export const adminAuth = (req, res, next) => {
  * 可选认证中间件
  */
 export const optionalAuth = (req, res, next) => {
-    const token = req.cookies.footradapro_token;
+    const token = req.cookies?.footradapro_token;
     if (token) {
         try {
             const decoded = jwt.verify(token, JWT_SECRET);
