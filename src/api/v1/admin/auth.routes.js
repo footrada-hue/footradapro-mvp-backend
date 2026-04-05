@@ -7,6 +7,8 @@ const router = express.Router();
 
 // 获取环境变量
 const NODE_ENV = process.env.NODE_ENV || 'development';
+// Cookie 域名配置 - 從環境變量讀取，便於不同環境部署
+const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || null;
 
 // ==================== 管理员登录 ====================
 router.post('/login', (req, res) => {
@@ -47,17 +49,18 @@ router.post('/login', (req, res) => {
         // 生成简单的会话 token
         const token = Buffer.from(admin.id + ':' + Date.now()).toString('base64');
         
-        // 设置 HttpOnly Cookie（自动适应环境）
+        // 设置 HttpOnly Cookie（生产环境安全配置）
         const cookieOptions = {
-            httpOnly: true,
-            secure: NODE_ENV === 'production',  // 生产环境 true，开发环境 false
-            sameSite: NODE_ENV === 'production' ? 'strict' : 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7天
+            httpOnly: true,                           // 防止 XSS 攻击
+            secure: NODE_ENV === 'production',        // 生产环境强制 HTTPS
+            sameSite: 'strict',                       // 防止 CSRF 攻击
+            maxAge: 7 * 24 * 60 * 60 * 1000,          // 7天
+            path: '/'                                  // 全站有效
         };
         
-        // 生产环境添加域名（可选）
-        if (NODE_ENV === 'production') {
-            cookieOptions.domain = '.yourdomain.com'; // 替换为您的域名
+        // 仅在明确配置域名时添加（支持跨子域名）
+        if (COOKIE_DOMAIN) {
+            cookieOptions.domain = COOKIE_DOMAIN;
         }
         
         res.cookie('admin_token', token, cookieOptions);
@@ -73,7 +76,7 @@ router.post('/login', (req, res) => {
             role: admin.role 
         });
         
-        // 返回用户信息（不包含 token）
+        // 返回用户信息（前端不需要手动处理 token，HttpOnly Cookie 会自动携带）
         res.json({
             success: true,
             data: {
@@ -88,22 +91,17 @@ router.post('/login', (req, res) => {
         logger.error('管理员登录错误:', error);
         res.status(500).json({ 
             success: false, 
-            error: '服务器错误' 
+            error: '服务器错误，请稍后重试' 
         });
     }
 });
 
 // ==================== 验证 Cookie ====================
 router.get('/verify', (req, res) => {
-    console.log('=== 管理员 verify 请求 ===');
-    console.log('Cookies:', req.cookies);
-    
     // 直接从 cookie 获取 token
     const token = req.cookies.admin_token;
-    console.log('Token from cookie:', token);
     
     if (!token) {
-        console.log('❌ 没有找到 admin_token cookie');
         return res.status(401).json({ success: false, error: 'UNAUTHORIZED' });
     }
     
@@ -116,7 +114,6 @@ router.get('/verify', (req, res) => {
         const admin = db.prepare('SELECT id, username, name, role FROM admins WHERE id = ?').get(adminId);
         
         if (!admin) {
-            console.log('❌ 管理员不存在:', adminId);
             return res.status(401).json({ success: false, error: 'UNAUTHORIZED' });
         }
         
@@ -126,20 +123,34 @@ router.get('/verify', (req, res) => {
         req.session.adminRole = admin.role;
         req.session.adminName = admin.username;
         
-        console.log('✅ 验证成功:', admin.username);
         res.json({ success: true, data: admin });
         
     } catch (error) {
-        console.error('❌ Token验证错误:', error);
+        logger.error('Token验证错误:', error);
         res.status(401).json({ success: false, error: 'UNAUTHORIZED' });
     }
 });
 
 // ==================== 退出登录 ====================
 router.post('/logout', (req, res) => {
-    // 清除 cookie
-    res.clearCookie('admin_token');
-    req.session.destroy();
+    // 清除 cookie（使用相同的配置确保能正确清除）
+    const cookieOptions = {
+        httpOnly: true,
+        secure: NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/'
+    };
+    
+    if (COOKIE_DOMAIN) {
+        cookieOptions.domain = COOKIE_DOMAIN;
+    }
+    
+    res.clearCookie('admin_token', cookieOptions);
+    
+    if (req.session) {
+        req.session.destroy();
+    }
+    
     res.json({ success: true });
 });
 
