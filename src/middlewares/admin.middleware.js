@@ -1,6 +1,7 @@
 /**
  * FOOTRADAPRO MVP - 管理员认证中间件
  * @description 检查管理员登录状态、账号状态、权限验证
+ * 支持 Session 和 Cookie Token 两种认证方式
  */
 
 import { getDb } from '../database/connection.js';
@@ -8,37 +9,109 @@ import logger from '../utils/logger.js';
 
 /**
  * 基础管理员认证中间件
- * 检查是否已登录且是管理员
+ * 支持 Session 和 Cookie Token 两种方式
  */
 export const adminAuth = (req, res, next) => {
-    try {
-        // 检查session中是否有adminId
-        if (!req.session || !req.session.adminId) {
-            logger.warn('Admin auth failed: No admin session', { 
-                path: req.path,
-                ip: req.ip 
-            });
-            return res.status(401).json({
-                success: false,
-                error: 'UNAUTHORIZED',
-                message: '请先登录'
-            });
-        }
-
-        // 将管理员信息附加到req对象
+    // 1. 优先检查 Session
+    if (req.session && req.session.adminId) {
         req.admin = {
             id: req.session.adminId,
             username: req.session.adminName,
             role: req.session.adminRole
         };
-
-        next();
-    } catch (err) {
-        logger.error('Admin auth middleware error:', err);
-        return res.status(500).json({
+        return next();
+    }
+    
+    // 2. 回退：检查 Cookie Token
+    const token = req.cookies.admin_token;
+    
+    if (!token) {
+        logger.warn('Admin auth failed: No session and no token', { 
+            path: req.path,
+            ip: req.ip 
+        });
+        return res.status(401).json({
             success: false,
-            error: 'INTERNAL_ERROR',
-            message: '认证服务错误'
+            error: 'UNAUTHORIZED',
+            message: '请先登录'
+        });
+    }
+    
+    try {
+        // 解码 token
+        const decoded = Buffer.from(token, 'base64').toString('utf8');
+        const parts = decoded.split(':');
+        const adminId = parts[0];
+        
+        if (!adminId) {
+            logger.warn('Invalid token format');
+            return res.status(401).json({
+                success: false,
+                error: 'UNAUTHORIZED',
+                message: '无效的登录凭证'
+            });
+        }
+        
+        const db = getDb();
+        const admin = db.prepare(`
+            SELECT id, username, name, role, is_active, is_locked 
+            FROM admins 
+            WHERE id = ?
+        `).get(adminId);
+        
+        if (!admin) {
+            logger.warn(`Admin not found for token: ${adminId}`);
+            return res.status(401).json({
+                success: false,
+                error: 'UNAUTHORIZED',
+                message: '账号不存在'
+            });
+        }
+        
+        // 检查账号是否启用
+        if (admin.is_active === 0) {
+            logger.warn(`Admin account disabled: ${admin.username}`);
+            return res.status(403).json({
+                success: false,
+                error: 'ACCOUNT_DISABLED',
+                message: '账号已被禁用'
+            });
+        }
+        
+        // 检查账号是否锁定
+        if (admin.is_locked === 1) {
+            logger.warn(`Admin account locked: ${admin.username}`);
+            return res.status(403).json({
+                success: false,
+                error: 'ACCOUNT_LOCKED',
+                message: '账号已被锁定'
+            });
+        }
+        
+        // 同步设置 Session（使后续请求也能通过 Session 认证）
+        if (req.session) {
+            req.session.adminId = admin.id;
+            req.session.adminName = admin.username;
+            req.session.adminRole = admin.role;
+        }
+        
+        // 将管理员信息附加到 req 对象
+        req.admin = {
+            id: admin.id,
+            username: admin.username,
+            name: admin.name || admin.username,
+            role: admin.role
+        };
+        
+        logger.debug(`Admin authenticated via token: ${admin.username}`);
+        next();
+        
+    } catch (error) {
+        logger.error('Admin auth token verification error:', error);
+        return res.status(401).json({
+            success: false,
+            error: 'UNAUTHORIZED',
+            message: '认证失败，请重新登录'
         });
     }
 };
@@ -49,9 +122,9 @@ export const adminAuth = (req, res, next) => {
  */
 export const adminAuthEnhanced = (req, res, next) => {
     try {
-        // 1. 检查session
-        if (!req.session || !req.session.adminId) {
-            logger.warn('Admin auth failed: No admin session');
+        // 1. 检查 session 或 req.admin（由 adminAuth 设置）
+        if (!req.admin && (!req.session || !req.session.adminId)) {
+            logger.warn('Admin auth enhanced failed: No admin session');
             return res.status(401).json({
                 success: false,
                 error: 'UNAUTHORIZED',
@@ -60,18 +133,21 @@ export const adminAuthEnhanced = (req, res, next) => {
         }
 
         const db = getDb();
+        const adminId = req.admin?.id || req.session?.adminId;
         
         // 2. 从数据库获取最新管理员信息
         const admin = db.prepare(`
             SELECT id, username, name, role, is_active, is_locked 
             FROM admins 
             WHERE id = ?
-        `).get(req.session.adminId);
+        `).get(adminId);
 
         if (!admin) {
             // 管理员不存在，销毁session
-            req.session.destroy();
-            logger.warn(`Admin not found in DB, session destroyed: ${req.session.adminId}`);
+            if (req.session) {
+                req.session.destroy();
+            }
+            logger.warn(`Admin not found in DB, session destroyed: ${adminId}`);
             return res.status(401).json({
                 success: false,
                 error: 'UNAUTHORIZED',
@@ -100,8 +176,10 @@ export const adminAuthEnhanced = (req, res, next) => {
         }
 
         // 5. 更新session中的信息（确保与数据库同步）
-        req.session.adminName = admin.name;
-        req.session.adminRole = admin.role;
+        if (req.session) {
+            req.session.adminName = admin.name;
+            req.session.adminRole = admin.role;
+        }
         
         // 6. 将完整信息附加到req对象
         req.admin = {
