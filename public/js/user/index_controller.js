@@ -400,7 +400,7 @@
                             profitColor = 'negative';
                         }
                         const profitDisplay = day.profit !== 0 ? `${day.profit > 0 ? '+' : ''}${formatAmount(day.profit)}` : '';
-                        const profitSymbol = day.profit > 0 ? '↑' : (day.profit < 0 ? '↓' : '');
+                        const profitSymbol = day.profit > 0 ? '\u2191' : (day.profit < 0 ? '\u2193' : '');
                         
                         return `
                             <div class="chart-bar-wrapper">
@@ -560,12 +560,15 @@
         const displayMatches = recommendMatches.slice(0, 4);
         
         // 并行获取数据
-        const [authorizations, weekData, recentTransactions, newsArticles] = await Promise.all([
-            fetchUserStats(),
-            Promise.resolve().then(() => getWeeklyChartData(await fetchUserStats())),
-            loadRecentTransactions(),
-            loadNews()
-        ]);
+// 先获取用户统计
+const authorizations = await fetchUserStats();
+const weekData = getWeeklyChartData(authorizations);
+
+// 并行获取其他数据
+const [recentTransactions, newsArticles] = await Promise.all([
+    loadRecentTransactions(),
+    loadNews()
+]);
         
         if (AppState.userName === 'Trader') {
             await fetchUserName();
