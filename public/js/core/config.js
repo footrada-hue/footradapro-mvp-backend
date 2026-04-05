@@ -1,8 +1,8 @@
 /**
  * FOOTRADAPRO MVP 全局配置文件
  * 适用范围：所有前端页面，统一管理项目常量、路由、业务规则、工具函数
- * @version 1.0.0
- * 修改：移除主题切换功能，避免与 HTML 中的主題切換衝突
+ * @version 1.0.1
+ * @description 生产环境标准配置 - API 使用 www 主域名确保 Cookie 正常传递
  */
 
 ;(function(window) {
@@ -13,14 +13,15 @@
         // 当前环境：dev 开发环境 | prod 生产环境
         env: 'prod',
         // 版本号，用于静态资源缓存更新
-        version: '1.0.0',
+        version: '1.0.1',
         // API基础地址，开发/生产一键切换
+        // 注意：必须使用主域名 www.footradapro.com 而非 api 子域名，以确保 Cookie 正确传递
         apiBaseUrl: {
             dev: 'http://localhost:3000/api/v1',
-            prod: 'https://api.footradapro.com/api/v1'
+            prod: 'https://www.footradapro.com/api/v1'
         },
         // API请求超时时间（毫秒）
-        requestTimeout: 10000,
+        requestTimeout: 30000,
         // 本地存储key前缀
         storagePrefix: 'footradapro_'
     };
@@ -49,7 +50,8 @@
         result: '/result.html',
         admin: {
             dashboard: '/admin/dashboard.html',
-            matches: '/admin/matches.html'
+            matches: '/admin/matches.html',
+            users: '/admin/users.html'
         }
     };
 
@@ -146,10 +148,20 @@
 
     // ====================== 10. 全局通用工具函数 ======================
     const UTILS = {
+        /**
+         * 格式化金额
+         * @param {number} amount - 金额
+         * @returns {string}
+         */
         formatAmount: function(amount) {
             return parseFloat(amount || 0).toFixed(2);
         },
 
+        /**
+         * 格式化日期时间
+         * @param {string} dateString - 日期字符串
+         * @returns {string}
+         */
         formatDateTime: function(dateString) {
             const date = new Date(dateString);
             if (isNaN(date.getTime())) return 'Invalid Date';
@@ -162,6 +174,11 @@
             });
         },
 
+        /**
+         * 格式化相对时间
+         * @param {string} dateString - 日期字符串
+         * @returns {string}
+         */
         formatRelativeTime: function(dateString) {
             const date = new Date(dateString);
             if (isNaN(date.getTime())) return 'Invalid Date';
@@ -178,11 +195,21 @@
             return date.toLocaleDateString('en-US');
         },
 
+        /**
+         * 获取 URL 参数
+         * @param {string} name - 参数名
+         * @returns {string|null}
+         */
         getUrlParam: function(name) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
         },
 
+        /**
+         * 设置本地存储
+         * @param {string} key - 键名
+         * @param {*} value - 值
+         */
         setStorage: function(key, value) {
             const fullKey = `${ENV_CONFIG.storagePrefix}${key}`;
             try {
@@ -192,6 +219,12 @@
             }
         },
 
+        /**
+         * 获取本地存储
+         * @param {string} key - 键名
+         * @param {*} defaultValue - 默认值
+         * @returns {*}
+         */
         getStorage: function(key, defaultValue = null) {
             const fullKey = `${ENV_CONFIG.storagePrefix}${key}`;
             try {
@@ -202,19 +235,29 @@
             }
         },
 
+        /**
+         * 删除本地存储
+         * @param {string} key - 键名
+         */
         removeStorage: function(key) {
             const fullKey = `${ENV_CONFIG.storagePrefix}${key}`;
             localStorage.removeItem(fullKey);
         },
 
-        // ========== 主題切換功能已禁用，避免與 HTML 中的主題切換衝突 ==========
-        // 主題切換功能現由各頁面獨立管理（register.html 中的主題切換腳本）
-        // 如需在其他頁面使用主題切換，請參考 register.html 中的實現
-        
+        /**
+         * 获取 API 基础 URL
+         * @returns {string}
+         */
         getApiBaseUrl: function() {
             return ENV_CONFIG.apiBaseUrl[ENV_CONFIG.env];
         },
 
+        /**
+         * 通用 API 请求方法
+         * @param {string} endpoint - API 端点（如 /admin/users）
+         * @param {Object} options - fetch 选项
+         * @returns {Promise}
+         */
         request: async function(endpoint, options = {}) {
             const baseUrl = UTILS.getApiBaseUrl();
             const url = `${baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
@@ -236,39 +279,78 @@
                 config.headers['Authorization'] = `Bearer ${token}`;
             }
 
+            // 添加超时控制
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), ENV_CONFIG.requestTimeout);
+            config.signal = controller.signal;
+
             try {
                 const response = await fetch(url, config);
+                clearTimeout(timeoutId);
+                
                 const data = await response.json();
                 
                 if (!response.ok) {
                     if (response.status === 401) {
-                        console.warn('Session expired');
+                        console.warn('Session expired or unauthorized');
+                        // 不在 API 调用中自动跳转，让调用方处理
                     }
                     throw new Error(data.error || 'Request failed');
                 }
                 
                 return data;
             } catch (err) {
+                clearTimeout(timeoutId);
+                if (err.name === 'AbortError') {
+                    console.error('Request timeout:', endpoint);
+                    throw new Error('REQUEST_TIMEOUT');
+                }
                 console.error('API Error:', err);
                 throw err;
             }
         },
 
+        /**
+         * 检查是否已登录
+         * @returns {boolean}
+         */
         isLoggedIn: function() {
             return document.cookie.includes('footradapro.sid');
         },
 
+        /**
+         * 退出登录
+         */
         logout: async function() {
             try {
                 await UTILS.request('/auth/logout', { method: 'POST' });
-                window.location.href = '/login.html';
             } catch (err) {
                 console.error('Logout error:', err);
+            } finally {
                 window.location.href = '/login.html';
             }
+        },
+
+        /**
+         * 防抖函数
+         * @param {Function} fn - 需要防抖的函数
+         * @param {number} delay - 延迟时间（毫秒）
+         * @returns {Function}
+         */
+        debounce: function(fn, delay) {
+            let timer = null;
+            return function() {
+                const context = this;
+                const args = arguments;
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                    fn.apply(context, args);
+                }, delay);
+            };
         }
     };
 
+    // ====================== 导出全局对象 ======================
     window.FOOTRADAPRO = {
         ENV: ENV_CONFIG,
         BRAND: BRAND_CONFIG,
@@ -284,21 +366,20 @@
 
     window.FOOTRADAPRO_CONFIG = window.FOOTRADAPRO;
 
-    // ========== DOMContentLoaded 事件 ==========
-    // 註釋掉主題相關的初始化，避免與 HTML 中的主題切換衝突
+    // ====================== DOM 事件初始化 ======================
     document.addEventListener('DOMContentLoaded', function() {
-        // 主題切換功能已禁用，由各頁面獨立管理
-        // 如需主題切換功能，請在頁面中添加獨立的主題切換腳本
-        
-        // 保留其他功能
+        // 后退按钮
         const backBtn = document.getElementById('backBtn');
         if (backBtn) {
-            backBtn.addEventListener('click', () => window.history.back());
+            backBtn.addEventListener('click', function() {
+                window.history.back();
+            });
         }
 
+        // 退出登录按钮
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', (e) => {
+            logoutBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 UTILS.logout();
             });
