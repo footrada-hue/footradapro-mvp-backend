@@ -1,8 +1,8 @@
 /**
  * 用户管理控制器
  * 负责用户列表展示、筛选、分页、状态切换、批量操作等功能
- * @version 2.0.0
- * @description 生产环境标准 - 使用相对路径 API
+ * @version 2.1.0
+ * @description 生产环境标准 - 使用相对路径 API（UTILS.request 已包含 /api/v1 前缀）
  */
 
 (function() {
@@ -48,6 +48,8 @@
     
     /**
      * 解析 UTC 日期字符串
+     * @param {string} dateStr - 日期字符串
+     * @returns {Date|null}
      */
     function parseUTCDate(dateStr) {
         if (!dateStr) return null;
@@ -60,6 +62,8 @@
 
     /**
      * 显示提示消息
+     * @param {string} message - 消息内容
+     * @param {string} type - 类型：success, error, info
      */
     function showToast(message, type = 'info') {
         const toast = document.createElement('div');
@@ -85,7 +89,10 @@
 
     /**
      * 管理员 API 请求封装
-     * 使用相对路径，确保 Cookie 正确发送
+     * 使用相对路径，UTILS.request 会自动添加 /api/v1 前缀
+     * @param {string} endpoint - API 端点（如 /admin/users）
+     * @param {Object} options - fetch 选项
+     * @returns {Promise}
      */
     async function adminRequest(endpoint, options = {}) {
         const defaultOptions = {
@@ -126,6 +133,8 @@
 
     /**
      * 获取在线状态 HTML
+     * @param {string} lastActive - 最后活动时间
+     * @returns {string}
      */
     function getOnlineStatus(lastActive) {
         if (!lastActive) return '<span style="color: #8e95a3;">⚪ 从未登录</span>';
@@ -142,6 +151,8 @@
 
     /**
      * 获取锁定状态 HTML
+     * @param {Object} user - 用户对象
+     * @returns {string}
      */
     function getLockedStatus(user) {
         const isLocked = user.is_mode_locked === 1;
@@ -203,6 +214,21 @@
     }
 
     /**
+     * HTML 转义（防止 XSS 攻击）
+     * @param {string} str - 需要转义的字符串
+     * @returns {string}
+     */
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    /**
      * 渲染表格
      */
     function renderTable() {
@@ -255,26 +281,13 @@
                             </button>
                         </div>
                     </td>
-                </tr>`;
+                 </tr>`;
             }
             tbody.innerHTML = html;
         }
 
         renderPagination();
         updateSelectionUI();
-    }
-
-    /**
-     * HTML 转义（防止 XSS）
-     */
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
     }
 
     /**
@@ -342,8 +355,8 @@
         
         try {
             tbody.innerHTML = '<tr><td colspan="12" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr>';
-            // ✅ 使用正确的 API 路径
-            const result = await adminRequest('/api/v1/admin/users');
+            // ✅ 使用正确的 API 路径（UTILS.request 会自动添加 /api/v1 前缀）
+            const result = await adminRequest('/admin/users');
             if (result.success && Array.isArray(result.data)) {
                 allUsers = result.data;
                 updateStats();
@@ -373,8 +386,8 @@
         detailUsernameSpan.textContent = '';
 
         try {
-            // ✅ 使用正确的 API 路径
-            const result = await adminRequest(`/api/v1/admin/users/${userId}`);
+            // ✅ 使用正确的 API 路径（UTILS.request 会自动添加 /api/v1 前缀）
+            const result = await adminRequest(`/admin/users/${userId}`);
             if (result.success && result.data) {
                 renderUserDetail(result.data);
             } else {
@@ -399,8 +412,8 @@
         }
         
         try {
-            // ✅ 使用正确的 API 路径
-            const result = await adminRequest(`/api/v1/admin/users/${userId}/toggle`, { method: 'POST' });
+            // ✅ 使用正确的 API 路径（UTILS.request 会自动添加 /api/v1 前缀）
+            const result = await adminRequest(`/admin/users/${userId}/toggle`, { method: 'POST' });
             if (result.success) {
                 showToast(`用户已${action}`, 'success');
                 loadUsers();
@@ -430,8 +443,8 @@
         }
         
         try {
-            // ✅ 使用正确的 API 路径
-            const result = await adminRequest(`/api/v1/admin/users/${userId}/toggle-mode`, {
+            // ✅ 使用正确的 API 路径（UTILS.request 会自动添加 /api/v1 前缀）
+            const result = await adminRequest(`/admin/users/${userId}/toggle-mode`, {
                 method: 'POST',
                 body: JSON.stringify({ mode: targetMode })
             });
@@ -486,8 +499,8 @@
 
         const userIds = Array.from(selectedUsers);
         try {
-            // ✅ 使用正确的 API 路径
-            const result = await adminRequest('/api/v1/admin/users/bulk/switch-to-live', {
+            // ✅ 使用正确的 API 路径（UTILS.request 会自动添加 /api/v1 前缀）
+            const result = await adminRequest('/admin/users/bulk/switch-to-live', {
                 method: 'POST',
                 body: JSON.stringify({ userIds })
             });
@@ -504,6 +517,10 @@
         }
     };
 
+    /**
+     * 渲染用户详情
+     * @param {Object} data - 用户详情数据
+     */
     function renderUserDetail(data) {
         const user = data.user;
         if (!detailUsernameSpan) return;
@@ -532,6 +549,9 @@
         if (modalBody) modalBody.innerHTML = html;
     }
 
+    /**
+     * 关闭详情模态框
+     */
     function closeModal() {
         if (modal) modal.classList.remove('show');
     }
