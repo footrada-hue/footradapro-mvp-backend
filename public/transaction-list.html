@@ -1,618 +1,666 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Transactions · FOOTRADA</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- 核心样式 -->
-    <link rel="stylesheet" href="/css/core/variables.css">
-    <link rel="stylesheet" href="/css/core/layout.css">
-    <link rel="stylesheet" href="/css/core/components.css">
-    
-    <style>
-        /* ===== 性能优化：提示GPU加速 ===== */
-        .transaction-card,
-        .stat-card,
-        .filter-tab,
-        .btn-primary,
-        .empty-state i {
-            will-change: transform;
-        }
-        
-        /* ===== 头部区域 ===== */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: var(--space-6);
-        }
-        
-        .logo {
-            font-size: 24px;
-            font-weight: var(--font-extrabold);
-            background: linear-gradient(135deg, #FFFFFF, var(--brand-400));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            letter-spacing: -0.5px;
-        }
-        
-        .logo span {
-            background: linear-gradient(135deg, var(--brand-500), var(--brand-400));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-        
-        .test-mode .logo {
-            background: none;
-            -webkit-background-clip: unset;
-            background-clip: unset;
-            color: #FFFFFF;
-        }
-        
-        .test-mode .logo span {
-            background: none;
-            -webkit-background-clip: unset;
-            background-clip: unset;
-            color: #5B8CFF;
-        }
-        
-        /* 统计卡片 - 优化阴影性能 */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: var(--space-6);
-        }
-        
-        .stat-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(12px);
-            border-radius: 24px;
-            border: 1px solid var(--border-brand-light);
-            padding: 16px;
-            text-align: center;
-            transition: transform 0.2s ease, border-color 0.2s ease;
-        }
-        
-        .stat-card:hover {
-            border-color: var(--brand-500);
-            transform: translateY(-2px);
-        }
-        
-        .stat-icon {
-            font-size: 28px;
-            color: var(--brand-500);
-            margin-bottom: 12px;
-        }
-        
-        .stat-label {
-            font-size: var(--text-sm);
-            color: #8B9BB0;
-            margin-bottom: 8px;
-            letter-spacing: 0.5px;
-        }
-        
-        .stat-value {
-            font-size: 28px;
-            font-weight: var(--font-bold);
-            font-family: var(--font-mono);
-            color: var(--text-primary);
-        }
-        
-        .stat-value.win {
-            color: var(--success-500);
-        }
-        
-        .stat-value.loss {
-            color: var(--danger-500);
-        }
-        
-        /* 筛选标签 - 优化动画 */
-        .filter-tabs {
-            display: flex;
-            gap: 12px;
-            margin-bottom: var(--space-6);
-            background: var(--bg-card);
-            backdrop-filter: blur(12px);
-            border-radius: 48px;
-            padding: 4px;
-            border: 1px solid var(--border-brand-light);
-        }
-        
-        .filter-tab {
-            flex: 1;
-            padding: 10px;
-            background: transparent;
-            border: none;
-            border-radius: 40px;
-            color: #8B9BB0;
-            font-weight: var(--font-semibold);
-            cursor: pointer;
-            transition: background 0.2s ease, color 0.2s ease;
-        }
-        
-        .filter-tab.active {
-            background: var(--gradient-primary);
-            color: white;
-        }
-        
-        .test-mode .filter-tab.active {
-            background: linear-gradient(135deg, #5B8CFF, #7BAAFF);
-        }
-        
-        /* 交易卡片 - 优化动画 */
-        .transactions-list {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        
-        .transaction-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(12px);
-            border-radius: 28px;
-            border: 1px solid var(--border-brand-light);
-            transition: transform 0.2s ease, border-color 0.2s ease;
-            overflow: hidden;
-        }
-        
-        .transaction-card:hover {
-            border-color: var(--brand-500);
-            transform: translateY(-3px);
-        }
-        
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border-brand-light);
-        }
-        
-        .match-teams {
-            font-size: 16px;
-            font-weight: var(--font-semibold);
-            color: var(--text-primary);
-        }
-        
-        .status-badge {
-            padding: 6px 14px;
-            border-radius: 40px;
-            font-size: 12px;
-            font-weight: var(--font-semibold);
-        }
-        
-        .status-badge.settled,
-        .status-badge.won {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--success-500);
-            border: 1px solid rgba(16, 185, 129, 0.25);
-        }
-        
-        .status-badge.lost {
-            background: rgba(239, 68, 68, 0.15);
-            color: var(--danger-500);
-            border: 1px solid rgba(239, 68, 68, 0.25);
-        }
-        
-        .status-badge.pending {
-            background: rgba(245, 158, 11, 0.15);
-            color: var(--warning-500);
-            border: 1px solid rgba(245, 158, 11, 0.25);
-        }
-        
-        .test-badge {
-            background: rgba(91, 140, 255, 0.15);
-            color: #8AB3FF;
-            padding: 4px 10px;
-            border-radius: 40px;
-            font-size: 10px;
-            font-weight: var(--font-semibold);
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            margin-right: 8px;
-        }
-        
-        .card-body {
-            padding: 20px;
-            cursor: pointer;
-        }
-        
-        .match-league {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            color: #8B9BB0;
-            font-size: 13px;
-            margin-bottom: 16px;
-        }
-        
-        .match-league i {
-            color: var(--brand-500);
-            font-size: 12px;
-        }
-        
-        .amount-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-        }
-        
-        .auth-amount {
-            font-size: 24px;
-            font-weight: var(--font-bold);
-            font-family: var(--font-mono);
-            color: var(--text-primary);
-        }
-        
-        .auth-amount small {
-            font-size: 13px;
-            font-weight: normal;
-            color: #8B9BB0;
-            margin-left: 4px;
-        }
-        
-        .profit-badge {
-            font-size: 20px;
-            font-weight: var(--font-bold);
-            font-family: var(--font-mono);
-        }
-        
-        .profit-badge.positive {
-            color: var(--success-500);
-        }
-        
-        .profit-badge.negative {
-            color: var(--danger-500);
-        }
-        
-        .profit-badge.pending {
-            color: #8B9BB0;
-        }
-        
-        .card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 20px;
-            border-top: 1px solid var(--border-brand-light);
-            background: rgba(0, 0, 0, 0.1);
-        }
-        
-        .match-time {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            color: #8B9BB0;
-            font-size: 12px;
-        }
-        
-        .match-time i {
-            color: var(--brand-500);
-        }
-        
-        .footer-right {
-            display: flex;
-            gap: 8px;
-        }
-        
-        .report-btn, .detail-btn {
-            padding: 8px 16px;
-            background: transparent;
-            border: 1px solid var(--border-brand-light);
-            border-radius: 40px;
-            color: #8B9BB0;
-            font-size: 12px;
-            font-weight: var(--font-semibold);
-            cursor: pointer;
-            transition: border-color 0.2s ease, color 0.2s ease;
-        }
-        
-        .report-btn:hover, .detail-btn:hover {
-            border-color: var(--brand-500);
-            color: var(--brand-500);
-        }
-        
-        /* 加载状态 - 优化动画 */
-        .loading-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #8B9BB0;
-        }
-        
-        .loading-state i {
-            font-size: 48px;
-            margin-bottom: 16px;
-            color: var(--brand-500);
-            animation: spin 0.8s linear infinite;
-        }
-        
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        
-        /* 空状态 - 优化动画 */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            background: var(--bg-card);
-            backdrop-filter: blur(12px);
-            border-radius: 28px;
-            border: 1px solid var(--border-brand-light);
-        }
-        
-        .empty-state i {
-            font-size: 64px;
-            color: var(--brand-500);
-            margin-bottom: 20px;
-            opacity: 0.6;
-            animation: float 3s ease-in-out infinite;
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-6px); }
-        }
-        
-        .empty-state p {
-            font-size: 16px;
-            margin-bottom: 24px;
-            color: var(--text-secondary);
-        }
-        
-        /* 空状态按钮 - 优化动画 */
-        .empty-state .btn-primary {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px 28px;
-            background: var(--gradient-primary);
-            border: none;
-            border-radius: 40px;
-            color: white;
-            font-size: 15px;
-            font-weight: var(--font-semibold);
-            text-decoration: none;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-        
-        /* 边框光晕 - 性能优化：只在悬浮时激活 */
-        .empty-state .btn-primary::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 40px;
-            padding: 1px;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.1));
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-        
-        .empty-state .btn-primary:hover::before {
-            opacity: 0.8;
-        }
-        
-        /* 流光动画 - 性能优化：只在悬浮时激活 */
-        .empty-state .btn-primary::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -60%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(115deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transform: rotate(30deg);
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            pointer-events: none;
-        }
-        
-        .empty-state .btn-primary:hover::after {
-            opacity: 1;
-            animation: shimmer 2s infinite;
-        }
-        
-        @keyframes shimmer {
-            0% { transform: translateX(-100%) rotate(30deg); }
-            100% { transform: translateX(100%) rotate(30deg); }
-        }
-        
-        .empty-state .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-        }
-        
-        .empty-state .btn-primary:active {
-            transform: translateY(0px);
-        }
-        
-        /* 测试模式按钮样式 */
-        .test-mode .empty-state .btn-primary {
-            background: linear-gradient(135deg, #5B8CFF, #7BAAFF);
-        }
-        
-        /* 加载更多 */
-        .load-more {
-            text-align: center;
-            margin: 24px 0;
-        }
-        
-        .load-more-btn {
-            padding: 12px 32px;
-            background: transparent;
-            border: 1px solid var(--border-brand-light);
-            border-radius: 40px;
-            color: #8B9BB0;
-            font-weight: var(--font-semibold);
-            cursor: pointer;
-            transition: border-color 0.2s ease, color 0.2s ease;
-        }
-        
-        .load-more-btn:hover {
-            border-color: var(--brand-500);
-            color: var(--brand-500);
-        }
-        
-        /* 移动端性能优化：降低blur强度 */
-        @media (max-width: 480px) {
-            .stat-card,
-            .transaction-card,
-            .filter-tabs,
-            .empty-state {
-                backdrop-filter: blur(8px);
-            }
-            
-            .stat-value {
-                font-size: 24px;
-            }
-            .auth-amount {
-                font-size: 20px;
-            }
-            .profit-badge {
-                font-size: 18px;
-            }
-            .match-teams {
-                font-size: 14px;
-            }
-            .card-header, .card-body, .card-footer {
-                padding: 12px 16px;
-            }
-            .empty-state .btn-primary {
-                padding: 10px 24px;
-                font-size: 14px;
-            }
-        }
-        
-        /* 高性能设备：保持完整效果 */
-        @media (min-width: 769px) and (pointer: fine) {
-            .transaction-card,
-            .stat-card {
-                transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-            }
-        }
-        
-        /* 低性能设备降级方案 */
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Transaction History · FootRadaPro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ========== 8px 网格系统 ========== */
+    :root {
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 28px;
+      --space-8: 32px;
+      
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-base: 1rem;
+      --font-md: 1.125rem;
+      --font-lg: 1.25rem;
+      --font-xl: 1.5rem;
+      
+      --radius-sm: 12px;
+      --radius-md: 16px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --radius-2xl: 28px;
+      --radius-full: 9999px;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-fast: 0.15s;
+      --duration-base: 0.24s;
+    }
+
+    /* ========== 玻璃质感主题 ========== */
+    :root {
+      --bg-gradient-start: rgba(248, 250, 252, 0.95);
+      --bg-gradient-end: rgba(241, 245, 249, 0.98);
+      --glass-bg: rgba(255, 255, 255, 0.52);
+      --glass-border: rgba(59, 130, 246, 0.12);
+      --glass-shadow: 0 2px 8px rgba(0,0,0,0.02), 0 8px 24px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.9);
+      --glass-shadow-hover: 0 8px 24px rgba(0,0,0,0.06), 0 16px 32px -12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.95);
+      --accent: #2563eb;
+      --accent-glow: rgba(37,99,235,0.2);
+      --accent-gradient: linear-gradient(135deg, #2563eb, #4f46e5);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --border-light: rgba(148,163,184,0.12);
+      --card-bg: rgba(255,255,255,0.65);
+      --ticker-bg: rgba(37,99,235,0.9);
+      --badge-soft: rgba(37,99,235,0.08);
+    }
+
+    body.dark {
+      --bg-gradient-start: rgba(10,16,30,0.96);
+      --bg-gradient-end: rgba(2,6,18,0.98);
+      --glass-bg: rgba(20,28,44,0.55);
+      --glass-border: rgba(59,130,246,0.2);
+      --glass-shadow: 0 2px 8px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04);
+      --glass-shadow-hover: 0 8px 24px rgba(0,0,0,0.35), 0 16px 32px -12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59,130,246,0.3);
+      --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #f87171;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --card-bg: rgba(20,28,44,0.6);
+    }
+
+    body {
+      background: radial-gradient(ellipse at 30% 40%, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: ''; position: fixed; top:0; left:0; width:100%; height:100%;
+      background-image: repeating-linear-gradient(90deg, rgba(59,130,246,0.015) 0px, rgba(59,130,246,0.015) 1px, transparent 1px, transparent 40px),
+                        repeating-linear-gradient(0deg, rgba(59,130,246,0.015) 0px, rgba(59,130,246,0.015) 1px, transparent 1px, transparent 40px);
+      background-size: 40px 40px;
+      pointer-events: none; z-index:0;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--border-light); border-radius: var(--radius-full); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: var(--radius-full); }
+
+    .app-wrapper { position: relative; z-index:1; min-height:100vh; display: flex; flex-direction: column; }
+
+    /* 跑马灯 */
+    .ticker {
+      background: var(--ticker-bg); backdrop-filter: blur(12px); color: white; padding: 10px 0; font-size: var(--font-sm); font-weight: 500;
+      white-space: nowrap; overflow: hidden; border-bottom: 1px solid var(--glass-border);
+    }
+    .ticker-content { display: inline-block; animation: ticker 32s linear infinite; padding-left: 100%; letter-spacing: 0.3px; }
+    @keyframes ticker { to { transform: translateX(-100%); } }
+
+    /* 头部导航 - 移除主题切换按钮 */
+    .header {
+      background: var(--glass-bg); backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border);
+      padding: var(--space-4) var(--space-6); position: sticky; top:0; z-index:50; box-shadow: var(--glass-shadow);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: var(--space-3); cursor: pointer; }
+    .logo-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+    .logo-text { font-size: var(--font-md); font-weight: 700; background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+    /* 主内容区 */
+    .container { display: flex; flex:1; padding: var(--space-6); gap: var(--space-6); max-width: 900px; margin: 0 auto; width: 100%; }
+    .content { flex:1; }
+
+    /* 模式指示器（只读） */
+    .mode-indicator {
+      display: inline-flex; align-items: center; gap: var(--space-2); background: var(--badge-soft); backdrop-filter: blur(8px);
+      padding: 6px 16px; border-radius: var(--radius-full); width: fit-content; margin-bottom: var(--space-5);
+      font-size: var(--font-sm);
+    }
+    .mode-indicator .sandbox-mode-text { color: #8b5cf6; font-weight: 600; }
+    .mode-indicator .live-mode-text { color: #f97316; font-weight: 600; }
+    .test-badge-mode { background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white; padding: 4px 12px; border-radius: var(--radius-full); font-size: var(--font-xs); margin-left: var(--space-3); }
+
+    /* 筛选标签 */
+    .filter-tabs {
+      display: flex; gap: var(--space-2); margin-bottom: var(--space-6); flex-wrap: wrap;
+    }
+    .filter-tab {
+      background: var(--badge-soft); border: none; padding: 10px 24px; border-radius: var(--radius-full);
+      color: var(--text-secondary); font-weight: 600; cursor: pointer; transition: all var(--duration-fast);
+      font-size: var(--font-sm);
+    }
+    .filter-tab.active { background: var(--accent-gradient); color: white; box-shadow: 0 4px 12px var(--accent-glow); }
+
+    /* 统计卡片 */
+    .stats-row {
+      display: flex; gap: var(--space-4); margin-bottom: var(--space-6);
+    }
+    .stat-card {
+      flex: 1; background: var(--card-bg); backdrop-filter: blur(24px); border-radius: var(--radius-lg);
+      border: 1px solid var(--glass-border); padding: var(--space-4) var(--space-3); text-align: center;
+      transition: all var(--duration-fast);
+    }
+    .stat-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+    .stat-number { font-size: var(--font-xl); font-weight: 700; color: var(--accent); line-height: 1.2; }
+    .stat-label { font-size: var(--font-xs); color: var(--text-muted); margin-top: var(--space-1); }
+
+    /* 交易卡片 */
+    .transaction-card {
+      background: var(--card-bg); backdrop-filter: blur(24px); border-radius: var(--radius-xl);
+      border: 1px solid var(--glass-border); margin-bottom: var(--space-4);
+      transition: all var(--duration-base);
+    }
+    .transaction-card:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: var(--glass-shadow-hover); }
+
+    /* 卡片头部 - 队徽两端，名称靠中间 */
+    .card-header {
+      display: flex; justify-content: space-between; align-items: center; padding: var(--space-5) var(--space-5) var(--space-3);
+    }
+    /* 主队区块：队徽在左，名称在右 */
+    .home-team-block {
+      display: flex; align-items: center; gap: var(--space-2);
+    }
+    /* 客队区块：名称在左，队徽在右 */
+    .away-team-block {
+      display: flex; align-items: center; gap: var(--space-2);
+    }
+    /* 队徽容器 */
+    .team-badge {
+      width: 40px; height: 40px; background: var(--badge-soft); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .team-badge i { font-size: 20px; color: var(--accent); }
+    .team-badge img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .team-name {
+      font-weight: 600; font-size: var(--font-sm); white-space: nowrap;
+    }
+    /* VS 分隔符 */
+    .vs-divider {
+      color: var(--accent); font-size: var(--font-xs); font-weight: 700; 
+      background: var(--badge-soft); padding: 4px 12px; border-radius: var(--radius-full);
+      margin: 0 var(--space-2);
+    }
+    .card-header-right { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
+    .test-badge { background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white; padding: 2px 8px; border-radius: var(--radius-full); font-size: 10px; }
+    .status-badge { font-size: var(--font-xs); font-weight: 600; padding: 4px 12px; border-radius: var(--radius-full); }
+    .status-badge.pending { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .status-badge.won { background: rgba(16,185,129,0.15); color: #10b981; }
+    .status-badge.lost { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+    /* 卡片主体 */
+    .card-body { padding: var(--space-2) var(--space-5); cursor: pointer; }
+    .match-league { font-size: var(--font-xs); color: var(--text-muted); margin-bottom: var(--space-2); }
+    .amount-info { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: var(--space-2); }
+    .auth-amount { font-size: var(--font-md); font-weight: 700; }
+    .auth-amount small { font-size: var(--font-xs); font-weight: normal; color: var(--text-muted); }
+    .profit-badge { font-size: var(--font-sm); font-weight: 600; }
+    .profit-badge.positive { color: var(--success); }
+    .profit-badge.negative { color: var(--danger); }
+    .profit-badge.pending { color: var(--warning); }
+
+    /* 卡片底部 */
+    .card-footer {
+      display: flex; justify-content: space-between; align-items: center; padding: var(--space-3) var(--space-5) var(--space-5);
+      border-top: 1px solid var(--border-light);
+      flex-wrap: wrap; gap: var(--space-2);
+    }
+    .match-time { font-size: var(--font-xs); color: var(--text-muted); display: flex; align-items: center; gap: var(--space-1); }
+    .footer-right { display: flex; align-items: center; gap: var(--space-3); }
+    .report-btn {
+      background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 6px 14px;
+      border-radius: var(--radius-full); font-size: var(--font-xs); font-weight: 500; cursor: pointer; transition: all var(--duration-fast);
+    }
+    .report-btn:hover { background: var(--accent); color: white; }
+    .detail-btn {
+      background: var(--badge-soft); border: none; width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all var(--duration-fast);
+    }
+    .detail-btn:hover { background: var(--accent); color: white; transform: translateX(2px); }
+
+    /* 章节标题 */
+    .section-title {
+      font-size: var(--font-base); font-weight: 600; margin: var(--space-5) 0 var(--space-3);
+      display: flex; align-items: center;
+    }
+
+    /* 加载状态 */
+    .loading-state { text-align: center; padding: 60px; }
+    .loading-spinner { width: 48px; height: 48px; border: 3px solid var(--border-light); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state { text-align: center; padding: 60px; background: var(--card-bg); backdrop-filter: blur(20px); border-radius: var(--radius-2xl); }
+    .empty-state i { font-size: 64px; color: var(--text-muted); margin-bottom: 16px; }
+
+    /* 加载更多 */
+    .load-more { display: flex; justify-content: center; margin: var(--space-6) 0; }
+    .load-more-btn { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); padding: 12px 32px; border-radius: var(--radius-full); color: var(--accent); font-weight: 600; cursor: pointer; transition: all var(--duration-fast); }
+    .load-more-btn:hover { background: var(--accent); color: white; }
+
+    /* 底部导航 */
+    .bottom-nav { display: none; position: fixed; bottom:0; left:0; right:0; background: var(--card-bg); backdrop-filter: blur(24px); border-top: 1px solid var(--glass-border); padding: var(--space-3) var(--space-5); z-index:60; }
+    .bottom-nav-items { display: flex; justify-content: space-around; max-width: 500px; margin:0 auto; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); font-size: var(--font-xs); color: var(--text-muted); cursor: pointer; padding: var(--space-2) 0; transition: all var(--duration-fast); text-decoration: none; }
+    .nav-item.active { color: var(--accent); }
+    .nav-item i { font-size: 22px; }
+
+    /* 悬浮按钮 */
+    .fab { position: fixed; bottom: 28px; right: 28px; width: 52px; height: 52px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px var(--accent-glow); z-index:55; cursor: pointer; transition: all var(--duration-fast); border: 1px solid rgba(255,255,255,0.2); }
+
+    /* Toast通知 */
+    .toast-notification {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: var(--success); color: white; padding: 12px 24px;
+      border-radius: 40px; font-size: 14px; z-index: 9999;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      animation: fadeInUp 0.3s ease;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translate(-50%, 20px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .container { padding: var(--space-4); }
+      .filter-tab { padding: 8px 18px; font-size: var(--font-xs); }
+      .stat-number { font-size: var(--font-md); }
+      
+      /* 移动端队徽和文字优化 */
+      .team-badge { width: 32px; height: 32px; }
+      .team-badge i { font-size: 16px; }
+      .team-name { font-size: var(--font-xs); white-space: normal; max-width: 80px; }
+      .vs-divider { padding: 2px 8px; font-size: 10px; margin: 0 var(--space-1); }
+      
+      .card-header { padding: var(--space-4); flex-wrap: wrap; gap: var(--space-2); }
+      .card-body { padding: var(--space-2) var(--space-4); }
+      .card-footer { padding: var(--space-2) var(--space-4) var(--space-4); }
+      
+      .auth-amount { font-size: var(--font-base); }
+      .profit-badge { font-size: var(--font-xs); }
+      .report-btn { padding: 4px 10px; font-size: 10px; }
+      .detail-btn { width: 28px; height: 28px; }
+      
+      .bottom-nav { display: block; }
+      body { padding-bottom: 70px; }
+      .fab { bottom: 80px; right: 20px; width: 48px; height: 48px; }
+    }
+
+    @media (max-width: 480px) {
+      .container { padding: var(--space-3); }
+      .stats-row { gap: var(--space-2); }
+      .stat-card { padding: var(--space-2); }
+      .stat-number { font-size: var(--font-base); }
+      
+      .team-badge { width: 28px; height: 28px; }
+      .team-badge i { font-size: 14px; }
+      .team-name { font-size: 10px; max-width: 65px; }
+      .vs-divider { padding: 2px 6px; font-size: 9px; }
+      
+      .card-footer { flex-direction: column; align-items: flex-start; }
+      .footer-right { width: 100%; justify-content: flex-end; }
+    }
+  </style>
 </head>
 <body>
-    <!-- 头部 -->
-    <header class="app-header">
-        <div class="header-container">
-            <div class="header">
-                <div class="logo">FOOT<span>RADA</span></div>
-            </div>
-            
-            <!-- 统计卡片 -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
-                    <div class="stat-label">Total</div>
-                    <div class="stat-value" id="totalCount">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
-                    <div class="stat-label">Profit</div>
-                    <div class="stat-value win" id="winCount">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
-                    <div class="stat-label">Loss</div>
-                    <div class="stat-value loss" id="lossCount">0</div>
-                </div>
-            </div>
-            
-            <!-- 筛选标签 -->
-            <div class="filter-tabs">
-                <button class="filter-tab active" data-status="all">All</button>
-                <button class="filter-tab" data-status="pending">Active</button>
-                <button class="filter-tab" data-status="settled">Settled</button>
-            </div>
-        </div>
-    </header>
-    
-    <!-- 内容区域 -->
-    <main class="content-scrollable">
-        <div class="content-container">
-            <div id="loadingState" class="loading-state">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Loading transactions...</p>
-            </div>
-            
-            <div id="transactionList" class="transactions-list" style="display: none;"></div>
-            
-            <div id="emptyState" class="empty-state" style="display: none;">
-                <i class="fas fa-receipt"></i>
-                <p>No transactions yet</p>
-                <a href="/match-market.html" class="btn-primary">Go to Markets <i class="fas fa-arrow-right"></i></a>
-            </div>
-            
-            <div class="load-more" id="loadMore" style="display: none;">
-                <button class="load-more-btn" id="loadMoreBtn">Load More <i class="fas fa-chevron-down"></i></button>
-            </div>
-        </div>
+<div class="app-wrapper">
+  <div class="ticker"><div class="ticker-content" id="tickerContent">⚡ FOOTRADA · AI-Powered Football Trading &nbsp;|&nbsp; 🔒 Trust Anchor Enabled &nbsp;|&nbsp; 🏆 World Cup 2026</div></div>
+
+  <div class="header">
+    <div class="logo" onclick="location.href='/index.html'">
+      <div class="logo-icon">⚽</div>
+      <div class="logo-text">FootRadaPro</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <main class="content">
+      <div class="mode-indicator">
+        <i class="fa-solid fa-info-circle"></i>
+        <span>Current Mode: </span>
+        <span id="currentModeText" class="sandbox-mode-text">Sandbox</span>
+        <span id="testModeBadge" class="test-badge-mode" style="display: none;">🧪 Test Mode</span>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-status="all">All</button>
+        <button class="filter-tab" data-status="pending">Active</button>
+        <button class="filter-tab" data-status="settled">Settled</button>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-number" id="totalCount">0</div><div class="stat-label">Total</div></div>
+        <div class="stat-card"><div class="stat-number" id="winCount">0</div><div class="stat-label">Won</div></div>
+        <div class="stat-card"><div class="stat-number" id="lossCount">0</div><div class="stat-label">Loss</div></div>
+      </div>
+
+      <div id="loadingState" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading transactions...</p>
+      </div>
+
+      <div id="emptyState" class="empty-state" style="display: none;">
+        <i class="fa-solid fa-receipt"></i>
+        <p>No transactions found</p>
+      </div>
+
+      <div id="transactionList"></div>
+
+      <div id="loadMore" class="load-more" style="display: none;">
+        <button class="load-more-btn" id="loadMoreBtn">Load More</button>
+      </div>
     </main>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="bottom-nav-items">
+      <a href="/index.html" class="nav-item" data-nav="home"><i class="fa-solid fa-home"></i><span>Home</span></a>
+      <a href="/match-market.html" class="nav-item" data-nav="market"><i class="fa-solid fa-chart-line"></i><span>Market</span></a>
+      <a href="/transaction-list.html" class="nav-item active" data-nav="records"><i class="fa-solid fa-list"></i><span>Records</span></a>
+      <a href="/profile.html" class="nav-item" data-nav="profile"><i class="fa-solid fa-user"></i><span>Profile</span></a>
+    </div>
+  </div>
+
+  <div class="fab" onclick="alert('Support: contact via Telegram')"><i class="fa-solid fa-comment-dots"></i></div>
+</div>
+
+<script src="/js/core/api-client.js"></script>
+<script src="/js/core/theme.js"></script>
+<script src="/js/core/sync.js"></script>
+<script>
+  // ==================== 全局变量 ====================
+  let allTransactions = [];
+  let filteredTransactions = [];
+  let currentFilter = 'all';
+  let currentPage = 1;
+  let pageSize = 20;
+  let isLoading = false;
+  let hasMore = true;
+
+  // ==================== 辅助函数 ====================
+  function formatAmount(amount) {
+    const num = Number(amount);
+    if (isNaN(num)) return '0.00';
+    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function formatDate(dateString) {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      return `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+    } catch { return '-'; }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+  }
+
+  function getTeamLogoUrl(logoUrl) {
+    if (logoUrl && logoUrl !== '/uploads/teams/default.png') return logoUrl;
+    return null;
+  }
+
+  function showToast(message) {
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) existingToast.remove();
     
-    <!-- 底部导航 -->
-    <nav class="bottom-nav">
-        <div class="nav-container">
-            <a href="/index.html" class="nav-item">
-                <i class="fas fa-home"></i>
-                <span>Home</span>
-            </a>
-            <a href="/match-market.html" class="nav-item">
-                <i class="fas fa-chart-line"></i>
-                <span>Markets</span>
-            </a>
-            <a href="/support.html" class="nav-item">
-                <i class="fas fa-headset"></i>
-                <span>Support</span>
-            </a>
-            <a href="/profile.html" class="nav-item active">
-                <i class="fas fa-user"></i>
-                <span>Account</span>
-            </a>
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.innerHTML = '<i class="fas fa-check-circle"></i> ' + message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
+  }
+
+  // ==================== 更新模式UI（只读，跟随全局） ====================
+  function updateModeUI() {
+    const isSandbox = ThemeManager ? ThemeManager.isTestMode : false;
+    const modeText = document.getElementById('currentModeText');
+    const testBadge = document.getElementById('testModeBadge');
+    
+    if (modeText) {
+      modeText.textContent = isSandbox ? 'Sandbox' : 'Live';
+      modeText.className = isSandbox ? 'sandbox-mode-text' : 'live-mode-text';
+    }
+    if (testBadge) {
+      testBadge.style.display = isSandbox ? 'inline-flex' : 'none';
+    }
+  }
+
+  // ==================== 渲染交易卡片 ====================
+  function renderTransactionCard(t) {
+    const isSandbox = ThemeManager ? ThemeManager.isTestMode : false;
+    const currency = isSandbox ? 'tUSDT' : 'USDT';
+    const isPending = t.status === 'pending' || t.status === 'upcoming' || t.status === 'ongoing';
+    const isWon = t.profit > 0;
+    const profitClass = isPending ? 'pending' : (isWon ? 'positive' : 'negative');
+    const profitText = isPending ? 'Pending' : (isWon ? `+${formatAmount(t.profit)}` : formatAmount(t.profit));
+    const statusClass = isPending ? 'pending' : (isWon ? 'won' : 'lost');
+    const statusText = isPending ? 'Pending' : (isWon ? 'Won' : 'Lost');
+
+    const homeLogoUrl = getTeamLogoUrl(t.home_logo);
+    const awayLogoUrl = getTeamLogoUrl(t.away_logo);
+
+    return `
+      <div class="transaction-card" data-auth-id="${t.auth_id || t.id}">
+        <div class="card-header">
+          <div style="display: flex; align-items: center; gap: var(--space-3);">
+            <div class="home-team-block">
+              <div class="team-badge">${homeLogoUrl ? `<img src="${homeLogoUrl}" onerror="this.onerror=null;this.parentElement.innerHTML='<i class=\\'fas fa-futbol\\'></i>'">` : '<i class="fas fa-futbol"></i>'}</div>
+              <span class="team-name">${escapeHtml(t.home_team || '?')}</span>
+            </div>
+            <span class="vs-divider">VS</span>
+            <div class="away-team-block">
+              <span class="team-name">${escapeHtml(t.away_team || '?')}</span>
+              <div class="team-badge">${awayLogoUrl ? `<img src="${awayLogoUrl}" onerror="this.onerror=null;this.parentElement.innerHTML='<i class=\\'fas fa-futbol\\'></i>'">` : '<i class="fas fa-futbol"></i>'}</div>
+            </div>
+          </div>
+          <div class="card-header-right">
+            ${isSandbox ? '<span class="test-badge"><i class="fas fa-flask"></i> Test</span>' : ''}
+            <div class="status-badge ${statusClass}">${statusText}</div>
+          </div>
         </div>
-    </nav>
+        <div class="card-body" onclick="viewDetail('${t.auth_id || t.id}')">
+          <div class="match-league"><i class="fas fa-trophy"></i> ${escapeHtml(t.league || 'Unknown League')}</div>
+          <div class="amount-info">
+            <div class="auth-amount">${formatAmount(t.amount || 0)} <small>${currency}</small></div>
+            <div class="profit-badge ${profitClass}">${profitText}</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="match-time"><i class="fas fa-clock"></i> ${formatDate(t.match_time || t.created_at)}</div>
+          <div class="footer-right">
+            ${!isPending && t.has_report ? `<button class="report-btn" onclick="viewReport('${t.auth_id || t.id}', event)"><i class="fas fa-file-alt"></i> Report</button>` : ''}
+            <button class="detail-btn" onclick="viewDetail('${t.auth_id || t.id}')"><i class="fas fa-chevron-right"></i></button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ==================== 筛选逻辑 ====================
+  function applyFilters() {
+    let filtered = [...allTransactions];
     
-    <script src="/js/core/config.js"></script>
-    <script src="/js/core/timezone.js"></script>
-    <script src="/js/core/theme.js"></script>
-    <script src="/js/user/transaction-list.js"></script>
+    if (currentFilter === 'pending') {
+      filtered = filtered.filter(t => t.status === 'pending' || t.status === 'upcoming' || t.status === 'ongoing');
+    } else if (currentFilter === 'settled') {
+      filtered = filtered.filter(t => t.status === 'settled' || t.status === 'completed' || t.profit !== undefined);
+    }
     
-    <script>
-        // 主题初始化 - 自动响应全局切换
-        document.addEventListener('DOMContentLoaded', async function() {
-            if (window.ThemeManager) {
-                await ThemeManager.init(true);
-            }
-        });
-    </script>
+    filtered.sort((a, b) => new Date(b.created_at || b.match_time) - new Date(a.created_at || a.match_time));
+    
+    filteredTransactions = filtered;
+    hasMore = filteredTransactions.length > pageSize;
+    currentPage = 1;
+    
+    updateStats();
+    render();
+  }
+
+  function updateStats() {
+    const total = filteredTransactions.length;
+    const wins = filteredTransactions.filter(t => t.profit > 0).length;
+    const losses = filteredTransactions.filter(t => t.profit < 0).length;
+    
+    const totalCount = document.getElementById('totalCount');
+    const winCount = document.getElementById('winCount');
+    const lossCount = document.getElementById('lossCount');
+    
+    if (totalCount) totalCount.textContent = total;
+    if (winCount) winCount.textContent = wins;
+    if (lossCount) lossCount.textContent = losses;
+  }
+
+  // ==================== 渲染 ====================
+  function render() {
+    const container = document.getElementById('transactionList');
+    const loadingState = document.getElementById('loadingState');
+    const emptyState = document.getElementById('emptyState');
+    const loadMore = document.getElementById('loadMore');
+    
+    if (!container) return;
+    
+    const displayTransactions = filteredTransactions.slice(0, currentPage * pageSize);
+    const hasMoreData = displayTransactions.length < filteredTransactions.length;
+    
+    // 分离 pending 和 settled
+    const pending = displayTransactions.filter(t => t.status === 'pending' || t.status === 'upcoming' || t.status === 'ongoing');
+    const settled = displayTransactions.filter(t => t.status === 'settled' || t.status === 'completed' || t.profit !== undefined);
+    
+    let html = '';
+    if (pending.length > 0) {
+      html += '<div class="section-title"><i class="fas fa-hourglass-half" style="margin-right: 8px; color: #f59e0b;"></i>Active</div>';
+      pending.forEach(t => { html += renderTransactionCard(t); });
+    }
+    if (settled.length > 0) {
+      html += '<div class="section-title"><i class="fas fa-check-circle" style="margin-right: 8px; color: #10b981;"></i>Settled</div>';
+      settled.forEach(t => { html += renderTransactionCard(t); });
+    }
+    
+    if (filteredTransactions.length === 0) {
+      loadingState.style.display = 'none';
+      emptyState.style.display = 'flex';
+      container.style.display = 'none';
+      loadMore.style.display = 'none';
+    } else {
+      loadingState.style.display = 'none';
+      emptyState.style.display = 'none';
+      container.style.display = 'block';
+      container.innerHTML = html;
+      loadMore.style.display = hasMoreData ? 'flex' : 'none';
+    }
+  }
+
+  function loadMore() {
+    if (!hasMore) return;
+    currentPage++;
+    render();
+  }
+
+  // ==================== 数据加载 ====================
+  async function loadTransactions() {
+    if (isLoading) return;
+    isLoading = true;
+    
+    const loadingState = document.getElementById('loadingState');
+    if (loadingState) loadingState.style.display = 'flex';
+    
+    try {
+      const isSandbox = ThemeManager ? ThemeManager.isTestMode : false;
+      const mode = isSandbox ? 'test' : 'live';
+      
+      const res = await APIClient.get(`/api/v1/user/authorize/list?mode=${mode}&limit=100`);
+      const result = await res.json();
+      
+      if (result.success && result.data) {
+        allTransactions = result.data;
+        applyFilters();
+        console.log(`✅ Loaded ${allTransactions.length} transactions`);
+      } else {
+        throw new Error(result.error || 'Failed to load transactions');
+      }
+    } catch (err) {
+      console.error('Failed to load transactions:', err);
+      const emptyState = document.getElementById('emptyState');
+      if (emptyState) {
+        emptyState.style.display = 'flex';
+        const p = emptyState.querySelector('p');
+        if (p) p.textContent = 'Failed to load transactions';
+      }
+    } finally {
+      isLoading = false;
+      const loadingState = document.getElementById('loadingState');
+      if (loadingState) loadingState.style.display = 'none';
+    }
+  }
+
+  // ==================== 事件绑定 ====================
+  function bindEvents() {
+    // 筛选标签
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentFilter = tab.dataset.status;
+        applyFilters();
+      });
+    });
+    
+    // 加载更多
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', () => loadMore());
+    }
+    
+    // 监听模式变化
+    if (ThemeManager.addListener) {
+      ThemeManager.addListener((state) => {
+        updateModeUI();
+        loadTransactions();
+      });
+    }
+  }
+
+  // ==================== 全局函数 ====================
+  window.viewDetail = function(authId) {
+    window.location.href = `/transaction-detail.html?authId=${authId}`;
+  };
+  
+  window.viewReport = function(authId, event) {
+    if (event) event.stopPropagation();
+    window.location.href = `/report-detail.html?authId=${authId}`;
+  };
+
+  // ==================== 初始化 ====================
+  async function init() {
+    console.log('📋 Transaction List page initialized');
+    
+    await ThemeManager.init();
+    updateModeUI();
+    
+    bindEvents();
+    await loadTransactions();
+    
+    console.log('✅ Transaction List ready');
+  }
+  
+  document.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>

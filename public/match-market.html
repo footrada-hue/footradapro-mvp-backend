@@ -1,332 +1,1155 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FOOTRADA · Match Markets</title>
-    
-    <!-- Fonts & Icons -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Core Styles -->
-    <link rel="stylesheet" href="/css/core/variables.css">
-    <link rel="stylesheet" href="/css/core/components.css">
-    <link rel="stylesheet" href="/css/pages/market.css">
-    
-    <!-- 终极强制覆盖 - 与首页主题完全一致 -->
-<style>
-    /* ===== 强制背景与首页一致 ===== */
-    html, body {
-        background-color: #111827 !important;
-        background-image: none !important;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Match Market · FootRadaPro</title>
+  <meta name="description" content="Browse all upcoming football matches. Filter by league, time, and AI confidence.">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="//instant.page/5.2.0" type="module" integrity="sha384-jnZyxPjiipYXnSU0ygqeac2q7CVYMbh84q0uHVRRxEtvFPiQYbXWUorga2aqZJ0z"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-    
+
+    :root {
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 32px;
+      --space-8: 40px;
+      
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-base: 1rem;
+      --font-lg: 1.125rem;
+      --font-xl: 1.25rem;
+      --font-2xl: 1.5rem;
+      --font-3xl: 1.875rem;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-fast: 0.15s;
+      --duration-base: 0.24s;
+    }
+
+    /* 亮色主题（默认） */
+    :root {
+      --bg-gradient-start: rgba(248, 250, 252, 0.92);
+      --bg-gradient-end: rgba(241, 245, 249, 0.96);
+      --glass-bg: rgba(255, 255, 255, 0.48);
+      --glass-border: rgba(59, 130, 246, 0.18);
+      --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.01), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      --glass-shadow-hover: 0 20px 35px -12px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      --accent: #2563eb;
+      --accent-glow: rgba(37, 99, 235, 0.25);
+      --accent-gradient: linear-gradient(135deg, #2563eb, #4f46e5);
+      --sandbox-gradient: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      --live-gradient: linear-gradient(135deg, #f97316, #ea580c);
+      --success: #10b981;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --border-light: rgba(148, 163, 184, 0.18);
+      --card-bg: rgba(255, 255, 255, 0.62);
+      --ticker-bg: rgba(37, 99, 235, 0.92);
+      --badge-soft: rgba(37, 99, 235, 0.1);
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    /* 暗色主题 */
+    body.dark {
+      --bg-gradient-start: rgba(10, 16, 30, 0.94);
+      --bg-gradient-end: rgba(2, 6, 18, 0.98);
+      --glass-bg: rgba(20, 28, 44, 0.52);
+      --glass-border: rgba(59, 130, 246, 0.28);
+      --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      --glass-shadow-hover: 0 20px 35px -12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.35);
+      --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      --sandbox-gradient: linear-gradient(135deg, #a855f7, #7c3aed);
+      --live-gradient: linear-gradient(135deg, #fb923c, #ea580c);
+      --success: #34d399;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --border-light: rgba(255, 255, 255, 0.08);
+      --card-bg: rgba(20, 28, 44, 0.58);
+      --ticker-bg: rgba(30, 58, 138, 0.92);
+      --badge-soft: rgba(59, 130, 246, 0.18);
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.15);
+    }
+
     body {
-        background: #111827 !important;
+      animation: fadeInPage 0.3s ease-out;
+      background: radial-gradient(ellipse at 30% 40%, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+      transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
     }
-    
-    /* ===== 强制底部导航与首页完全一致 ===== */
+
+    @keyframes fadeInPage {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: repeating-linear-gradient(90deg, rgba(59,130,246,0.02) 0px, rgba(59,130,246,0.02) 1px, transparent 1px, transparent 40px),
+                        repeating-linear-gradient(0deg, rgba(59,130,246,0.02) 0px, rgba(59,130,246,0.02) 1px, transparent 1px, transparent 40px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app-wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 跑马灯 */
+    .ticker {
+      background: var(--ticker-bg);
+      backdrop-filter: blur(16px);
+      color: white;
+      padding: 10px 0;
+      font-size: var(--font-sm);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      border-bottom: 1px solid var(--glass-border);
+      position: relative;
+    }
+    .ticker-content {
+      display: inline-block;
+      animation: ticker 32s linear infinite;
+      padding-left: 100%;
+    }
+    @keyframes ticker { to { transform: translateX(-100%); } }
+
+    /* 头部导航 */
+    .header {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: var(--space-4) var(--space-6);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .header-container {
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* 桌面端导航栏 */
+    .desktop-nav {
+      display: flex;
+      gap: var(--space-2);
+      background: var(--badge-soft);
+      padding: 4px;
+      border-radius: 60px;
+      backdrop-filter: blur(8px);
+    }
+
+    .nav-link {
+      padding: 8px 20px;
+      border-radius: 60px;
+      font-size: var(--font-sm);
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all var(--duration-fast) var(--ease-out);
+    }
+
+    .nav-link:hover {
+      color: var(--accent);
+      background: rgba(255,255,255,0.1);
+    }
+
+    .nav-link.active {
+      background: var(--accent-gradient);
+      color: white;
+      box-shadow: 0 2px 8px var(--accent-glow);
+    }
+
+    .logo { display: flex; align-items: center; gap: var(--space-3); cursor: pointer; }
+    .logo-icon { font-size: 28px; }
+    .logo-text {
+      font-size: var(--font-xl);
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .header-actions { display: flex; gap: var(--space-5); align-items: center; }
+    .header-actions i { font-size: 20px; color: var(--text-secondary); cursor: pointer; transition: 0.2s; }
+    .user-badge {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--badge-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      border: 1px solid var(--glass-border);
+      cursor: pointer;
+    }
+
+    /* 主容器 - 主内容区在左，侧边栏在右 */
+    .container {
+      display: flex;
+      flex: 1;
+      padding: var(--space-6);
+      gap: var(--space-6);
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* 主内容区 */
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      min-width: 0;
+    }
+
+    /* 侧边栏 - 筛选区域（与首页风格统一） */
+    .sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      background: var(--card-bg);
+      backdrop-filter: blur(24px);
+      border-radius: 36px;
+      border: 1px solid var(--glass-border);
+      padding: var(--space-5);
+      height: fit-content;
+      position: sticky;
+      top: 88px;
+      box-shadow: var(--glass-shadow);
+      transition: all var(--duration-base) var(--ease-out);
+    }
+
+    .sidebar:hover {
+      border-color: var(--accent);
+      box-shadow: var(--glass-shadow-hover);
+    }
+
+    /* 侧边栏区块 */
+    .filter-section {
+      margin-bottom: var(--space-5);
+    }
+
+    .filter-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .filter-title {
+      font-size: var(--font-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: var(--space-4);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .filter-option {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-2) 0;
+      cursor: pointer;
+      font-size: var(--font-sm);
+      color: var(--text-secondary);
+      transition: all var(--duration-fast);
+      border-radius: var(--space-2);
+    }
+
+    .filter-option:hover {
+      color: var(--accent);
+      background: var(--badge-soft);
+      padding-left: var(--space-2);
+    }
+
+    .filter-option.active {
+      color: var(--accent);
+      font-weight: 600;
+      background: var(--badge-soft);
+      padding-left: var(--space-2);
+    }
+
+    .filter-radio {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--border-light);
+      background: transparent;
+      display: inline-block;
+    }
+
+    .filter-option.active .filter-radio {
+      border-color: var(--accent);
+      background: var(--accent);
+      box-shadow: inset 0 0 0 3px var(--card-bg);
+    }
+
+    /* 联赛筛选列表 */
+.league-list {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.league-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.league-list::-webkit-scrollbar-track {
+  background: var(--border-light);
+  border-radius: 4px;
+}
+
+.league-list::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+    .league-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-2) var(--space-2);
+      cursor: pointer;
+      font-size: var(--font-sm);
+      color: var(--text-secondary);
+      transition: all var(--duration-fast);
+      border-radius: var(--space-2);
+    }
+
+    .league-item:hover {
+      color: var(--accent);
+      background: var(--badge-soft);
+    }
+
+    .league-item.active {
+      color: var(--accent);
+      font-weight: 600;
+      background: var(--badge-soft);
+    }
+
+    .league-count {
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+      background: var(--border-light);
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    /* 统计卡片 */
+    .stats-card {
+      background: var(--badge-soft);
+      border-radius: 24px;
+      padding: var(--space-4);
+      margin-top: var(--space-4);
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-2) 0;
+      font-size: var(--font-sm);
+    }
+
+    .stats-label {
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .stats-value {
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* 区域标题 */
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: var(--space-5);
+      flex-wrap: wrap;
+      gap: var(--space-3);
+    }
+
+    .section-title {
+      font-size: var(--font-xl);
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .match-count {
+      background: var(--badge-soft);
+      padding: 2px 10px;
+      border-radius: 40px;
+      font-size: var(--font-sm);
+      margin-left: var(--space-2);
+    }
+
+    /* 移动端筛选条（桌面端隐藏） */
+    .mobile-filter-bar {
+      display: none;
+      background: var(--card-bg);
+      backdrop-filter: blur(24px);
+      border-radius: 60px;
+      border: 1px solid var(--glass-border);
+      padding: 8px 16px;
+      margin-bottom: var(--space-4);
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .mobile-filter-chip {
+      padding: 6px 16px;
+      border-radius: 40px;
+      font-size: var(--font-xs);
+      font-weight: 500;
+      background: var(--badge-soft);
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--duration-fast);
+    }
+
+    .mobile-filter-chip.active {
+      background: var(--accent-gradient);
+      color: white;
+    }
+
+.mobile-league-select {
+  background: var(--badge-soft);
+  border: 1px solid var(--border-light);
+  border-radius: 40px;
+  padding: 6px 16px;
+  color: var(--text-primary);
+  font-size: var(--font-xs);
+  cursor: pointer;
+  flex: 1;
+  min-width: 120px;
+}
+
+/* 修复下拉选项背景透明问题 */
+.mobile-league-select option {
+  background: var(--card-bg);
+  color: var(--text-primary);
+    background: #1e293b;
+  color: #f1f5f9;
+}
+
+    /* 比赛网格 */
+    .featured-grid, .matches-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-5);
+      margin-bottom: var(--space-6);
+    }
+
+    /* 比赛卡片 */
+    .match-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(28px);
+      border-radius: 32px;
+      border: 1px solid var(--glass-border);
+      padding: var(--space-5);
+      transition: all var(--duration-base) var(--ease-out);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .match-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--accent);
+    }
+
+    /* 卡片瀑布动画 */
+    .match-card {
+      animation: cardFadeIn 0.3s ease-out;
+      animation-fill-mode: backwards;
+    }
+
+    @keyframes cardFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .match-card:nth-child(1) { animation-delay: 0.05s; }
+    .match-card:nth-child(2) { animation-delay: 0.1s; }
+    .match-card:nth-child(3) { animation-delay: 0.15s; }
+    .match-card:nth-child(4) { animation-delay: 0.2s; }
+    .match-card:nth-child(5) { animation-delay: 0.25s; }
+    .match-card:nth-child(6) { animation-delay: 0.3s; }
+
+    .match-logos-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+
+    .match-logo-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      flex: 1;
+      text-align: center;
+    }
+
+    .match-logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: var(--badge-soft);
+    }
+
+    .logo-fallback {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--badge-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .match-team-name {
+      font-size: var(--font-sm);
+      font-weight: 600;
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .match-vs-badge {
+      font-weight: 700;
+      background: var(--badge-soft);
+      padding: 4px 12px;
+      border-radius: 40px;
+      font-size: var(--font-xs);
+      flex-shrink: 0;
+    }
+
+    .match-info {
+      margin-bottom: var(--space-4);
+    }
+
+    .match-league-time {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-3);
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+    }
+
+    .league-badge {
+      background: var(--badge-soft);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .confidence-bar {
+      margin-top: var(--space-2);
+    }
+
+    .confidence-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .confidence-progress {
+      background: var(--border-light);
+      border-radius: 20px;
+      height: 6px;
+      overflow: hidden;
+    }
+
+    .confidence-fill {
+      height: 100%;
+      background: var(--accent-gradient);
+      border-radius: 20px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 30px;
+      font-size: var(--font-xs);
+      font-weight: 500;
+      margin-bottom: var(--space-3);
+    }
+
+    .status-upcoming {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+    }
+
+    .authorize-btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 60px;
+      background: var(--accent-gradient);
+      color: white;
+      font-weight: 600;
+      border: none;
+      margin-top: auto;
+      cursor: pointer;
+      transition: opacity var(--duration-fast);
+    }
+
+    .authorize-btn:hover {
+      opacity: 0.9;
+    }
+
+    /* 加载更多 */
+    .load-more-container {
+      display: flex;
+      justify-content: center;
+      margin: var(--space-6) 0;
+    }
+
+    .load-more-btn {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      padding: 12px 32px;
+      border-radius: 60px;
+      color: var(--accent);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .load-more-btn:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    .loading-indicator {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-muted);
+      display: none;
+    }
+
+    .loading-indicator i {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      background: var(--card-bg);
+      backdrop-filter: blur(24px);
+      border-radius: 32px;
+      border: 1px solid var(--glass-border);
+      grid-column: 1 / -1;
+    }
+
+    .empty-state i {
+      font-size: 48px;
+      opacity: 0.5;
+      margin-bottom: var(--space-4);
+    }
+
+    /* 底部导航 */
     .bottom-nav {
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        background: rgba(17, 24, 39, 0.95) !important;
-        backdrop-filter: blur(20px) !important;
-        border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-        padding: 10px 0 !important;
-        z-index: 100 !important;
-        box-shadow: none !important;
-        border-radius: 0 !important;
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card-bg);
+      backdrop-filter: blur(32px);
+      border-top: 1px solid var(--glass-border);
+      padding: var(--space-3) var(--space-5);
+      z-index: 60;
     }
-    
-    .bottom-nav::before,
-    .bottom-nav::after {
-        display: none !important;
-        content: none !important;
+
+    .bottom-nav-items {
+      display: flex;
+      justify-content: space-around;
+      max-width: 500px;
+      margin: 0 auto;
     }
-    
-    .nav-container {
-        display: flex !important;
-        justify-content: space-around !important;
-        align-items: center !important;
-        max-width: 500px !important;
-        margin: 0 auto !important;
-        padding: 0 !important;
+
+    .nav-item-mobile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: all var(--duration-fast) var(--ease-out);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: var(--space-2);
     }
-    
-    .nav-item {
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        gap: 4px !important;
-        padding: 8px 16px !important;
-        color: #6B7280 !important;
-        text-decoration: none !important;
-        font-size: 12px !important;
-        font-weight: 500 !important;
-        transition: all 0.2s !important;
-        border-radius: 12px !important;
-        background: transparent !important;
-        border: none !important;
-        position: relative !important;
+
+    .nav-item-mobile.active {
+      color: var(--accent);
     }
-    
-    .nav-item i {
-        font-size: 20px !important;
-        margin: 0 !important;
-        filter: none !important;
-        box-shadow: none !important;
-        text-shadow: none !important;
+
+    .nav-item-mobile i {
+      font-size: 22px;
     }
-    
-    .nav-item span {
-        font-size: 11px !important;
-        font-weight: 500 !important;
+
+    /* 触摸反馈 */
+    .nav-item-mobile, .filter-option, .league-item, .authorize-btn, .mobile-filter-chip {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
-    
-    .nav-item.active {
-        color: #F97316 !important;
-        background: transparent !important;
-        text-shadow: none !important;
+
+    .nav-item-mobile:active, .filter-option:active, .league-item:active, .mobile-filter-chip:active {
+      transform: scale(0.96);
+      transition: transform 0.05s ease;
     }
-    
-    /* 移除小圆点 */
-    .nav-item.active::after {
-        display: none !important;
-        content: none !important;
+
+    /* Toast */
+    #toastContainer {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
-    
-    /* 移除光晕效果 */
-    .nav-item.active i {
-        filter: none !important;
-        box-shadow: none !important;
-        text-shadow: none !important;
+
+    .toast-notification {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border-radius: 16px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      animation: slideIn 0.3s ease;
     }
-    
-    .nav-item i {
-        filter: none !important;
-        box-shadow: none !important;
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
     }
-    
-    .nav-item:hover i {
-        filter: none !important;
-        box-shadow: none !important;
+
+    /* ==================== 響應式佈局 ==================== */
+    @media (max-width: 1200px) {
+      .featured-grid, .matches-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .container {
+        padding: var(--space-4);
+      }
     }
-    
-    .nav-item:active {
-        background: rgba(255, 107, 0, 0.1) !important;
+
+    @media (max-width: 899px) {
+      .desktop-nav { display: none; }
+      .bottom-nav { display: block; }
+      body { padding-bottom: 70px; }
+      
+      .container { 
+        flex-direction: column; 
+        padding: var(--space-4);
+        gap: var(--space-4);
+      }
+      
+      /* 移动端隐藏侧边栏 */
+      .sidebar { 
+        display: none;
+      }
+      
+      /* 移动端显示筛选条 */
+      .mobile-filter-bar {
+        display: flex;
+      }
+      
+      .featured-grid, .matches-grid { 
+        grid-template-columns: 1fr; 
+      }
+      
+      .match-card { 
+        padding: var(--space-4); 
+      }
+      
+      .match-logo, .logo-fallback { 
+        width: 48px; 
+        height: 48px; 
+        font-size: 20px; 
+      }
+      
+      .match-team-name { 
+        max-width: 80px; 
+        font-size: var(--font-xs); 
+      }
+      
+      .header {
+        padding: var(--space-3) var(--space-4);
+      }
+      
+      .header-container {
+        width: 100%;
+      }
+      
+      .logo-text {
+        font-size: var(--font-lg);
+      }
+      
+      .header-actions {
+        gap: var(--space-3);
+      }
+      
+      .user-badge {
+        width: 32px;
+        height: 32px;
+        font-size: var(--font-xs);
+      }
+      
+      .section-title {
+        font-size: var(--font-lg);
+      }
     }
-    
-    /* 测试模式底部导航 */
-    body.test-mode .nav-item.active {
-        color: #3B82F6 !important;
+
+    @media (max-width: 480px) {
+      .match-team-name { 
+        max-width: 60px; 
+        font-size: 10px; 
+      }
+      .match-logo, .logo-fallback { 
+        width: 40px; 
+        height: 40px; 
+        font-size: 18px; 
+      }
+      .mobile-filter-bar {
+        gap: var(--space-2);
+      }
+      .mobile-filter-chip {
+        padding: 4px 12px;
+        font-size: 10px;
+      }
+      .mobile-league-select {
+        padding: 4px 12px;
+        font-size: 10px;
+      }
     }
-    
-    body.test-mode .nav-item:active {
-        background: rgba(59, 130, 246, 0.1) !important;
-    }
-    
-    /* ===== 强制 header 背景一致 ===== */
-    .app-header {
-        background: rgba(17, 24, 39, 0.95) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-    }
-    
-    /* ===== 强制内容区域背景透明 ===== */
-    .content-scrollable,
-    .content-container {
-        background: transparent !important;
-    }
-    
-    /* ===== 强制卡片背景一致 ===== */
-    .filter-section,
-    .match-group {
-        background: rgba(31, 41, 55, 0.6) !important;
-        backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    }
-    
-    .compact-card {
-        background: rgba(255, 255, 255, 0.02) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    }
-    
-    .compact-card:hover {
-        border-color: #F97316 !important;
-    }
-    
-    /* 测试模式卡片边框 */
-    body.test-mode .compact-card:hover {
-        border-color: #3B82F6 !important;
-    }
-    
-    /* ===== 品牌色统一 ===== */
-    .filter-chip.active {
-        background: #F97316 !important;
-        color: white !important;
-    }
-    
-    body.test-mode .filter-chip.active {
-        background: #3B82F6 !important;
-    }
-    
-    .card-action:not(.disabled) {
-        background: #F97316 !important;
-    }
-    
-    body.test-mode .card-action:not(.disabled) {
-        background: #3B82F6 !important;
-    }
-</style>
-    
-    <!-- Theme Management -->
-    <script src="/js/core/theme.js"></script>
-    <script src="/js/core/timezone.js"></script>
+  </style>
 </head>
 <body>
-    <header class="app-header">
-        <div class="header-container">
-            <!-- Ticker / Marquee -->
-            <div class="ticker-bar" id="tickerBar">
-                <div class="ticker-icon"><i class="fas fa-circle-nodes"></i></div>
-                <div class="ticker-wrapper">
-                    <div class="ticker-messages" id="tickerMessages" data-i18n="ticker.loading">Loading market updates...</div>
-                </div>
-                
-            </div>
-            
-            <!-- Control Bar -->
-            <div class="controls-group">
-<div class="controls-left">
-</div>
-                <div class="controls-right">
-                    <button class="control-btn" id="refreshBtn" aria-label="Refresh" data-i18n="button.refresh">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                    
-                    <!-- Timezone Switcher -->
-                    <div class="timezone-switcher" id="timezoneSwitcher">
-                        <button class="timezone-trigger" id="timezoneTrigger" data-i18n="timezone.trigger">
-                            <i class="fas fa-globe"></i>
-                            <span id="currentTimezoneLabel" data-i18n="timezone.auto">Auto</span>
-                            <i class="fas fa-chevron-down"></i>
-                        </button>
-                        <div class="timezone-dropdown" id="timezoneDropdown">
-                            <div class="dropdown-header">
-                                <i class="fas fa-clock"></i>
-                                <span data-i18n="timezone.select">Select Timezone</span>
-                            </div>
-                            <div class="dropdown-option" data-tz="auto">
-                                <i class="fas fa-sync-alt"></i>
-                                <span data-i18n="timezone.auto">Auto Detect</span>
-                                <span class="tz-check">✓</span>
-                            </div>
-                            <div class="dropdown-divider"></div>
-                            <div class="dropdown-option" data-tz="UTC-12">UTC-12 (Baker Island)</div>
-                            <div class="dropdown-option" data-tz="UTC-11">UTC-11 (American Samoa)</div>
-                            <div class="dropdown-option" data-tz="UTC-10">UTC-10 (Honolulu)</div>
-                            <div class="dropdown-option" data-tz="UTC-9">UTC-9 (Anchorage)</div>
-                            <div class="dropdown-option" data-tz="UTC-8">UTC-8 (Los Angeles, Vancouver)</div>
-                            <div class="dropdown-option" data-tz="UTC-7">UTC-7 (Denver, Phoenix)</div>
-                            <div class="dropdown-option" data-tz="UTC-6">UTC-6 (Chicago, Mexico City)</div>
-                            <div class="dropdown-option" data-tz="UTC-5">UTC-5 (New York, Toronto)</div>
-                            <div class="dropdown-option" data-tz="UTC-4">UTC-4 (Santiago, Caracas)</div>
-                            <div class="dropdown-option" data-tz="UTC-3">UTC-3 (São Paulo, Buenos Aires)</div>
-                            <div class="dropdown-option" data-tz="UTC-2">UTC-2 (South Georgia)</div>
-                            <div class="dropdown-option" data-tz="UTC-1">UTC-1 (Azores)</div>
-                            <div class="dropdown-option" data-tz="UTC+0">UTC+0 (London, Dublin)</div>
-                            <div class="dropdown-option" data-tz="UTC+1">UTC+1 (Paris, Berlin, Rome)</div>
-                            <div class="dropdown-option" data-tz="UTC+2">UTC+2 (Athens, Cairo)</div>
-                            <div class="dropdown-option" data-tz="UTC+3">UTC+3 (Moscow, Istanbul)</div>
-                            <div class="dropdown-option" data-tz="UTC+4">UTC+4 (Dubai, Baku)</div>
-                            <div class="dropdown-option" data-tz="UTC+5">UTC+5 (Karachi, Tashkent)</div>
-                            <div class="dropdown-option" data-tz="UTC+6">UTC+6 (Dhaka, Almaty)</div>
-                            <div class="dropdown-option" data-tz="UTC+7">UTC+7 (Bangkok, Jakarta)</div>
-                            <div class="dropdown-option" data-tz="UTC+8">UTC+8 (Beijing, Hong Kong, Singapore)</div>
-                            <div class="dropdown-option" data-tz="UTC+9">UTC+9 (Tokyo, Seoul)</div>
-                            <div class="dropdown-option" data-tz="UTC+10">UTC+10 (Sydney, Melbourne)</div>
-                            <div class="dropdown-option" data-tz="UTC+11">UTC+11 (Solomon Islands)</div>
-                            <div class="dropdown-option" data-tz="UTC+12">UTC+12 (Auckland, Fiji)</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Language Switcher -->
-                    <div class="lang-switcher" id="langSwitcher">
-                        <button class="lang-trigger" data-i18n="lang.trigger">
-                            <span class="lang-code" id="currentLangDisp">EN</span>
-                            <i class="fas fa-chevron-down chevron-icon"></i>
-                        </button>
-                        <div class="lang-dropdown" id="langDropdown"></div>
-                    </div>
-                </div>
-            </div>
+<div id="appRoot">
+<div class="app-wrapper">
+  <div class="ticker">
+    <div class="ticker-content" id="tickerContent">⚡ AI-POWERED FOOTBALL LIQUIDITY ⚡ VERIFIABLE ON-CHAIN ⚡</div>
+  </div>
 
-            <!-- Header Title -->
-            <div class="market-header">
-                <h1 class="page-title" data-i18n="market.title">Match Markets</h1>
-                <div class="page-subtitle" data-i18n="market.subtitle">Discover and trade the best matches</div>
-            </div>
-        </div>
-    </header>
+  <div class="header">
+    <div class="header-container">
+      <div class="logo" onclick="location.href='/index.html'">
+        <div class="logo-icon">⚽</div>
+        <div class="logo-text">FootRadaPro</div>
+      </div>
 
-    <main class="content-scrollable">
-        <div class="content-container">
-            <!-- Dynamic content rendered by JavaScript -->
+      <!-- 桌面端导航栏 -->
+      <nav class="desktop-nav">
+        <a href="/index.html" class="nav-link" data-nav="home">Home</a>
+        <a href="/match-market.html" class="nav-link" data-nav="markets">Markets</a>
+        <a href="/records.html" class="nav-link" data-nav="records">Records</a>
+        <a href="/support.html" class="nav-link" data-nav="support">Support</a>
+        <a href="/profile.html" class="nav-link" data-nav="profile">Profile</a>
+      </nav>
+
+      <div class="header-actions">
+        <i class="fa-regular fa-moon" id="themeToggle"></i>
+        <div class="user-badge" id="langToggle">EN</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- 主内容区（左侧） -->
+    <main class="content">
+      <!-- 移动端筛选条（仅移动端显示） -->
+      <div class="mobile-filter-bar">
+        <button class="mobile-filter-chip active" data-time="all">All</button>
+        <button class="mobile-filter-chip" data-time="today">Today</button>
+        <button class="mobile-filter-chip" data-time="tomorrow">Tomorrow</button>
+        <select class="mobile-league-select" id="mobileLeagueSelect">
+          <option value="all">🌍 All Leagues</option>
+        </select>
+      </div>
+
+      <!-- Featured Matches -->
+      <div>
+        <div class="section-head">
+          <h3 class="section-title"><i class="fas fa-star"></i> Featured Matches</h3>
         </div>
+        <div class="featured-grid" id="featuredGrid"></div>
+      </div>
+
+      <!-- All Matches -->
+      <div>
+        <div class="section-head">
+          <h3 class="section-title"><i class="fas fa-list"></i> All Matches <span class="match-count" id="matchCount">0</span></h3>
+        </div>
+        <div class="matches-grid" id="allMatchesGrid"></div>
+
+        <!-- 加载更多 -->
+        <div class="load-more-container" id="loadMoreContainer">
+          <button class="load-more-btn" id="loadMoreBtn">Load More</button>
+        </div>
+        <div class="loading-indicator" id="loadingIndicator">
+          <i class="fas fa-spinner"></i> Loading...
+        </div>
+      </div>
     </main>
 
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-        <div class="nav-container">
-            <a href="/index.html" class="nav-item" data-i18n="nav.home">
-    <i class="fas fa-home"></i>
-    <span>Home</span>
-</a>
-            <a href="/match-market.html" class="nav-item active" data-i18n="nav.markets">
-                <i class="fas fa-chart-line"></i>
-                <span>Markets</span>
-            </a>
-            <a href="/support.html" class="nav-item" data-i18n="nav.support">
-                <i class="fas fa-headset"></i>
-                <span>Support</span>
-            </a>
-            <a href="/profile.html" class="nav-item" data-i18n="nav.account">
-                <i class="fas fa-user"></i>
-                <span>Account</span>
-            </a>
+    <!-- 侧边栏（右侧） - 桌面端显示 -->
+    <aside class="sidebar">
+      <!-- 时间筛选 -->
+      <div class="filter-section">
+        <div class="filter-title"><i class="fa-regular fa-calendar"></i> TIME FILTER</div>
+        <div class="filter-option active" data-time="all">
+          <span class="filter-radio"></span>
+          <span>All Matches</span>
         </div>
-    </nav>
+        <div class="filter-option" data-time="today">
+          <span class="filter-radio"></span>
+          <span>Today</span>
+        </div>
+        <div class="filter-option" data-time="tomorrow">
+          <span class="filter-radio"></span>
+          <span>Tomorrow</span>
+        </div>
+      </div>
 
-    <!-- Notification Modal -->
-    <div class="modal-overlay" id="notificationModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 id="notificationTitle" data-i18n="modal.system">System</h2>
-                <button class="modal-close" onclick="closeNotificationModal()">&times;</button>
-            </div>
-            <div class="modal-body" id="notificationContent"></div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeNotificationModal()" data-i18n="modal.close">Close</button>
-                <button class="btn-primary" onclick="markNotificationRead()" data-i18n="modal.acknowledge">Acknowledge</button>
-            </div>
-        </div>
+      <!-- 联赛筛选 -->
+      <div class="filter-section">
+        <div class="filter-title"><i class="fa-solid fa-trophy"></i> LEAGUE FILTER</div>
+        <div class="league-list" id="leagueList"></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="bottom-nav-items">
+      <a href="/index.html" class="nav-item-mobile"><i class="fas fa-home"></i><span>Home</span></a>
+      <a href="/match-market.html" class="nav-item-mobile"><i class="fas fa-chart-line"></i><span>Markets</span></a>
+      <a href="/records.html" class="nav-item-mobile"><i class="fas fa-list"></i><span>Records</span></a>
+      <a href="/support.html" class="nav-item-mobile"><i class="fa-solid fa-headset"></i><span>Support</span></a>
+      <a href="/profile.html" class="nav-item-mobile"><i class="fas fa-user"></i><span>Profile</span></a>
     </div>
+  </div>
 
-    <!-- Scripts -->
-    <script src="/js/core/config.js"></script>
-    <script src="/js/user/match-market_controller.js"></script>
-    
-    <script>
-        // Timezone switcher initialization
-        document.addEventListener('DOMContentLoaded', function() {
-            if (window.FOOTRADA_TIMEZONE) {
-                window.FOOTRADA_TIMEZONE.initTimezoneSwitcher();
-            }
-        });
-    </script>
+  <div id="toastContainer"></div>
+</div>
+</div>
+
+<script src="/js/core/theme.js"></script>
+<script src="/js/core/api-client.js"></script>
+<script src="/js/core/sync.js"></script>
+<script src="/js/user/match-market_controller.js"></script>
+
+<script>
+// ========== 导航栏自动高亮 ==========
+function highlightCurrentNav() {
+  const currentPath = window.location.pathname;
+  const navLinks = document.querySelectorAll('.desktop-nav .nav-link');
+  const mobileNavLinks = document.querySelectorAll('.nav-item-mobile');
+  
+  const navMap = {
+    '/index.html': 'home',
+    '/': 'home',
+    '/match-market.html': 'markets',
+    '/records.html': 'records',
+    '/support.html': 'support',
+    '/profile.html': 'profile'
+  };
+  
+  let activeNav = navMap[currentPath] || 'home';
+  
+  navLinks.forEach(link => {
+    const linkNav = link.dataset.nav;
+    if (linkNav === activeNav) {
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
+  
+  mobileNavLinks.forEach(link => {
+    const linkNav = link.dataset.nav;
+    if (linkNav === activeNav) {
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
+}
+
+highlightCurrentNav();
+
+// ========== 侧边栏筛选交互（桌面端） ==========
+function initSidebarFilters() {
+  // 时间筛选点击
+  document.querySelectorAll('.sidebar .filter-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.sidebar .filter-option').forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+      const timeFilter = opt.dataset.time;
+      if (window.AppState) {
+        window.AppState.timeFilter = timeFilter;
+        if (window.applyFilters) window.applyFilters();
+      }
+    });
+  });
+}
+
+// ========== 移动端筛选交互 ==========
+function initMobileFilters() {
+  // 时间筛选点击
+  document.querySelectorAll('.mobile-filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.mobile-filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      const timeFilter = chip.dataset.time;
+      if (window.AppState) {
+        window.AppState.timeFilter = timeFilter;
+        if (window.applyFilters) window.applyFilters();
+      }
+      // 同步桌面端侧边栏高亮
+      document.querySelectorAll('.sidebar .filter-option').forEach(opt => {
+        if (opt.dataset.time === timeFilter) {
+          opt.classList.add('active');
+        } else {
+          opt.classList.remove('active');
+        }
+      });
+    });
+  });
+
+  // 联赛选择器
+  const mobileSelect = document.getElementById('mobileLeagueSelect');
+  if (mobileSelect && window.updateLeagueSelect) {
+    // 监听联赛选择变化
+    mobileSelect.addEventListener('change', () => {
+      const selectedLeague = mobileSelect.value;
+      if (window.AppState) {
+        window.AppState.selectedLeague = selectedLeague;
+        if (window.applyFilters) window.applyFilters();
+      }
+      // 同步桌面端联赛高亮
+      document.querySelectorAll('.league-item').forEach(item => {
+        const leagueName = item.dataset.league;
+        if (leagueName === selectedLeague) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+    });
+  }
+}
+
+// 监听联赛列表更新，同步移动端下拉框
+function watchLeagueList() {
+  const observer = new MutationObserver(() => {
+    const leagueSelect = document.getElementById('mobileLeagueSelect');
+    if (leagueSelect && window.AppState && window.AppState.leagues) {
+      const currentValue = leagueSelect.value;
+      let options = '<option value="all">🌍 All Leagues</option>';
+      for (let [league, count] of window.AppState.leagues) {
+        options += `<option value="${league}">${league} (${count})</option>`;
+      }
+      leagueSelect.innerHTML = options;
+      leagueSelect.value = currentValue;
+    }
+  });
+  
+  const leagueList = document.getElementById('leagueList');
+  if (leagueList) {
+    observer.observe(leagueList, { childList: true, subtree: true });
+  }
+}
+
+// 等待控制器加载完成后初始化
+setTimeout(() => {
+  initSidebarFilters();
+  initMobileFilters();
+  watchLeagueList();
+}, 500);
+</script>
 </body>
 </html>

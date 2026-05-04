@@ -1,23 +1,23 @@
 /**
  * FOOTRADAPRO - 数据统计控制器
- * 版本: 1.0.0
+ * 版本: 1.0.1 (修复 DOM 元素获取时机问题)
  */
 
 (function() {
     'use strict';
 
-    // ==================== DOM 元素 ====================
+    // ==================== DOM 元素（使用 getter 延遲獲取，確保元素存在） ====================
     const DOM = {
-        loadingSpinner: document.getElementById('loadingSpinner'),
-        statsContent: document.getElementById('statsContent'),
-        statsCards: document.getElementById('statsCards'),
-        authTableBody: document.getElementById('authTableBody'),
-        adminName: document.getElementById('adminName'),
-        logoutBtn: document.getElementById('logoutBtn'),
-        startDate: document.getElementById('startDate'),
-        endDate: document.getElementById('endDate'),
-        applyRange: document.getElementById('applyRange'),
-        rangeBtns: document.querySelectorAll('.range-btn')
+        get loadingSpinner() { return document.getElementById('loadingSpinner'); },
+        get statsContent() { return document.getElementById('statsContent'); },
+        get statsCards() { return document.getElementById('statsCards'); },
+        get authTableBody() { return document.getElementById('authTableBody'); },
+        get adminName() { return document.getElementById('adminName'); },
+        get logoutBtn() { return document.getElementById('logoutBtn'); },
+        get startDate() { return document.getElementById('startDate'); },
+        get endDate() { return document.getElementById('endDate'); },
+        get applyRange() { return document.getElementById('applyRange'); },
+        get rangeBtns() { return document.querySelectorAll('.range-btn'); }
     };
 
     // ==================== 图表实例 ====================
@@ -93,8 +93,8 @@
     function getDateParams() {
         const params = {};
         if (currentRange === 'custom') {
-            params.startDate = DOM.startDate.value;
-            params.endDate = DOM.endDate.value;
+            params.startDate = DOM.startDate?.value;
+            params.endDate = DOM.endDate?.value;
         } else {
             params.range = currentRange;
         }
@@ -154,6 +154,12 @@
 
     // ==================== 加载授权记录（支持分页、排序、筛选） ====================
     async function loadAuthRecords() {
+        // 确保 authTableBody 存在
+        if (!DOM.authTableBody) {
+            console.error('authTableBody 元素不存在');
+            return;
+        }
+        
         try {
             const params = getDateParams();
             const queryString = new URLSearchParams(params).toString();
@@ -177,6 +183,8 @@
 
     // ==================== 渲染授权表格 ====================
     function renderAuthTable(data) {
+        if (!DOM.authTableBody) return;
+        
         if (!data || data.length === 0) {
             DOM.authTableBody.innerHTML = '<tr><td colspan="6" class="loading-td">暂无授权记录</td></tr>';
             return;
@@ -606,7 +614,7 @@
 
         if (DOM.applyRange) {
             DOM.applyRange.addEventListener('click', () => {
-                if (!DOM.startDate.value || !DOM.endDate.value) {
+                if (!DOM.startDate?.value || !DOM.endDate?.value) {
                     alert('请选择开始和结束日期');
                     return;
                 }

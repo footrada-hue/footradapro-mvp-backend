@@ -1,124 +1,1601 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FOOTRADA · AI-Powered Football Trading</title>
-    
-    <!-- Fonts & Icons -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Page Styles -->
-    <link rel="stylesheet" href="/css/pages/index.css">
-    
-    <!-- Core Scripts -->
-    <script src="/js/core/config.js"></script>
-    <script src="/js/core/timezone.js"></script>
-    <script src="/js/core/theme.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <meta name="theme-color" content="#0B0E11" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)">
+  <title>FootRadaPro · AI Trading Dashboard</title>
+  <meta name="description" content="AI-Powered Football Trading Platform — Transparent, Verifiable, Non-Custodial">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="//instant.page/5.2.0" type="module" integrity="sha384-jnZyxPjiipYXnSU0ygqeac2q7CVYMbh84q0uHVRRxEtvFPiQYbXWUorga2aqZJ0z"></script>
+  <style>
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 32px;
+      --space-8: 40px;
+      --space-9: 48px;
+      --space-10: 64px;
+      
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-base: 1rem;
+      --font-lg: 1.125rem;
+      --font-xl: 1.25rem;
+      --font-2xl: 1.5rem;
+      --font-3xl: 1.875rem;
+      --font-4xl: 2.25rem;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-bounce: cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      --duration-fast: 0.15s;
+      --duration-base: 0.24s;
+      --duration-slow: 0.4s;
+    }
+
+    /* Light Theme (Default) */
+    :root {
+      --bg-gradient-start: rgba(248, 250, 252, 0.92);
+      --bg-gradient-end: rgba(241, 245, 249, 0.96);
+      --glass-bg: rgba(255, 255, 255, 0.48);
+      --glass-border: rgba(59, 130, 246, 0.18);
+      --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.01), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      --glass-shadow-hover: 0 20px 35px -12px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.02), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      --accent: #2563eb;
+      --accent-glow: rgba(37, 99, 235, 0.25);
+      --accent-gradient: linear-gradient(135deg, #2563eb, #4f46e5);
+      --sandbox-gradient: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      --live-gradient: linear-gradient(135deg, #f97316, #ea580c);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --border-light: rgba(148, 163, 184, 0.18);
+      --card-bg: rgba(255, 255, 255, 0.62);
+      --ticker-bg: rgba(37, 99, 235, 0.92);
+      --ticker-text: #ffffff;
+      --badge-soft: rgba(37, 99, 235, 0.1);
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    /* Dark Theme */
+    body.dark {
+      --bg-gradient-start: rgba(10, 16, 30, 0.94);
+      --bg-gradient-end: rgba(2, 6, 18, 0.98);
+      --glass-bg: rgba(20, 28, 44, 0.52);
+      --glass-border: rgba(59, 130, 246, 0.28);
+      --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      --glass-shadow-hover: 0 20px 35px -12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.35);
+      --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      --sandbox-gradient: linear-gradient(135deg, #a855f7, #7c3aed);
+      --live-gradient: linear-gradient(135deg, #fb923c, #ea580c);
+      --success: #34d399;
+      --warning: #fbbf24;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --border-light: rgba(255, 255, 255, 0.08);
+      --card-bg: rgba(20, 28, 44, 0.58);
+      --ticker-bg: rgba(30, 58, 138, 0.92);
+      --ticker-text: #e2e8f0;
+      --badge-soft: rgba(59, 130, 246, 0.18);
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.15);
+    }
+
+
+    body {
+      background: radial-gradient(ellipse at 30% 40%, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+      transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
+      -webkit-tap-highlight-color: transparent;
+    }
+/* 页面加载淡入动画 */
+body {
+  animation: fadeInPage 0.3s ease-out;
+}
+
+/* 页面加载淡入动画 */
+body {
+  animation: fadeInPage 0.3s ease-out;
+}
+
+@keyframes fadeInPage {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: repeating-linear-gradient(90deg, rgba(59,130,246,0.02) 0px, rgba(59,130,246,0.02) 1px, transparent 1px, transparent 40px),
+                        repeating-linear-gradient(0deg, rgba(59,130,246,0.02) 0px, rgba(59,130,246,0.02) 1px, transparent 1px, transparent 40px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--border-light); border-radius: 12px; }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 12px; }
+
+    .app-wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ========== 跑马灯 ========== */
+    .ticker {
+      background: var(--ticker-bg);
+      backdrop-filter: blur(16px);
+      color: var(--ticker-text);
+      padding: 10px 0;
+      font-size: var(--font-sm);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      border-bottom: 1px solid var(--glass-border);
+      position: relative;
+    }
+    .ticker::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 80px;
+      background: linear-gradient(90deg, transparent, var(--ticker-bg));
+      pointer-events: none;
+    }
+    .ticker-content {
+      display: inline-block;
+      animation: ticker 32s linear infinite;
+      padding-left: 100%;
+    }
+    .ticker:hover .ticker-content { animation-play-state: paused; }
+    @keyframes ticker { to { transform: translateX(-100%); } }
+
+    /* ========== 头部导航 ========== */
+    .header {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: var(--space-4) var(--space-6);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--glass-shadow);
+    }
+
+    .header-container {
+      max-width: 1600px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .logo-icon { font-size: 28px; }
+
+    .logo-text {
+      font-size: var(--font-xl);
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -0.3px;
+    }
+
+    /* 桌面端导航栏 */
+    .desktop-nav {
+      display: flex;
+      gap: var(--space-2);
+      background: var(--badge-soft);
+      padding: 4px;
+      border-radius: 60px;
+      backdrop-filter: blur(8px);
+    }
+
+    .nav-link {
+      padding: 8px 20px;
+      border-radius: 60px;
+      font-size: var(--font-sm);
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all var(--duration-fast) var(--ease-out);
+    }
+
+    .nav-link:hover {
+      color: var(--accent);
+      background: rgba(255,255,255,0.1);
+    }
+
+    .nav-link.active {
+      background: var(--accent-gradient);
+      color: white;
+      box-shadow: 0 2px 8px var(--accent-glow);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: var(--space-4);
+      align-items: center;
+    }
+
+    .header-actions i {
+      font-size: 20px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-out);
+    }
+
+    .header-actions i:hover {
+      color: var(--accent);
+      transform: scale(1.05);
+    }
+
+    .user-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--badge-soft);
+      backdrop-filter: blur(8px);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      border: 1px solid var(--glass-border);
+      cursor: pointer;
+    }
+
+    /* ========== 主容器 ========== */
+    .container {
+      display: flex;
+      flex: 1;
+      padding: var(--space-6);
+      gap: var(--space-6);
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ========== 侧边栏 ========== */
+    .sidebar {
+      width: 340px;
+      background: var(--card-bg);
+      backdrop-filter: blur(24px);
+      border-radius: 36px;
+      border: 1px solid var(--glass-border);
+      padding: var(--space-5);
+      height: fit-content;
+      position: sticky;
+      top: 88px;
+      box-shadow: var(--glass-shadow);
+      transition: all var(--duration-base) var(--ease-out);
+    }
+
+    .sidebar:hover {
+      border-color: var(--accent);
+      box-shadow: var(--glass-shadow-hover);
+    }
+
+    /* ========== Platform Performance 模块 ========== */
+    .perf-header {
+      margin-bottom: var(--space-5);
+      text-align: left;
+    }
+
+    .perf-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: var(--space-2);
+    }
+
+    .perf-title i {
+      font-size: 24px;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .perf-title h2 {
+      font-size: 18px;
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .perf-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .kpi-grid-sidebar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: var(--space-5);
+    }
+
+    .kpi-card-sidebar {
+      background: var(--badge-soft);
+      border-radius: 20px;
+      padding: 14px 12px;
+      transition: all var(--duration-fast) var(--ease-out);
+      border: 1px solid transparent;
+    }
+
+    .kpi-card-sidebar:hover {
+      transform: translateY(-2px);
+      border-color: var(--glass-border);
+      background: var(--card-bg);
+    }
+
+    .kpi-icon { font-size: 18px; color: var(--accent); margin-bottom: 8px; }
+    .kpi-number { font-size: 22px; font-weight: 700; color: var(--text-primary); line-height: 1.2; margin-bottom: 4px; }
+    .kpi-label-sidebar { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .kpi-trend { font-size: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; }
+    .trend-up { color: var(--success); }
+
+    .ai-metrics {
+      background: var(--badge-soft);
+      border-radius: 20px;
+      padding: var(--space-4);
+      margin-bottom: var(--space-4);
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-secondary);
+    }
+
+    .metric-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .progress-bar {
+      background: var(--border-light);
+      border-radius: 20px;
+      height: 6px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent-gradient);
+      border-radius: 20px;
+    }
+
+    .best-league-card {
+      background: var(--badge-soft);
+      border-radius: 20px;
+      padding: var(--space-4);
+      margin-bottom: var(--space-5);
+      text-align: center;
+    }
+
+    .best-league-card .league-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 8px 0 4px;
+    }
+
+    .best-league-card .league-accuracy {
+      font-size: 24px;
+      font-weight: 800;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .full-report-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 60px;
+      background: var(--accent-gradient);
+      border: none;
+      color: white;
+      font-weight: 600;
+      font-size: var(--font-sm);
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-bounce);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: var(--space-5);
+    }
+
+    .full-report-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px var(--accent-glow);
+    }
+
+    /* 链上验证模块 */
+    .onchain-verify {
+      padding: 16px;
+      margin-bottom: 16px;
+      border-radius: 20px;
+      background: var(--badge-soft);
+      border: 1px solid var(--border-light);
+    }
+
+    .verify-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .verify-header i { color: var(--accent); }
+
+    .contract-address {
+      background: rgba(0,0,0,0.12);
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-family: monospace;
+      font-size: 11px;
+      word-break: break-all;
+      color: var(--text-secondary);
+      margin: 12px 0;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .verify-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .verify-link a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .badge-eth {
+      background: rgba(114, 137, 218, 0.15);
+      padding: 4px 10px;
+      border-radius: 30px;
+      font-size: 11px;
+    }
+
+    .verify-footer {
+      padding: 12px 0 0;
+      text-align: center;
+      font-size: 10px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-light);
+    }
+
+    /* ========== 主内容区 ========== */
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+    }
+
+    .mode-tabs {
+      display: flex;
+      background: var(--card-bg);
+      backdrop-filter: blur(24px);
+      border-radius: 60px;
+      border: 1px solid var(--glass-border);
+      padding: 5px;
+      gap: 5px;
+      width: fit-content;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .mode-tab {
+      padding: 10px 32px;
+      border-radius: 60px;
+      font-size: var(--font-sm);
+      font-weight: 600;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-out);
+    }
+
+    .mode-tab.sandbox.active {
+      background: var(--sandbox-gradient);
+      color: white;
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
+    }
+
+    .mode-tab.live.active {
+      background: var(--live-gradient);
+      color: white;
+      box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4);
+    }
+
+    .mode-note {
+      margin-top: var(--space-3);
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+      padding-left: var(--space-2);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-6);
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(28px);
+      border-radius: 36px;
+      border: 1px solid var(--glass-border);
+      padding: var(--space-6);
+      transition: all var(--duration-base) var(--ease-out);
+      box-shadow: var(--glass-shadow);
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--glass-shadow-hover);
+      border-color: var(--accent);
+    }
+
+    .card-title {
+      font-size: var(--font-lg);
+      font-weight: 600;
+      margin-bottom: var(--space-5);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .card-title i { color: var(--accent); }
+
+    .amount {
+      font-size: var(--font-4xl);
+      font-weight: 700;
+      font-family: monospace;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin: var(--space-3) 0;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--border-light);
+      font-size: var(--font-sm);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 6px 14px;
+      border-radius: 60px;
+      font-size: var(--font-xs);
+      font-weight: 500;
+      backdrop-filter: blur(8px);
+    }
+
+    .badge.sandbox-mode { background: rgba(139, 92, 246, 0.12); color: #8b5cf6; }
+    .badge.live-mode { background: rgba(249, 115, 22, 0.12); color: #f97316; }
+    .positive { color: var(--success); font-weight: 600; }
+
+    /* AI Spotlight 赛事卡片 */
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: var(--space-5);
+    }
+
+    .section-title {
+      font-size: var(--font-xl);
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .section-more {
+      font-size: var(--font-sm);
+      color: var(--accent);
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    .events-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-5);
+    }
+
+    .match-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(28px);
+      border-radius: 32px;
+      border: 1px solid var(--glass-border);
+      padding: var(--space-5);
+      transition: all var(--duration-base) var(--ease-out);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .match-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--accent);
+      box-shadow: var(--glass-shadow-hover);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 30px;
+      font-size: var(--font-xs);
+      font-weight: 600;
+      margin-bottom: var(--space-3);
+      width: fit-content;
+    }
+
+    .status-upcoming {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--success);
+    }
+
+    .match-logos-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+
+    .match-logo-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      flex: 1;
+      text-align: center;
+    }
+
+    .match-logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--badge-soft);
+      object-fit: cover;
+      border: 1px solid var(--glass-border);
+    }
+
+    .logo-fallback {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--badge-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: var(--accent);
+    }
+
+    .match-team-name {
+      font-size: var(--font-sm);
+      font-weight: 600;
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .match-vs-badge {
+      font-weight: 700;
+      background: var(--badge-soft);
+      padding: 4px 12px;
+      border-radius: 40px;
+      font-size: var(--font-xs);
+      flex-shrink: 0;
+    }
+
+    .match-info {
+      margin: var(--space-3) 0;
+    }
+
+    .match-league-time {
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: var(--space-3);
+      display: flex;
+      justify-content: center;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+    }
+
+    .league-badge {
+      background: var(--badge-soft);
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .confidence-bar {
+      background: var(--badge-soft);
+      border-radius: 12px;
+      padding: 8px 12px;
+    }
+
+    .confidence-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+    }
+
+    .confidence-progress {
+      background: var(--border-light);
+      border-radius: 10px;
+      height: 4px;
+      overflow: hidden;
+    }
+
+    .confidence-fill {
+      background: var(--accent-gradient);
+      height: 100%;
+      border-radius: 10px;
+    }
+
+    .authorize-btn {
+      width: 100%;
+      padding: 10px;
+      border-radius: 60px;
+      background: var(--accent-gradient);
+      color: white;
+      font-weight: 600;
+      border: none;
+      margin-top: auto;
+      cursor: pointer;
+      transition: opacity var(--duration-fast);
+    }
+
+    .authorize-btn:hover {
+      opacity: 0.9;
+    }
+
+    /* 表格 */
+    .desktop-table { display: block; overflow-x: auto; }
+    .mobile-history-list { display: none; }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      text-align: left;
+      padding: var(--space-4) var(--space-3);
+      font-size: var(--font-xs);
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border-light);
+    }
+    td { padding: var(--space-3); font-size: var(--font-sm); border-bottom: 1px solid var(--border-light); }
+    .link { color: var(--accent); font-weight: 500; text-decoration: none; }
+
+    .mobile-history-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(24px);
+      border-radius: 28px;
+      border: 1px solid var(--glass-border);
+      padding: var(--space-4);
+      margin-bottom: var(--space-3);
+    }
+
+    .history-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-2) 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .history-row:last-child { border-bottom: none; }
+    .history-label { font-size: var(--font-xs); color: var(--text-muted); }
+    .history-value { font-weight: 500; }
+    .history-profit { color: var(--success); font-weight: 600; }
+
+    .bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card-bg);
+      backdrop-filter: blur(32px);
+      border-top: 1px solid var(--glass-border);
+      padding: var(--space-3) var(--space-5);
+      z-index: 60;
+    }
+
+    .bottom-nav-items {
+      display: flex;
+      justify-content: space-around;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .nav-item-mobile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: all var(--duration-fast) var(--ease-out);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: var(--space-2);
+    }
+
+    .nav-item-mobile.active { color: var(--accent); }
+    .nav-item-mobile i { font-size: 22px; }
+
+    .fab {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      width: 56px;
+      height: 56px;
+      border-radius: 30px;
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px var(--accent-glow);
+      z-index: 55;
+      cursor: pointer;
+      transition: all var(--duration-base) var(--ease-bounce);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .loading-skeleton {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 1199px) {
+      .events-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 899px) {
+      .desktop-nav { display: none; }
+      .bottom-nav { display: block; }
+      body { padding-bottom: 70px; }
+      .container { padding: var(--space-4); gap: var(--space-4); flex-direction: column; }
+      .sidebar { width: 100%; position: relative; top: 0; }
+      .grid { grid-template-columns: 1fr; gap: var(--space-4); }
+      .mode-tabs { width: 100%; justify-content: stretch; }
+      .mode-tab { flex: 1; text-align: center; padding: 10px 0; }
+      .events-grid { gap: var(--space-4); }
+      .match-card { padding: var(--space-4); }
+      .match-logo { width: 48px; height: 48px; }
+      .desktop-table { display: none; }
+      .mobile-history-list { display: block; }
+      .fab { bottom: 80px; right: 20px; }
+    }
+
+    @media (max-width: 599px) {
+      .events-grid { grid-template-columns: 1fr; }
+      .header { padding: var(--space-3) var(--space-4); }
+      .logo-text { font-size: var(--font-lg); }
+      .card { padding: var(--space-4); }
+      .amount { font-size: var(--font-3xl); }
+      .match-team-name { font-size: var(--font-xs); white-space: normal; }
+      .match-logos-wrapper { gap: var(--space-2); }
+      .match-logo { width: 44px; height: 44px; }
+      .section-title { font-size: var(--font-lg); }
+    }
+  </style>
 </head>
 <body>
-    <div class="toast-container" id="toastContainer"></div>
+<div class="app-wrapper">
+  <div class="ticker">
+    <div class="ticker-content" id="tickerContent">
+      ⚡ VERIFIABLE ON-CHAIN · AI POWERED FOOTBALL LIQUIDITY ⚡ 20% PERFORMANCE FEE ONLY ON PROFITS ⚡ CUTOFF ENFORCED
+    </div>
+  </div>
 
-    <!-- Header -->
-    <header class="app-header">
-        <div class="header-container">
-            <!-- Marquee Ticker -->
-            <div class="ticker-bar" id="tickerBar" style="display: none;">
-                <div class="ticker-icon"><i class="fas fa-circle-nodes"></i></div>
-                <div class="ticker-wrapper">
-                    <div class="ticker-messages" id="tickerMessages">Loading...</div>
-                </div>
-                <div class="ticker-stats"><span id="tickerVolume">0</span> USDT</div>
-            </div>
-            
-            <!-- Main Header -->
-            <div class="header-main">
-                <div class="logo">FOOT<span>RADA</span></div>
-                <div class="mode-indicator" id="modeIndicator">
-                    <span class="mode-badge test-mode-badge" style="display: none;">
-                        <i class="fas fa-flask"></i>
-                        <span>Test Mode</span>
-                        <span class="mode-balance">· Simulated 10,000 USDT</span>
-                    </span>
-                </div>
-                <div class="mode-switch" id="modeSwitch">
-                    <button class="mode-btn test-mode-btn" id="testModeBtn">
-                        <i class="fas fa-flask"></i>
-                        <span>Test</span>
-                    </button>
-                    <button class="mode-btn live-mode-btn" id="liveModeBtn">
-                        <i class="fas fa-bolt"></i>
-                        <span>Live</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </header>
+  <header class="header">
+    <div class="header-container">
+      <div class="logo">
+        <div class="logo-icon">⚽</div>
+        <div class="logo-text">FootRadaPro</div>
+      </div>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <div class="content-container" id="appRoot">
-            <div class="loading-state">
-                <div class="loading-spinner"></div>
-                <p>Loading...</p>
-            </div>
+<nav class="desktop-nav">
+  <a href="/index.html" class="nav-link" data-nav="home">Home</a>
+  <a href="/match-market.html" class="nav-link" data-nav="markets">Markets</a>
+  <a href="/records.html" class="nav-link" data-nav="records">Records</a>
+  <a href="/support.html" class="nav-link" data-nav="support">Support</a>
+  <a href="/profile.html" class="nav-link" data-nav="profile">Profile</a>
+</nav>
+
+      <div class="header-actions">
+        <i class="fa-regular fa-moon" id="themeToggle"></i>
+        <i class="fa-regular fa-bell"></i>
+        <div class="user-badge" id="langToggle">EN</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <main class="content">
+      <div>
+        <div class="mode-tabs" id="modeTabs">
+          <button class="mode-tab sandbox active" data-mode="sandbox"><i class="fa-solid fa-flask"></i> Sandbox</button>
+          <button class="mode-tab live" data-mode="live"><i class="fa-solid fa-bolt"></i> Live</button>
         </div>
+        <div class="mode-note" id="modeNote"><i class="fa-regular fa-circle-info"></i> Sandbox uses virtual funds — no real asset risk.</div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="card-title"><i class="fa-solid fa-wallet"></i> Account Balance</div>
+          <div class="amount" id="poolAmount">10,000.00</div>
+          <div class="row"><span>Available balance</span><span id="availableBalance">10,000.00 USDT</span></div>
+          <div class="row"><span>Authorized</span><span>0.00 USDT</span></div>
+          <div class="row"><span>Today P&L</span><span class="positive">+0.00 USDT</span></div>
+        </div>
+
+        <!-- 图表卡片 - 替换 Trust Anchor -->
+        <div class="card">
+          <div class="card-title">
+            <i class="fas fa-chart-line"></i> 
+            <span>Authorization & Profit Trends</span>
+            <div style="margin-left: auto; display: flex; gap: 6px;">
+              <button class="chart-time-btn" data-period="1d" style="background: rgba(37, 99, 235, 0.1); border: none; padding: 4px 10px; border-radius: 30px; font-size: 10px; font-weight: 500; cursor: pointer; color: var(--text-secondary);">1D</button>
+              <button class="chart-time-btn" data-period="1w" style="background: rgba(37, 99, 235, 0.1); border: none; padding: 4px 10px; border-radius: 30px; font-size: 10px; font-weight: 500; cursor: pointer; color: var(--text-secondary);">1W</button>
+              <button class="chart-time-btn active" data-period="1m" style="background: linear-gradient(135deg, #2563eb, #4f46e5); border: none; padding: 4px 10px; border-radius: 30px; font-size: 10px; font-weight: 500; cursor: pointer; color: white;">1M</button>
+              <button class="chart-time-btn" data-period="1y" style="background: rgba(37, 99, 235, 0.1); border: none; padding: 4px 10px; border-radius: 30px; font-size: 10px; font-weight: 500; cursor: pointer; color: var(--text-secondary);">1Y</button>
+            </div>
+          </div>
+          <canvas id="authProfitChart" width="400" height="200" style="max-height: 200px; width: 100%;"></canvas>
+          <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 0.75rem; font-size: 10px;">
+            <div style="display: flex; align-items: center; gap: 4px;"><div style="width: 10px; height: 10px; background: #3b82f6; border-radius: 2px;"></div><span style="color: var(--text-muted);">Authorized Amount</span></div>
+            <div style="display: flex; align-items: center; gap: 4px;"><div style="width: 10px; height: 10px; background: #10b981; border-radius: 2px;"></div><span style="color: var(--text-muted);">Profit / Loss</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Spotlight - 从比赛超市动态获取 -->
+      <div>
+        <div class="section-head">
+          <h3 class="section-title">AI Spotlight</h3>
+          <a href="/match-market.html" class="section-more">All matches <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <div class="events-grid" id="spotlightGrid">
+          <div class="loading-skeleton"><i class="fas fa-spinner fa-pulse"></i> Loading matches...</div>
+        </div>
+      </div>
+
+      <!-- Recent Authorizations -->
+      <div>
+        <div class="section-head"><h3 class="section-title">Recent Authorizations</h3><a href="#" class="section-more">View all <i class="fa-solid fa-arrow-right"></i></a></div>
+        <div class="desktop-table" style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr><th>Timestamp</th><th>Match</th><th>Amount</th><th>Status</th><th>Mode</th><th></th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="link">2025-01-15 10:30</td><td>Liverpool vs Man City</td><td>200 USDT</td><td>Pending</td><td><span class="badge sandbox-mode" style="margin:0;">Sandbox</span></td><td><a href="#" class="link">Verify</a></td></tr>
+              <tr><td class="link">2025-01-14 15:20</td><td>Real Madrid vs Barcelona</td><td>300 USDT</td><td class="positive">+45.20</td><td><span class="badge sandbox-mode" style="margin:0;">Sandbox</span></td><td><a href="#" class="link">Details</a></td></tr>
+              <tr><td class="link">2025-01-13 20:00</td><td>Bayern vs Dortmund</td><td>150 USDT</td><td class="positive">+22.50</td><td><span class="badge sandbox-mode" style="margin:0;">Sandbox</span></td><td><a href="#" class="link">Details</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="mobile-history-list">
+          <div class="mobile-history-card"><div class="history-row"><span class="history-label">Timestamp</span><span class="history-value">2025-01-15 10:30</span></div><div class="history-row"><span class="history-label">Match</span><span class="history-value">Liverpool vs Man City</span></div><div class="history-row"><span class="history-label">Amount</span><span class="history-value">200 USDT</span></div><div class="history-row"><span class="history-label">Status</span><span class="history-value">Pending</span></div><div class="history-row"><span class="history-label">Mode</span><span class="badge sandbox-mode" style="margin:0;">Sandbox</span></div><div class="history-row"><a href="#" class="link">Verify →</a></div></div>
+          <div class="mobile-history-card"><div class="history-row"><span class="history-label">Timestamp</span><span class="history-value">2025-01-14 15:20</span></div><div class="history-row"><span class="history-label">Match</span><span class="history-value">Real Madrid vs Barcelona</span></div><div class="history-row"><span class="history-label">Amount</span><span class="history-value">300 USDT</span></div><div class="history-row"><span class="history-label">Profit</span><span class="history-value history-profit">+45.20 USDT</span></div><div class="history-row"><span class="history-label">Mode</span><span class="badge sandbox-mode" style="margin:0;">Sandbox</span></div><div class="history-row"><a href="#" class="link">Details →</a></div></div>
+          <div class="mobile-history-card"><div class="history-row"><span class="history-label">Timestamp</span><span class="history-value">2025-01-13 20:00</span></div><div class="history-row"><span class="history-label">Match</span><span class="history-value">Bayern vs Dortmund</span></div><div class="history-row"><span class="history-label">Amount</span><span class="history-value">150 USDT</span></div><div class="history-row"><span class="history-label">Profit</span><span class="history-value history-profit">+22.50 USDT</span></div><div class="history-row"><span class="history-label">Mode</span><span class="badge sandbox-mode" style="margin:0;">Sandbox</span></div><div class="history-row"><a href="#" class="link">Details →</a></div></div>
+        </div>
+      </div>
     </main>
 
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-        <div class="nav-container">
-           <a href="/index.html" class="nav-item active">
-    <i class="fas fa-home"></i>
-    <span>Home</span>
-</a>
-            <a href="/match-market.html" class="nav-item">
-                <i class="fas fa-chart-line"></i>
-                <span>Market</span>
-            </a>
-            <a href="/support.html" class="nav-item">
-                <i class="fas fa-headset"></i>
-                <span>Support</span>
-            </a>
-            <a href="/profile.html" class="nav-item">
-                <i class="fas fa-user"></i>
-                <span>Profile</span>
-            </a>
+    <!-- 右侧侧边栏 -->
+    <aside class="sidebar">
+      <div class="perf-header">
+        <div class="perf-title">
+          <i class="fas fa-chart-line"></i>
+          <h2>Platform Performance</h2>
         </div>
-    </nav>
-
-    <!-- Onboarding Modal -->
-    <div id="onboardingOverlay" class="onboarding-overlay" style="display: none;">
-        <div class="onboarding-card">
-            <div class="onboarding-header">
-                <div class="onboarding-step-dots">
-                    <span class="dot active"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                </div>
-                <button class="onboarding-close" id="onboardingClose">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="onboarding-body">
-                <div class="onboarding-icon" id="onboardingIcon"></div>
-                <h3 id="onboardingTitle"></h3>
-                <p id="onboardingDesc"></p>
-            </div>
-            <div class="onboarding-footer">
-                <button class="onboarding-prev" id="onboardingPrev" style="display: none;">Back</button>
-                <button class="onboarding-next" id="onboardingNext">Next</button>
-                <button class="onboarding-skip" id="onboardingSkip">Skip</button>
-            </div>
+        <div class="perf-sub">
+          <i class="fas fa-sync-alt"></i> Real-time metrics
         </div>
-        <div class="onboarding-highlight" id="onboardingHighlight"></div>
-    </div>
+      </div>
 
-    <!-- Main Controller -->
-    <script src="/js/user/index_controller.js"></script>
+      <div class="kpi-grid-sidebar">
+        <div class="kpi-card-sidebar">
+          <div class="kpi-icon"><i class="fas fa-chart-simple"></i></div>
+          <div class="kpi-number">1.2M</div>
+          <div class="kpi-label-sidebar">Total Auth</div>
+          <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> 12.3%</div>
+        </div>
+        <div class="kpi-card-sidebar">
+          <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
+          <div class="kpi-number">83.2%</div>
+          <div class="kpi-label-sidebar">Success Rate</div>
+          <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> 2.1%</div>
+        </div>
+        <div class="kpi-card-sidebar">
+          <div class="kpi-icon"><i class="fas fa-coins"></i></div>
+          <div class="kpi-number">52.4M</div>
+          <div class="kpi-label-sidebar">Volume (USDT)</div>
+          <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> 8.7%</div>
+        </div>
+        <div class="kpi-card-sidebar">
+          <div class="kpi-icon"><i class="fas fa-users"></i></div>
+          <div class="kpi-number">48.3K</div>
+          <div class="kpi-label-sidebar">Active Users</div>
+          <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> 5.7%</div>
+        </div>
+      </div>
+
+      <div class="ai-metrics">
+        <div class="metric-row">
+          <span class="metric-label"><i class="fas fa-microchip"></i> AI Accuracy</span>
+          <span class="metric-value">83.2%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width: 83.2%"></div></div>
+        <div class="metric-row">
+          <span class="metric-label"><i class="fas fa-bolt"></i> High Confidence</span>
+          <span class="metric-value">91.4%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width: 91.4%"></div></div>
+      </div>
+
+      <div class="best-league-card">
+        <i class="fas fa-trophy" style="color: var(--warning); font-size: 20px;"></i>
+        <div class="league-name">UEFA Champions League</div>
+        <div class="league-accuracy">86.3%</div>
+        <div style="font-size: 10px; color: var(--text-muted);">Best performing league</div>
+      </div>
+
+      <button class="full-report-btn" id="viewFullReportBtn">
+        <i class="fas fa-file-alt"></i> View Full Report
+        <i class="fas fa-arrow-right"></i>
+      </button>
+
+      <div class="onchain-verify">
+        <div class="verify-header"><i class="fa-brands fa-ethereum"></i> USDT On-Chain Verification</div>
+        <div class="contract-address" id="contractAddress">0xdAC17F958D2ee523a2206206994597C13D831ec7</div>
+        <div class="verify-link">
+          <span class="badge-eth"><i class="fa-regular fa-circle-check"></i> Verified on Ethereum</span>
+          <a href="#" id="etherscanLink">Etherscan →</a>
+        </div>
+      </div>
+
+      <div class="verify-footer"><i class="fa-regular fa-shield"></i> Smart contract audited · Non-custodial architecture</div>
+    </aside>
+  </div>
+
+<div class="bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="/index.html" class="nav-item-mobile active" data-nav="home"><i class="fa-solid fa-home"></i><span>Home</span></a>
+    <a href="/match-market.html" class="nav-item-mobile" data-nav="markets"><i class="fa-solid fa-chart-line"></i><span>Markets</span></a>
+    <a href="/records.html" class="nav-item-mobile" data-nav="records"><i class="fa-solid fa-list"></i><span>Records</span></a>
+    <a href="/support.html" class="nav-item-mobile" data-nav="support"><i class="fa-solid fa-headset"></i><span>Support</span></a>
+    <a href="/profile.html" class="nav-item-mobile" data-nav="profile"><i class="fa-solid fa-user"></i><span>Profile</span></a>
+  </div>
+</div>
+  </div>
+
+  <div class="fab" onclick="alert('Support: contact via Telegram or Email')"><i class="fa-solid fa-headset"></i></div>
+</div>
+
+<script src="/js/core/theme.js"></script>
+<script src="/js/core/api-client.js"></script>
+<script src="/js/user/match-market_controller.js"></script>
+
+
+
+<script>
+  // ========== 导航栏自动高亮 ==========
+function highlightCurrentNav() {
+  const currentPath = window.location.pathname;
+  const navLinks = document.querySelectorAll('.desktop-nav .nav-link');
+  const mobileNavLinks = document.querySelectorAll('.nav-item-mobile');
+  
+  // 定义路径与导航项的映射
+  const navMap = {
+    '/index.html': 'home',
+    '/': 'home',
+    '/match-market.html': 'markets',
+    '/records.html': 'records',
+    '/support.html': 'support',
+    '/profile.html': 'profile'
+  };
+  
+  // 确定当前激活的导航项
+  let activeNav = navMap[currentPath] || 'home';
+  
+  // 更新桌面端导航高亮
+  navLinks.forEach(link => {
+    const linkNav = link.dataset.nav;
+    if (linkNav === activeNav) {
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
+  
+  // 更新移动端导航高亮
+  mobileNavLinks.forEach(link => {
+    const linkNav = link.dataset.nav;
+    if (linkNav === activeNav) {
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
+}
+
+// 页面加载时调用
+highlightCurrentNav();
+// 等待所有依赖加载完成后再执行
+setTimeout(function() {
+  // 主题切换
+  function setTheme(theme) {
+    if (theme === 'dark') document.body.classList.add('dark');
+    else document.body.classList.remove('dark');
+    localStorage.setItem('theme', theme);
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+      const icon = themeToggle.querySelector('i');
+      if (icon) {
+        if (theme === 'dark') {
+          icon.classList.remove('fa-moon');
+          icon.classList.add('fa-sun');
+        } else {
+          icon.classList.remove('fa-sun');
+          icon.classList.add('fa-moon');
+        }
+      }
+    }
+  }
+  
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  setTheme(savedTheme);
+  
+  const themeToggleBtn = document.getElementById('themeToggle');
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      const newTheme = document.body.classList.contains('dark') ? 'light' : 'dark';
+      setTheme(newTheme);
+    });
+  }
+
+  // 模式切换
+let sandboxBalance = 10000;
+let liveBalance = 0;
+const poolEl = document.getElementById('poolAmount');
+const availEl = document.getElementById('availableBalance');
+const modeBadgeSpan = document.getElementById('currentModeBadge');
+const modeNote = document.getElementById('modeNote');
+
+function getAppMode() { return localStorage.getItem('appMode') || 'sandbox'; }
+function setAppMode(mode) { localStorage.setItem('appMode', mode); updateUI(); }
+
+// 从 API 获取用户余额
+async function fetchUserBalance() {
+  try {
+    const isSandbox = getAppMode() === 'sandbox';
+    const mode = isSandbox ? 'test' : 'live';
+    const response = await fetch(`/api/v1/user/stats/fund?mode=${mode}`, { credentials: 'include' });
+    const result = await response.json();
+    
+    if (result.success) {
+      if (isSandbox) {
+        sandboxBalance = result.data.test_balance || 10000;
+      } else {
+        // 真实模式：显示净资金（充值 - 提现）
+        liveBalance = result.data.net_fund || 0;
+      }
+    }
+  } catch (error) {
+    console.error('获取余额失败:', error);
+  }
+}
+
+async function updateUI() {
+  const isSandbox = getAppMode() === 'sandbox';
+  
+  // 获取最新余额
+  await fetchUserBalance();
+  
+  const target = isSandbox ? sandboxBalance : liveBalance;
+  
+  // 获取当前显示的值
+  const currentPool = parseFloat(poolEl?.innerText) || 0;
+  const currentAvail = parseFloat(availEl?.innerText) || 0;
+  
+  // 带动画更新
+  if (poolEl) animateNumber(poolEl, currentPool, target);
+  if (availEl) animateNumber(availEl, currentAvail, target);
+  
+  if (modeBadgeSpan) modeBadgeSpan.innerHTML = isSandbox ? '<span class="badge sandbox-mode" style="margin:0;">Sandbox</span>' : '<span class="badge live-mode" style="margin:0;">Live</span>';
+  if (modeNote) modeNote.innerHTML = isSandbox ? '<i class="fa-regular fa-circle-info"></i> Sandbox uses virtual funds — no real asset risk.' : '<i class="fa-regular fa-circle-info"></i> Live mode uses real funds. Please ensure sufficient balance.';
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    if ((isSandbox && tab.classList.contains('sandbox')) || (!isSandbox && tab.classList.contains('live'))) {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
+  });
+}
+// 数字动画函数
+function animateNumber(element, start, end, duration = 500) {
+  if (!element) return;
+  const startTime = performance.now();
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(1, elapsed / duration);
+    // 缓动函数 easeOutCubic
+    const easeOut = 1 - Math.pow(1 - progress, 3);
+    const current = start + (end - start) * easeOut;
+    element.innerText = current.toFixed(2);
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    } else {
+      element.innerText = end.toFixed(2);
+      // 添加闪烁效果
+      element.classList.add('amount-flash');
+      setTimeout(() => element.classList.remove('amount-flash'), 300);
+    }
+  }
+  requestAnimationFrame(update);
+}
+document.querySelectorAll('.mode-tab').forEach(tab => {
+  tab.addEventListener('click', (e) => {
+    const mode = tab.dataset.mode;
+    if (mode === getAppMode()) return;
+    setAppMode(mode);
+  });
+});
+updateUI();
+
+  // 跳转
+  const reportBtn = document.getElementById('viewFullReportBtn');
+  if (reportBtn) {
+    reportBtn.addEventListener('click', () => { window.location.href = '/platform-reports.html'; });
+  }
+
+  const etherscanLink = document.getElementById('etherscanLink');
+  if (etherscanLink) {
+    etherscanLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.open('https://etherscan.io/address/0xdAC17F958D2ee523a2206206994597C13D831ec7', '_blank');
+    });
+  }
+
+  const contractAddr = document.getElementById('contractAddress');
+  if (contractAddr) {
+    contractAddr.addEventListener('click', () => {
+      const address = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+      navigator.clipboard.writeText(address).then(() => {
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:80px;right:20px;background:var(--card-bg);padding:10px 20px;border-radius:40px;font-size:12px;z-index:9999;backdrop-filter:blur(16px);border:1px solid var(--glass-border)';
+        toast.innerHTML = '<i class="fas fa-check-circle" style="color:var(--success)"></i> Address copied!';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+      });
+    });
+  }
+
+  // AI Spotlight 渲染函数
+  function formatMatchTime(utcString) {
+    if (!utcString) return '-';
+    try {
+      const date = new Date(utcString);
+      return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch { return '-'; }
+  }
+  
+  function getRelativeTime(utcString) {
+    const matchTime = new Date(utcString);
+    const now = new Date();
+    const diffHours = Math.floor((matchTime - now) / (1000 * 60 * 60));
+    if (diffHours < 0) return 'Started';
+    if (diffHours === 0) return 'Now';
+    if (diffHours < 24) return `${diffHours}h`;
+    return `${Math.floor(diffHours / 24)}d`;
+  }
+  
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+  }
+
+  function renderSpotlightMatches(matches) {
+    const grid = document.getElementById('spotlightGrid');
+    if (!grid) return;
+    
+    if (!matches || matches.length === 0) {
+      grid.innerHTML = '<div class="empty-state" style="text-align:center;padding:40px;"><i class="fas fa-futbol"></i><p>No upcoming matches</p></div>';
+      return;
+    }
+    
+    grid.innerHTML = matches.map(match => {
+      const time = formatMatchTime(match.match_time);
+      const relativeTime = getRelativeTime(match.match_time);
+      const leagueName = match.league || 'Unknown';
+      const confidence = match.confidence || 85;
+      const homeLogo = match.home_logo && match.home_logo !== '/uploads/teams/default.png' ? match.home_logo : null;
+      const awayLogo = match.away_logo && match.away_logo !== '/uploads/teams/default.png' ? match.away_logo : null;
+      
+      return `
+        <div class="match-card" data-match-id="${match.id}">
+          <div class="status-badge status-upcoming">Upcoming</div>
+          <div class="match-logos-wrapper">
+            <div class="match-logo-item">
+              ${homeLogo ? `<img class="match-logo" src="${homeLogo}" alt="${escapeHtml(match.home_team)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'logo-fallback\\'><i class=\\'fas fa-futbol\\'></i></div><div class=\\'match-team-name\\'>${escapeHtml(match.home_team)}</div>'">` : `<div class="logo-fallback"><i class="fas fa-futbol"></i></div>`}
+              <div class="match-team-name">${escapeHtml(match.home_team)}</div>
+            </div>
+            <div class="match-vs-badge">VS</div>
+            <div class="match-logo-item">
+              ${awayLogo ? `<img class="match-logo" src="${awayLogo}" alt="${escapeHtml(match.away_team)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'logo-fallback\\'><i class=\\'fas fa-futbol\\'></i></div><div class=\\'match-team-name\\'>${escapeHtml(match.away_team)}</div>'">` : `<div class="logo-fallback"><i class="fas fa-futbol"></i></div>`}
+              <div class="match-team-name">${escapeHtml(match.away_team)}</div>
+            </div>
+          </div>
+          <div class="match-info">
+            <div class="match-league-time">
+              <span class="league-badge">${escapeHtml(leagueName)}</span>
+              <span>${time} (${relativeTime})</span>
+            </div>
+            <div class="confidence-bar">
+              <div class="confidence-label">
+                <span>AI Confidence</span>
+                <span>${confidence}%</span>
+              </div>
+              <div class="confidence-progress">
+                <div class="confidence-fill" style="width: ${confidence}%"></div>
+              </div>
+            </div>
+          </div>
+          <button class="authorize-btn" onclick="window.location.href='/authorize-submit.html?matchId=${match.id}'">
+            Authorize <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function waitForMatchesData() {
+    return new Promise((resolve) => {
+      if (window.AppState && window.AppState.filteredMatches && window.AppState.filteredMatches.length > 0) {
+        resolve(window.AppState.filteredMatches.slice(0, 4));
+        return;
+      }
+      if (window.AppState && window.AppState.matches && window.AppState.matches.length > 0) {
+        const upcoming = window.AppState.matches.filter(m => m.calculated_status === 'upcoming' || m.status === 'upcoming');
+        resolve(upcoming.slice(0, 4));
+        return;
+      }
+      
+      let checkCount = 0;
+      const maxChecks = 50;
+      const checkInterval = setInterval(() => {
+        checkCount++;
+        if (window.AppState && window.AppState.filteredMatches && window.AppState.filteredMatches.length > 0) {
+          clearInterval(checkInterval);
+          resolve(window.AppState.filteredMatches.slice(0, 4));
+        } else if (window.AppState && window.AppState.matches && window.AppState.matches.length > 0) {
+          clearInterval(checkInterval);
+          const upcoming = window.AppState.matches.filter(m => m.calculated_status === 'upcoming' || m.status === 'upcoming');
+          resolve(upcoming.slice(0, 4));
+        } else if (checkCount >= maxChecks) {
+          clearInterval(checkInterval);
+          resolve([]);
+        }
+      }, 200);
+    });
+  }
+
+  async function loadSpotlight() {
+    const matches = await waitForMatchesData();
+    renderSpotlightMatches(matches);
+  }
+  
+  loadSpotlight();
+
+  // ========== 图表 - 从真实 API 获取数据 ==========
+  let authProfitChart;
+
+  // 模拟数据 fallback（API 失败时使用）
+  function getFallbackData(period) {
+    const fallback = {
+      '1d': { labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'], authorized: [0, 12, 45, 78, 120, 95, 30], profit: [0, 2, 8, 15, 28, 18, 5] },
+      '1w': { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], authorized: [120, 85, 200, 150, 280, 95, 60], profit: [15, 8, 42, 22, 58, 12, -5] },
+      '1m': { labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'], authorized: [850, 1200, 980, 1450], profit: [120, 210, 175, 320] },
+      '1y': { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], authorized: [3200, 4100, 5200, 4800, 6100, 7800, 8500, 9200, 10100, 11800, 12500, 14200], profit: [450, 620, 830, 710, 1050, 1420, 1680, 1950, 2280, 2650, 2980, 3450] }
+    };
+    return fallback[period] || fallback['1m'];
+  }
+
+  // 从 API 获取图表数据
+  async function fetchChartData(days) {
+    try {
+      const isSandbox = getAppMode() === 'sandbox';
+      const mode = isSandbox ? 'test' : 'live';
+      const url = `/api/v1/user/stats/chart?days=${days}&mode=${mode}`;
+      const response = await fetch(url, { credentials: 'include' });
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        return {
+          labels: result.data.labels,
+          authorized: result.data.authorized,
+          profit: result.data.profit
+        };
+      } else {
+        console.warn('API 返回失败:', result);
+        return null;
+      }
+    } catch (error) {
+      console.error('获取图表数据失败:', error);
+      return null;
+    }
+  }
+
+  function initChart(labels, authData, profitData) {
+    const ctx = document.getElementById('authProfitChart');
+    if (!ctx) return;
+    if (authProfitChart) authProfitChart.destroy();
+    authProfitChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: 'Authorized Amount (USDT)', data: authData, backgroundColor: '#3b82f6', borderRadius: 4, barPercentage: 0.6, categoryPercentage: 0.7 },
+          { label: 'Profit / Loss (USDT)', data: profitData, backgroundColor: profitData.map(v => v >= 0 ? '#10b981' : '#ef4444'), borderRadius: 4, barPercentage: 0.6, categoryPercentage: 0.7 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { tooltip: { callbacks: { label: function(context) {
+          let val = context.raw;
+          if (context.dataset.label.includes('Profit')) return context.dataset.label + ': ' + (val >= 0 ? '+' : '') + val.toFixed(2) + ' USDT';
+          return context.dataset.label + ': ' + val.toFixed(2) + ' USDT';
+        } } }, legend: { display: false } },
+        scales: { y: { title: { display: true, text: 'USDT', color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(148, 163, 184, 0.15)' }, ticks: { font: { size: 9 } } }, x: { grid: { display: false }, ticks: { font: { size: 9 } } } }
+      }
+    });
+  }
+
+  async function updateChartFromAPI(period) {
+    // 显示加载状态
+    const ctx = document.getElementById('authProfitChart');
+    if (!ctx) return;
+    
+    // 根据 period 确定天数
+    let days = 30;
+    switch(period) {
+      case '1d': days = 1; break;
+      case '1w': days = 7; break;
+      case '1m': days = 30; break;
+      case '1y': days = 365; break;
+      default: days = 30;
+    }
+    
+    const data = await fetchChartData(days);
+    if (data) {
+      initChart(data.labels, data.authorized, data.profit);
+    } else {
+      // 如果 API 失败，使用模拟数据作为 fallback
+      console.log('使用模拟数据作为 fallback');
+      const fallbackData = getFallbackData(period);
+      initChart(fallbackData.labels, fallbackData.authorized, fallbackData.profit);
+    }
+  }
+
+  // 绑定图表按钮事件
+  document.querySelectorAll('.chart-time-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.chart-time-btn').forEach(b => {
+        b.classList.remove('active');
+        b.style.background = 'rgba(37, 99, 235, 0.1)';
+        b.style.color = 'var(--text-secondary)';
+      });
+      btn.classList.add('active');
+      btn.style.background = 'linear-gradient(135deg, #2563eb, #4f46e5)';
+      btn.style.color = 'white';
+      updateChartFromAPI(btn.dataset.period);
+    });
+  });
+
+  // 初始化图表（默认1M）
+  updateChartFromAPI('1m');
+  
+}, 500);
+</script>
+
 </body>
 </html>

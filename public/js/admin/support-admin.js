@@ -13,7 +13,8 @@ class SupportAdmin {
         this.messagesArea = document.getElementById('messagesArea');
         this.replyInput = document.getElementById('replyInput');
         this.sendReplyBtn = document.getElementById('sendReplyBtn');
-        
+        this.socket = null;
+this.isSocketConnected = false;
         this.init();
     }
     
@@ -74,7 +75,7 @@ class SupportAdmin {
         this.bindEvents();
         this.setupTabNotification();
         this.requestNotificationPermission();
-        
+        this.connectWebSocket();
         // 初始化表情选择器
         setTimeout(() => {
             this.initAdminEmojiPicker();
@@ -205,6 +206,13 @@ class SupportAdmin {
     }
     
     async selectConversation(convId) {
+        // 加入 WebSocket 房間
+if (this.socket && this.isSocketConnected) {
+    this.socket.emit('join-conversation', {
+        convId: convId,
+        role: 'admin'
+    });
+}
         this.currentConvId = convId;
         await this.markConversationRead(convId);
         
@@ -468,7 +476,67 @@ class SupportAdmin {
             alert(this.t('updateFailed'));
         }
     }
+    // ==================== WebSocket 連接 ====================
+connectWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}`;
     
+    console.log('[SupportAdmin] Connecting to WebSocket:', wsUrl);
+    
+    this.socket = io(wsUrl, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
+    });
+    
+    this.socket.on('connect', () => {
+        console.log('[SupportAdmin] WebSocket connected');
+        this.isSocketConnected = true;
+        
+        // 加入管理員房間
+        this.socket.emit('join', {
+            role: 'admin',
+            roomId: 'admin-support'
+        });
+        
+        if (this.currentConvId) {
+            this.socket.emit('join-conversation', {
+                convId: this.currentConvId,
+                role: 'admin'
+            });
+        }
+    });
+    
+    this.socket.on('disconnect', () => {
+        console.log('[SupportAdmin] WebSocket disconnected');
+        this.isSocketConnected = false;
+    });
+    
+    // 監聽新消息
+    this.socket.on('new-message', (message) => {
+        console.log('[SupportAdmin] New message via WebSocket:', message);
+        
+        if (message.conv_id === this.currentConvId || message.convId === this.currentConvId) {
+            this.loadMessages(this.currentConvId);
+            this.scrollToBottom();
+        }
+        
+        this.loadConversations();
+        this.loadStats();
+        
+        if (!document.hasFocus()) {
+            this.sendNotification('New message from User', message.content);
+            this.playSound();
+        }
+    });
+    
+    this.socket.on('connect_error', (error) => {
+        console.error('[SupportAdmin] WebSocket error:', error);
+        this.isSocketConnected = false;
+    });
+}
+// =====================================================
     startPolling() {
         if (this.pollingInterval) clearInterval(this.pollingInterval);
         this.pollingInterval = setInterval(() => {

@@ -2,9 +2,10 @@
  * FOOTRADAPRO - 比赛管理控制器 (优化版)
  * 基于 DeepSeek 自动录入，使用 calculated_status 实时状态
  * 
- * @version 6.0.0
- * @since 2026-04-02
- * @i18n 支持多语言，所有文案已标记
+ * @version 6.2.0
+ * @since 2026-04-12
+ * @note 隊徽管理功能已移至 HTML 獨立實現，此控制器不再處理
+ * @note 表格列宽已固定，表头与数据行完美对齐
  */
 
 (function() {
@@ -29,20 +30,20 @@
 
     // 來源徽章映射
     const sourceBadgeMap = {
-        'manual': '<span class="source-badge manual">✍️ Manual</span>',
-        'auto-deepseek': '<span class="source-badge auto-deepseek">🤖 DeepSeek</span>',
-        'deepseek': '<span class="source-badge auto-deepseek">🤖 DeepSeek</span>'
+        'manual': '<span class="source-badge manual"><i class="fas fa-pencil-alt"></i> 手动</span>',
+        'auto-deepseek': '<span class="source-badge auto"><i class="fas fa-robot"></i> DeepSeek</span>',
+        'deepseek': '<span class="source-badge auto"><i class="fas fa-robot"></i> DeepSeek</span>'
     };
 
-    const defaultSourceBadge = '<span class="source-badge manual">📋 Unknown</span>';
+    const defaultSourceBadge = '<span class="source-badge manual"><i class="fas fa-question"></i> 未知</span>';
 
     function getStatusBadge(match) {
         const realStatus = match.calculated_status || match.status;
         const statusMap = {
-            upcoming: '<span class="status-badge upcoming">🟢 Upcoming</span>',
-            ongoing: '<span class="status-badge live">🟡 Live</span>',
-            live: '<span class="status-badge live">🟡 Live</span>',
-            finished: '<span class="status-badge finished">🔴 Finished</span>'
+            upcoming: '<span class="status-badge upcoming"><i class="fas fa-clock"></i> 未开始</span>',
+            ongoing: '<span class="status-badge live"><i class="fas fa-play-circle"></i> 进行中</span>',
+            live: '<span class="status-badge live"><i class="fas fa-play-circle"></i> 进行中</span>',
+            finished: '<span class="status-badge finished"><i class="fas fa-check-circle"></i> 已结束</span>'
         };
         return statusMap[realStatus] || statusMap.upcoming;
     }
@@ -83,6 +84,7 @@
             z-index: 10000;
             font-size: 14px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease;
         `;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
@@ -113,7 +115,7 @@
         if (home !== null && away !== null) {
             return `<span class="score-badge">${home} : ${away}</span>`;
         }
-        return '-';
+        return '<span class="score-badge no-score">- : -</span>';
     }
 
     function escapeHtml(str) {
@@ -206,15 +208,12 @@
 
     async function updateStats() {
         try {
-            // i18n: 从后端API获取统计数据
             const response = await fetch('/api/v1/admin/matches/stats/overview', { credentials: 'include' });
             const result = await response.json();
             
             if (result.success && result.data) {
-                // 计算 active 数量（is_active = 1）
                 const active = state.matches.filter(m => m.is_active == 1).length;
                 
-                // i18n: 更新统计卡片
                 if (DOM.totalMatches) DOM.totalMatches.textContent = result.data.total || 0;
                 if (DOM.activeCount) DOM.activeCount.textContent = active;
                 if (DOM.liveCount) DOM.liveCount.textContent = result.data.live || 0;
@@ -225,58 +224,92 @@
         }
     }
 
+    // ==================== 表格渲染 - 列宽固定对齐 ====================
     function renderTable() {
         const start = (state.currentPage - 1) * state.pageSize;
         const end = start + state.pageSize;
         const pageMatches = state.filteredMatches.slice(start, end);
+        
         if (!DOM.matchesList) return;
+        
         if (pageMatches.length === 0) {
-            DOM.matchesList.innerHTML = '<td colspan="11" class="empty-state"><i class="fas fa-futbol"></i><div>No match data available</div>\\<';
+            DOM.matchesList.innerHTML = `
+                <tr>
+                    <td colspan="11" class="empty-state">
+                        <i class="fas fa-futbol"></i>
+                        <div>暂无比赛数据</div>
+                    </td>
+                </tr>
+            `;
             return;
         }
+        
         DOM.matchesList.innerHTML = pageMatches.map(match => {
             const sourceKey = (match.source || '').split(',')[0];
             const sourceHtml = sourceBadgeMap[sourceKey] || defaultSourceBadge;
             const scoreHtml = formatScore(match.home_score, match.away_score);
             const statusHtml = getStatusBadge(match);
+            const execRate = match.execution_rate || 30;
+            
+            // 优先级颜色
+            let priorityColor = '#10B981';
+            if (execRate >= 70) priorityColor = '#EF4444';
+            else if (execRate >= 40) priorityColor = '#F59E0B';
+            
             return `
                 <tr>
-                    <td style="text-align: center;">
+                    <td style="width: 45px; text-align: center; padding: 12px 8px;">
                         <input type="checkbox" class="match-checkbox" data-id="${match.id}" ${state.selectedMatches.has(match.id) ? 'checked' : ''}>
                     </td>
-                    <td>
-                        <strong>${escapeHtml(match.home_team)}</strong> 
-                        <span style="color: var(--accent);">vs</span> 
+                    <td style="width: 210px; text-align: left; padding: 12px 8px;">
+                        <strong>${escapeHtml(match.home_team)}</strong>
+                        <span style="color: var(--primary); margin: 0 4px;">vs</span>
                         <strong>${escapeHtml(match.away_team)}</strong>
                     </td>
-                    <td><span class="league-tag">${escapeHtml(match.league || '-')}</span></td>
-                    <td>${sourceHtml}</td>
-                    <td><span class="rate-badge">${match.execution_rate || 30}%</span></td>
-                    <td>${formatDateTime(match.match_time)}</td>
-                    <td>${scoreHtml}</td>
-                    <td>${statusHtml}</td>
-                    <td class="display-toggle">
+                    <td style="width: 100px; text-align: left; padding: 12px 8px;">
+                        <span class="league-tag">${escapeHtml(match.league || '-')}</span>
+                    </td>
+                    <td style="width: 90px; text-align: center; padding: 12px 8px;">
+                        ${sourceHtml}
+                    </td>
+                    <td style="width: 70px; text-align: center; padding: 12px 8px;">
+                        <span class="priority-badge" style="background: ${priorityColor}20; color: ${priorityColor};">
+                            ${execRate}%
+                        </span>
+                    </td>
+                    <td style="width: 150px; text-align: center; padding: 12px 8px;">
+                        <i class="fas fa-calendar-alt" style="font-size: 11px; margin-right: 4px; color: var(--text-muted);"></i>
+                        ${formatDateTime(match.match_time)}
+                    </td>
+                    <td style="width: 70px; text-align: center; padding: 12px 8px;">
+                        ${scoreHtml}
+                    </td>
+                    <td style="width: 70px; text-align: center; padding: 12px 8px;">
+                        ${statusHtml}
+                    </td>
+                    <td style="width: 85px; text-align: center; padding: 12px 8px;">
                         <label class="toggle-switch">
                             <input type="checkbox" class="active-toggle" data-id="${match.id}" ${match.is_active ? 'checked' : ''}>
                             <span class="toggle-slider"></span>
                         </label>
-                        <span class="toggle-label ${match.is_active ? 'enabled' : 'disabled'}">
-                            ${match.is_active ? 'Show' : 'Hide'}
+                        <span class="toggle-label" style="font-size: 11px; margin-left: 6px; ${match.is_active ? 'color: #10B981;' : 'color: #64748B;'}">
+                            ${match.is_active ? '显示' : '隐藏'}
                         </span>
                     </td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="action-btn-sm edit-btn" data-id="${match.id}">
-                                <i class="fas fa-edit"></i> Edit
+                    <td style="width: 110px; text-align: center; padding: 12px 8px;">
+                        <div class="action-buttons" style="display: flex; gap: 6px; justify-content: center;">
+                            <button class="action-btn-sm edit-btn" data-id="${match.id}" title="编辑">
+                                <i class="fas fa-edit"></i> 编辑
                             </button>
-                            <button class="action-btn-sm danger delete-btn" data-id="${match.id}">
-                                <i class="fas fa-trash"></i> Delete
+                            <button class="action-btn-sm danger delete-btn" data-id="${match.id}" title="删除">
+                                <i class="fas fa-trash"></i> 删除
                             </button>
                         </div>
                     </td>
-                 </tr>
+                </tr>
             `;
         }).join('');
+        
         bindTableEvents();
     }
 
@@ -327,33 +360,33 @@
             });
             const result = await response.json();
             if (result.success) {
-                showToast(isActive ? 'Match is now visible on frontend' : 'Match is now hidden from frontend');
+                showToast(isActive ? '比赛已在前台显示' : '比赛已从前台隐藏');
                 loadMatches();
                 loadStorageStats();
             } else {
-                showToast('Operation failed', 'error');
+                showToast('操作失败', 'error');
                 loadMatches();
             }
         } catch (err) {
-            showToast('Network error', 'error');
+            showToast('网络错误', 'error');
             loadMatches();
         }
     }
 
     async function deleteMatch(id) {
-        if (!confirm('Are you sure you want to delete this match?')) return;
+        if (!confirm('确定要删除这场比赛吗？')) return;
         try {
             const response = await fetch(`/api/v1/admin/matches/${id}`, { method: 'DELETE', credentials: 'include' });
             const result = await response.json();
             if (result.success) {
-                showToast('Match deleted');
+                showToast('比赛已删除');
                 loadMatches();
                 loadStorageStats();
             } else {
-                showToast('Delete failed', 'error');
+                showToast('删除失败', 'error');
             }
         } catch (err) {
-            showToast('Network error', 'error');
+            showToast('网络错误', 'error');
         }
     }
 
@@ -368,22 +401,22 @@
             document.getElementById('editAwayTeam').textContent = match.away_team;
             document.getElementById('editMatchTime').textContent = formatDateTime(match.match_time);
             const sourceEl = document.getElementById('editSource');
-            if (sourceEl) sourceEl.innerHTML = `<i class="fas fa-database"></i> Source: ${match.source || 'Manual'}`;
+            if (sourceEl) sourceEl.innerHTML = `<i class="fas fa-database"></i> 数据源: ${match.source || '手动'}`;
             document.getElementById('editExecutionRate').value = match.execution_rate || 30;
             document.getElementById('editRateValue').textContent = (match.execution_rate || 30) + '%';
             document.getElementById('editMinAuth').value = match.min_authorization || 100;
             document.getElementById('editMatchLimit').value = match.match_limit || 500;
             DOM.editModal.classList.add('show');
         } catch (err) {
-            showToast('Failed to load match info', 'error');
+            showToast('加载比赛信息失败', 'error');
         }
     }
 
     async function batchToggleActive(enable) {
         const ids = Array.from(state.selectedMatches);
-        if (ids.length === 0) { showToast('Please select matches first', 'warning'); return; }
-        const action = enable ? 'show' : 'hide';
-        if (!confirm(`Are you sure you want to ${action} ${ids.length} matches?`)) return;
+        if (ids.length === 0) { showToast('请先选择比赛', 'warning'); return; }
+        const action = enable ? '显示' : '隐藏';
+        if (!confirm(`确定要${action} ${ids.length} 场比赛吗？`)) return;
         try {
             const response = await fetch('/api/v1/admin/matches/batch-toggle', {
                 method: 'POST',
@@ -392,23 +425,23 @@
             });
             const result = await response.json();
             if (result.success) {
-                showToast(`${ids.length} matches ${action}n`);
+                showToast(`${ids.length} 场比赛已${action}`);
                 state.selectedMatches.clear();
                 loadMatches();
                 loadStorageStats();
             } else {
-                showToast('Operation failed', 'error');
+                showToast('操作失败', 'error');
             }
         } catch (err) {
-            showToast('Network error', 'error');
+            showToast('网络错误', 'error');
         }
     }
 
     async function batchByLeague(enable) {
         const league = document.getElementById('batchLeagueSelect').value;
-        if (!league) { showToast('Please select a league', 'warning'); return; }
-        const action = enable ? 'show' : 'hide';
-        if (!confirm(`Are you sure you want to ${action} all ${league} matches?`)) return;
+        if (!league) { showToast('请选择联赛', 'warning'); return; }
+        const action = enable ? '显示' : '隐藏';
+        if (!confirm(`确定要${action}所有 ${league} 的比赛吗？`)) return;
         try {
             const response = await fetch('/api/v1/admin/matches/batch-by-league', {
                 method: 'POST',
@@ -417,38 +450,38 @@
             });
             const result = await response.json();
             if (result.success) {
-                showToast(`${result.updated} ${league} matches ${action}n`);
+                showToast(`${result.updated} 场 ${league} 比赛已${action}`);
                 loadMatches();
                 loadStorageStats();
                 DOM.leagueBatchModal.classList.remove('show');
             } else {
-                showToast('Operation failed', 'error');
+                showToast('操作失败', 'error');
             }
         } catch (err) {
-            showToast('Network error', 'error');
+            showToast('网络错误', 'error');
         }
     }
 
     async function autoFetchMatches() {
-        if (!confirm('Fetch latest match data from DeepSeek AI?')) return;
-        if (DOM.syncStatus) DOM.syncStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fetching...';
-        showToast('Fetching match data, please wait...', 'info');
+        if (!confirm('从 DeepSeek AI 获取最新比赛数据？')) return;
+        if (DOM.syncStatus) DOM.syncStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 获取中...';
+        showToast('正在获取比赛数据，请稍候...', 'info');
         try {
             const response = await fetch('/api/v1/admin/matches/auto-fetch', { method: 'POST', credentials: 'include' });
             const result = await response.json();
             if (result.success) {
                 const added = result.data?.newToPool || 0;
-                showToast(`✅ Fetch complete: ${added} new matches added`);
-                if (DOM.syncStatus) DOM.syncStatus.innerHTML = '<i class="fas fa-check-circle"></i> Data synced';
+                showToast(`✅ 获取完成：新增 ${added} 场比赛`);
+                if (DOM.syncStatus) DOM.syncStatus.innerHTML = '<i class="fas fa-check-circle"></i> 数据已同步';
                 loadMatches();
                 loadStorageStats();
             } else {
-                showToast(`Fetch failed: ${result.error || 'Unknown error'}`, 'error');
-                if (DOM.syncStatus) DOM.syncStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Fetch failed';
+                showToast(`获取失败：${result.error || '未知错误'}`, 'error');
+                if (DOM.syncStatus) DOM.syncStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> 获取失败';
             }
         } catch (err) {
-            showToast('Network error, please try again', 'error');
-            if (DOM.syncStatus) DOM.syncStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Fetch failed';
+            showToast('网络错误，请重试', 'error');
+            if (DOM.syncStatus) DOM.syncStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> 获取失败';
         }
     }
 
@@ -469,7 +502,7 @@
     }
 
     async function manualCleanup() {
-        if (!confirm('Clean up expired data? This operation cannot be undone.')) return;
+        if (!confirm('清理过期数据？此操作不可撤销。')) return;
         try {
             const response = await fetch('/api/v1/admin/matches/cleanup', { method: 'POST', credentials: 'include' });
             const result = await response.json();
@@ -478,10 +511,10 @@
                 loadStorageStats();
                 loadMatches();
             } else {
-                showToast('Cleanup failed', 'error');
+                showToast('清理失败', 'error');
             }
         } catch (err) {
-            showToast('Network error', 'error');
+            showToast('网络错误', 'error');
         }
     }
 
@@ -493,10 +526,10 @@
                 const leagueSelect = DOM.leagueFilter;
                 const batchLeagueSelect = document.getElementById('batchLeagueSelect');
                 if (leagueSelect) {
-                    leagueSelect.innerHTML = '<option value="all">All Leagues</option>' + result.data.map(l => `<option value="${escapeHtml(l.league)}">${escapeHtml(l.league)} (${l.match_count})</option>`).join('');
+                    leagueSelect.innerHTML = '<option value="all">全部联赛</option>' + result.data.map(l => `<option value="${escapeHtml(l.league)}">${escapeHtml(l.league)} (${l.match_count})</option>`).join('');
                 }
                 if (batchLeagueSelect) {
-                    batchLeagueSelect.innerHTML = '<option value="">Select League</option>' + result.data.map(l => `<option value="${escapeHtml(l.league)}">${escapeHtml(l.league)} (${l.match_count})</option>`).join('');
+                    batchLeagueSelect.innerHTML = '<option value="">选择联赛</option>' + result.data.map(l => `<option value="${escapeHtml(l.league)}">${escapeHtml(l.league)} (${l.match_count})</option>`).join('');
                 }
             }
         } catch (err) { console.error('Failed to load leagues:', err); }
@@ -511,7 +544,7 @@
                 state.matches = result.data;
                 applyFilters();
             }
-        } catch (err) { showToast('Load failed', 'error'); }
+        } catch (err) { showToast('加载失败', 'error'); }
     }
 
     function renderPagination() {
@@ -593,8 +626,8 @@
         document.getElementById('leagueBatchEnableBtn')?.addEventListener('click', () => batchByLeague(true));
         document.getElementById('leagueBatchDisableBtn')?.addEventListener('click', () => batchByLeague(false));
         const syncBtn = document.getElementById('syncBtn');
-        if (syncBtn) { syncBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Auto Fetch'; syncBtn.onclick = autoFetchMatches; }
-        document.getElementById('refreshBtn')?.addEventListener('click', () => { loadMatches(); loadStorageStats(); showToast('Refreshed', 'success'); });
+        if (syncBtn) { syncBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> 自动获取'; syncBtn.onclick = autoFetchMatches; }
+        document.getElementById('refreshBtn')?.addEventListener('click', () => { loadMatches(); loadStorageStats(); showToast('已刷新', 'success'); });
         document.getElementById('manualCleanupBtn')?.addEventListener('click', manualCleanup);
         document.getElementById('closeModalBtn')?.addEventListener('click', () => DOM.editModal.classList.remove('show'));
         document.getElementById('cancelEditBtn')?.addEventListener('click', () => DOM.editModal.classList.remove('show'));
@@ -611,9 +644,9 @@
             try {
                 const response = await fetch(`/api/v1/admin/matches/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
                 const result = await response.json();
-                if (result.success) { showToast('Strategy updated successfully'); DOM.editModal.classList.remove('show'); loadMatches(); loadStorageStats(); }
-                else { showToast('Update failed', 'error'); }
-            } catch (err) { showToast('Network error', 'error'); }
+                if (result.success) { showToast('策略已更新'); DOM.editModal.classList.remove('show'); loadMatches(); loadStorageStats(); }
+                else { showToast('更新失败', 'error'); }
+            } catch (err) { showToast('网络错误', 'error'); }
         });
         document.querySelectorAll('.rate-presets button').forEach(btn => {
             btn.onclick = () => {
@@ -638,8 +671,10 @@
         if (manualAddBtn) {
             manualAddBtn.onclick = () => {
                 const today = new Date();
-                document.getElementById('manualMatchDate').value = today.toISOString().split('T')[0];
-                document.getElementById('manualMatchTime').value = '20:00';
+                const dateInput = document.getElementById('manualMatchDate');
+                const timeInput = document.getElementById('manualMatchTime');
+                if (dateInput) dateInput.value = today.toISOString().split('T')[0];
+                if (timeInput) timeInput.value = '20:00';
                 DOM.manualAddModal?.classList.add('show');
             };
         }
@@ -654,14 +689,14 @@
                 const league = document.getElementById('manualLeague').value.trim();
                 const matchDate = document.getElementById('manualMatchDate').value;
                 const matchTime = document.getElementById('manualMatchTime').value;
-                if (!homeTeam || !awayTeam || !league || !matchDate) { showToast('Please fill in all required fields', 'error'); return; }
+                if (!homeTeam || !awayTeam || !league || !matchDate) { showToast('请填写所有必填项', 'error'); return; }
                 const localDateTimeStr = `${matchDate}T${matchTime}:00`;
                 const localDate = new Date(localDateTimeStr);
-                if (isNaN(localDate.getTime())) { showToast('Invalid date/time format', 'error'); return; }
+                if (isNaN(localDate.getTime())) { showToast('日期/时间格式无效', 'error'); return; }
                 const matchDateTimeUTC = localDate.toISOString();
                 const matchDateObj = new Date(matchDateTimeUTC);
                 const cutoffDateTimeUTC = new Date(matchDateObj.getTime() - 5 * 60 * 1000).toISOString();
-                if (matchDateObj <= new Date()) { showToast('Match time must be in the future', 'error'); return; }
+                if (matchDateObj <= new Date()) { showToast('比赛时间必须是将来的时间', 'error'); return; }
                 const formData = new FormData();
                 formData.append('home_team', homeTeam);
                 formData.append('away_team', awayTeam);
@@ -682,241 +717,37 @@
                     const response = await fetch('/api/v1/admin/matches/add', { method: 'POST', body: formData });
                     const result = await response.json();
                     if (result.success) {
-                        showToast(`✅ Match added: ${homeTeam} vs ${awayTeam}`);
+                        showToast(`✅ 比赛已添加：${homeTeam} vs ${awayTeam}`);
                         DOM.manualAddModal?.classList.remove('show');
                         manualAddForm.reset();
-                        document.getElementById('homeLogoPreview').style.display = 'none';
-                        document.getElementById('awayLogoPreview').style.display = 'none';
+                        const homePreview = document.getElementById('homeLogoPreview');
+                        const awayPreview = document.getElementById('awayLogoPreview');
+                        if (homePreview) homePreview.style.display = 'none';
+                        if (awayPreview) awayPreview.style.display = 'none';
                         loadMatches();
                         loadStorageStats();
-                    } else { showToast(`Add failed: ${result.error || 'Unknown error'}`, 'error'); }
-                } catch (err) { showToast('Network error, please try again', 'error'); }
+                    } else { showToast(`添加失败：${result.error || '未知错误'}`, 'error'); }
+                } catch (err) { showToast('网络错误，请重试', 'error'); }
             };
         }
     }
 
-    // ==================== 队徽管理功能 ====================
-    let currentUploadTeam = null;
-
-    async function loadAllTeamLogos() {
-        const tbody = document.getElementById('missingLogosList');
-        if (!tbody) return;
-        const league = document.getElementById('teamLogoLeagueFilter')?.value || 'all';
-        const search = document.getElementById('teamLogoSearchInput')?.value || '';
-        
-        tbody.innerHTML = '<td colspan="5" class="empty-state">Loading...<\/td>';
-        
-        try {
-            const params = new URLSearchParams();
-            if (league !== 'all') params.append('league', league);
-            if (search) params.append('search', search);
-            
-            const res = await fetch(`/api/v1/admin/matches/all-team-logos?${params}`, { credentials: 'include' });
-            const result = await res.json();
-            
-            if (result.success && result.data) {
-                if (result.data.length === 0) {
-                    tbody.innerHTML = '<td colspan="5" class="empty-state">No team data<\/td>';
-                    return;
-                }
-                
-                tbody.innerHTML = result.data.map(team => `
-                    <tr>
-                        <td><strong>${escapeHtml(team.team_name)}</strong></td>
-                        <td><span class="league-tag">${escapeHtml(team.league || '-')}</span></td>
-                        <td>${team.involved_matches} matches</td>
-                        <td class="logo-preview-cell">
-                            <img class="table-logo-preview" src="${team.logo_url || '/uploads/teams/default.png'}" 
-                                 onerror="this.src='/uploads/teams/default.png'"
-                                 style="width: 32px; height: 32px; border-radius: 50%; object-fit: contain;">
-                            <span class="logo-status-badge ${team.logo_status === 'ok' ? 'ok' : 'missing'}">
-                                ${team.logo_status === 'ok' ? 'Has logo' : 'No logo'}
-                            </span>
-                        <\/td>
-                        <td>
-                            <button class="action-btn-sm upload-logo-btn" 
-                                    data-team="${escapeHtml(team.team_name)}" 
-                                    data-league="${escapeHtml(team.league || '')}" 
-                                    data-matches="${team.involved_matches}"
-                                    data-current-logo="${team.logo_url || ''}">
-                                <i class="fas fa-upload"></i> Upload logo
-                            </button>
-                        <\/td>
-                    </tr>
-                `).join('');
-                
-                document.querySelectorAll('.upload-logo-btn').forEach(btn => {
-                    btn.onclick = () => {
-                        openUploadModal(
-                            btn.dataset.team, 
-                            btn.dataset.league, 
-                            btn.dataset.matches,
-                            btn.dataset.currentLogo
-                        );
-                    };
-                });
-            } else {
-                tbody.innerHTML = '<td colspan="5" class="empty-state">Load failed<\/td>';
-            }
-        } catch (err) {
-            tbody.innerHTML = '<td colspan="5" class="empty-state">Network error<\/td>';
-            console.error(err);
-        }
-    }
-
-    function openUploadModal(teamName, league, matches, currentLogo) {
-        window.currentUploadTeam = teamName;
-        document.getElementById('uploadTeamName').textContent = teamName;
-        document.getElementById('uploadTeamInfo').textContent = `${league} • ${matches} matches affected`;
-        
-        const previewDiv = document.getElementById('uploadTeamPreview');
-        if (previewDiv) {
-            if (currentLogo && currentLogo !== '/uploads/teams/default.png') {
-                previewDiv.innerHTML = `<img src="${currentLogo}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: contain;">`;
-            } else {
-                previewDiv.innerHTML = `<i class="fas fa-futbol" style="font-size: 48px; color: #f97316;"></i>`;
-            }
-        }
-        
-        document.getElementById('uploadPreview').style.display = 'none';
-        document.getElementById('teamLogoFile').value = '';
-        document.getElementById('uploadLogoModal').classList.add('show');
-    }
-
-    async function uploadTeamLogo() {
-        const fileInput = document.getElementById('teamLogoFile');
-        const file = fileInput.files[0];
-        const teamName = window.currentUploadTeam;
-        
-        if (!file) {
-            showToast('Please select an image file', 'error');
-            return;
-        }
-        if (!teamName) {
-            showToast('Invalid team', 'error');
-            return;
-        }
-        
-        const formData = new FormData();
-        formData.append('team_name', teamName);
-        formData.append('logo', file);
-        
-        try {
-            showToast('Uploading...', 'info');
-            const res = await fetch('/api/v1/admin/matches/upload-logo', {
-                method: 'POST',
-                body: formData,
-                credentials: 'include'
-            });
-            const result = await res.json();
-            
-            if (result.success) {
-                showToast(`✅ ${teamName} logo updated, affects ${result.updated_matches} matches`);
-                document.getElementById('uploadLogoModal').classList.remove('show');
-                loadAllTeamLogos();
-                loadMatches();
-            } else {
-                showToast(result.error || 'Upload failed', 'error');
-            }
-        } catch (err) {
-            showToast('Network error', 'error');
-        }
-    }
-
-    function initTeamLogoManager() {
-        setTimeout(() => {
-            const manageBtn = document.getElementById('manageLogosBtn');
-            if (manageBtn) {
-                manageBtn.onclick = async () => {
-                    try {
-                        document.getElementById('teamLogoModal').classList.add('show');
-                        await loadLeaguesForTeamLogo();
-                        await loadAllTeamLogos();
-                    } catch (err) {
-                        console.error('Team logo management load failed:', err);
-                    }
-                };
-            }
-            
-            const closeBtn = document.getElementById('closeTeamLogoModalBtn');
-            if (closeBtn) {
-                closeBtn.onclick = () => {
-                    document.getElementById('teamLogoModal').classList.remove('show');
-                };
-            }
-            
-            const closeUpload = document.getElementById('closeUploadModalBtn');
-            if (closeUpload) {
-                closeUpload.onclick = () => {
-                    document.getElementById('uploadLogoModal').classList.remove('show');
-                };
-            }
-            
-            const cancelUpload = document.getElementById('cancelUploadBtn');
-            if (cancelUpload) {
-                cancelUpload.onclick = () => {
-                    document.getElementById('uploadLogoModal').classList.remove('show');
-                };
-            }
-            
-            const refreshBtn = document.getElementById('refreshTeamLogosBtn');
-            if (refreshBtn) refreshBtn.onclick = () => { loadAllTeamLogos(); };
-            
-            const searchInput = document.getElementById('teamLogoSearchInput');
-            if (searchInput) {
-                searchInput.oninput = () => { loadAllTeamLogos(); };
-            }
-            
-            const leagueFilter = document.getElementById('teamLogoLeagueFilter');
-            if (leagueFilter) leagueFilter.onchange = () => { loadAllTeamLogos(); };
-            
-            const fileInput = document.getElementById('teamLogoFile');
-            if (fileInput) {
-                fileInput.onchange = (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                            document.getElementById('uploadPreviewImg').src = ev.target.result;
-                            document.getElementById('uploadPreview').style.display = 'block';
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                };
-            }
-            
-            const confirmBtn = document.getElementById('confirmUploadBtn');
-            if (confirmBtn) {
-                confirmBtn.onclick = () => uploadTeamLogo();
-            }
-            
-            console.log('✅ Team logo management initialized');
-        }, 200);
-    }
-
-    async function loadLeaguesForTeamLogo() {
-        try {
-            const res = await fetch('/api/v1/admin/matches/leagues', { credentials: 'include' });
-            const result = await res.json();
-            if (result.success && result.data) {
-                const select = document.getElementById('teamLogoLeagueFilter');
-                if (select) {
-                    select.innerHTML = '<option value="all">All Leagues</option>' + result.data.map(l => `<option value="${escapeHtml(l.league)}">${escapeHtml(l.league)} (${l.match_count})</option>`).join('');
-                }
-            }
-        } catch (err) { console.error(err); }
-    }
+    // ==================== 隊徽管理功能（已禁用，移至 HTML 獨立實現） ====================
+    async function loadAllTeamLogos() { console.log('队徽管理已由 HTML 独立实现'); }
+    function openUploadModal() { console.log('队徽管理已由 HTML 独立实现'); }
+    async function uploadTeamLogo() { console.log('队徽管理已由 HTML 独立实现'); }
+    function initTeamLogoManager() { console.log('队徽管理已由 HTML 独立实现，跳过初始化'); }
+    async function loadLeaguesForTeamLogo() { console.log('队徽管理已由 HTML 独立实现'); }
 
     // ==================== 初始化 ====================
     async function init() {
         if (window.FOOTRADA_TIMEZONE) {
-            console.log('✅ Timezone tool loaded:', window.FOOTRADA_TIMEZONE.getUserTimezoneInfo());
+            console.log('✅ 时区工具已加载:', window.FOOTRADA_TIMEZONE.getUserTimezoneInfo());
         } else {
-            console.warn('⚠️ Timezone tool not loaded, using UTC mode');
+            console.warn('⚠️ 时区工具未加载，使用 UTC 模式');
         }
         
         initEventListeners();
-        initTeamLogoManager();
         
         await loadLeagues();
         await loadMatches();

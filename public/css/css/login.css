@@ -1,0 +1,405 @@
+/**
+ * FOOTRADAPRO - 登录页面样式
+ * @file /css/login.css
+ * @version 2.0.0
+ * 與註冊頁統一風格：簡潔、現代、專業
+ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    transition: background-color 0.2s ease;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 淺色主題 */
+body[data-theme="light"] {
+    background-color: #FFFFFF;
+    color: #1A1F36;
+}
+
+/* 深色主題 */
+body[data-theme="dark"] {
+    background-color: #0A0C12;
+    color: #EDEDF0;
+}
+
+/* 主容器 */
+.auth-container {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 24px;
+    position: relative;
+}
+
+/* 品牌區域 */
+.brand {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+.brand-logo {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    text-decoration: none;
+    background: linear-gradient(135deg, #FF6B00 0%, #FF8A3C 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+body[data-theme="dark"] .brand-logo {
+    background: linear-gradient(135deg, #FFFFFF 0%, #FF6B00 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* ==================== 右上角設置欄 ==================== */
+.settings-bar {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 12px;
+    z-index: 1000;
+}
+
+@media (max-width: 480px) {
+    .settings-bar {
+        top: 12px;
+        right: 12px;
+        gap: 8px;
+    }
+}
+
+/* 統一的按鈕組樣式 */
+.btn-group {
+    display: flex;
+    background: #F8F9FC;
+    border: 1px solid #E9EDF2;
+    border-radius: 40px;
+    padding: 4px;
+    height: 40px;
+    box-sizing: border-box;
+    backdrop-filter: blur(8px);
+}
+
+body[data-theme="dark"] .btn-group {
+    background: #11141C;
+    border-color: #1F242F;
+}
+
+/* 統一的按鈕樣式 */
+.btn-option {
+    padding: 0 14px;
+    height: 32px;
+    font-size: 13px;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    border-radius: 32px;
+    color: #8A99AA;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+    line-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+body[data-theme="dark"] .btn-option {
+    color: #9CA3AF;
+}
+
+.btn-option:hover {
+    color: #FF6B00;
+    background: rgba(255, 107, 0, 0.1);
+}
+
+.btn-option.active {
+    background: #FF6B00;
+    color: white;
+}
+
+/* 語言切換組特殊處理 */
+.lang-group {
+    position: relative;
+    cursor: pointer;
+}
+
+.lang-group .btn-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.lang-group .btn-option .fa-chevron-down {
+    font-size: 10px;
+    transition: transform 0.2s;
+}
+
+.lang-group.open .btn-option .fa-chevron-down {
+    transform: rotate(180deg);
+}
+
+.lang-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 100px;
+    background: white;
+    border: 1px solid #E9EDF2;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all 0.2s;
+    z-index: 101;
+    overflow: hidden;
+}
+
+body[data-theme="dark"] .lang-dropdown {
+    background: #11141C;
+    border-color: #1F242F;
+}
+
+.lang-group.open .lang-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.lang-option {
+    padding: 10px 16px;
+    font-size: 13px;
+    color: #5A6A7E;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-align: center;
+}
+
+body[data-theme="dark"] .lang-option {
+    color: #9CA3AF;
+}
+
+.lang-option:hover {
+    background: rgba(255, 107, 0, 0.1);
+    color: #FF6B00;
+}
+
+.lang-option.active {
+    background: rgba(255, 107, 0, 0.15);
+    color: #FF6B00;
+    font-weight: 500;
+}
+
+/* 登錄卡片 */
+.login-card {
+    background: transparent;
+    border-radius: 24px;
+}
+
+/* 標題區域 */
+.header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+    color: var(--text-primary, #1A1F36);
+}
+
+body[data-theme="dark"] .header h1 {
+    color: #EDEDF0;
+}
+
+.header p {
+    font-size: 14px;
+    color: #8A99AA;
+}
+
+/* 表單 */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: #8A99AA;
+    margin-bottom: 8px;
+}
+
+.forgot-link {
+    font-size: 12px;
+    color: #8A99AA;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.forgot-link:hover {
+    color: #FF6B00;
+}
+
+.form-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px;
+    background: white;
+    border: 1px solid #E9EDF2;
+    border-radius: 12px;
+    font-size: 15px;
+    transition: all 0.2s;
+    outline: none;
+}
+
+body[data-theme="dark"] .form-input {
+    background: #11141C;
+    border-color: #1F242F;
+    color: #EDEDF0;
+}
+
+.form-input:focus {
+    border-color: #FF6B00;
+    box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
+}
+
+.form-input::placeholder {
+    color: #8A99AA;
+}
+
+/* 密碼輸入框包裝器 */
+.password-wrapper {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #8A99AA;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.password-toggle:hover {
+    color: #FF6B00;
+    background: rgba(255, 107, 0, 0.1);
+}
+
+/* 錯誤消息 */
+.error-message {
+    font-size: 12px;
+    color: #EF4444;
+    margin-top: 6px;
+    min-height: 20px;
+}
+
+/* 登錄按鈕 */
+.btn-primary {
+    width: 100%;
+    height: 48px;
+    background: #FF6B00;
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #F05A00;
+    transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 頁腳連結 */
+.footer-links {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 13px;
+    color: #8A99AA;
+}
+
+.footer-links a {
+    color: #FF6B00;
+    text-decoration: none;
+    font-weight: 500;
+    margin-left: 4px;
+}
+
+.footer-links a:hover {
+    text-decoration: underline;
+}
+
+/* 響應式 */
+@media (max-width: 480px) {
+    .auth-container {
+        padding: 16px;
+    }
+    
+    .brand-logo {
+        font-size: 28px;
+    }
+    
+    .header h1 {
+        font-size: 24px;
+    }
+    
+    .btn-group {
+        height: 36px;
+        padding: 3px;
+    }
+    
+    .btn-option {
+        padding: 0 12px;
+        height: 30px;
+        line-height: 30px;
+        font-size: 12px;
+    }
+    
+    .settings-bar {
+        gap: 8px;
+    }
+}
+
+/* 無障礙 */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

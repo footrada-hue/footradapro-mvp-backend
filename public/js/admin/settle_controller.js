@@ -80,6 +80,7 @@
         tabPanes: document.querySelectorAll('.tab-pane'),
         // 筛选元素
         searchInput: document.getElementById('searchInput'),
+        modeFilter: document.getElementById('modeFilter'),
         leagueFilter: document.getElementById('leagueFilter'),
         hasAuthFilter: document.getElementById('hasAuthFilter'),
         sortFilter: document.getElementById('sortFilter'),
@@ -123,6 +124,21 @@
         previewFee: document.getElementById('previewFee'),
         previewNet: document.getElementById('previewNet'),
         previewTotal: document.getElementById('previewTotal')
+    };
+
+    // ==================== 系统配置 DOM 元素 ====================
+    const ConfigDOM = {
+        platformFeeRate: document.getElementById('platformFeeRate'),
+        platformFeeRateNum: document.getElementById('platformFeeRateNum'),
+        platformLossRate: document.getElementById('platformLossRate'),
+        platformLossRateNum: document.getElementById('platformLossRateNum'),
+        defaultExecRate: document.getElementById('defaultExecRate'),
+        defaultExecRateNum: document.getElementById('defaultExecRateNum'),
+        saveConfigBtn: document.getElementById('saveConfigBtn'),
+        configStatus: document.getElementById('configStatus'),
+        toggleConfigBtn: document.getElementById('toggleConfigBtn'),
+        configBody: document.getElementById('configBody'),
+        configToggleIcon: document.getElementById('configToggleIcon')
     };
 
     let allMatches = [];
@@ -200,7 +216,6 @@
     function applyFilters() {
         let filtered = [...allMatches];
         
-        // 搜索筛选
         const keyword = DOM.searchInput?.value.trim().toLowerCase();
         if (keyword) {
             filtered = filtered.filter(m => 
@@ -209,36 +224,39 @@
             );
         }
         
-        // 联赛筛选
         const league = DOM.leagueFilter?.value;
         if (league && league !== 'all') {
             filtered = filtered.filter(m => m.league === league);
         }
         
-        // 授权状态筛选
         const hasAuth = DOM.hasAuthFilter?.value;
+        // 模式筛选
+const mode = DOM.modeFilter?.value;
+if (mode && mode !== 'all') {
+    filtered = filtered.filter(m => {
+        if (mode === 'test') {
+            return m.has_test_auth === 1 || m.has_test_auth === true;
+        } else if (mode === 'live') {
+            return m.has_live_auth === 1 || m.has_live_auth === true;
+        }
+        return true;
+    });
+}
         if (hasAuth === 'yes') {
             filtered = filtered.filter(m => m.auth_count > 0);
         } else if (hasAuth === 'no') {
             filtered = filtered.filter(m => m.auth_count === 0);
         }
         
-        // 排序
         const sortBy = DOM.sortFilter?.value || 'time_desc';
         filtered.sort((a, b) => {
             switch(sortBy) {
-                case 'time_asc':
-                    return new Date(a.match_time) - new Date(b.match_time);
-                case 'auth_desc':
-                    return (b.auth_count || 0) - (a.auth_count || 0);
-                case 'auth_asc':
-                    return (a.auth_count || 0) - (b.auth_count || 0);
-                case 'amount_desc':
-                    return (b.total_amount || 0) - (a.total_amount || 0);
-                case 'amount_asc':
-                    return (a.total_amount || 0) - (b.total_amount || 0);
-                default:
-                    return new Date(b.match_time) - new Date(a.match_time);
+                case 'time_asc': return new Date(a.match_time) - new Date(b.match_time);
+                case 'auth_desc': return (b.auth_count || 0) - (a.auth_count || 0);
+                case 'auth_asc': return (a.auth_count || 0) - (b.auth_count || 0);
+                case 'amount_desc': return (b.total_amount || 0) - (a.total_amount || 0);
+                case 'amount_asc': return (a.total_amount || 0) - (b.total_amount || 0);
+                default: return new Date(b.match_time) - new Date(a.match_time);
             }
         });
         
@@ -247,7 +265,6 @@
         renderPendingTable();
         renderPendingPagination();
         
-        // 更新统计卡片中的待结算数量
         if (DOM.pendingCount) {
             DOM.pendingCount.textContent = allMatches.length;
         }
@@ -260,7 +277,7 @@
         const pageMatches = filteredMatches.slice(start, start + pageSize);
         
         if (pageMatches.length === 0) {
-            DOM.pendingTable.innerHTML = '<tr><td colspan="8" class="empty-cell">暂无待结算比赛</td></tr>';
+            DOM.pendingTable.innerHTML = '<tr><td colspan="8" class="empty-cell">暂无待结算比赛</td><\/tr>';
             return;
         }
         
@@ -268,23 +285,44 @@
         pageMatches.forEach(match => {
             const isSelected = selectedMatches.has(match.id);
             const hasAuth = match.auth_count > 0;
+            // 判断模式并添加样式
+const hasTestAuth = match.has_test_auth === 1 || match.has_test_auth === true;
+const hasLiveAuth = match.has_live_auth === 1 || match.has_live_auth === true;
+
+let modeClass = '';
+let modeBadges = '';
+
+if (hasTestAuth && hasLiveAuth) {
+    modeClass = 'mixed-mode';
+    modeBadges = '<span class="mode-badge-small mixed">🎯 混合模式</span>';
+} else if (hasTestAuth) {
+    modeClass = 'test-mode';
+    modeBadges = '<span class="mode-badge-small test">🧪 测试模式</span>';
+} else if (hasLiveAuth) {
+    modeClass = 'live-mode';
+    modeBadges = '<span class="mode-badge-small live">⚡ 真实模式</span>';
+} else {
+    modeClass = '';
+    modeBadges = '<span class="mode-badge-small" style="background: rgba(100,100,100,0.1); color: #666;">无授权</span>';
+}
             
-            html += `
-                <tr>
-                    <td style="text-align: center;">
-                        <input type="checkbox" class="match-checkbox" data-id="${match.id}" ${isSelected ? 'checked' : ''}>
-                    </td>
+html += `
+    <tr class="match-row ${modeClass}">
+        <td style="text-align: center;">
+            <input type="checkbox" class="match-checkbox" data-id="${match.id}" ${isSelected ? 'checked' : ''}>
+        </td>
                     <td><strong>${UTILS.escapeHtml(match.home_team)}</strong> vs <strong>${UTILS.escapeHtml(match.away_team)}</strong></td>
                     <td>${UTILS.escapeHtml(match.league || '-')}</td>
                     <td>${UTILS.formatDateTime(match.match_time)}</td>
                     <td class="score-cell">
-    ${(match.home_score !== null && match.away_score !== null) 
-        ? `<span class="match-score">${match.home_score} : ${match.away_score}</span>` 
-        : `<span class="score-missing">待获取</span>`}
-</td>
+                        ${(match.home_score !== null && match.away_score !== null) 
+                            ? `<span class="match-score">${match.home_score} : ${match.away_score}</span>` 
+                            : `<span class="score-missing">待获取</span>`}
+                    </td>
                     <td><span class="rate-badge">${match.execution_rate || 30}%</span></td>
                     <td class="${hasAuth ? 'text-success' : ''}">${match.auth_count || 0}</td>
                     <td class="amount-cell">${UTILS.formatAmount(match.total_amount || 0)} USDT</td>
+                    <td>${modeBadges}</td>
                     <td>
                         <button class="action-btn settle-btn" data-match-id="${match.match_id}" data-id="${match.id}">
                             <i class="fas fa-calculator"></i> 清算
@@ -298,7 +336,6 @@
         });
         DOM.pendingTable.innerHTML = html;
         
-        // 绑定清算按钮事件
         document.querySelectorAll('.settle-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const matchId = btn.dataset.matchId;
@@ -306,7 +343,6 @@
             });
         });
         
-        // 绑定快速清算按钮事件
         document.querySelectorAll('.quick-settle-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -315,7 +351,6 @@
             });
         });
         
-        // 绑定复选框事件
         document.querySelectorAll('.match-checkbox').forEach(cb => {
             cb.addEventListener('change', (e) => {
                 const id = parseInt(e.target.dataset.id);
@@ -530,43 +565,43 @@
         }
     }
 
-    // ==================== 加载清算历史 ====================
-    async function loadSettledHistory() {
-        if (!DOM.historyTable) return;
+// ==================== 加载清算历史 ====================
+async function loadSettledHistory() {
+    if (!DOM.historyTable) return;
 
-        try {
-            DOM.historyTable.innerHTML = `
-                <tr><td colspan="8" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> 加载中...<\/td><\/tr>
-            `;
+    try {
+        DOM.historyTable.innerHTML = `
+            <tr><td colspan="8" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> 加载中...<\/td><\/tr>
+        `;
 
-            const result = await adminRequest('/history');
+        const result = await adminRequest('/history');
+        
+        if (result.success && result.data) {
+            renderSettledHistory(result.data);
             
-            if (result.success && result.data) {
-                renderSettledHistory(result.data);
-                if (DOM.todayCount) {
-                    DOM.todayCount.textContent = result.data.length;
-                }
-                
-                const total = result.data.reduce((sum, h) => sum + (h.total_amount || 0), 0);
-                if (DOM.totalAmount) {
-                    DOM.totalAmount.textContent = UTILS.formatAmount(total) + ' USDT';
-                }
-                if (DOM.settledCount) {
-                    DOM.settledCount.textContent = result.data.length;
-                }
+            // ✅ 使用后端返回的统计数据
+            if (DOM.todayCount && result.stats) {
+                DOM.todayCount.textContent = result.stats.today_count;
             }
-        } catch (err) {
-            DOM.historyTable.innerHTML = `
-                <tr><td colspan="8" class="loading-cell" style="color: #ef4444;">加载失败: ${err.message}<\/td><\/tr>
-            `;
+            if (DOM.totalAmount && result.stats) {
+                DOM.totalAmount.textContent = UTILS.formatAmount(result.stats.total_amount) + ' USDT';
+            }
+            if (DOM.settledCount) {
+                DOM.settledCount.textContent = result.data.length;
+            }
         }
+    } catch (err) {
+        DOM.historyTable.innerHTML = `
+            <td><td colspan="8" class="loading-cell" style="color: #ef4444;">加载失败: ${err.message}<\/td><\/tr>
+        `;
     }
+}
 
     function renderSettledHistory(history) {
         if (!DOM.historyTable) return;
 
         if (history.length === 0) {
-            DOM.historyTable.innerHTML = '<tr><td colspan="8" class="empty-cell">暂无清算历史</td></tr>';
+            DOM.historyTable.innerHTML = '<tr><td colspan="8" class="empty-cell">暂无清算历史</td><\/tr>';
             return;
         }
 
@@ -660,7 +695,7 @@
                     }
                 } else {
                     if (ModalDOM.authTableBody) {
-                        ModalDOM.authTableBody.innerHTML = '<tr><td colspan="4" class="empty-cell">暂无授权记录</td></tr>';
+                        ModalDOM.authTableBody.innerHTML = '<tr><td colspan="4" class="empty-cell">暂无授权记录</td><\/tr>';
                     }
                     if (ModalDOM.totalAuthCount) ModalDOM.totalAuthCount.textContent = '0';
                     if (ModalDOM.totalAuthAmount) ModalDOM.totalAuthAmount.textContent = '0.00';
@@ -801,9 +836,171 @@
         }
     }
 
+    // ==================== 系统配置管理 ====================
+    
+    // 加载系统配置
+    async function loadSettlementConfig() {
+        try {
+            const token = localStorage.getItem('admin_token');
+            const response = await fetch('/api/v1/admin/config/settlement', {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
+            const data = await response.json();
+            
+            if (data.success && data.data) {
+                const config = data.data;
+                
+                if (ConfigDOM.platformFeeRate) {
+                    const feeRate = (config.platform_fee_rate * 100).toFixed(0);
+                    ConfigDOM.platformFeeRate.value = feeRate;
+                    ConfigDOM.platformFeeRateNum.value = feeRate;
+                }
+                if (ConfigDOM.platformLossRate) {
+                    const lossRate = (config.platform_loss_rate * 100).toFixed(0);
+                    ConfigDOM.platformLossRate.value = lossRate;
+                    ConfigDOM.platformLossRateNum.value = lossRate;
+                }
+                if (ConfigDOM.defaultExecRate) {
+                    ConfigDOM.defaultExecRate.value = config.default_execution_rate;
+                    ConfigDOM.defaultExecRateNum.value = config.default_execution_rate;
+                }
+                
+                console.log('✅ 加载清算配置成功:', config);
+            } else {
+                console.warn('加载配置失败，使用默认值');
+            }
+        } catch (err) {
+            console.error('加载清算配置失败:', err);
+        }
+    }
+    
+    // 保存系统配置
+    async function saveSettlementConfig() {
+        try {
+            if (ConfigDOM.saveConfigBtn) {
+                ConfigDOM.saveConfigBtn.disabled = true;
+                ConfigDOM.saveConfigBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+            }
+            
+            const platformFeeRate = parseFloat(ConfigDOM.platformFeeRate?.value || 20) / 100;
+            const platformLossRate = parseFloat(ConfigDOM.platformLossRate?.value || 40) / 100;
+            const defaultExecutionRate = parseInt(ConfigDOM.defaultExecRate?.value || 30);
+            
+            const token = localStorage.getItem('admin_token');
+            const response = await fetch('/api/v1/admin/config/settlement', {
+                method: 'PUT',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    platform_fee_rate: platformFeeRate,
+                    platform_loss_rate: platformLossRate,
+                    default_execution_rate: defaultExecutionRate
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                if (ConfigDOM.configStatus) {
+                    ConfigDOM.configStatus.textContent = '✅ 保存成功';
+                    ConfigDOM.configStatus.style.color = '#10b981';
+                    setTimeout(() => {
+                        ConfigDOM.configStatus.textContent = '';
+                    }, 3000);
+                }
+                UTILS.showToast('清算配置已保存', 'success');
+            } else {
+                throw new Error(data.message || '保存失败');
+            }
+        } catch (err) {
+            console.error('保存清算配置失败:', err);
+            if (ConfigDOM.configStatus) {
+                ConfigDOM.configStatus.textContent = '❌ 保存失败: ' + err.message;
+                ConfigDOM.configStatus.style.color = '#ef4444';
+                setTimeout(() => {
+                    ConfigDOM.configStatus.textContent = '';
+                }, 3000);
+            }
+            UTILS.showToast('保存失败: ' + err.message, 'error');
+        } finally {
+            if (ConfigDOM.saveConfigBtn) {
+                ConfigDOM.saveConfigBtn.disabled = false;
+                ConfigDOM.saveConfigBtn.innerHTML = '<i class="fas fa-save"></i> 保存配置';
+            }
+        }
+    }
+    
+    // 绑定配置控件联动
+    function bindConfigEvents() {
+        if (ConfigDOM.platformFeeRate && ConfigDOM.platformFeeRateNum) {
+            ConfigDOM.platformFeeRate.addEventListener('input', () => {
+                ConfigDOM.platformFeeRateNum.value = ConfigDOM.platformFeeRate.value;
+            });
+            ConfigDOM.platformFeeRateNum.addEventListener('input', () => {
+                let val = parseInt(ConfigDOM.platformFeeRateNum.value) || 0;
+                val = Math.min(100, Math.max(0, val));
+                ConfigDOM.platformFeeRate.value = val;
+                ConfigDOM.platformFeeRateNum.value = val;
+            });
+        }
+        
+        if (ConfigDOM.platformLossRate && ConfigDOM.platformLossRateNum) {
+            ConfigDOM.platformLossRate.addEventListener('input', () => {
+                ConfigDOM.platformLossRateNum.value = ConfigDOM.platformLossRate.value;
+            });
+            ConfigDOM.platformLossRateNum.addEventListener('input', () => {
+                let val = parseInt(ConfigDOM.platformLossRateNum.value) || 0;
+                val = Math.min(100, Math.max(0, val));
+                ConfigDOM.platformLossRate.value = val;
+                ConfigDOM.platformLossRateNum.value = val;
+            });
+        }
+        
+        if (ConfigDOM.defaultExecRate && ConfigDOM.defaultExecRateNum) {
+            ConfigDOM.defaultExecRate.addEventListener('input', () => {
+                ConfigDOM.defaultExecRateNum.value = ConfigDOM.defaultExecRate.value;
+            });
+            ConfigDOM.defaultExecRateNum.addEventListener('input', () => {
+                let val = parseInt(ConfigDOM.defaultExecRateNum.value) || 0;
+                val = Math.min(100, Math.max(0, val));
+                ConfigDOM.defaultExecRate.value = val;
+                ConfigDOM.defaultExecRateNum.value = val;
+            });
+        }
+        
+        if (ConfigDOM.saveConfigBtn) {
+            ConfigDOM.saveConfigBtn.addEventListener('click', saveSettlementConfig);
+        }
+        
+        if (ConfigDOM.toggleConfigBtn && ConfigDOM.configBody) {
+            ConfigDOM.toggleConfigBtn.addEventListener('click', () => {
+                const isCollapsed = ConfigDOM.configBody.classList.contains('collapsed');
+                if (isCollapsed) {
+                    ConfigDOM.configBody.classList.remove('collapsed');
+                    if (ConfigDOM.configToggleIcon) {
+                        ConfigDOM.configToggleIcon.classList.remove('fa-chevron-right');
+                        ConfigDOM.configToggleIcon.classList.add('fa-chevron-down');
+                    }
+                } else {
+                    ConfigDOM.configBody.classList.add('collapsed');
+                    if (ConfigDOM.configToggleIcon) {
+                        ConfigDOM.configToggleIcon.classList.remove('fa-chevron-down');
+                        ConfigDOM.configToggleIcon.classList.add('fa-chevron-right');
+                    }
+                }
+            });
+        }
+    }
+
     // ==================== 事件绑定 ====================
     function bindEvents() {
-        // 筛选事件
         if (DOM.searchInput) DOM.searchInput.addEventListener('input', () => applyFilters());
         if (DOM.leagueFilter) DOM.leagueFilter.addEventListener('change', () => applyFilters());
         if (DOM.hasAuthFilter) DOM.hasAuthFilter.addEventListener('change', () => applyFilters());
@@ -818,7 +1015,6 @@
             });
         }
         
-        // 批量操作
         if (DOM.selectAllBtn) DOM.selectAllBtn.addEventListener('click', selectAllOnPage);
         if (DOM.clearSelectionBtn) DOM.clearSelectionBtn.addEventListener('click', clearSelection);
         if (DOM.selectAllCheckbox) {
@@ -829,7 +1025,6 @@
         }
         if (DOM.batchSettleBtn) DOM.batchSettleBtn.addEventListener('click', openBatchSettleModal);
         
-        // 批量清算模态框
         if (DOM.batchWinBtn) {
             DOM.batchWinBtn.addEventListener('click', () => {
                 DOM.batchWinBtn.classList.add('active');
@@ -857,7 +1052,6 @@
             });
         }
         
-        // 盈亏状态切换
         if (DOM.winBtn) {
             DOM.winBtn.addEventListener('click', () => {
                 DOM.winBtn.classList.add('active');
@@ -941,7 +1135,35 @@
                 window.location.href = '/admin/index.html';
             });
         }
+        // 在 bindEvents 函数中添加表头排序事件
+document.querySelectorAll('.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+        const sortField = th.dataset.sort;
+        let sortValue = '';
         
+        if (sortField === 'auth') {
+            // 切换排序方向
+            const currentSort = DOM.sortFilter?.value;
+            if (currentSort === 'auth_desc') {
+                sortValue = 'auth_asc';
+            } else {
+                sortValue = 'auth_desc';
+            }
+        } else if (sortField === 'amount') {
+            const currentSort = DOM.sortFilter?.value;
+            if (currentSort === 'amount_desc') {
+                sortValue = 'amount_asc';
+            } else {
+                sortValue = 'amount_desc';
+            }
+        }
+        
+        if (DOM.sortFilter && sortValue) {
+            DOM.sortFilter.value = sortValue;
+            applyFilters();
+        }
+    });
+});
         if (DOM.tabBtns.length) {
             DOM.tabBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -965,7 +1187,9 @@
             DOM.adminName.textContent = storedAdmin;
         }
         bindEvents();
+        bindConfigEvents();           // ← 绑定配置事件
         loadPendingMatches();
+        loadSettlementConfig();       // ← 加载配置
         
         if (DOM.winBtn) DOM.winBtn.classList.add('active');
         if (DOM.batchWinBtn) DOM.batchWinBtn.classList.add('active');

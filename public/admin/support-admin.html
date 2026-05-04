@@ -1,509 +1,510 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="FootRadaPro Support Admin - Manage customer conversations">
-    <title>Support Admin - FootRadaPro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="description" content="FOOTRADAPRO Support Admin - Manage customer conversations">
+    <title>客服管理 · FOOTRADAPRO 后台</title>
     
-    <!-- Font Awesome Icons -->
+    <!-- Font Awesome & Google Fonts -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Socket.IO Client -->
     <script src="/socket.io/socket.io.js"></script>
     
+    <!-- 全局配置 - 保留原有引用 -->
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+    
     <style>
+        /* ============================================
+           世界級後台管理系統 - 客服管理頁面
+           深色主題 | 玻璃態效果 | 響應式佈局
+        ============================================ */
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
+
+        :root {
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --primary-light: #60A5FA;
+            --secondary: #8B5CF6;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --info: #06B6D4;
+            --dark-bg: #0A0F1C;
+            --card-bg: rgba(18, 28, 44, 0.75);
+            --border-glow: rgba(59, 130, 246, 0.25);
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
         }
-        
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at 20% 30%, #0B1120, #050814);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1E293B;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
         .admin-container {
             display: flex;
             height: 100vh;
+            overflow: hidden;
         }
-        
-        /* Sidebar */
+
+        /* ========= 側邊欄 ========= */
         .sidebar {
             width: 380px;
-            background: white;
-            border-right: 1px solid #e5e7eb;
+            background: rgba(10, 18, 32, 0.85);
+            backdrop-filter: blur(16px);
+            border-right: 1px solid var(--border-glow);
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
-        
+
+        /* 統計欄 */
         .stats-bar {
             padding: 20px;
-            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-            color: white;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.15));
+            border-bottom: 1px solid var(--border-glow);
             display: flex;
             justify-content: space-around;
         }
-        
         .stat-item {
             text-align: center;
         }
-        
         .stat-value {
             font-size: 24px;
-            font-weight: bold;
+            font-weight: 700;
+            color: var(--primary-light);
         }
-        
         .stat-label {
-            font-size: 12px;
-            opacity: 0.9;
+            font-size: 11px;
+            color: var(--text-secondary);
             margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        
+
+        /* 會話列表 */
         .conversations-list {
             flex: 1;
             overflow-y: auto;
         }
-        
         .conv-item {
             padding: 16px;
-            border-bottom: 1px solid #f3f4f6;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.4);
             cursor: pointer;
             transition: all 0.2s;
+            position: relative;
         }
-        
         .conv-item:hover {
-            background: #fef9f0;
+            background: rgba(59, 130, 246, 0.1);
         }
-        
-/* 当前选中的会话 - 强高亮样式 */
-.conv-item.active {
-    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
-    border-left: 4px solid #f97316;
-    box-shadow: 0 2px 8px rgba(249, 115, 22, 0.2);
-    position: relative;
-}
-        
-/* 选中时用户名变色加粗 */
-.conv-item.active .user-name {
-    color: #ea580c;
-    font-weight: 700;
-}
-
-/* 选中时添加一个右侧小指示器 */
-.conv-item.active::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 4px;
-    height: 40px;
-    background: #f97316;
-    border-radius: 4px 0 0 4px;
-}
-        
-/* 选中时的状态标签高亮 */
-.conv-item.active .status-badge {
-    background: #f97316;
-    color: white;
-    transform: scale(1.05);
-}
+        .conv-item.active {
+            background: linear-gradient(95deg, rgba(59,130,246,0.15), rgba(139,92,246,0.08));
+            border-left: 3px solid var(--primary);
+        }
+        .conv-item.active .user-name {
+            color: var(--primary-light);
+            font-weight: 700;
+        }
         .conv-header {
             display: flex;
             justify-content: space-between;
             margin-bottom: 8px;
         }
-        
         .user-name {
             font-weight: 600;
-            color: #374151;
+            color: var(--text-primary);
         }
-        
         .status-badge {
-            font-size: 11px;
+            font-size: 10px;
             padding: 2px 8px;
             border-radius: 20px;
-            transition: transform 0.2s;
+            font-weight: 600;
         }
-        
         .status-open {
-            background: #d1fae5;
-            color: #065f46;
+            background: rgba(16, 185, 129, 0.2);
+            color: #10B981;
         }
-        
         .status-resolved {
-            background: #dbeafe;
-            color: #1e40af;
+            background: rgba(59, 130, 246, 0.2);
+            color: #60A5FA;
         }
-        
         .status-closed {
-            background: #f3f4f6;
-            color: #6b7280;
+            background: rgba(107, 114, 128, 0.2);
+            color: #9CA3AF;
         }
-        
         .last-message {
-            font-size: 13px;
-            color: #6b7280;
+            font-size: 12px;
+            color: var(--text-secondary);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-        
         .message-time {
-            font-size: 11px;
-            color: #9ca3af;
+            font-size: 10px;
+            color: var(--text-muted);
             margin-top: 4px;
         }
-        
-        /* Main Chat Area */
-        /* Admin Status Selector */
-.admin-status-selector {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 12px;
-    background: #f9fafb;
-    border-radius: 20px;
-}
 
-.status-label {
-    font-size: 12px;
-    color: #6b7280;
-}
-
-.admin-status-select {
-    padding: 4px 8px;
-    border: 1px solid #e5e7eb;
-    border-radius: 16px;
-    font-size: 12px;
-    background: white;
-    cursor: pointer;
-}
-
-.admin-status-select option[value="online"] { color: #10b981; }
-.admin-status-select option[value="away"] { color: #f59e0b; }
-.admin-status-select option[value="busy"] { color: #ef4444; }
+        /* ========= 主聊天區 ========= */
         .chat-main {
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: #f9fafb;
+            background: rgba(10, 18, 32, 0.5);
         }
-        
+
+        /* 聊天頭部 */
         .chat-header-info {
             padding: 16px 24px;
-            background: white;
-            border-bottom: 1px solid #e5e7eb;
+            background: rgba(10, 18, 32, 0.7);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-glow);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
         }
-        
-        .status-select {
+        .chat-header-info strong {
+            color: var(--text-secondary);
+        }
+        #currentConvId {
+            color: var(--primary-light);
+            font-weight: 600;
+        }
+        #userInfo {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        /* 客服狀態選擇器 */
+        .admin-status-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             padding: 6px 12px;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 13px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 30px;
         }
-        
+        .status-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        .admin-status-select {
+            padding: 6px 10px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            color: white;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .status-select {
+            padding: 8px 14px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        #updateStatusBtn {
+            margin-left: 8px;
+            padding: 8px 18px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        #updateStatusBtn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        /* 消息區域 */
         .messages-area {
             flex: 1;
             overflow-y: auto;
             padding: 24px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
         }
-        
         .message {
             display: flex;
         }
-        
         .message.user {
             justify-content: flex-end;
         }
-        
         .message.admin {
             justify-content: flex-start;
         }
-        
         .message.system {
             justify-content: center;
         }
-        
         .message-bubble {
             max-width: 70%;
-            padding: 10px 14px;
-            border-radius: 18px;
-            font-size: 14px;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 13px;
         }
-        
         .user .message-bubble {
-            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
             border-bottom-right-radius: 4px;
         }
-        
         .admin .message-bubble {
-            background: white;
-            border: 1px solid #e5e7eb;
-            color: #374151;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid var(--border-glow);
+            color: var(--text-primary);
             border-bottom-left-radius: 4px;
         }
-        
         .system .message-bubble {
-            background: #f3f4f6;
-            color: #6b7280;
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-secondary);
             font-style: italic;
-            font-size: 12px;
+            font-size: 11px;
         }
-        
         .message-time {
-            font-size: 10px;
+            font-size: 9px;
             margin-top: 4px;
-            opacity: 0.7;
+            opacity: 0.6;
         }
-        
-        /* Reply Area with Tools */
+
+        /* 回覆區域 */
         .reply-area {
             padding: 16px 24px;
-            background: white;
-            border-top: 1px solid #e5e7eb;
+            background: rgba(10, 18, 32, 0.7);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border-glow);
             display: flex;
             gap: 12px;
             align-items: center;
         }
-        
         .reply-tools {
             display: flex;
             gap: 8px;
-            align-items: center;
         }
-        
         .admin-emoji-btn, .quick-reply-toggle {
-            background: none;
-            border: none;
-            font-size: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 18px;
             cursor: pointer;
-            color: #6b7280;
+            color: var(--text-secondary);
             padding: 8px;
             border-radius: 50%;
-            transition: all 0.2s;
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.2s;
         }
-        
         .admin-emoji-btn:hover, .quick-reply-toggle:hover {
-            background: #f3f4f6;
-            color: #f97316;
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--primary);
+            border-color: var(--primary);
         }
-        
         .reply-area input {
             flex: 1;
-            padding: 12px 16px;
-            border: 1px solid #e5e7eb;
-            border-radius: 24px;
+            padding: 12px 18px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 30px;
             outline: none;
             font-size: 14px;
+            color: white;
         }
-        
         .reply-area input:focus {
-            border-color: #f97316;
-            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+            border-color: var(--primary);
         }
-        
+        .reply-area input::placeholder {
+            color: var(--text-muted);
+        }
         .reply-area button {
             padding: 12px 28px;
-            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
             border: none;
-            border-radius: 24px;
+            border-radius: 30px;
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
         }
-        
+        .reply-area button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        /* 空狀態 */
         .empty-state {
             text-align: center;
             padding: 60px;
-            color: #9ca3af;
+            color: var(--text-secondary);
         }
-        
-        /* Quick Reply Panel */
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* 快捷回覆面板 */
         .quick-reply-panel {
-            position: absolute;
-            bottom: 80px;
-            right: 20px;
-            width: 300px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e5e7eb;
+            position: fixed;
+            bottom: 90px;
+            right: 30px;
+            width: 320px;
+            background: #0F172A;
+            border-radius: 20px;
+            border: 1px solid var(--border-glow);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
             z-index: 1000;
             overflow: hidden;
         }
-        
         .quick-reply-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 16px;
-            background: #f9fafb;
-            border-bottom: 1px solid #e5e7eb;
+            padding: 14px 18px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid var(--border-glow);
             font-weight: 600;
         }
-        
         .quick-reply-header button {
             background: none;
             border: none;
             font-size: 20px;
             cursor: pointer;
-            color: #6b7280;
+            color: var(--text-secondary);
         }
-        
         .quick-reply-list {
             max-height: 300px;
             overflow-y: auto;
         }
-        
         .quick-reply-item {
             padding: 12px 16px;
-            border-bottom: 1px solid #f3f4f6;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.4);
             cursor: pointer;
             transition: background 0.2s;
         }
-        
         .quick-reply-item:hover {
-            background: #fef9f0;
+            background: rgba(59, 130, 246, 0.1);
         }
-        
         .quick-reply-title {
             font-weight: 500;
-            color: #374151;
+            color: var(--text-primary);
             margin-bottom: 4px;
         }
-        
         .quick-reply-content {
-            font-size: 12px;
-            color: #6b7280;
+            font-size: 11px;
+            color: var(--text-secondary);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-        
-        /* Admin Emoji Picker */
+
+        /* Emoji 選擇器 */
         .admin-emoji-picker {
-            position: absolute;
-            bottom: 80px;
-            left: 20px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-            width: 320px;
-            max-height: 300px;
+            position: fixed;
+            bottom: 90px;
+            left: 30px;
+            background: #0F172A;
+            border-radius: 20px;
+            border: 1px solid var(--border-glow);
+            width: 350px;
+            max-height: 350px;
             overflow-y: auto;
             z-index: 1000;
-            border: 1px solid #e5e7eb;
         }
-        
-        .admin-emoji-picker .emoji-category {
+        .emoji-category {
             padding: 12px;
-            border-bottom: 1px solid #f3f4f6;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.4);
         }
-        
-        .admin-emoji-picker .emoji-category:last-child {
-            border-bottom: none;
-        }
-        
-        .admin-emoji-picker .emoji-category-title {
-            font-size: 12px;
+        .emoji-category-title {
+            font-size: 11px;
             font-weight: 600;
-            color: #6b7280;
+            color: var(--text-secondary);
             display: block;
             margin-bottom: 8px;
         }
-        
-        .admin-emoji-picker .emoji-list {
+        .emoji-list {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
         }
-        
-        .admin-emoji-picker .emoji-list span {
+        .emoji-list span {
             font-size: 20px;
             cursor: pointer;
             padding: 4px;
             border-radius: 8px;
             transition: all 0.2s;
         }
-        
-        .admin-emoji-picker .emoji-list span:hover {
-            background: #f3f4f6;
+        .emoji-list span:hover {
+            background: rgba(59, 130, 246, 0.2);
             transform: scale(1.1);
         }
-        
-        /* Attachment Styles */
-        .image-attachment {
-            margin: 8px 0;
-        }
-        
+
+        /* 附件樣式 */
         .image-attachment img {
             max-width: 200px;
             max-height: 150px;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: transform 0.2s;
+            margin-top: 8px;
         }
-        
-        .image-attachment img:hover {
-            transform: scale(1.02);
-        }
-        
         .file-attachment {
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px;
-            background: #f3f4f6;
-            border-radius: 8px;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
             margin-top: 8px;
         }
-        
-        .file-attachment i {
-            font-size: 20px;
-            color: #f97316;
-        }
-        
         .file-attachment a {
-            color: #f97316;
+            color: var(--primary-light);
             text-decoration: none;
-            word-break: break-all;
         }
-        
-        .file-attachment a:hover {
-            text-decoration: underline;
-        }
-        
+
+        /* 響應式 */
         @media (max-width: 768px) {
             .sidebar {
                 width: 280px;
             }
-            
-            .admin-emoji-picker {
+            .quick-reply-panel, .admin-emoji-picker {
                 width: 280px;
-                left: 10px;
-                bottom: 70px;
             }
-            
-            .quick-reply-panel {
-                width: 260px;
-                right: 10px;
-                bottom: 70px;
+            .chat-header-info {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
     </style>
@@ -514,64 +515,59 @@
             <div class="stats-bar" id="statsBar">
                 <div class="stat-item">
                     <div class="stat-value" id="totalConv">0</div>
-                    <div class="stat-label" data-i18n="total">Total</div>
+                    <div class="stat-label">Total</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-value" id="openConv">0</div>
-                    <div class="stat-label" data-i18n="open">Open</div>
+                    <div class="stat-label">Open</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-value" id="todayConv">0</div>
-                    <div class="stat-label" data-i18n="today">Today</div>
+                    <div class="stat-label">Today</div>
                 </div>
             </div>
             <div class="conversations-list" id="conversationsList">
-                <div class="empty-state" data-i18n="loading">Loading...</div>
+                <div class="empty-state"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
             </div>
         </div>
         
         <div class="chat-main">
-<div class="chat-header-info" id="chatHeader" style="display: none;">
-    <div>
-        <strong data-i18n="conversation_id">Conversation ID: </strong><span id="currentConvId"></span>
-        <span id="userInfo" style="margin-left: 16px; color: #6b7280; font-size: 13px;"></span>
-    </div>
-    <div style="display: flex; align-items: center; gap: 16px;">
-        <!-- 客服个人状态选择器 -->
-        <div class="admin-status-selector">
-            <span class="status-label">Status:</span>
-            <select id="adminStatusSelect" class="admin-status-select">
-                <option value="online">🟢 Online</option>
-                <option value="away">🟡 Away</option>
-                <option value="busy">🔴 Busy</option>
-            </select>
-        </div>
-        <div>
-            <select id="statusSelect" class="status-select">
-                <option value="open" data-i18n="status_open">Open</option>
-                <option value="resolved" data-i18n="status_resolved">Resolved</option>
-                <option value="closed" data-i18n="status_closed">Closed</option>
-            </select>
-            <button id="updateStatusBtn" style="margin-left: 8px; padding: 6px 16px; background: #f97316; color: white; border: none; border-radius: 6px; cursor: pointer;" data-i18n="update">Update</button>
-        </div>
-    </div>
-</div>
+            <div class="chat-header-info" id="chatHeader" style="display: none;">
+                <div>
+                    <strong>Conversation ID: </strong><span id="currentConvId"></span>
+                    <span id="userInfo" style="margin-left: 16px;"></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                    <div class="admin-status-selector">
+                        <span class="status-label">Status:</span>
+                        <select id="adminStatusSelect" class="admin-status-select">
+                            <option value="online">🟢 Online</option>
+                            <option value="away">🟡 Away</option>
+                            <option value="busy">🔴 Busy</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select id="statusSelect" class="status-select">
+                            <option value="open">Open</option>
+                            <option value="resolved">Resolved</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                        <button id="updateStatusBtn">Update</button>
+                    </div>
+                </div>
+            </div>
             
             <div class="messages-area" id="messagesArea">
-                <div class="empty-state" data-i18n="select_conversation">Select a conversation from the left</div>
+                <div class="empty-state"><i class="fas fa-comments"></i><br>Select a conversation from the left</div>
             </div>
             
             <div class="reply-area" id="replyArea" style="display: none;">
                 <div class="reply-tools">
-                    <button id="adminEmojiBtn" class="admin-emoji-btn" title="Emoji" data-i18n-title="emoji">
-                        <i class="far fa-smile"></i>
-                    </button>
-                    <button id="quickReplyBtn" class="quick-reply-toggle" title="Quick Replies" data-i18n-title="quick_replies">
-                        <i class="fas fa-bolt"></i>
-                    </button>
+                    <button id="adminEmojiBtn" class="admin-emoji-btn" title="Emoji"><i class="far fa-smile"></i></button>
+                    <button id="quickReplyBtn" class="quick-reply-toggle" title="Quick Replies"><i class="fas fa-bolt"></i></button>
                 </div>
-                <input type="text" id="replyInput" placeholder="Type your reply..." data-i18n-placeholder="reply_placeholder">
-                <button id="sendReplyBtn" data-i18n="send">Send Reply</button>
+                <input type="text" id="replyInput" placeholder="Type your reply...">
+                <button id="sendReplyBtn">Send Reply</button>
                 <input type="file" id="adminFileInput" style="display: none;" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt">
             </div>
         </div>
@@ -580,11 +576,11 @@
     <!-- Quick Reply Panel -->
     <div id="quickReplyPanel" class="quick-reply-panel" style="display: none;">
         <div class="quick-reply-header">
-            <span data-i18n="quick_replies_title">Quick Replies</span>
+            <span>Quick Replies</span>
             <button id="closeQuickReplyBtn">&times;</button>
         </div>
         <div class="quick-reply-list" id="quickReplyList">
-            <div class="empty-state" data-i18n="loading">Loading...</div>
+            <div class="empty-state"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
         </div>
     </div>
     
@@ -592,95 +588,47 @@
     <div id="adminEmojiPicker" class="admin-emoji-picker" style="display: none;">
         <div class="emoji-category">
             <span class="emoji-category-title">😊 Smileys</span>
-            <div class="emoji-list">
-                😀 😃 😄 😁 😆 😅 🤣 😂 🙂 🙃 😉 😊 😇 🥰 😍 🤩 😘 😗 😚 😙 😋 😛 😜 🤪 😝 🤑 🤗 🤭 🤫 🤔 🤐 🤨 😐 😑 😶 😏 😒 🙄 😬 🤥 😌 😔 😪 🤤 😴 😷 🤒 🤕 🤢 🤮 🤧 🥵 🥶 🥴 😵 🤯 🤠 🥳 😎 🤓 🧐 😕 😟 🙁 ☹️ 😮 😯 😲 😳 🥺 😦 😧 😨 😰 😥 😢 😭 😱 😖 😣 😞 😓 😩 😫 🥱 😤 😡 😠 🤬
-            </div>
+            <div class="emoji-list">😀 😃 😄 😁 😆 😅 🤣 😂 🙂 🙃 😉 😊 😇 🥰 😍 🤩 😘 😗 😚 😙 😋 😛 😜 🤪 😝 🤑 🤗 🤭 🤫 🤔 🤐 🤨 😐 😑 😶 😏 😒 🙄 😬 🤥 😌 😔 😪 🤤 😴 😷 🤒 🤕 🤢 🤮 🤧 🥵 🥶 🥴 😵 🤯 🤠 🥳 😎 🤓 🧐 😕 😟 🙁 ☹️ 😮 😯 😲 😳 🥺 😦 😧 😨 😰 😥 😢 😭 😱 😖 😣 😞 😓 😩 😫 🥱 😤 😡 😠 🤬</div>
         </div>
         <div class="emoji-category">
             <span class="emoji-category-title">❤️ Hearts</span>
-            <div class="emoji-list">
-                ❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 ❣️ 💕 💞 💓 💗 💖 💘 💝
-            </div>
+            <div class="emoji-list">❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 ❣️ 💕 💞 💓 💗 💖 💘 💝</div>
         </div>
         <div class="emoji-category">
             <span class="emoji-category-title">⚽ Sports</span>
-            <div class="emoji-list">
-                ⚽ 🏀 🏈 ⚾ 🥎 🎾 🏐 🏉 🥏 🎱 🪀 🏓 🏸 🥊 🥋 🎽 ⛸️ 🥌 🎿 ⛷️ 🏂 🏋️ 🤼 🤸 🤺 🤾 🏌️ 🏇 🧘 🏄 🚣 🏊 🤽 🚴 🚵
-            </div>
+            <div class="emoji-list">⚽ 🏀 🏈 ⚾ 🥎 🎾 🏐 🏉 🥏 🎱 🪀 🏓 🏸 🥊 🥋 🎽 ⛸️ 🥌 🎿 ⛷️ 🏂 🏋️ 🤼 🤸 🤺 🤾 🏌️ 🏇 🧘 🏄 🚣 🏊 🤽 🚴 🚵</div>
         </div>
         <div class="emoji-category">
             <span class="emoji-category-title">🎉 Celebrations</span>
-            <div class="emoji-list">
-                🎉 🎊 🎈 🎁 🎂 🎉 🎊 🎈 🎁 🎀 🏆 🥇 🥈 🥉 🎖️ 🏅
-            </div>
+            <div class="emoji-list">🎉 🎊 🎈 🎁 🎂 🎉 🎊 🎈 🎁 🎀 🏆 🥇 🥈 🥉 🎖️ 🏅</div>
         </div>
     </div>
     
-    <!-- I18N Helper -->
-    <script>
-        // I18N: Language translations placeholder
-        window.i18n = {
-            currentLang: 'en',
-            translations: {
-                en: {
-                    total: 'Total',
-                    open: 'Open',
-                    today: 'Today',
-                    loading: 'Loading...',
-                    conversation_id: 'Conversation ID: ',
-                    status_open: 'Open',
-                    status_resolved: 'Resolved',
-                    status_closed: 'Closed',
-                    update: 'Update',
-                    select_conversation: 'Select a conversation from the left',
-                    reply_placeholder: 'Type your reply...',
-                    send: 'Send Reply',
-                    emoji: 'Emoji',
-                    quick_replies: 'Quick Replies',
-                    quick_replies_title: 'Quick Replies',
-                    no_messages: 'No messages',
-                    no_conversations: 'No conversations',
-                    user: 'User',
-                    admin: 'Admin',
-                    system: 'System'
-                },
-                // Future languages can be added here
-                // zh: { ... },
-                // es: { ... }
-            },
-            
-            t(key) {
-                return this.translations[this.currentLang]?.[key] || this.translations.en[key] || key;
-            },
-            
-            setLanguage(lang) {
-                if (this.translations[lang]) {
-                    this.currentLang = lang;
-                    this.updateDOM();
-                }
-            },
-            
-            updateDOM() {
-                document.querySelectorAll('[data-i18n]').forEach(el => {
-                    const key = el.getAttribute('data-i18n');
-                    el.textContent = this.t(key);
-                });
-                document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-                    const key = el.getAttribute('data-i18n-placeholder');
-                    el.placeholder = this.t(key);
-                });
-                document.querySelectorAll('[data-i18n-title]').forEach(el => {
-                    const key = el.getAttribute('data-i18n-title');
-                    el.title = this.t(key);
-                });
-            }
-        };
-        
-        // Initialize i18n
-        window.i18n.updateDOM();
-    </script>
-    
-    <!-- Main Admin Script -->
     <script src="/js/admin/support-admin.js"></script>
+    
+    <script>
+        // 顯示管理員名稱
+        const storedAdmin = localStorage.getItem('admin_name');
+        if (storedAdmin) {
+            const adminNameSpan = document.createElement('span');
+            adminNameSpan.id = 'adminName';
+            adminNameSpan.textContent = storedAdmin;
+            adminNameSpan.style.color = 'var(--text-primary)';
+            adminNameSpan.style.fontWeight = '600';
+            const chatHeader = document.querySelector('.chat-header-info');
+            if (chatHeader && !document.getElementById('adminName')) {
+                const statusDiv = chatHeader.querySelector('div:last-child');
+                if (statusDiv) {
+                    const nameSpan = document.createElement('span');
+                    nameSpan.id = 'adminName';
+                    nameSpan.textContent = `👤 ${storedAdmin}`;
+                    nameSpan.style.marginRight = '16px';
+                    nameSpan.style.fontSize = '13px';
+                    nameSpan.style.color = 'var(--primary-light)';
+                    statusDiv.insertBefore(nameSpan, statusDiv.firstChild);
+                }
+            }
+        }
+    </script>
 </body>
-</html> 
+</html>

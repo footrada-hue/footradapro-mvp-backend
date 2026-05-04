@@ -53,8 +53,8 @@ import adminUsersRoutes from './api/v1/admin/users.routes.js';
 import adminStatsRoutes from './api/v1/admin/stats.routes.js';
 import adminAdminsRoutes from './api/v1/admin/admins.routes.js';
 import captchaRoutes from './api/v1/captcha.routes.js';
-import adminNotificationRoutes from './api/v1/admin/notification.routes.js';
-import userNotificationRoutes from './api/v1/user/notification.routes.js';
+import adminNotificationRoutes from './api/v1/admin/notifications.routes.js';
+import userNotificationRoutes from './api/v1/user/notifications.routes.js';
 import adminTickerManagerRoutes from './api/v1/admin/ticker-manager.routes.js';
 import tickerRoutes from './api/v1/ticker.routes.js';
 import userTransactionsRoutes from './api/v1/user/transactions.routes.js';
@@ -82,6 +82,9 @@ import './jobs/auto-fetch-scores.js';
 import depositNotifyRoutes from './api/v1/user/deposit-notify.routes.js';
 import './services/emailservice.js';
 import SQLiteStore from 'connect-sqlite3';
+import configRoutes from './api/v1/admin/config.routes.js';
+import notificationRoutes from './api/v1/user/notifications.routes.js';
+
 // ==================== 导入数据库 ====================
 import database from './database/connection.js';
 
@@ -159,10 +162,13 @@ scriptSrc: [
 connectSrc: [
     "'self'", 
     "https://cdn.jsdelivr.net",
+    "https://cdn.socket.io",           // 👈 添加这行
     "https://api.footradapro.com",
     "https://www.footradapro.com",
     "ws://localhost:*",
-    "wss://localhost:*"
+    "wss://localhost:*",
+    "ws://localhost:3000",              // 👈 添加这行
+    "wss://localhost:3000"              // 👈 添加这行
 ],
             frameSrc: [
                 "'self'",
@@ -351,7 +357,7 @@ app.get('/support', (req, res) => {
 });
 
 app.get('/support-chat', (req, res) => {
-    res.sendFile(path.join(process.cwd(), 'public', 'support-chat.html'));
+    res.sendFile(path.join(process.cwd(), 'public', 'support-chat-content.html'));
 });
 
 // VIP
@@ -459,7 +465,7 @@ app.use('/api/v1/admin/support', adminSupportRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/user/deposit', depositNotifyRoutes);
 app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
-
+app.use('/api/v1/admin/config', configRoutes);
 // ==================== 404 处理 ====================
 app.use((req, res) => {
     res.status(404).sendFile(path.join(process.cwd(), 'public', '404.html'));

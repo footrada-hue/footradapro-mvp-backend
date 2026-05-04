@@ -1,0 +1,1120 @@
+<!-- 
+  transaction-detail-content.html - 交易详情内容
+  优化版：桌面端卡片更紧凑，移动端适配良好
+-->
+
+<div class="transaction-detail-container">
+  <!-- 模式指示器 -->
+  <div class="mode-indicator">
+    <i class="fa-solid fa-info-circle"></i>
+    <span>Current Mode: </span>
+    <span id="currentModeText" class="sandbox-mode-text">Sandbox</span>
+  </div>
+
+  <!-- 加载状态 -->
+  <div id="loadingState" class="loading-state">
+    <div class="loading-spinner"></div>
+    <p>Loading transaction details...</p>
+  </div>
+
+  <!-- 错误状态 -->
+  <div id="errorState" class="error-state" style="display: none;">
+    <i class="fa-solid fa-circle-exclamation"></i>
+    <p>Failed to load transaction details</p>
+    <button class="retry-btn" onclick="location.reload()">Retry</button>
+  </div>
+
+  <!-- 详情内容 -->
+  <div id="detailContent" style="display: none;">
+    <!-- 交易ID卡片 -->
+    <div class="card tx-card">
+      <div class="tx-id-container">
+        <span class="tx-id-label">Transaction ID</span>
+        <span class="tx-id-value" id="authId">—</span>
+        <button class="copy-btn" onclick="window.copyTxId?.()"><i class="fa-regular fa-copy"></i></button>
+      </div>
+    </div>
+
+    <!-- 比赛信息卡片 -->
+    <div class="card match-card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fa-solid fa-trophy"></i>
+          <span>Match Details</span>
+        </div>
+      </div>
+      
+      <div class="team-logos-section">
+        <div class="team-item">
+          <div class="team-logo-circle" id="homeLogoContainer">
+            <i class="fas fa-futbol default-logo"></i>
+            <img id="homeLogo" class="team-logo-img" style="display: none;">
+          </div>
+          <div class="team-name" id="homeTeamName">—</div>
+          <div class="team-abbr" id="homeTeamAbbr">—</div>
+        </div>
+        <div class="vs-divider">
+          <span class="vs-badge">VS</span>
+        </div>
+        <div class="team-item">
+          <div class="team-logo-circle" id="awayLogoContainer">
+            <i class="fas fa-futbol default-logo"></i>
+            <img id="awayLogo" class="team-logo-img" style="display: none;">
+          </div>
+          <div class="team-name" id="awayTeamName">—</div>
+          <div class="team-abbr" id="awayTeamAbbr">—</div>
+        </div>
+      </div>
+      
+      <div class="match-info-section">
+        <div class="match-league" id="matchLeague">
+          <i class="fa-regular fa-circle-dot"></i> <span>—</span>
+        </div>
+        <div class="match-datetime" id="matchDate">
+          <i class="fa-regular fa-calendar"></i> <span>—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 状态卡片 -->
+    <div class="card status-card" id="statusCard">
+      <div class="status-content-wrapper">
+        <div class="status-icon pending">
+          <i class="fas fa-hourglass-half"></i>
+        </div>
+        <div class="status-info">
+          <div class="status-title pending">Pending Settlement</div>
+          <div class="status-message">AI strategy is active. Waiting for match to complete.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 倒计时卡片 -->
+    <div id="countdownContainer" class="card countdown-card" style="display: none;">
+      <div class="countdown-header">
+        <i class="fa-regular fa-clock"></i>
+        <span>Match starts in</span>
+      </div>
+      <div class="countdown-display" id="matchCountdown">--:--:--</div>
+    </div>
+
+    <!-- 授权详情卡片 -->
+    <div class="card details-card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Authorization Details</span>
+        </div>
+      </div>
+      <div class="details-list">
+        <div class="detail-row">
+          <span class="detail-label">Authorization Amount</span>
+          <span class="detail-value" id="authAmount">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">AI Allocation Ratio</span>
+          <span class="detail-value" id="executionRate">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Active AI Deployment</span>
+          <span class="detail-value" id="deployedAmount">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">AI Strategy Reserve</span>
+          <span class="detail-value" id="reservedAmount">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Authorization Time</span>
+          <span class="detail-value" id="authTime">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 结算卡片 -->
+    <div class="card settlement-card" id="settlementCard" style="display: none;">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fa-solid fa-scale-balanced"></i>
+          <span>Settlement Details</span>
+        </div>
+      </div>
+      <div class="settlement-grid">
+        <div class="settlement-item">
+          <span class="settlement-label">Result</span>
+          <span class="settlement-value" id="resultText">—</span>
+        </div>
+        <div class="settlement-item">
+          <span class="settlement-label">Return Rate</span>
+          <span class="settlement-value" id="profitRateText">—</span>
+        </div>
+        <div class="settlement-item">
+          <span class="settlement-label">AI Deployment Return</span>
+          <span class="settlement-value" id="deployedProfit">—</span>
+        </div>
+        <div class="settlement-item">
+          <span class="settlement-label">Strategy Fee (20%)</span>
+          <span class="settlement-value" id="platformFee">—</span>
+        </div>
+        <div class="settlement-item">
+          <span class="settlement-label">Net Profit</span>
+          <span class="settlement-value" id="netProfit">—</span>
+        </div>
+        <div class="settlement-item">
+          <span class="settlement-label">Deployment Return</span>
+          <span class="settlement-value" id="deployedReturn">—</span>
+        </div>
+        <div class="settlement-item">
+          <span class="settlement-label">Reserve Return</span>
+          <span class="settlement-value" id="reservedReturn">—</span>
+        </div>
+        <div class="settlement-item highlight">
+          <span class="settlement-label">Final Return</span>
+          <span class="settlement-value" id="finalReturn">—</span>
+        </div>
+      </div>
+      <div class="settlement-footer">
+        <i class="fa-regular fa-clock"></i>
+        <span id="settledAt">—</span>
+      </div>
+    </div>
+
+    <!-- 报告预览卡片 -->
+    <div id="reportSectionNew" class="card report-card" style="display: none;">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fa-solid fa-file-alt"></i>
+          <span>AI Analysis Report</span>
+        </div>
+      </div>
+      <p id="reportPreviewContent">AI analysis indicates high confidence in strategy execution. View the complete report for detailed insights.</p>
+      <button class="report-btn" id="viewFullReportBtn">View Full Report →</button>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ========== 交易详情样式 - 桌面端优化版 ========== */
+.transaction-detail-container {
+  flex: 1;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px;
+  width: 100%;
+}
+
+/* 模式指示器 */
+.mode-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--badge-soft);
+  padding: 6px 16px;
+  border-radius: 40px;
+  font-size: 13px;
+  margin-bottom: 20px;
+  color: var(--text-secondary);
+}
+
+.mode-indicator .sandbox-mode-text { color: #8b5cf6; font-weight: 600; }
+.mode-indicator .live-mode-text { color: #f97316; font-weight: 600; }
+
+/* 卡片通用样式 */
+.card {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.card-title i {
+  font-size: 16px;
+  color: var(--accent);
+}
+
+/* 交易ID卡片 */
+.tx-card {
+  padding: 16px 20px;
+}
+
+.tx-id-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tx-id-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.tx-id-value {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--badge-soft);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.copy-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  transform: scale(1.1);
+}
+
+/* 比赛卡片 */
+.match-card {
+  text-align: center;
+}
+
+.team-logos-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.team-item {
+  flex: 1;
+  text-align: center;
+}
+
+.team-logo-circle {
+  width: 100px;
+  height: 100px;
+  background: var(--badge-soft);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  border: 2px solid var(--glass-border);
+  overflow: hidden;
+}
+
+.team-logo-circle i {
+  font-size: 48px;
+  color: var(--accent);
+}
+
+.team-logo-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.team-name {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.team-abbr {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.vs-divider {
+  flex-shrink: 0;
+}
+
+.vs-badge {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--accent);
+  background: var(--badge-soft);
+  padding: 8px 20px;
+  border-radius: 40px;
+}
+
+.match-info-section {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-light);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.match-info-section i {
+  margin-right: 6px;
+}
+
+/* 状态卡片 */
+.status-content-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.status-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.status-icon.pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.status-icon.won {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.status-icon.lost {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.status-info {
+  flex: 1;
+}
+
+.status-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.status-title.pending { color: #f59e0b; }
+.status-title.won { color: #10b981; }
+.status-title.lost { color: #ef4444; }
+
+.status-message {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* 倒计时卡片 */
+.countdown-card {
+  text-align: center;
+  background: var(--badge-soft);
+}
+
+.countdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.countdown-display {
+  font-size: 36px;
+  font-weight: 700;
+  font-family: monospace;
+  color: var(--accent);
+  letter-spacing: 4px;
+}
+
+/* 详情列表 */
+.details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.detail-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.detail-value.positive { color: var(--success); }
+.detail-value.negative { color: var(--danger); }
+
+/* 结算卡片 */
+.settlement-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.settlement-item {
+  background: var(--badge-soft);
+  border-radius: 16px;
+  padding: 14px;
+  text-align: center;
+}
+
+.settlement-item.highlight {
+  background: linear-gradient(135deg, rgba(37,99,235,0.12), rgba(79,70,229,0.06));
+  border: 1px solid var(--accent);
+}
+
+.settlement-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.settlement-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.settlement-value.positive { color: var(--success); }
+.settlement-value.negative { color: var(--danger); }
+.settlement-value.highlight { color: var(--accent); font-size: 17px; }
+
+.settlement-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* 报告卡片 */
+.report-card p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.report-btn, .retry-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 40px;
+  background: var(--accent-gradient);
+  color: white;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.report-btn:hover, .retry-btn:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+/* 加载状态 */
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-light);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 错误状态 */
+.error-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: var(--card-bg);
+  border-radius: 20px;
+}
+
+.error-state i {
+  font-size: 48px;
+  color: var(--danger);
+  margin-bottom: 16px;
+}
+
+.error-state p {
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+/* Toast通知 */
+.toast-notification {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--success);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 40px;
+  font-size: 13px;
+  z-index: 9999;
+  white-space: nowrap;
+  animation: fadeInUp 0.3s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* ========== 响应式设计 ========== */
+
+/* 平板端 */
+@media (max-width: 768px) {
+  .transaction-detail-container {
+    max-width: 100%;
+    padding: 16px;
+  }
+  
+  .team-logo-circle {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .team-logo-circle i {
+    font-size: 36px;
+  }
+  
+  .team-name {
+    font-size: 14px;
+  }
+  
+  .vs-badge {
+    font-size: 14px;
+    padding: 6px 16px;
+  }
+  
+  .countdown-display {
+    font-size: 28px;
+  }
+  
+  .status-title {
+    font-size: 18px;
+  }
+  
+  .status-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 24px;
+  }
+}
+
+/* 手机端 */
+@media (max-width: 480px) {
+  .transaction-detail-container {
+    padding: 12px;
+  }
+  
+  .card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+  
+  .card-header {
+    margin-bottom: 16px;
+  }
+  
+  .team-logos-section {
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  
+  .team-logo-circle {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .team-logo-circle i {
+    font-size: 28px;
+  }
+  
+  .team-name {
+    font-size: 12px;
+  }
+  
+  .team-abbr {
+    font-size: 10px;
+  }
+  
+  .vs-badge {
+    font-size: 12px;
+    padding: 4px 12px;
+  }
+  
+  .match-info-section {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+  
+  .countdown-display {
+    font-size: 24px;
+    letter-spacing: 2px;
+  }
+  
+  .status-content-wrapper {
+    gap: 12px;
+  }
+  
+  .status-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+  
+  .status-title {
+    font-size: 16px;
+  }
+  
+  .status-message {
+    font-size: 11px;
+  }
+  
+  .settlement-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .settlement-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    text-align: left;
+  }
+  
+  .settlement-label {
+    margin-bottom: 0;
+  }
+  
+  .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 10px 0;
+  }
+  
+  .detail-label {
+    font-size: 12px;
+  }
+  
+  .detail-value {
+    font-size: 14px;
+  }
+  
+  .tx-id-container {
+    gap: 8px;
+  }
+  
+  .tx-id-value {
+    font-size: 11px;
+    padding: 3px 10px;
+  }
+}
+
+/* 小手机 */
+@media (max-width: 380px) {
+  .team-logo-circle {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .team-logo-circle i {
+    font-size: 24px;
+  }
+  
+  .team-name {
+    font-size: 10px;
+  }
+  
+  .vs-badge {
+    font-size: 10px;
+    padding: 3px 10px;
+  }
+  
+  .countdown-display {
+    font-size: 20px;
+  }
+}
+</style>
+
+<script>
+(function() {
+  'use strict';
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const authId = urlParams.get('authId');
+  let countdownTimer = null;
+  let currentData = null;
+
+  const loadingState = document.getElementById('loadingState');
+  const errorState = document.getElementById('errorState');
+  const detailContent = document.getElementById('detailContent');
+  const currentModeText = document.getElementById('currentModeText');
+
+  const escapeHtml = (str) => {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+  };
+
+  const formatAmount = (amount) => {
+    const num = Number(amount);
+    if (isNaN(num)) return '0.00';
+    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      return date.toLocaleString('en-US', {
+        year: 'numeric', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    } catch { return '-'; }
+  };
+
+  const formatShortDate = (dateString) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch { return '-'; }
+  };
+
+  const getCurrencySymbol = () => {
+    if (window.ThemeManager && !window.ThemeManager.isTestMode) {
+      return 'USDT';
+    }
+    return 'tUSDT';
+  };
+
+  const showToast = (message) => {
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) existingToast.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.innerHTML = '<i class="fas fa-check-circle"></i> ' + message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
+  };
+
+  window.copyTxId = () => {
+    const txId = document.getElementById('authId')?.textContent;
+    if (txId && txId !== '—') {
+      navigator.clipboard.writeText(txId).then(() => {
+        showToast('Transaction ID copied');
+      }).catch(() => {
+        const textarea = document.createElement('textarea');
+        textarea.value = txId;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast('Transaction ID copied');
+      });
+    }
+  };
+
+  const updateModeUI = () => {
+    if (!currentModeText) return;
+    const isSandbox = window.ThemeManager ? window.ThemeManager.isTestMode : true;
+    currentModeText.textContent = isSandbox ? 'Sandbox' : 'Live';
+    currentModeText.className = isSandbox ? 'sandbox-mode-text' : 'live-mode-text';
+  };
+
+  const renderTeamLogo = (containerId, imgId, logoUrl, teamName) => {
+    const container = document.getElementById(containerId);
+    const img = document.getElementById(imgId);
+    if (!container || !img) return;
+    
+    const defaultIcon = container.querySelector('.default-logo');
+    
+    if (logoUrl && logoUrl !== '/uploads/teams/default.png' && logoUrl !== '') {
+      img.src = logoUrl;
+      img.style.display = 'block';
+      if (defaultIcon) defaultIcon.style.display = 'none';
+      img.onerror = () => {
+        console.warn(`Failed to load logo for ${teamName}: ${logoUrl}`);
+        img.style.display = 'none';
+        if (defaultIcon) defaultIcon.style.display = 'flex';
+      };
+    } else {
+      img.style.display = 'none';
+      if (defaultIcon) defaultIcon.style.display = 'flex';
+    }
+  };
+
+  const renderDetail = (data) => {
+    currentData = data;
+    const currency = getCurrencySymbol();
+    
+    console.log('📊 Rendering detail:', data);
+    
+    // Transaction ID
+    const authIdEl = document.getElementById('authId');
+    if (authIdEl) authIdEl.textContent = data.auth_id || authId || '-';
+    
+    // Match Info
+    document.getElementById('homeTeamName').textContent = data.home_team || '?';
+    document.getElementById('awayTeamName').textContent = data.away_team || '?';
+    document.getElementById('homeTeamAbbr').textContent = (data.home_team || '?').substring(0, 3).toUpperCase();
+    document.getElementById('awayTeamAbbr').textContent = (data.away_team || '?').substring(0, 3).toUpperCase();
+    document.getElementById('matchLeague').innerHTML = `<i class="fa-regular fa-circle-dot"></i> <span>${escapeHtml(data.league || 'Unknown League')}</span>`;
+    document.getElementById('matchDate').innerHTML = `<i class="fa-regular fa-calendar"></i> <span>${formatShortDate(data.match_time)}</span>`;
+    
+    // Team Logos
+    renderTeamLogo('homeLogoContainer', 'homeLogo', data.home_logo, data.home_team);
+    renderTeamLogo('awayLogoContainer', 'awayLogo', data.away_logo, data.away_team);
+    
+    // Authorization Details
+    const amount = Number(data.amount) || 0;
+    const rate = Number(data.execution_rate) || 30;
+    const deployed = amount * rate / 100;
+    const reserved = amount - deployed;
+    
+    document.getElementById('authAmount').textContent = `${formatAmount(amount)} ${currency}`;
+    document.getElementById('executionRate').textContent = `${rate}%`;
+    document.getElementById('deployedAmount').textContent = `${formatAmount(deployed)} ${currency}`;
+    document.getElementById('reservedAmount').textContent = `${formatAmount(reserved)} ${currency}`;
+    document.getElementById('authTime').textContent = formatDate(data.created_at);
+    
+    // Status
+    const isPending = data.status === 'pending' || data.status === 'upcoming';
+    const isSettled = data.status === 'settled' || data.status === 'won' || data.status === 'lost' || data.profit !== undefined;
+    const isWon = data.profit > 0;
+    
+    const statusCard = document.getElementById('statusCard');
+    if (isPending) {
+      statusCard.innerHTML = `
+        <div class="status-content-wrapper">
+          <div class="status-icon pending"><i class="fas fa-hourglass-half"></i></div>
+          <div class="status-info">
+            <div class="status-title pending">Pending Settlement</div>
+            <div class="status-message">AI strategy is active. Waiting for match to complete.</div>
+          </div>
+        </div>
+      `;
+    } else if (isSettled) {
+      const statusClass = isWon ? 'won' : 'lost';
+      const icon = isWon ? 'fa-check-circle' : 'fa-times-circle';
+      const title = isWon ? 'Won' : 'Lost';
+      const message = isWon ? 'AI strategy generated profit. Transaction settled.' : 'AI strategy incurred loss. Transaction settled.';
+      statusCard.innerHTML = `
+        <div class="status-content-wrapper">
+          <div class="status-icon ${statusClass}"><i class="fas ${icon}"></i></div>
+          <div class="status-info">
+            <div class="status-title ${statusClass}">${title}</div>
+            <div class="status-message">${message}</div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Countdown
+    const countdownContainer = document.getElementById('countdownContainer');
+    if (countdownContainer) {
+      if (isPending && data.match_time) {
+        countdownContainer.style.display = 'block';
+        if (countdownTimer) clearInterval(countdownTimer);
+        const matchDate = new Date(data.match_time);
+        const updateCountdown = () => {
+          const diffMs = matchDate - new Date();
+          if (diffMs <= 0) {
+            document.getElementById('matchCountdown').textContent = 'Match in progress';
+            if (countdownTimer) clearInterval(countdownTimer);
+            return;
+          }
+          const hours = Math.floor(diffMs / (1000 * 60 * 60));
+          const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+          document.getElementById('matchCountdown').textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        };
+        updateCountdown();
+        countdownTimer = setInterval(updateCountdown, 1000);
+      } else {
+        countdownContainer.style.display = 'none';
+      }
+    }
+    
+    // Settlement
+    const settlementCard = document.getElementById('settlementCard');
+    if (settlementCard) {
+      if (isSettled && data.profit !== undefined && data.profit !== null) {
+        settlementCard.style.display = 'block';
+        
+        const profit = Number(data.profit) || 0;
+        const profitRate = deployed > 0 ? (profit / deployed * 100).toFixed(2) : 0;
+        const strategyFee = profit > 0 ? profit * 0.2 : 0;
+        const netProfit = profit - strategyFee;
+        const finalReturn = deployed + reserved + netProfit;
+        
+        const resultText = document.getElementById('resultText');
+        resultText.textContent = profit > 0 ? 'Win' : 'Loss';
+        resultText.className = `settlement-value ${profit > 0 ? 'positive' : 'negative'}`;
+        
+        document.getElementById('profitRateText').textContent = `${profitRate > 0 ? '+' : ''}${profitRate}%`;
+        document.getElementById('deployedProfit').textContent = `${profit > 0 ? '+' : ''}${formatAmount(profit)} ${currency}`;
+        document.getElementById('platformFee').textContent = `-${formatAmount(strategyFee)} ${currency}`;
+        document.getElementById('netProfit').textContent = `${netProfit > 0 ? '+' : ''}${formatAmount(netProfit)} ${currency}`;
+        document.getElementById('deployedReturn').textContent = `${formatAmount(deployed)} ${currency}`;
+        document.getElementById('reservedReturn').textContent = `${formatAmount(reserved)} ${currency}`;
+        document.getElementById('finalReturn').textContent = `${formatAmount(finalReturn)} ${currency}`;
+        document.getElementById('settledAt').textContent = formatDate(data.settled_at || data.updated_at);
+      } else {
+        settlementCard.style.display = 'none';
+      }
+    }
+    
+    // Report section
+// Report section - 仅已结算的授权显示报告入口
+const reportSection = document.getElementById('reportSectionNew');
+if (reportSection) {
+    if (isSettled) {
+        reportSection.style.display = 'block';
+        const reportBtn = document.getElementById('viewFullReportBtn');
+        if (reportBtn) {
+            reportBtn.onclick = () => {
+                // 使用 auth_id 或 match_id 跳转到报告详情页
+                window.location.href = `/shell.html?page=report-detail&auth_id=${authId}`;
+            };
+        }
+    } else {
+        reportSection.style.display = 'none';
+    }
+}
+    
+    loadingState.style.display = 'none';
+    errorState.style.display = 'none';
+    detailContent.style.display = 'block';
+  };
+
+  const showError = (message) => {
+    loadingState.style.display = 'none';
+    errorState.style.display = 'block';
+    const errorMsg = errorState.querySelector('p');
+    if (errorMsg) errorMsg.textContent = message || 'Failed to load transaction details';
+    detailContent.style.display = 'none';
+  };
+
+  const loadTransactionDetail = async () => {
+    if (!authId) {
+      showError('Missing transaction ID');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/v1/user/authorize/${authId}`, {
+        credentials: 'include',
+        cache: 'no-cache'
+      });
+      const result = await response.json();
+      
+      console.log('📡 API Response:', result);
+      
+      if (result.success && result.data) {
+        renderDetail(result.data);
+      } else {
+        throw new Error(result.error || 'Failed to load transaction details');
+      }
+    } catch (err) {
+      console.error('Failed to load transaction:', err);
+      showError(err.message || 'Network error. Please try again.');
+    }
+  };
+
+  const initModeListener = () => {
+    if (window.ThemeManager) {
+      ThemeManager.addListener(() => {
+        updateModeUI();
+        if (currentData) renderDetail(currentData);
+      });
+    }
+  };
+
+  const init = async () => {
+    if (!authId) {
+      showError('Missing transaction ID');
+      return;
+    }
+    
+    if (window.ThemeManager) await ThemeManager.init(true);
+    updateModeUI();
+    initModeListener();
+    await loadTransactionDetail();
+  };
+  
+  init();
+})();
+</script>

@@ -1,0 +1,1056 @@
+<!-- 
+  profile-content.html - 个人中心内容
+  最终版：左侧用户信息+余额+按钮+安全，右侧竖状柱状图拉高填充，
+  下方4个长条框垂直排列，Logout按钮
+-->
+
+<div class="profile-container">
+  <!-- 桌面端布局 -->
+  <div class="desktop-layout">
+    <!-- 左侧：用户信息 + 余额 + 按钮 + 安全 -->
+    <div class="profile-left">
+      <!-- 用户信息卡片 -->
+      <div class="info-card">
+        <div class="user-info-wrapper">
+          <div class="user-avatar">
+            <i class="fa-solid fa-user-large"></i>
+          </div>
+          <div class="user-details">
+            <h3 id="username">Loading...</h3>
+            <p id="uid"><i class="fa-regular fa-id-card"></i> UID: --</p>
+            <div id="testModeBadge" class="mode-badge" style="display: none;">
+              <i class="fa-solid fa-flask"></i> Test Mode
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 余额卡片 -->
+      <div class="balance-card">
+        <div class="balance-label">Balance</div>
+        <div class="balance-amount" id="totalAssets">0.00</div>
+        <div class="balance-currency" id="balanceCurrency">USDT</div>
+        <div class="action-buttons">
+          <button class="action-btn deposit" id="depositBtn">
+            <i class="fa-solid fa-circle-dollar-to-slot"></i>
+            <span>Deposit</span>
+          </button>
+          <button class="action-btn withdraw" id="withdrawBtn">
+            <i class="fa-solid fa-arrow-up-from-bracket"></i>
+            <span>Withdraw</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 安全卡片 -->
+      <div class="security-card">
+        <div class="security-header">
+          <i class="fa-solid fa-shield-haltered"></i>
+          <span>Security</span>
+        </div>
+        <div class="security-content">
+          <div class="security-label">Payment Password</div>
+          <button class="security-btn" id="securityCardBtn">
+            <span id="securityBtnText">Set</span>
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧：Quick Stats - 竖状柱状图（拉高填充） -->
+    <div class="profile-right">
+      <div class="stats-card">
+        <div class="stats-header">
+          <i class="fa-solid fa-chart-simple"></i>
+          <span>Performance</span>
+        </div>
+        <div class="chart-container">
+          <div class="chart-bars">
+            <div class="chart-bar-wrapper">
+              <div class="chart-bar" id="tradesBar" style="height: 0%">
+                <span class="chart-value" id="totalTrades">0</span>
+              </div>
+              <div class="chart-label">Trades</div>
+            </div>
+            <div class="chart-bar-wrapper">
+              <div class="chart-bar success" id="winsBar" style="height: 0%">
+                <span class="chart-value" id="winCount">0</span>
+              </div>
+              <div class="chart-label">Wins</div>
+            </div>
+            <div class="chart-bar-wrapper">
+              <div class="chart-bar accent" id="winRateBar" style="height: 0%">
+                <span class="chart-value" id="winRate">0%</span>
+              </div>
+              <div class="chart-label">Win Rate</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 快捷菜单 - 4个长条框垂直排列 -->
+  <div class="quick-access-section">
+    <div class="quick-item" id="fundFlowCard">
+      <div class="quick-icon"><i class="fa-solid fa-chart-line"></i></div>
+      <div class="quick-content">
+<h4>Fund Flow</h4>
+<p>View deposit & withdraw history</p>
+      </div>
+      <i class="fa-solid fa-chevron-right quick-arrow"></i>
+    </div>
+
+    <div class="quick-item" id="authCard">
+      <div class="quick-icon"><i class="fa-solid fa-file-signature"></i></div>
+      <div class="quick-content">
+<h4>Authorizations</h4>
+<p>Track your authorization records</p>
+      </div>
+      <i class="fa-solid fa-chevron-right quick-arrow"></i>
+    </div>
+
+<div class="quick-item" id="settingsCard">
+  <div class="quick-icon"><i class="fa-solid fa-sliders-h"></i></div>
+  <div class="quick-content">
+    <h4>Settings</h4>
+    <p>Account preferences & security</p>
+  </div>
+  <i class="fa-solid fa-chevron-right quick-arrow"></i>
+</div>
+
+    <div class="quick-item" id="supportCard">
+      <div class="quick-icon"><i class="fa-solid fa-headset"></i></div>
+      <div class="quick-content">
+        <h4>Support</h4>
+        <p>Get help 24/7</p>
+      </div>
+      <i class="fa-solid fa-chevron-right quick-arrow"></i>
+    </div>
+  </div>
+
+  <!-- 退出登录按钮 -->
+  <button class="logout-btn" id="logoutBtn">
+    <i class="fa-solid fa-right-from-bracket"></i>
+    <span>Logout</span>
+  </button>
+
+  <!-- 移动端布局 -->
+  <div class="mobile-layout">
+    <!-- 用户信息卡片 -->
+    <div class="mobile-card">
+      <div class="mobile-user-row">
+        <div class="user-avatar">
+          <i class="fa-solid fa-user-large"></i>
+        </div>
+        <div class="mobile-user-info">
+          <h3 id="mobileUsername">Loading...</h3>
+          <p id="mobileUid"><i class="fa-regular fa-id-card"></i> UID: --</p>
+          <div id="mobileTestModeBadge" class="mode-badge" style="display: none;">
+            <i class="fa-solid fa-flask"></i> Test Mode
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 余额卡片 -->
+    <div class="mobile-card">
+      <div class="mobile-balance-label">Balance</div>
+      <div class="mobile-balance-amount" id="mobileTotalAssets">0.00</div>
+      <div class="mobile-balance-currency" id="mobileBalanceCurrency">USDT</div>
+      <div class="mobile-actions">
+        <button class="mobile-action-btn deposit" id="mobileDepositBtn">
+          <i class="fa-solid fa-circle-dollar-to-slot"></i> Deposit
+        </button>
+        <button class="mobile-action-btn withdraw" id="mobileWithdrawBtn">
+          <i class="fa-solid fa-arrow-up-from-bracket"></i> Withdraw
+        </button>
+      </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="mobile-card">
+      <div class="mobile-stats-header">
+        <i class="fa-solid fa-chart-simple"></i>
+        <span>Performance</span>
+      </div>
+      <div class="mobile-stats-grid">
+        <div class="mobile-stat-item">
+          <div class="mobile-stat-number" id="mobileTotalTrades">0</div>
+          <div class="mobile-stat-label">Trades</div>
+        </div>
+        <div class="mobile-stat-item">
+          <div class="mobile-stat-number" id="mobileWinCount">0</div>
+          <div class="mobile-stat-label">Wins</div>
+        </div>
+        <div class="mobile-stat-item">
+          <div class="mobile-stat-number" id="mobileWinRate">0%</div>
+          <div class="mobile-stat-label">Win Rate</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 安全卡片 -->
+    <div class="mobile-card">
+      <div class="mobile-security-header">
+        <i class="fa-solid fa-shield-haltered"></i>
+        <span>Security</span>
+      </div>
+      <div class="mobile-security-row">
+        <div class="mobile-security-label">Payment Password</div>
+        <button class="mobile-security-btn" id="mobileSecurityBtn">
+          <span id="mobileSecurityBtnText">Set</span>
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- 快捷菜单 -->
+    <div class="mobile-card menu-list">
+      <div class="menu-list-item" id="mobileFundFlowCard">
+        <div class="menu-list-left">
+          <div class="menu-list-icon"><i class="fa-solid fa-chart-line"></i></div>
+          <div class="menu-list-info">
+<h4>Fund Flow</h4>
+<p>History</p>
+          </div>
+        </div>
+        <i class="fa-solid fa-chevron-right"></i>
+      </div>
+      <div class="menu-list-item" id="mobileAuthCard">
+        <div class="menu-list-left">
+          <div class="menu-list-icon"><i class="fa-solid fa-file-signature"></i></div>
+          <div class="menu-list-info">
+<h4>Authorizations</h4>
+<p>Records</p>
+          </div>
+        </div>
+        <i class="fa-solid fa-chevron-right"></i>
+      </div>
+<div class="menu-list-item" id="mobileSettingsCard">
+  <div class="menu-list-left">
+    <div class="menu-list-icon"><i class="fa-solid fa-sliders-h"></i></div>
+    <div class="menu-list-info">
+      <h4>Settings</h4>
+      <p>Account preferences & security</p>
+    </div>
+  </div>
+  <i class="fa-solid fa-chevron-right"></i>
+</div>
+
+
+      <div class="menu-list-item" id="mobileSupportCard">
+        <div class="menu-list-left">
+          <div class="menu-list-icon"><i class="fa-solid fa-headset"></i></div>
+          <div class="menu-list-info">
+            <h4>Support</h4>
+            <p>Get help 24/7</p>
+          </div>
+        </div>
+        <i class="fa-solid fa-chevron-right"></i>
+      </div>
+    </div>
+
+    <!-- 退出登录按钮（移动端） -->
+    <button class="mobile-logout-btn" id="mobileLogoutBtn">
+      <i class="fa-solid fa-right-from-bracket"></i>
+      <span>Logout</span>
+    </button>
+  </div>
+</div>
+
+<style>
+/* ========== 个人中心样式 - 最终版 ========== */
+.profile-container {
+  flex: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+  width: 100%;
+}
+
+/* ========== 桌面端布局 ========== */
+.desktop-layout {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.profile-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.profile-right {
+  width: 320px;
+}
+
+/* 卡片通用样式 */
+.info-card,
+.balance-card,
+.security-card,
+.stats-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid var(--border-light);
+  padding: 24px;
+  transition: all 0.2s ease;
+}
+
+.info-card:hover,
+.balance-card:hover,
+.security-card:hover,
+.stats-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.12);
+}
+
+/* 用户信息 */
+.user-info-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-avatar {
+  width: 64px;
+  height: 64px;
+  background: var(--accent-gradient);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.user-details h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.user-details p {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 40px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* 余额卡片 */
+.balance-card {
+  text-align: center;
+}
+
+.balance-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.balance-amount {
+  font-size: 42px;
+  font-weight: 800;
+  font-family: monospace;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.balance-currency {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 60px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.action-btn.deposit {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.action-btn.withdraw {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: white;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25);
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+
+/* 安全卡片 */
+.security-header,
+.stats-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.security-header i,
+.stats-header i {
+  font-size: 16px;
+  color: var(--accent);
+}
+
+.security-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.security-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.security-btn {
+  background: var(--badge-soft);
+  border: none;
+  padding: 10px 16px;
+  border-radius: 40px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  width: fit-content;
+}
+
+.security-btn:hover {
+  background: var(--accent);
+  color: white;
+}
+
+/* Quick Stats - 竖状柱状图（拉高填充） */
+.stats-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 320px;
+}
+
+.chart-bars {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 32px;
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+}
+
+.chart-bar-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.chart-bar {
+  width: 100%;
+  max-width: 70px;
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+  border-radius: 12px 12px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 12px;
+  transition: height 0.5s ease;
+  position: relative;
+  min-height: 40px;
+}
+
+.chart-bar.success {
+  background: linear-gradient(180deg, #10b981, #059669);
+}
+
+.chart-bar.accent {
+  background: linear-gradient(180deg, var(--accent), #4f46e5);
+}
+
+.chart-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.chart-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* 快捷菜单 - 4个长条框垂直排列 */
+.quick-access-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.quick-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  padding: 18px 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.quick-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.quick-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(37, 99, 235, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.quick-icon i {
+  font-size: 22px;
+  color: var(--accent);
+}
+
+.quick-content {
+  flex: 1;
+  padding-left: 16px;
+}
+
+.quick-content h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.quick-content p {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.quick-arrow {
+  font-size: 18px;
+  color: var(--text-muted);
+  opacity: 0.6;
+  transition: all 0.2s;
+}
+
+.quick-item:hover .quick-arrow {
+  opacity: 1;
+  transform: translateX(4px);
+  color: var(--accent);
+}
+
+/* 退出按钮 */
+.logout-btn {
+  width: 100%;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  padding: 14px;
+  border-radius: 60px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  transform: translateY(-2px);
+}
+
+/* 动画 */
+.amount-flash {
+  text-shadow: 0 0 12px var(--accent-glow);
+  transition: text-shadow 0.1s ease;
+}
+
+/* ========== 移动端布局 ========== */
+.mobile-layout {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid var(--border-light);
+  padding: 16px;
+  transition: all 0.2s ease;
+}
+
+.mobile-user-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.mobile-user-info h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.mobile-user-info p {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.mobile-balance-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.mobile-balance-amount {
+  font-size: 32px;
+  font-weight: 800;
+  font-family: monospace;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.mobile-balance-currency {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.mobile-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.mobile-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 60px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.mobile-action-btn.deposit {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.mobile-action-btn.withdraw {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: white;
+}
+
+.mobile-stats-header,
+.mobile-security-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.mobile-stats-header i,
+.mobile-security-header i {
+  font-size: 14px;
+  color: var(--accent);
+}
+
+.mobile-stats-grid {
+  display: flex;
+  justify-content: space-around;
+  gap: 12px;
+}
+
+.mobile-stat-item {
+  text-align: center;
+  flex: 1;
+}
+
+.mobile-stat-number {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.mobile-stat-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.mobile-security-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mobile-security-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.mobile-security-btn {
+  background: var(--badge-soft);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 40px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.mobile-security-btn:hover {
+  background: var(--accent);
+  color: white;
+}
+
+/* 移动端菜单列表 */
+.menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+}
+
+.menu-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: var(--badge-soft);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.menu-list-item:hover {
+  background: rgba(37, 99, 235, 0.12);
+  transform: translateX(4px);
+}
+
+.menu-list-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.menu-list-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(37, 99, 235, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-list-icon i {
+  font-size: 18px;
+  color: var(--accent);
+}
+
+.menu-list-info h4 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  color: var(--text-primary);
+}
+
+.menu-list-info p {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.menu-list-item i:last-child {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.mobile-logout-btn {
+  width: 100%;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  padding: 12px;
+  border-radius: 60px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  margin-top: 4px;
+}
+
+.mobile-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  transform: translateY(-2px);
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 900px) {
+  .profile-container {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-container {
+    padding: 16px;
+    max-width: 100%;
+  }
+  
+  .desktop-layout {
+    display: none;
+  }
+  
+  .quick-access-section {
+    display: none;
+  }
+  
+  .logout-btn {
+    display: none;
+  }
+  
+  .mobile-layout {
+    display: flex;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-container {
+    padding: 12px;
+  }
+  
+  .mobile-card {
+    padding: 14px;
+  }
+  
+  .user-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 22px;
+  }
+  
+  .mobile-user-info h3 {
+    font-size: 15px;
+  }
+  
+  .mobile-balance-amount {
+    font-size: 28px;
+  }
+  
+  .mobile-action-btn {
+    padding: 10px;
+    font-size: 12px;
+  }
+  
+  .mobile-stat-number {
+    font-size: 20px;
+  }
+  
+  .menu-list-item {
+    padding: 10px;
+  }
+  
+  .menu-list-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .menu-list-icon i {
+    font-size: 16px;
+  }
+}
+</style>
+
+<script>
+(function() {
+  // 数字动画函数
+  const animateNumber = (element, start, end, duration = 500) => {
+    if (!element) return;
+    const startTime = performance.now();
+    function update(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const current = start + (end - start) * easeOut;
+      element.innerText = current.toFixed(2);
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      } else {
+        element.innerText = end.toFixed(2);
+        element.classList.add('amount-flash');
+        setTimeout(() => element.classList.remove('amount-flash'), 300);
+      }
+    }
+    requestAnimationFrame(update);
+  };
+
+  // 获取货币符号
+  const getCurrencySymbol = () => {
+    if (window.ThemeManager && !window.ThemeManager.isTestMode) {
+      return 'USDT';
+    }
+    return 'tUSDT';
+  };
+
+  // 更新所有货币显示
+  const updateAllCurrency = () => {
+    const currency = getCurrencySymbol();
+    const desktopCurrency = document.getElementById('balanceCurrency');
+    const mobileCurrency = document.getElementById('mobileBalanceCurrency');
+    if (desktopCurrency) desktopCurrency.textContent = currency;
+    if (mobileCurrency) mobileCurrency.textContent = currency;
+  };
+
+  // 更新柱状图高度
+  const updateBars = (trades, wins, winRate) => {
+    const tradesBar = document.getElementById('tradesBar');
+    const winsBar = document.getElementById('winsBar');
+    const winRateBar = document.getElementById('winRateBar');
+    
+    const maxTrades = 100;
+    const tradesPercent = Math.min((trades / maxTrades) * 100, 100);
+    const winsPercent = trades > 0 ? (wins / trades) * 100 : 0;
+    
+    if (tradesBar) tradesBar.style.height = `${Math.max(tradesPercent, 5)}%`;
+    if (winsBar) winsBar.style.height = `${Math.max(winsPercent, 5)}%`;
+    if (winRateBar) winRateBar.style.height = `${Math.max(winRate, 5)}%`;
+  };
+
+  // 监听模式切换
+  if (window.ThemeManager) {
+    window.ThemeManager.addListener(async (state) => {
+      console.log('🔄 个人中心：模式已切换', state.isTestMode ? 'Sandbox' : 'Live');
+      updateAllCurrency();
+      if (typeof window.refreshProfileData === 'function') {
+        await window.refreshProfileData();
+      }
+    });
+  }
+
+  // 等待 profile_controller 加载完成
+  const initTimer = setInterval(() => {
+    if (typeof window.initProfile === 'function') {
+      clearInterval(initTimer);
+      window.initProfile();
+      console.log('✅ Profile controller initialized');
+    }
+  }, 50);
+  
+  setTimeout(() => {
+    clearInterval(initTimer);
+    if (typeof window.initProfile !== 'function') {
+      console.warn('⚠️ Profile controller load timeout');
+    }
+  }, 5000);
+})();
+</script>

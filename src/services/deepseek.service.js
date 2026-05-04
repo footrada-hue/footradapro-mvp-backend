@@ -1,8 +1,8 @@
 /**
  * DeepSeek API Service
- * @description 调用 DeepSeek API 分批获取比赛数据和队徽 URL（启用联网搜索）
- * @version 7.1.0
- * @since 2026-04-01
+ * @description 调用 DeepSeek API 获取比赛数据（启用联网搜索）
+ * @version 9.0.0
+ * @since 2026-04-12
  */
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
@@ -13,15 +13,24 @@ const MAX_TOKENS = 8192;
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-function buildBatchPrompt(date, leagueGroup, leagues, targetCount) {
-    return `【重要】请使用联网搜索功能，实时搜索 ${date} 至未来 7 天的全球足球比赛赛程，联赛类型为：${leagues}。
+/**
+ * 构建提示词 - 只获取当天的比赛
+ * @param {string} date - 日期字符串 (YYYY-MM-DD)
+ * @param {number} targetCount - 目标获取数量
+ * @returns {string}
+ */
+function buildPrompt(date, targetCount) {
+    return `请使用联网搜索功能，搜索 ${date} 当天的全球足球比赛赛程。
 
 【核心要求】：
-1. 必须使用联网搜索获取最新比赛数据
-2. 只返回 JSON 格式，不要有任何 markdown 标记
-3. 比赛时间使用 UTC 格式（YYYY-MM-DD HH:MM:SS）
-4. 联赛名称使用英文标准名称
-5. 球队名称必须使用英文
+1. ⭐ 只返回 ${date} 当天的比赛，绝对不要返回其他日期的比赛
+2. 必须使用联网搜索获取最新、真实的比赛数据
+3. 只返回 JSON 格式，不要有任何 markdown 标记或其他文字
+4. 比赛时间使用 UTC 格式（YYYY-MM-DD HH:MM:SS）
+5. 联赛名称使用英文标准名称
+6. 球队名称必须使用英文全称
+7. 不要限制联赛级别，包括：顶级联赛、次级联赛、杯赛、友谊赛、青年队比赛等所有足球比赛
+8. 如果当天比赛不足 ${targetCount} 场，则返回实际数量
 
 【返回格式】：
 {
@@ -30,14 +39,19 @@ function buildBatchPrompt(date, leagueGroup, leagues, targetCount) {
       "league": "Premier League",
       "home_team": "Manchester City",
       "away_team": "Liverpool",
-      "match_time_utc": "2026-04-01 12:30:00"
+      "match_time_utc": "${date} 12:30:00"
     }
   ]
 }
 
-请返回 ${targetCount} 场比赛。`;
+请返回 ${targetCount} 场 ${date} 当天的比赛。`;
 }
 
+/**
+ * 清理 Markdown 格式
+ * @param {string} content - 原始内容
+ * @returns {string}
+ */
 function cleanMarkdown(content) {
     if (!content) return '';
     let cleaned = content.trim();
@@ -48,6 +62,12 @@ function cleanMarkdown(content) {
     return cleaned.trim();
 }
 
+/**
+ * 带重试机制的 API 调用
+ * @param {string} prompt - 提示词
+ * @param {number} retryCount - 当前重试次数
+ * @returns {Promise<object>}
+ */
 async function callWithRetry(prompt, retryCount = 0) {
     try {
         console.log(`📡 发送请求到 DeepSeek API...`);
@@ -62,8 +82,8 @@ async function callWithRetry(prompt, retryCount = 0) {
                 messages: [
                     {
                         role: 'system',
-                        content: '你是一个足球数据助手。请使用联网搜索功能获取最新数据。只返回纯JSON格式的数据。球队名称必须使用英文。'
-},
+                        content: '你是一个专业的足球数据助手。请使用联网搜索功能获取最新、真实的足球比赛数据。只返回纯JSON格式的数据，不要有任何额外文字。球队名称必须使用英文全称。'
+                    },
                     {
                         role: 'user',
                         content: prompt
@@ -96,15 +116,21 @@ async function callWithRetry(prompt, retryCount = 0) {
     }
 }
 
-async function fetchBatch(leagueGroup, leagues, date, targetCount) {
-    const prompt = buildBatchPrompt(date, leagueGroup, leagues, targetCount);
+/**
+ * 获取当天的比赛数据
+ * @param {string} date - 日期字符串 (YYYY-MM-DD)
+ * @param {number} targetCount - 目标获取数量
+ * @returns {Promise<Array>}
+ */
+async function fetchMatchesForDate(date, targetCount = 50) {
+    const prompt = buildPrompt(date, targetCount);
     
     try {
-        console.log(`📡 调用 DeepSeek API (联网搜索) - ${leagueGroup}，目标 ${targetCount} 场`);
+        console.log(`📡 调用 DeepSeek API 获取 ${date} 的比赛数据，目标 ${targetCount} 场`);
         const data = await callWithRetry(prompt);
         
         if (!data.choices || !data.choices[0]) {
-            console.error(`❌ DeepSeek API 响应缺少 choices 字段 (${leagueGroup})`);
+            console.error(`❌ DeepSeek API 响应缺少 choices 字段`);
             return [];
         }
         
@@ -112,29 +138,103 @@ async function fetchBatch(leagueGroup, leagues, date, targetCount) {
         content = cleanMarkdown(content);
         
         if (!content) {
-            console.error(`❌ DeepSeek API 返回内容为空 (${leagueGroup})`);
+            console.error(`❌ DeepSeek API 返回内容为空`);
             return [];
         }
         
         const result = JSON.parse(content);
         
         if (result.matches && Array.isArray(result.matches)) {
-const validMatches = result.matches.filter(m => {
-    return m.home_team && m.away_team && m.match_time_utc;
-});
+            // 验证比赛时间是否为当天
+            const validMatches = result.matches.filter(m => {
+                if (!m.home_team || !m.away_team || !m.match_time_utc) {
+                    return false;
+                }
+                // 检查比赛日期是否为当天
+                const matchDate = m.match_time_utc.split(' ')[0];
+                if (matchDate !== date) {
+                    console.warn(`⚠️ 跳过非当天比赛: ${m.home_team} vs ${m.away_team}, 日期: ${matchDate}`);
+                    return false;
+                }
+                return true;
+            });
             
-            console.log(`✅ ${leagueGroup}: 获取 ${result.matches.length} 场，有效 ${validMatches.length} 场`);
+            console.log(`✅ 获取 ${result.matches.length} 场，有效 ${validMatches.length} 场（当天）`);
             return validMatches;
         }
         
         return [];
         
     } catch (error) {
-        console.error(`❌ ${leagueGroup} 批次失败:`, error.message);
+        console.error(`❌ 获取比赛数据失败:`, error.message);
         return [];
     }
 }
 
+/**
+ * 获取未来7天的比赛（备用方案）
+ * @param {string} startDate - 起始日期
+ * @param {number} targetCount - 目标获取数量
+ * @returns {Promise<Array>}
+ */
+async function fetchUpcomingMatchesBackup(startDate, targetCount = 30) {
+    const prompt = `请使用联网搜索功能，搜索 ${startDate} 至未来 7 天的全球足球比赛赛程。
+
+【核心要求】：
+1. 必须使用联网搜索获取最新、真实的比赛数据
+2. 只返回 JSON 格式，不要有任何 markdown 标记
+3. 比赛时间使用 UTC 格式（YYYY-MM-DD HH:MM:SS）
+4. 联赛名称和球队名称使用英文
+5. 优先返回最近2天的比赛
+
+【返回格式】：
+{
+  "matches": [
+    {
+      "league": "Premier League",
+      "home_team": "Manchester City",
+      "away_team": "Liverpool",
+      "match_time_utc": "${startDate} 12:30:00"
+    }
+  ]
+}
+
+请返回 ${targetCount} 场比赛。`;
+    
+    try {
+        console.log(`📡 使用备用方案获取未来7天比赛...`);
+        const data = await callWithRetry(prompt);
+        
+        if (!data.choices || !data.choices[0]) {
+            return [];
+        }
+        
+        let content = data.choices[0].message.content;
+        content = cleanMarkdown(content);
+        
+        if (!content) {
+            return [];
+        }
+        
+        const result = JSON.parse(content);
+        
+        if (result.matches && Array.isArray(result.matches)) {
+            const validMatches = result.matches.filter(m => m.home_team && m.away_team && m.match_time_utc);
+            console.log(`✅ 备用方案获取 ${validMatches.length} 场比赛`);
+            return validMatches;
+        }
+        
+        return [];
+    } catch (error) {
+        console.error(`❌ 备用方案失败:`, error.message);
+        return [];
+    }
+}
+
+/**
+ * 获取比赛数据（主入口）
+ * @returns {Promise<Array>}
+ */
 export async function fetchUpcomingMatches() {
     if (!DEEPSEEK_API_KEY) {
         console.warn('⚠️ DEEPSEEK_API_KEY 未配置');
@@ -143,49 +243,72 @@ export async function fetchUpcomingMatches() {
 
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
-    console.log(`📡 开始联网搜索比赛数据，起始日期: ${todayStr}`);
+    console.log(`📡 开始搜索 ${todayStr} 当天的比赛数据...`);
     
     const startTime = Date.now();
-    const allMatches = [];
+    let allMatches = [];
     
-    const batches = [
-        {
-            name: 'European Top Leagues',
-            leagues: '英超 (Premier League), 西甲 (La Liga), 意甲 (Serie A), 德甲 (Bundesliga), 法甲 (Ligue 1)',
-            target: 40
-        },
-        {
-            name: 'European Cups',
-            leagues: '欧冠 (Champions League), 欧联杯 (Europa League)',
-            target: 20
-        },
-        {
-            name: 'International & Others',
-            leagues: '国际友谊赛 (International Friendly), 世界杯预选赛 (World Cup Qualifier), 亚洲联赛 (J1 League, K League 1, Chinese Super League), 南美联赛 (Campeonato Brasileiro Série A, Primera División Argentina)',
-            target: 30
-        }
-    ];
+    // 方案一：获取今天的比赛
+    console.log(`\n📡 方案一：获取 ${todayStr} 当天的比赛...`);
+    const todayMatches = await fetchMatchesForDate(todayStr, 60);
+    allMatches.push(...todayMatches);
+    console.log(`✅ 当天实际获取 ${todayMatches.length} 场比赛`);
     
-for (const batch of batches) {
-    console.log(`\n📡 正在获取: ${batch.name} (目标 ${batch.target} 场)...`);
-    const matches = await fetchBatch(batch.name, batch.leagues, todayStr, batch.target);
-    allMatches.push(...matches);
-    console.log(`✅ ${batch.name}: 实际获取 ${matches.length} 场`);
+    // 如果今天没有比赛，使用备用方案获取未来几天的比赛
+    if (todayMatches.length === 0) {
+        console.log(`\n⚠️ 当天没有比赛数据，使用备用方案获取未来7天比赛...`);
+        const backupMatches = await fetchUpcomingMatchesBackup(todayStr, 50);
+        
+        // 过滤出未来3天内的比赛
+        const threeDaysLater = new Date(today);
+        threeDaysLater.setDate(threeDaysLater.getDate() + 3);
+        const threeDaysLaterStr = threeDaysLater.toISOString().split('T')[0];
+        
+        const recentMatches = backupMatches.filter(m => {
+            const matchDate = m.match_time_utc.split(' ')[0];
+            return matchDate <= threeDaysLaterStr;
+        });
+        
+        allMatches.push(...recentMatches);
+        console.log(`✅ 备用方案获取未来3天内比赛 ${recentMatches.length} 场`);
+    }
     
-    await delay(1500);
-}
+    const duration = Date.now() - startTime;
+    console.log(`\n📊 总共获取 ${allMatches.length} 场比赛，耗时 ${duration}ms`);
     
-const duration = Date.now() - startTime;
-console.log(`\n📊 总共获取 ${allMatches.length} 场比赛，耗时 ${duration}ms`);
+    if (allMatches.length === 0) {
+        console.warn(`⚠️ 未获取到任何比赛数据，请检查 DeepSeek API 配置或网络`);
+    }
     
     return allMatches;
 }
 
+/**
+ * 手动指定日期获取比赛
+ * @param {string} date - 日期字符串 (YYYY-MM-DD)
+ * @returns {Promise<Array>}
+ */
+export async function fetchMatchesForSpecificDate(date) {
+    if (!DEEPSEEK_API_KEY) {
+        console.warn('⚠️ DEEPSEEK_API_KEY 未配置');
+        return [];
+    }
+    
+    console.log(`📡 手动获取 ${date} 的比赛数据...`);
+    return fetchMatchesForDate(date, 50);
+}
+
+/**
+ * 兼容旧版 API
+ * @param {string} date - 日期字符串
+ * @returns {Promise<Array>}
+ */
 export async function fetchMatchesFromDeepSeek(date) {
-    return fetchBatch('Test Batch', 'Premier League', date, 20);
+    return fetchMatchesForDate(date, 20);
 }
 
 export default {
     fetchMatchesFromDeepSeek,
-    fetchUpcomingMatches
+    fetchUpcomingMatches,
+    fetchMatchesForSpecificDate
 };

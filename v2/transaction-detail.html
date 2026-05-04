@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Transaction Detail · FootRadaPro</title>
+  <meta name="description" content="View detailed transaction information, AI allocation, settlement results">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ========== 8px 网格系统 ========== */
+    :root {
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 28px;
+      --space-8: 32px;
+      --space-9: 40px;
+      
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-base: 1rem;
+      --font-md: 1.125rem;
+      --font-lg: 1.25rem;
+      --font-xl: 1.5rem;
+      --font-2xl: 1.75rem;
+      
+      --radius-sm: 12px;
+      --radius-md: 16px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --radius-2xl: 28px;
+      --radius-full: 9999px;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-fast: 0.15s;
+      --duration-base: 0.24s;
+    }
+
+    /* ========== 玻璃质感主题 ========== */
+    :root {
+      --bg-gradient-start: rgba(248, 250, 252, 0.95);
+      --bg-gradient-end: rgba(241, 245, 249, 0.98);
+      --glass-bg: rgba(255, 255, 255, 0.52);
+      --glass-border: rgba(59, 130, 246, 0.12);
+      --glass-shadow: 0 2px 8px rgba(0,0,0,0.02), 0 8px 24px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.9);
+      --glass-shadow-hover: 0 8px 24px rgba(0,0,0,0.06), 0 16px 32px -12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.95);
+      --accent: #2563eb;
+      --accent-glow: rgba(37,99,235,0.2);
+      --accent-gradient: linear-gradient(135deg, #2563eb, #4f46e5);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --border-light: rgba(148,163,184,0.12);
+      --card-bg: rgba(255,255,255,0.65);
+      --ticker-bg: rgba(37,99,235,0.9);
+      --badge-soft: rgba(37,99,235,0.08);
+    }
+
+    body.dark {
+      --bg-gradient-start: rgba(10,16,30,0.96);
+      --bg-gradient-end: rgba(2,6,18,0.98);
+      --glass-bg: rgba(20,28,44,0.55);
+      --glass-border: rgba(59,130,246,0.2);
+      --glass-shadow: 0 2px 8px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04);
+      --glass-shadow-hover: 0 8px 24px rgba(0,0,0,0.35), 0 16px 32px -12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59,130,246,0.3);
+      --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #f87171;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --card-bg: rgba(20,28,44,0.6);
+    }
+
+    body {
+      background: radial-gradient(ellipse at 30% 40%, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: ''; position: fixed; top:0; left:0; width:100%; height:100%;
+      background-image: repeating-linear-gradient(90deg, rgba(59,130,246,0.015) 0px, rgba(59,130,246,0.015) 1px, transparent 1px, transparent 40px),
+                        repeating-linear-gradient(0deg, rgba(59,130,246,0.015) 0px, rgba(59,130,246,0.015) 1px, transparent 1px, transparent 40px);
+      background-size: 40px 40px;
+      pointer-events: none; z-index:0;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--border-light); border-radius: var(--radius-full); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: var(--radius-full); }
+
+    .app-wrapper { position: relative; z-index:1; min-height:100vh; display: flex; flex-direction: column; }
+
+    /* 跑马灯 */
+    .ticker {
+      background: var(--ticker-bg); backdrop-filter: blur(12px); color: white; padding: 10px 0; font-size: var(--font-sm); font-weight: 500;
+      white-space: nowrap; overflow: hidden; border-bottom: 1px solid var(--glass-border);
+    }
+    .ticker-content { display: inline-block; animation: ticker 32s linear infinite; padding-left: 100%; letter-spacing: 0.3px; }
+    @keyframes ticker { to { transform: translateX(-100%); } }
+
+    /* 头部导航 */
+    .header {
+      background: var(--glass-bg); backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border);
+      padding: var(--space-4) var(--space-6); position: sticky; top:0; z-index:50; box-shadow: var(--glass-shadow);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: var(--space-3); }
+    .logo-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+    .logo-text { font-size: var(--font-md); font-weight: 700; background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .header-actions { display: flex; gap: var(--space-5); align-items: center; }
+    .header-actions i { font-size: 20px; color: var(--text-secondary); cursor: pointer; transition: all var(--duration-fast) var(--ease-out); }
+    .user-badge { width: 38px; height: 38px; border-radius: 50%; background: var(--badge-soft); backdrop-filter: blur(8px); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 600; border: 1px solid var(--glass-border); }
+
+    /* 主内容区 */
+    .container { display: flex; flex:1; padding: var(--space-6); gap: var(--space-6); max-width: 900px; margin: 0 auto; width: 100%; }
+    .content { flex:1; }
+
+    /* 模式指示器 */
+    .mode-indicator {
+      display: inline-flex; align-items: center; gap: var(--space-2); background: var(--badge-soft); backdrop-filter: blur(8px);
+      padding: 6px 16px; border-radius: var(--radius-full); width: fit-content; margin-bottom: var(--space-5);
+      font-size: var(--font-sm);
+    }
+    .mode-indicator .sandbox-mode-text { color: #8b5cf6; font-weight: 600; }
+    .mode-indicator .live-mode-text { color: #f97316; font-weight: 600; }
+    .test-badge { background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white; padding: 4px 12px; border-radius: var(--radius-full); font-size: var(--font-xs); margin-left: var(--space-3); }
+
+    /* 卡片通用样式 */
+    .card {
+      background: var(--card-bg); backdrop-filter: blur(24px); border-radius: var(--radius-xl);
+      border: 1px solid var(--glass-border); padding: var(--space-6); margin-bottom: var(--space-6);
+      transition: all var(--duration-base);
+    }
+    .card:last-child { margin-bottom: 0; }
+    .card-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-5);
+      padding-bottom: var(--space-3); border-bottom: 1px solid var(--border-light);
+    }
+    .card-title { display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-base); font-weight: 600; color: var(--text-secondary); }
+    .card-title i { color: var(--accent); font-size: var(--font-lg); }
+
+    /* 交易ID区域 */
+    .tx-id-container { display: flex; align-items: center; gap: var(--space-3); background: var(--badge-soft); padding: var(--space-3) var(--space-5); border-radius: var(--radius-full); width: fit-content; }
+    .tx-id-label { font-size: var(--font-xs); color: var(--text-muted); }
+    .tx-id-value { font-family: monospace; font-size: var(--font-sm); font-weight: 600; }
+    .copy-btn { background: none; border: none; color: var(--accent); cursor: pointer; padding: var(--space-1); transition: all var(--duration-fast); }
+    .copy-btn:hover { transform: scale(1.1); }
+
+    /* 比赛信息区域 */
+    .match-teams { text-align: center; margin-bottom: var(--space-5); }
+    .match-teams h2 { font-size: var(--font-lg); font-weight: 700; margin-bottom: var(--space-2); letter-spacing: -0.3px; }
+    .match-meta { display: flex; justify-content: center; gap: var(--space-5); color: var(--text-muted); font-size: var(--font-sm); flex-wrap: wrap; }
+
+    /* 球队Logo区域 */
+    .team-logos { display: flex; justify-content: center; align-items: center; gap: var(--space-7); margin: var(--space-6) 0; }
+    .team-logo { text-align: center; flex: 1; max-width: 120px; }
+    .team-logo-circle { width: 80px; height: 80px; background: var(--badge-soft); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-3); border: 2px solid var(--glass-border); }
+    .team-logo-circle i { font-size: 36px; color: var(--accent); }
+    .team-logo-circle img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: none; }
+    .team-name { font-weight: 600; font-size: var(--font-sm); }
+    .team-abbr { font-size: var(--font-xs); color: var(--text-muted); }
+    .vs-badge { font-size: var(--font-base); font-weight: 700; color: var(--accent); background: var(--badge-soft); padding: 8px 20px; border-radius: var(--radius-full); }
+
+    /* 状态卡片 */
+    .status-card-pending, .status-card-settled, .status-card-unknown {
+      display: flex; align-items: center; gap: var(--space-5); padding: var(--space-5);
+    }
+    .status-icon-large { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+    .status-icon-large.pending { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .status-icon-large.won { background: rgba(16,185,129,0.15); color: #10b981; }
+    .status-icon-large.lost { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .status-title { font-size: var(--font-lg); font-weight: 700; margin-bottom: var(--space-1); }
+    .status-title.pending { color: #f59e0b; }
+    .status-title.won { color: #10b981; }
+    .status-title.lost { color: #ef4444; }
+    .status-message { font-size: var(--font-sm); color: var(--text-muted); }
+
+    /* 倒计时 */
+    .countdown-container { background: rgba(0,0,0,0.1); border-radius: var(--radius-lg); padding: var(--space-5); text-align: center; margin-top: var(--space-4); }
+    .countdown-label { font-size: var(--font-xs); color: var(--text-muted); margin-bottom: var(--space-2); text-transform: uppercase; letter-spacing: 1px; }
+    .countdown-display { font-size: var(--font-xl); font-weight: 700; font-family: monospace; color: var(--accent); letter-spacing: 2px; }
+
+    /* 详情列表 */
+    .detail-list { display: flex; flex-direction: column; gap: var(--space-3); }
+    .detail-item { display: flex; justify-content: space-between; align-items: center; padding: var(--space-3) 0; border-bottom: 1px solid var(--border-light); }
+    .detail-item:last-child { border-bottom: none; }
+    .detail-item-label { font-size: var(--font-sm); color: var(--text-muted); }
+    .detail-item-value { font-size: var(--font-sm); font-weight: 600; color: var(--text-primary); }
+    .detail-item-value.positive { color: var(--success); }
+    .detail-item-value.negative { color: var(--danger); }
+    .detail-item-value.highlight { font-size: var(--font-md); color: var(--accent); }
+
+    /* 结算卡片网格 */
+    .settlement-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4); margin-top: var(--space-4); }
+    .settlement-item { background: var(--badge-soft); border-radius: var(--radius-md); padding: var(--space-4); text-align: center; }
+    .settlement-label { font-size: var(--font-xs); color: var(--text-muted); margin-bottom: var(--space-2); }
+    .settlement-value { font-size: var(--font-base); font-weight: 700; }
+
+    /* 报告预览 */
+    .report-preview { background: linear-gradient(135deg, rgba(37,99,235,0.05), rgba(79,70,229,0.02)); border-radius: var(--radius-lg); padding: var(--space-5); margin-top: var(--space-4); }
+    .report-preview p { font-size: var(--font-sm); color: var(--text-muted); margin-bottom: var(--space-4); }
+    .report-btn { width: 100%; padding: 12px; border-radius: var(--radius-full); background: var(--accent-gradient); color: white; font-weight: 600; border: none; cursor: pointer; transition: all var(--duration-fast); }
+
+    /* 加载状态 */
+    .loading-state { text-align: center; padding: 60px; }
+    .loading-spinner { width: 48px; height: 48px; border: 3px solid var(--border-light); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-state { text-align: center; padding: 60px; background: var(--card-bg); backdrop-filter: blur(20px); border-radius: var(--radius-2xl); }
+    .error-state i { font-size: 64px; color: var(--danger); margin-bottom: 16px; }
+
+    /* 底部导航 */
+    .bottom-nav { display: none; position: fixed; bottom:0; left:0; right:0; background: var(--card-bg); backdrop-filter: blur(24px); border-top: 1px solid var(--glass-border); padding: var(--space-3) var(--space-5); z-index:60; }
+    .bottom-nav-items { display: flex; justify-content: space-around; max-width: 500px; margin:0 auto; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); font-size: var(--font-xs); color: var(--text-muted); cursor: pointer; padding: var(--space-2) 0; transition: all var(--duration-fast); }
+    .nav-item.active { color: var(--accent); }
+    .nav-item i { font-size: 22px; }
+
+    /* 悬浮按钮 */
+    .fab { position: fixed; bottom: 28px; right: 28px; width: 52px; height: 52px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px var(--accent-glow); z-index:55; cursor: pointer; transition: all var(--duration-fast); border: 1px solid rgba(255,255,255,0.2); }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .container { padding: var(--space-4); }
+      .card { padding: var(--space-5); }
+      .card-header { margin-bottom: var(--space-4); }
+      
+      .team-logos { gap: var(--space-4); }
+      .team-logo-circle { width: 60px; height: 60px; }
+      .team-logo-circle i { font-size: 28px; }
+      .vs-badge { padding: 6px 14px; font-size: var(--font-sm); }
+      
+      .settlement-grid { gap: var(--space-3); }
+      .settlement-item { padding: var(--space-3); }
+      .settlement-value { font-size: var(--font-sm); }
+      
+      .status-icon-large { width: 48px; height: 48px; font-size: 24px; }
+      .status-title { font-size: var(--font-md); }
+      
+      .bottom-nav { display: block; }
+      body { padding-bottom: 70px; }
+      .fab { bottom: 80px; right: 20px; width: 48px; height: 48px; }
+    }
+
+    @media (max-width: 480px) {
+      .container { padding: var(--space-3); }
+      .card { padding: var(--space-4); }
+      
+      .team-logo-circle { width: 50px; height: 50px; }
+      .team-logo-circle i { font-size: 24px; }
+      .team-name { font-size: var(--font-xs); }
+      .vs-badge { padding: 4px 10px; font-size: 10px; }
+      
+      .settlement-grid { grid-template-columns: 1fr; gap: var(--space-2); }
+      .settlement-item { display: flex; justify-content: space-between; align-items: center; text-align: left; }
+      .settlement-label { margin-bottom: 0; }
+      
+      .detail-item { flex-direction: column; align-items: flex-start; gap: var(--space-1); }
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <div class="ticker"><div class="ticker-content">⚡ FOOTRADA · AI-Powered Football Trading &nbsp;|&nbsp; 🔒 Trust Anchor Enabled &nbsp;|&nbsp; 🏆 World Cup 2026</div></div>
+
+  <div class="header">
+    <div class="logo"><div class="logo-icon">⚽</div><div class="logo-text">FootRadaPro</div></div>
+    <div class="header-actions"><i class="fa-regular fa-moon" id="themeToggle"></i><div class="user-badge">EN</div></div>
+  </div>
+
+  <div class="container">
+    <main class="content">
+      <div class="mode-indicator">
+        <i class="fa-solid fa-info-circle"></i>
+        <span>Current Mode: </span>
+        <span id="currentModeText" class="sandbox-mode-text">Sandbox</span>
+        <span id="testModeBadge" class="test-badge" style="display: none;">🧪 Test Mode</span>
+      </div>
+
+      <!-- 加载状态 -->
+      <div id="loadingState" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading transaction details...</p>
+      </div>
+
+      <!-- 错误状态 -->
+      <div id="errorState" class="error-state" style="display: none;">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <p>Failed to load transaction details</p>
+        <button class="report-btn" style="margin-top: 16px; width: auto; padding: 10px 24px;" onclick="location.reload()">Retry</button>
+      </div>
+
+      <!-- 详情内容 -->
+      <div id="detailContent" style="display: none;">
+        <!-- 交易ID卡片 -->
+        <div class="card">
+          <div class="tx-id-container">
+            <span class="tx-id-label">Transaction ID</span>
+            <span class="tx-id-value" id="authId">—</span>
+            <button class="copy-btn" onclick="copyTxId()"><i class="fa-regular fa-copy"></i></button>
+          </div>
+        </div>
+
+        <!-- 比赛信息卡片 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-trophy"></i> Match Details</div>
+          </div>
+          <div class="match-teams">
+            <h2 id="matchTeams">— vs —</h2>
+            <div class="match-meta">
+              <span id="matchLeague"><i class="fa-solid fa-trophy"></i> —</span>
+              <span id="matchDate"><i class="fa-regular fa-calendar"></i> —</span>
+            </div>
+          </div>
+          <div class="team-logos">
+            <div class="team-logo">
+              <div class="team-logo-circle" id="homeLogoContainer">
+                <i class="fas fa-futbol default-logo"></i>
+                <img id="homeLogo" style="display: none;">
+              </div>
+              <div class="team-name" id="homeTeamName">—</div>
+              <div class="team-abbr" id="homeTeamAbbr">—</div>
+            </div>
+            <div class="vs-badge">VS</div>
+            <div class="team-logo">
+              <div class="team-logo-circle" id="awayLogoContainer">
+                <i class="fas fa-futbol default-logo"></i>
+                <img id="awayLogo" style="display: none;">
+              </div>
+              <div class="team-name" id="awayTeamName">—</div>
+              <div class="team-abbr" id="awayTeamAbbr">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 状态卡片 -->
+        <div class="card" id="statusCard">
+          <div class="status-card-pending">
+            <div class="status-icon-large pending"><i class="fas fa-hourglass-half"></i></div>
+            <div class="status-content">
+              <div class="status-title pending">Pending Settlement</div>
+              <div class="status-message">AI strategy is active. Waiting for match to complete.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 倒计时容器 -->
+        <div id="countdownContainer" class="card" style="display: none;">
+          <div class="countdown-container">
+            <div class="countdown-label"><i class="fa-regular fa-clock"></i> Match starts in</div>
+            <div class="countdown-display" id="matchCountdown">--:--:--</div>
+          </div>
+        </div>
+
+        <!-- 授权详情卡片 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-chart-line"></i> Authorization Details</div>
+          </div>
+          <div class="detail-list">
+            <div class="detail-item"><span class="detail-item-label">Authorization Amount</span><span class="detail-item-value" id="authAmount">—</span></div>
+            <div class="detail-item"><span class="detail-item-label">AI Allocation Ratio</span><span class="detail-item-value" id="executionRate">—</span></div>
+            <div class="detail-item"><span class="detail-item-label">Active AI Deployment</span><span class="detail-item-value" id="deployedAmount">—</span></div>
+            <div class="detail-item"><span class="detail-item-label">AI Strategy Reserve</span><span class="detail-item-value" id="reservedAmount">—</span></div>
+            <div class="detail-item"><span class="detail-item-label">Authorization Time</span><span class="detail-item-value" id="authTime">—</span></div>
+          </div>
+        </div>
+
+        <!-- 结算卡片（初始隐藏） -->
+        <div class="card" id="settlementCard" style="display: none;">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-scale-balanced"></i> Settlement Details</div>
+          </div>
+          <div class="settlement-grid">
+            <div class="settlement-item"><div class="settlement-label">Result</div><div class="settlement-value" id="resultText">—</div></div>
+            <div class="settlement-item"><div class="settlement-label">Return Rate</div><div class="settlement-value" id="profitRateText">—</div></div>
+            <div class="settlement-item"><div class="settlement-label">AI Deployment Return</div><div class="settlement-value" id="deployedProfit">—</div></div>
+            <div class="settlement-item"><div class="settlement-label">Strategy Fee (20%)</div><div class="settlement-value" id="platformFee">—</div></div>
+            <div class="settlement-item"><div class="settlement-label">Net Profit</div><div class="settlement-value" id="netProfit">—</div></div>
+            <div class="settlement-item"><div class="settlement-label">Deployment Return</div><div class="settlement-value" id="deployedReturn">—</div></div>
+            <div class="settlement-item"><div class="settlement-label">Reserve Return</div><div class="settlement-value" id="reservedReturn">—</div></div>
+            <div class="settlement-item"><div class="settlement-label">Final Return</div><div class="settlement-value highlight" id="finalReturn">—</div></div>
+          </div>
+          <div class="detail-item" style="margin-top: var(--space-4);"><span class="detail-item-label">Settled At</span><span class="detail-item-value" id="settledAt">—</span></div>
+        </div>
+
+        <!-- 报告预览 -->
+        <div id="reportSectionNew" class="card" style="display: none;">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-file-alt"></i> AI Analysis Report</div>
+          </div>
+          <div class="report-preview">
+            <p id="reportPreviewContent">AI analysis report available</p>
+            <button class="report-btn" id="viewFullReportBtn">View Full Report →</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="bottom-nav-items">
+      <div class="nav-item" data-nav="home"><i class="fa-solid fa-home"></i><span>Home</span></div>
+      <div class="nav-item" data-nav="market"><i class="fa-solid fa-chart-line"></i><span>Market</span></div>
+      <div class="nav-item" data-nav="records"><i class="fa-solid fa-list"></i><span>Records</span></div>
+      <div class="nav-item active" data-nav="support"><i class="fa-solid fa-headset"></i><span>Support</span></div>
+      <div class="nav-item" data-nav="profile"><i class="fa-solid fa-user"></i><span>Profile</span></div>
+    </div>
+  </div>
+
+  <div class="fab" onclick="alert('Support: contact via Telegram')"><i class="fa-solid fa-comment-dots"></i></div>
+</div>
+
+<script>
+  // 复制交易ID
+  window.copyTxId = function() {
+    const txId = document.getElementById('authId')?.textContent;
+    if (txId && txId !== '—') {
+      navigator.clipboard.writeText(txId).then(() => {
+        showToast('Transaction ID copied');
+      }).catch(() => {
+        const textarea = document.createElement('textarea');
+        textarea.value = txId;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast('Transaction ID copied');
+      });
+    }
+  };
+
+  function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.innerHTML = '<i class="fas fa-check-circle"></i> ' + message;
+    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--success);color:white;padding:12px 24px;border-radius:40px;font-size:14px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
+  }
+
+  // 全局状态
+  function getAppMode() { return localStorage.getItem('appMode') || 'sandbox'; }
+  function getThemeMode() { return localStorage.getItem('theme') || 'light'; }
+
+  function updateThemeUI() {
+    const theme = getThemeMode();
+    if (theme === 'dark') document.body.classList.add('dark');
+    else document.body.classList.remove('dark');
+    const icon = document.getElementById('themeToggle');
+    if (icon) {
+      if (theme === 'dark') { icon.classList.remove('fa-moon'); icon.classList.add('fa-sun'); }
+      else { icon.classList.remove('fa-sun'); icon.classList.add('fa-moon'); }
+    }
+  }
+
+  function updateModeUI() {
+    const isSandbox = getAppMode() === 'sandbox';
+    const modeText = document.getElementById('currentModeText');
+    if (modeText) {
+      modeText.textContent = isSandbox ? 'Sandbox' : 'Live';
+      modeText.className = isSandbox ? 'sandbox-mode-text' : 'live-mode-text';
+    }
+  }
+
+  document.getElementById('themeToggle')?.addEventListener('click', () => {
+    const newTheme = getThemeMode() === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', newTheme);
+    window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
+    updateThemeUI();
+  });
+
+  window.addEventListener('appModeChanged', () => updateModeUI());
+  window.addEventListener('themeChanged', () => updateThemeUI());
+
+  // 底部导航
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const nav = item.dataset.nav;
+      if (nav === 'home') window.location.href = '/index.html';
+      if (nav === 'market') window.location.href = '/match-market.html';
+      if (nav === 'records') window.location.href = '/authorizations.html';
+      if (nav === 'support') window.location.href = '/support.html';
+      if (nav === 'profile') window.location.href = '/profile.html';
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+
+  // 初始化
+  updateThemeUI();
+  updateModeUI();
+
+  // 模拟数据展示（无API时使用）
+  const urlParams = new URLSearchParams(window.location.search);
+  const authId = urlParams.get('authId');
+  const matchId = urlParams.get('matchId');
+
+  if (!authId && !matchId) {
+    // 演示模式：显示模拟数据
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('detailContent').style.display = 'block';
+    
+    document.getElementById('authId').textContent = 'A1001';
+    document.getElementById('matchTeams').textContent = 'Liverpool vs Manchester City';
+    document.getElementById('matchLeague').textContent = 'Premier League';
+    document.getElementById('matchDate').textContent = 'Jan 15, 2025';
+    document.getElementById('homeTeamName').textContent = 'Liverpool';
+    document.getElementById('homeTeamAbbr').textContent = 'LIV';
+    document.getElementById('awayTeamName').textContent = 'Manchester City';
+    document.getElementById('awayTeamAbbr').textContent = 'MCI';
+    document.getElementById('authAmount').textContent = '200 USDT';
+    document.getElementById('executionRate').textContent = '30%';
+    document.getElementById('deployedAmount').textContent = '60 USDT';
+    document.getElementById('reservedAmount').textContent = '140 USDT';
+    document.getElementById('authTime').textContent = 'Jan 15, 2025, 10:30 AM';
+    
+    // 显示结算卡片（演示）
+    document.getElementById('settlementCard').style.display = 'block';
+    document.getElementById('resultText').textContent = 'Won';
+    document.getElementById('resultText').className = 'settlement-value positive';
+    document.getElementById('profitRateText').textContent = '+22.50%';
+    document.getElementById('profitRateText').className = 'settlement-value positive';
+    document.getElementById('deployedProfit').textContent = '+13.50 USDT';
+    document.getElementById('deployedProfit').className = 'settlement-value positive';
+    document.getElementById('platformFee').textContent = '-2.70 USDT';
+    document.getElementById('netProfit').textContent = '+10.80 USDT';
+    document.getElementById('netProfit').className = 'settlement-value positive';
+    document.getElementById('deployedReturn').textContent = '60.00 USDT';
+    document.getElementById('reservedReturn').textContent = '140.00 USDT';
+    document.getElementById('finalReturn').textContent = '210.80 USDT';
+    document.getElementById('settledAt').textContent = 'Jan 16, 2025, 14:30 PM';
+    
+    // 显示报告预览
+    document.getElementById('reportSectionNew').style.display = 'block';
+    document.getElementById('reportPreviewContent').innerHTML = 'AI analysis indicates high confidence in strategy execution. View the complete report for detailed insights.';
+    document.getElementById('viewFullReportBtn').onclick = () => alert('Report page coming soon');
+  }
+</script>
+</body>
+</html>

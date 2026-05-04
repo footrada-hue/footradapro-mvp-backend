@@ -1,1420 +1,969 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FOOTRADAPRO · Create account</title>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <meta name="csrf-token" content="{{csrfToken}}">
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            transition: background-color 0.2s ease;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        body[data-theme="light"] {
-            background-color: #FFFFFF;
-            color: #1A1F36;
-        }
-        
-        body[data-theme="dark"] {
-            background-color: #0A0C12;
-            color: #EDEDF0;
-        }
-        
-        .auth-container {
-            width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-        
-        .brand {
-            text-align: center;
-            margin-bottom: 48px;
-        }
-        
-        .brand-logo {
-            font-size: 32px;
-            font-weight: 800;
-            letter-spacing: -1px;
-            text-decoration: none;
-            background: linear-gradient(135deg, #FF6B00 0%, #FF8A3C 100%);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        body[data-theme="dark"] .brand-logo {
-            background: linear-gradient(135deg, #FFFFFF 0%, #FF6B00 100%);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .settings-bar {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 12px;
-            z-index: 1000;
-        }
-        
-        @media (max-width: 480px) {
-            .settings-bar {
-                top: 12px;
-                right: 12px;
-                gap: 8px;
-            }
-        }
-        
-        .btn-group {
-            display: flex;
-            background: rgba(248, 249, 252, 0.9);
-            border: 1px solid #E9EDF2;
-            border-radius: 40px;
-            padding: 4px;
-            height: 40px;
-            backdrop-filter: blur(8px);
-        }
-        
-        body[data-theme="dark"] .btn-group {
-            background: rgba(17, 20, 28, 0.9);
-            border-color: #1F242F;
-        }
-        
-        .btn-option {
-            padding: 0 14px;
-            height: 32px;
-            font-size: 13px;
-            font-weight: 500;
-            background: transparent;
-            border: none;
-            border-radius: 32px;
-            color: #8A99AA;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: 'Inter', sans-serif;
-            line-height: 32px;
-        }
-        
-        body[data-theme="dark"] .btn-option {
-            color: #9CA3AF;
-        }
-        
-        .btn-option:hover {
-            color: #FF6B00;
-            background: rgba(255, 107, 0, 0.1);
-        }
-        
-        .btn-option.active {
-            background: #FF6B00;
-            color: white;
-        }
-        
-        .lang-group {
-            position: relative;
-            cursor: pointer;
-        }
-        
-        .lang-group .btn-option {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .lang-group .btn-option .fa-chevron-down {
-            font-size: 10px;
-            transition: transform 0.2s;
-        }
-        
-        .lang-group.open .btn-option .fa-chevron-down {
-            transform: rotate(180deg);
-        }
-        
-        .lang-dropdown {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            min-width: 100px;
-            background: white;
-            border: 1px solid #E9EDF2;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-8px);
-            transition: all 0.2s;
-            z-index: 101;
-            overflow: hidden;
-        }
-        
-        body[data-theme="dark"] .lang-dropdown {
-            background: #11141C;
-            border-color: #1F242F;
-        }
-        
-        .lang-group.open .lang-dropdown {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-        
-        .lang-option {
-            padding: 10px 16px;
-            font-size: 13px;
-            color: #5A6A7E;
-            cursor: pointer;
-            transition: background 0.2s;
-            text-align: center;
-        }
-        
-        body[data-theme="dark"] .lang-option {
-            color: #9CA3AF;
-        }
-        
-        .lang-option:hover {
-            background: rgba(255, 107, 0, 0.1);
-            color: #FF6B00;
-        }
-        
-        .lang-option.active {
-            background: rgba(255, 107, 0, 0.15);
-            color: #FF6B00;
-            font-weight: 500;
-        }
-        
-        .step { display: none; }
-        .step.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 32px;
-        }
-        
-        .header h1 {
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            margin-bottom: 8px;
-        }
-        
-        .header p {
-            font-size: 14px;
-            color: #8A99AA;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-label {
-            display: block;
-            font-size: 13px;
-            font-weight: 500;
-            color: #8A99AA;
-            margin-bottom: 8px;
-        }
-        
-        .form-input {
-            width: 100%;
-            height: 48px;
-            padding: 0 16px;
-            background: white;
-            border: 1px solid #E9EDF2;
-            border-radius: 12px;
-            font-size: 15px;
-            transition: all 0.2s;
-            outline: none;
-        }
-        
-        body[data-theme="dark"] .form-input {
-            background: #11141C;
-            border-color: #1F242F;
-            color: #EDEDF0;
-        }
-        
-        .form-input:focus {
-            border-color: #FF6B00;
-            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
-        }
-        
-        .helper-text {
-            font-size: 12px;
-            color: #8A99AA;
-            margin-top: 8px;
-        }
-        
-        .code-inputs {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin: 24px 0;
-        }
-        
-        .code-digit {
-            width: 52px;
-            height: 60px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: 600;
-            background: white;
-            border: 1px solid #E9EDF2;
-            border-radius: 12px;
-            font-family: monospace;
-            transition: all 0.2s;
-            outline: none;
-        }
-        
-        body[data-theme="dark"] .code-digit {
-            background: #11141C;
-            border-color: #1F242F;
-            color: #EDEDF0;
-        }
-        
-        .code-digit:focus {
-            border-color: #FF6B00;
-            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
-        }
-        
-        @media (max-width: 480px) {
-            .code-digit { width: 44px; height: 52px; font-size: 20px; }
-            .code-inputs { gap: 8px; }
-        }
-        
-        .btn-primary {
-            width: 100%;
-            height: 48px;
-            background: #FF6B00;
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 8px;
-        }
-        
-        .btn-primary:hover:not(:disabled) {
-            background: #F05A00;
-            transform: translateY(-1px);
-        }
-        
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .secondary-link {
-            text-align: center;
-            margin-top: 24px;
-        }
-        
-        .secondary-link a {
-            color: #8A99AA;
-            text-decoration: none;
-            font-size: 13px;
-        }
-        
-        .secondary-link a:hover {
-            color: #FF6B00;
-        }
-        
-        .password-requirements {
-            margin-top: 12px;
-            padding: 12px;
-            background: #F8F9FC;
-            border-radius: 8px;
-        }
-        
-        body[data-theme="dark"] .password-requirements {
-            background: #11141C;
-        }
-        
-        .requirement-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: #8A99AA;
-            margin-bottom: 4px;
-        }
-        
-        .requirement-item.valid { color: #10B981; }
-        .requirement-item i { width: 14px; }
-        
-        .strength-meter {
-            display: flex;
-            gap: 4px;
-            margin-top: 8px;
-        }
-        
-        .strength-bar {
-            height: 3px;
-            flex: 1;
-            background: #E9EDF2;
-            border-radius: 4px;
-        }
-        
-        body[data-theme="dark"] .strength-bar {
-            background: #1F242F;
-        }
-        
-        .strength-bar.active { background: #FF6B00; }
-        .strength-text { font-size: 11px; color: #8A99AA; margin-top: 4px; }
-        
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 24px 0;
-        }
-        
-        .checkbox-group input {
-            width: 16px;
-            height: 16px;
-            accent-color: #FF6B00;
-        }
-        
-        .checkbox-group label {
-            font-size: 13px;
-            color: #8A99AA;
-        }
-        
-        .checkbox-group a {
-            color: #FF6B00;
-            text-decoration: none;
-        }
-        
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-        
-        .modal.active { display: flex; }
-        
-        .modal-content {
-            background: white;
-            border-radius: 20px;
-            padding: 32px;
-            max-width: 360px;
-            width: 90%;
-            text-align: center;
-        }
-        
-        body[data-theme="dark"] .modal-content {
-            background: #11141C;
-        }
-        
-        .success-icon {
-            width: 56px;
-            height: 56px;
-            background: rgba(16, 185, 129, 0.1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 16px;
-            color: #10B981;
-            font-size: 28px;
-        }
-        
-        .trust-list {
-            text-align: left;
-            margin: 24px 0;
-            padding: 16px;
-            background: #F8F9FC;
-            border-radius: 12px;
-        }
-        
-        body[data-theme="dark"] .trust-list {
-            background: #0A0C12;
-        }
-        
-        .trust-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 0;
-            font-size: 13px;
-            color: #8A99AA;
-        }
-        
-        .trust-item i {
-            color: #FF6B00;
-            width: 20px;
-        }
-        
-        .auto-redirect {
-            font-size: 12px;
-            color: #8A99AA;
-            margin-top: 16px;
-        }
-        
-        .auto-redirect span {
-            color: #FF6B00;
-            font-weight: 500;
-        }
-        
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        .toast {
-            padding: 10px 18px;
-            background: white;
-            border-radius: 40px;
-            font-size: 13px;
-            font-weight: 500;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            border-left: 3px solid;
-        }
-        
-        body[data-theme="dark"] .toast {
-            background: #11141C;
-        }
-        
-        .toast-success { border-left-color: #10B981; color: #10B981; }
-        .toast-error { border-left-color: #EF4444; color: #EF4444; }
-        
-        .spinner {
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-            margin-right: 6px;
-        }
-        
-        @keyframes spin { to { transform: rotate(360deg); } }
-        
-        @media (max-width: 480px) {
-            .auth-container { padding: 16px; }
-            .brand-logo { font-size: 28px; }
-            .header h1 { font-size: 24px; }
-            .modal-content { padding: 24px; }
-            .btn-group { height: 36px; padding: 3px; }
-            .btn-option { padding: 0 12px; height: 30px; line-height: 30px; font-size: 12px; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Create Account · FootRadaPro</title>
+  <meta name="description" content="Sign up for a FootRadaPro account and start trading with AI">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 32px;
+      --space-8: 40px;
+      
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-base: 1rem;
+      --font-md: 1.125rem;
+      --font-lg: 1.25rem;
+      --font-xl: 1.5rem;
+      --font-2xl: 2rem;
+      
+      --radius-sm: 12px;
+      --radius-md: 16px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --radius-2xl: 28px;
+      --radius-full: 9999px;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-fast: 0.15s;
+      --duration-base: 0.24s;
+    }
+
+    :root {
+      --bg-gradient-start: rgba(248, 250, 252, 0.95);
+      --bg-gradient-end: rgba(255, 255, 255, 0.98);
+      --glass-bg: rgba(255, 255, 255, 0.7);
+      --glass-border: rgba(0, 0, 0, 0.06);
+      --glass-shadow: 0 1px 2px rgba(0,0,0,0.02), 0 8px 24px rgba(0,0,0,0.03);
+      --glass-shadow-hover: 0 2px 4px rgba(0,0,0,0.02), 0 16px 32px -12px rgba(0,0,0,0.08);
+      --accent: #0066FF;
+      --accent-glow: rgba(0,102,255,0.1);
+      --accent-gradient: linear-gradient(135deg, #0066FF, #0052CC);
+      --success: #00A86B;
+      --warning: #F5A623;
+      --danger: #FF3B30;
+      --text-primary: #1A1A2E;
+      --text-secondary: #4A4A6A;
+      --text-muted: #8A8AAE;
+      --border-light: rgba(0,0,0,0.06);
+      --card-bg: rgba(255,255,255,0.85);
+      --ticker-bg: #0066FF;
+      --badge-soft: rgba(0,102,255,0.06);
+      --input-bg: #F7F9FC;
+    }
+
+    body.dark {
+      --bg-gradient-start: rgba(10, 16, 30, 0.98);
+      --bg-gradient-end: rgba(2, 6, 18, 0.99);
+      --glass-bg: rgba(20, 28, 44, 0.7);
+      --glass-border: rgba(255,255,255,0.06);
+      --glass-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.25);
+      --glass-shadow-hover: 0 2px 4px rgba(0,0,0,0.2), 0 16px 32px -12px rgba(0,0,0,0.4);
+      --accent: #3B82F6;
+      --accent-glow: rgba(59,130,246,0.15);
+      --accent-gradient: linear-gradient(135deg, #3B82F6, #8B5CF6);
+      --success: #34D399;
+      --warning: #FBBF24;
+      --danger: #F87171;
+      --text-primary: #F1F5F9;
+      --text-secondary: #CBD5E1;
+      --text-muted: #94A3B8;
+      --card-bg: rgba(20,28,44,0.7);
+      --badge-soft: rgba(59,130,246,0.12);
+      --input-bg: #1E293B;
+    }
+
+    body {
+      background: radial-gradient(ellipse at 30% 40%, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    body::before {
+      content: ''; position: fixed; top:0; left:0; width:100%; height:100%;
+      background-image: radial-gradient(circle at 20% 30%, rgba(0,102,255,0.02) 0%, transparent 50%);
+      pointer-events: none; z-index:0;
+    }
+
+    .register-container {
+      position: relative; z-index:1; width: 100%; max-width: 480px; margin: var(--space-6);
+    }
+
+    .logo-area {
+      text-align: center; margin-bottom: var(--space-7);
+    }
+    .logo-icon {
+      width: 64px; height: 64px; background: var(--accent-gradient); border-radius: var(--radius-xl);
+      display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-4);
+    }
+    .logo-icon i { font-size: 32px; color: white; }
+    .logo-area h1 {
+      font-size: var(--font-2xl); font-weight: 700; background: var(--accent-gradient);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+
+    .register-card {
+      background: var(--card-bg); backdrop-filter: blur(24px); border-radius: var(--radius-2xl);
+      border: 1px solid var(--glass-border); padding: var(--space-7);
+      box-shadow: var(--glass-shadow);
+    }
+
+    .header { text-align: center; margin-bottom: var(--space-6); }
+    .header h2 { font-size: var(--font-xl); font-weight: 600; margin-bottom: var(--space-2); }
+    .header p { color: var(--text-muted); font-size: var(--font-sm); }
+
+    .form-group { margin-bottom: var(--space-5); }
+    .input-label {
+      display: block; font-size: var(--font-sm); font-weight: 500; margin-bottom: var(--space-2);
+      color: var(--text-secondary);
+    }
+    .input-wrapper {
+      position: relative; display: flex; align-items: center;
+    }
+    .input-wrapper input {
+      width: 100%; padding: 14px 18px; background: var(--input-bg);
+      border: 1px solid var(--glass-border); border-radius: var(--radius-xl);
+      color: var(--text-primary); font-size: var(--font-base);
+      transition: all var(--duration-fast); font-family: inherit;
+    }
+    .input-wrapper input:focus {
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .captcha-row {
+      display: flex; gap: var(--space-3); align-items: center;
+      position: relative;
+    }
+    .captcha-row .input-wrapper { flex: 1; }
+    .captcha-box {
+      width: 120px; height: 52px; background: linear-gradient(135deg, #1e293b, #0f172a);
+      border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: 1px solid var(--glass-border); transition: all var(--duration-fast);
+    }
+    .captcha-box:hover { border-color: var(--accent); transform: scale(1.02); }
+    .captcha-code {
+      font-family: 'Courier New', monospace; font-size: 22px; font-weight: 700;
+      letter-spacing: 4px; color: #e2e8f0; text-shadow: 0 0 5px rgba(0,102,255,0.5);
+      user-select: none;
+    }
+    .refresh-icon {
+      margin-left: var(--space-2); color: var(--text-muted); cursor: pointer;
+      transition: all var(--duration-fast); font-size: 18px;
+      display: inline-block;
+    }
+    .refresh-icon:hover { color: var(--accent); transform: rotate(15deg); }
+
+    /* 步骤2 - 验证码输入 */
+    .step {
+      display: none;
+    }
+    .step.active {
+      display: block;
+    }
+    .code-inputs {
+      display: flex; gap: var(--space-3); justify-content: center; margin-bottom: var(--space-6);
+    }
+    .code-digit {
+      width: 52px; height: 60px; text-align: center; font-size: var(--font-xl);
+      font-weight: 600; font-family: monospace; background: var(--input-bg);
+      border: 1px solid var(--glass-border); border-radius: var(--radius-xl);
+      color: var(--text-primary); transition: all var(--duration-fast);
+    }
+    .code-digit:focus {
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .btn-primary {
+      width: 100%; padding: 14px; border-radius: var(--radius-full); background: var(--accent-gradient);
+      color: white; font-weight: 700; font-size: var(--font-base); border: none; cursor: pointer;
+      transition: all var(--duration-fast); display: flex; align-items: center; justify-content: center; gap: var(--space-2);
+    }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px var(--accent-glow); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .secondary-link {
+      text-align: center; margin-top: var(--space-5); font-size: var(--font-sm);
+    }
+    .secondary-link a { color: var(--accent); text-decoration: none; cursor: pointer; }
+    .secondary-link a:hover { text-decoration: underline; }
+
+    .resend-link {
+      text-align: center; margin-top: var(--space-5);
+    }
+    .resend-link a { color: var(--accent); text-decoration: none; font-size: var(--font-sm); cursor: pointer; }
+
+    .password-rules {
+      margin-top: var(--space-3); padding: var(--space-3) var(--space-4);
+      background: var(--badge-soft); border-radius: var(--radius-xl);
+    }
+    .rule-item {
+      display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) 0;
+      font-size: var(--font-xs); color: var(--text-secondary);
+    }
+    .rule-item i { width: 16px; font-size: 12px; }
+    .rule-item.valid i { color: var(--success); }
+    .rule-item.invalid i { color: var(--text-muted); }
+
+    .terms-box {
+      display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-6);
+      padding: var(--space-3); background: var(--badge-soft); border-radius: var(--radius-xl);
+    }
+    .terms-box input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent); }
+    .terms-box label { font-size: var(--font-sm); color: var(--text-secondary); cursor: pointer; }
+    .terms-box a { color: var(--accent); text-decoration: none; }
+
+    .toast-container {
+      position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 12px;
+    }
+    .toast {
+      padding: 12px 20px; border-radius: var(--radius-xl); font-size: var(--font-sm);
+      font-weight: 500; animation: slideIn 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .toast-success { background: var(--success); color: white; }
+    .toast-error { background: var(--danger); color: white; }
+    .toast-info { background: var(--accent); color: white; }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+
+    .modal-overlay {
+      position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 2000;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+      background: var(--card-bg); backdrop-filter: blur(28px); border-radius: var(--radius-2xl);
+      border: 1px solid var(--glass-border); padding: var(--space-7); max-width: 400px; width: 90%;
+      text-align: center; animation: modalIn 0.25s ease;
+    }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+    .modal-content h2 { font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-3); }
+    .trust-item { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--badge-soft); border-radius: var(--radius-xl); margin-bottom: var(--space-3); }
+    .trust-item i { font-size: 24px; color: var(--accent); }
+
+    .spinner {
+      width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .theme-toggle {
+      position: fixed; top: 20px; right: 20px; width: 40px; height: 40px;
+      background: var(--card-bg); backdrop-filter: blur(12px); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      border: 1px solid var(--glass-border); z-index: 100;
+    }
+    .theme-toggle i { font-size: 18px; color: var(--text-secondary); }
+
+    @media (max-width: 560px) {
+      .register-container { margin: var(--space-4); }
+      .register-card { padding: var(--space-5); }
+      .code-digit { width: 44px; height: 52px; font-size: var(--font-lg); }
+      .captcha-box { width: 100px; height: 48px; }
+      .captcha-code { font-size: 18px; letter-spacing: 2px; }
+    }
+  </style>
 </head>
 <body>
-    <div class="auth-container">
-        <div class="brand">
-            <a href="/" class="brand-logo">FOOTRADA</a>
-        </div>
+<div class="theme-toggle" id="themeToggle">
+  <i class="fa-regular fa-moon"></i>
+</div>
 
-        <div class="settings-bar">
-            <div class="btn-group">
-                <button class="btn-option" data-theme="light">Light</button>
-                <button class="btn-option" data-theme="auto">Auto</button>
-                <button class="btn-option" data-theme="dark">Dark</button>
-            </div>
-            
-            <div class="btn-group lang-group">
-                <button class="btn-option" id="langBtn">
-                    <span id="currentLang">EN</span> <i class="fas fa-chevron-down"></i>
-                </button>
-                <div class="lang-dropdown" id="langDropdown">
-                    <div class="lang-option" data-lang="en">English</div>
-                    <div class="lang-option" data-lang="zh">中文</div>
-                    <div class="lang-option" data-lang="ms">Melayu</div>
-                </div>
-            </div>
-        </div>
+<div class="register-container">
+  <div class="logo-area">
+    <div class="logo-icon"><i class="fas fa-futbol"></i></div>
+    <h1>FootRadaPro</h1>
+  </div>
 
-        <!-- 步骤1：Email -->
-        <div id="step1" class="step active">
-            <div class="header">
-                <h1>Create account</h1>
-                <p>Start your journey with FootRada</p>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" class="form-input" id="email" placeholder="name@example.com">
-                <p class="helper-text">We'll send you a verification code</p>
-            </div>
-            <button class="btn-primary" id="sendCodeBtn">Continue</button>
-            <div class="secondary-link">
-                <a href="/login.html">Already have an account? Sign in</a>
-            </div>
-        </div>
+  <div class="register-card">
+    <!-- 步骤1：邮箱 + 图形验证码 -->
+    <div id="step1" class="step active">
+      <div class="header">
+        <h2>Create account</h2>
+        <p>Start your journey with FootRada</p>
+      </div>
 
-        <!-- 步骤2：验证码 -->
-        <div id="step2" class="step">
-            <div class="header">
-                <h1>Verify your email</h1>
-                <p>Enter the code sent to <strong id="displayEmail"></strong></p>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Verification code</label>
-                <div class="code-inputs">
-                    <input type="text" class="code-digit" maxlength="1" inputmode="numeric">
-                    <input type="text" class="code-digit" maxlength="1" inputmode="numeric">
-                    <input type="text" class="code-digit" maxlength="1" inputmode="numeric">
-                    <input type="text" class="code-digit" maxlength="1" inputmode="numeric">
-                    <input type="text" class="code-digit" maxlength="1" inputmode="numeric">
-                    <input type="text" class="code-digit" maxlength="1" inputmode="numeric">
-                </div>
-                <p class="helper-text">Didn't receive code? <a href="#" id="resendCode">Resend</a></p>
-            </div>
-            <button class="btn-primary" id="verifyCodeBtn" disabled>Verify</button>
-            <div class="secondary-link">
-                <a href="#" id="backToEmail">Use different email</a>
-            </div>
+      <div class="form-group">
+        <label class="input-label">Email address</label>
+        <div class="input-wrapper">
+          <input type="email" id="email" placeholder="your@email.com" autocomplete="email">
         </div>
+      </div>
+
+      <div class="form-group">
+        <label class="input-label">Verification code</label>
+        <div class="captcha-row">
+          <div class="input-wrapper">
+            <input type="text" id="captchaInput" placeholder="Enter code" autocomplete="off">
+          </div>
+          <div class="captcha-box" id="captchaBox">
+            <span class="captcha-code" id="captchaCode">A3F9</span>
+          </div>
+          <span class="refresh-icon" id="refreshCaptcha"><i class="fas fa-sync-alt"></i></span>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="sendCodeBtn" disabled>
+        <i class="fas fa-arrow-right"></i>
+        <span>Send verification code</span>
+      </button>
+
+      <div class="secondary-link">
+        Already have an account? <a href="/login.html">Sign in</a>
+      </div>
     </div>
 
-    <!-- 密码模态框 -->
-    <div class="modal" id="passwordModal">
-        <div class="modal-content">
-            <h2>Set password</h2>
-            <div class="form-group">
-                <label class="form-label">Password</label>
-                <input type="password" class="form-input" id="newPassword" placeholder="Create a strong password">
-                <div class="strength-meter">
-                    <div class="strength-bar" id="strengthBar1"></div>
-                    <div class="strength-bar" id="strengthBar2"></div>
-                    <div class="strength-bar" id="strengthBar3"></div>
-                </div>
-                <div class="strength-text" id="strengthText">At least 8 characters</div>
-                <div class="password-requirements">
-                    <div class="requirement-item" id="reqLength"><i class="far fa-circle"></i> 8+ characters</div>
-                    <div class="requirement-item" id="reqUppercase"><i class="far fa-circle"></i> Uppercase letter</div>
-                    <div class="requirement-item" id="reqLowercase"><i class="far fa-circle"></i> Lowercase letter</div>
-                    <div class="requirement-item" id="reqNumber"><i class="far fa-circle"></i> Number</div>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Confirm password</label>
-                <input type="password" class="form-input" id="confirmNewPassword" placeholder="Confirm your password">
-            </div>
-            <div class="checkbox-group">
-                <input type="checkbox" id="termsCheckbox" required>
-                <label for="termsCheckbox">I agree to <a href="/terms.html">Terms</a> & <a href="/privacy.html">Privacy</a></label>
-            </div>
-            <button class="btn-primary" id="completeRegistrationBtn">Complete</button>
-        </div>
-    </div>
+    <!-- 步骤2：邮箱验证码输入 -->
+    <div id="step2" class="step">
+      <div class="header">
+        <h2>Verify your email</h2>
+        <p>Enter the code sent to <strong id="displayEmail"></strong></p>
+      </div>
 
-    <!-- 成功弹窗 -->
-    <div class="modal" id="trustModal">
-        <div class="modal-content">
-            <div class="success-icon"><i class="fas fa-check-circle"></i></div>
-            <h2>Welcome!</h2>
-            <p>Your account is ready</p>
-            <div class="trust-list">
-                <div class="trust-item"><i class="fas fa-flask"></i> Sandbox mode</div>
-                <div class="trust-item"><i class="fas fa-coins"></i> 10,000 tUSDT</div>
-                <div class="trust-item"><i class="fas fa-shield-alt"></i> Test funds</div>
-            </div>
-            <button class="btn-primary" id="goToHomeBtn">Start exploring →</button>
-            <p class="auto-redirect">Redirecting in <span id="countdown">5</span>s</p>
-        </div>
-    </div>
+      <div class="code-inputs">
+        <input type="text" maxlength="1" class="code-digit" id="code1">
+        <input type="text" maxlength="1" class="code-digit" id="code2">
+        <input type="text" maxlength="1" class="code-digit" id="code3">
+        <input type="text" maxlength="1" class="code-digit" id="code4">
+        <input type="text" maxlength="1" class="code-digit" id="code5">
+        <input type="text" maxlength="1" class="code-digit" id="code6">
+      </div>
 
-    <script>
-    // ==================== 全局配置（内嵌） ====================
-    window.FOOTRADAPRO = {
-        ENV: { env: 'prod', apiBaseUrl: { prod: 'https://api.footradapro.com/api/v1' } },
-        UTILS: {
-            getStorage: function(k, d) { 
-                try { return JSON.parse(localStorage.getItem('footradapro_' + k) || null) || d; } 
-                catch(e) { return d; } 
-            },
-            setStorage: function(k, v) { 
-                localStorage.setItem('footradapro_' + k, JSON.stringify(v)); 
-            },
-            getApiBaseUrl: function() { 
-                return 'https://api.footradapro.com/api/v1'; 
-            }
-        },
-        ROUTES: {}, THEME: {}, USER: {}, CONSTANTS: {}, FEATURES: {}, SECURITY: {}, THIRD_PARTY: {}
+      <button class="btn-primary" id="verifyCodeBtn" disabled>
+        <i class="fas fa-check"></i>
+        <span>Verify code</span>
+      </button>
+
+      <div class="resend-link">
+        <a href="#" id="resendCode">Resend code</a>
+      </div>
+      <div class="secondary-link">
+        <a href="#" id="backToEmail">Use different email</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 密码模态框 -->
+  <div id="passwordModal" class="modal-overlay">
+    <div class="modal-content">
+      <h2>Create account</h2>
+      <p style="color: var(--text-muted); margin-bottom: var(--space-5);">Set your password</p>
+
+      <div class="form-group">
+        <label class="input-label">New password</label>
+        <div class="input-wrapper">
+          <input type="password" id="newPassword" placeholder="Enter password">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="input-label">Confirm password</label>
+        <div class="input-wrapper">
+          <input type="password" id="confirmNewPassword" placeholder="Confirm password">
+        </div>
+      </div>
+
+      <div class="password-rules" id="passwordRules">
+        <div class="rule-item invalid" id="ruleLength"><i class="fas fa-circle"></i><span>At least 8 characters</span></div>
+        <div class="rule-item invalid" id="ruleUppercase"><i class="fas fa-circle"></i><span>At least 1 uppercase letter</span></div>
+        <div class="rule-item invalid" id="ruleLowercase"><i class="fas fa-circle"></i><span>At least 1 lowercase letter</span></div>
+        <div class="rule-item invalid" id="ruleNumber"><i class="fas fa-circle"></i><span>At least 1 number</span></div>
+        <div class="rule-item invalid" id="ruleMatch"><i class="fas fa-circle"></i><span>Passwords match</span></div>
+      </div>
+
+      <div class="terms-box">
+        <input type="checkbox" id="termsCheckbox">
+        <label>I agree to the <a href="/terms.html">Terms of Service</a> and <a href="/privacy.html">Privacy Policy</a></label>
+      </div>
+
+      <button class="btn-primary" id="completeRegistrationBtn" disabled>
+        <i class="fas fa-user-plus"></i>
+        <span>Create account</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 成功模态框 -->
+  <div id="trustModal" class="modal-overlay">
+    <div class="modal-content">
+      <h2>Welcome!</h2>
+      <p>Your account is ready</p>
+      <div class="trust-item"><i class="fas fa-flask"></i><span>Sandbox mode</span></div>
+      <div class="trust-item"><i class="fas fa-coins"></i><span>10,000 tUSDT</span></div>
+      <div class="trust-item"><i class="fas fa-chart-line"></i><span>Test funds</span></div>
+      <button class="btn-primary" id="goToHomeBtn" style="margin-top: var(--space-5);">Start exploring →</button>
+      <p class="auto-redirect" style="margin-top: var(--space-4); font-size: var(--font-xs); color: var(--text-muted);">Redirecting in <span id="countdown">5</span> seconds</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 全局变量
+  let AppState = {
+    email: '',
+    tempToken: null,
+    requestInProgress: false,
+    countdownInterval: null,
+    currentLang: 'en'
+  };
+
+  let currentCaptchaId = null;
+  let csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
+
+  // DOM 元素
+  const elements = {
+    step1: document.getElementById('step1'),
+    step2: document.getElementById('step2'),
+    emailInput: document.getElementById('email'),
+    sendCodeBtn: document.getElementById('sendCodeBtn'),
+    displayEmail: document.getElementById('displayEmail'),
+    codeInputs: document.querySelectorAll('.code-digit'),
+    verifyCodeBtn: document.getElementById('verifyCodeBtn'),
+    resendLink: document.getElementById('resendCode'),
+    backToEmail: document.getElementById('backToEmail'),
+    passwordModal: document.getElementById('passwordModal'),
+    newPassword: document.getElementById('newPassword'),
+    confirmNewPassword: document.getElementById('confirmNewPassword'),
+    completeRegistrationBtn: document.getElementById('completeRegistrationBtn'),
+    termsCheckbox: document.getElementById('termsCheckbox'),
+    trustModal: document.getElementById('trustModal'),
+    goToHomeBtn: document.getElementById('goToHomeBtn'),
+    captchaInput: document.getElementById('captchaInput'),
+    captchaImage: document.getElementById('captchaCode'),
+    captchaBox: document.getElementById('captchaBox'),
+    refreshCaptchaBtn: document.getElementById('refreshCaptcha')
+  };
+
+  function showToast(message, type) {
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'toast-container';
+      document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  function setLoading(btn, isLoading, loadingText) {
+    if (!btn) return;
+    if (isLoading) {
+      btn.disabled = true;
+      btn.dataset.originalText = btn.innerHTML;
+      btn.innerHTML = `<span class="spinner"></span> ${loadingText}`;
+      AppState.requestInProgress = true;
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = btn.dataset.originalText || btn.innerHTML;
+      AppState.requestInProgress = false;
+    }
+  }
+
+  function openModal(modal) {
+    if (modal) modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal(modal) {
+    if (modal) modal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function validateEmail(email) {
+    return /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/.test(email);
+  }
+
+  function validatePassword(password) {
+    return {
+      valid: password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password),
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password)
     };
-    </script>
+  }
 
-    <script>
-    // ==================== 主題切換 ====================
-    (function() {
-        let savedTheme = localStorage.getItem('theme') || 'auto';
-        
-        function setTheme(theme) {
-            if (theme === 'auto') {
-                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
-            } else {
-                document.body.setAttribute('data-theme', theme);
-            }
-            localStorage.setItem('theme', theme);
-            
-            document.querySelectorAll('.btn-option[data-theme]').forEach(btn => {
-                if (btn.getAttribute('data-theme') === theme) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-        }
-        
-        document.querySelectorAll('.btn-option[data-theme]').forEach(btn => {
-            btn.addEventListener('click', function() {
-                setTheme(this.getAttribute('data-theme'));
-            });
-        });
-        
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-            if (localStorage.getItem('theme') === 'auto') setTheme('auto');
-        });
-        
-        setTheme(savedTheme);
-    })();
+  function updatePasswordValidation() {
+    const password = elements.newPassword?.value || '';
+    const confirm = elements.confirmNewPassword?.value || '';
+    const validation = validatePassword(password);
     
-    // ==================== 語言切換 ====================
-    (function() {
-        const langBtn = document.getElementById('langBtn');
-        const langGroup = document.querySelector('.lang-group');
-        const currentLangSpan = document.getElementById('currentLang');
-        let currentLang = localStorage.getItem('lang') || 'en';
-        const langNames = { en: 'EN', zh: '中文', ms: 'MS' };
-        
-        function setLang(lang) {
-            currentLang = lang;
-            localStorage.setItem('lang', lang);
-            if (currentLangSpan) currentLangSpan.textContent = langNames[lang] || 'EN';
-            document.querySelectorAll('.lang-option').forEach(opt => {
-                if (opt.getAttribute('data-lang') === lang) {
-                    opt.classList.add('active');
-                } else {
-                    opt.classList.remove('active');
-                }
-            });
-            window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang } }));
+    const updateRule = (id, isValid) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const icon = el.querySelector('i');
+      if (isValid) {
+        el.classList.add('valid');
+        el.classList.remove('invalid');
+        icon.className = 'fas fa-check-circle';
+      } else {
+        el.classList.add('invalid');
+        el.classList.remove('valid');
+        icon.className = 'fas fa-circle';
+      }
+    };
+    
+    updateRule('ruleLength', validation.length);
+    updateRule('ruleUppercase', validation.uppercase);
+    updateRule('ruleLowercase', validation.lowercase);
+    updateRule('ruleNumber', validation.number);
+    updateRule('ruleMatch', password === confirm && password.length > 0);
+    
+    const termsChecked = elements.termsCheckbox?.checked || false;
+    const allValid = validation.valid && password === confirm && password.length > 0 && termsChecked;
+    if (elements.completeRegistrationBtn) elements.completeRegistrationBtn.disabled = !allValid;
+  }
+
+  function checkFormValidity() {
+    const emailValid = validateEmail(elements.emailInput?.value || '');
+    const captchaValid = elements.captchaInput?.value?.trim().length > 0;
+    if (elements.sendCodeBtn) elements.sendCodeBtn.disabled = !(emailValid && captchaValid);
+  }
+
+  function showStep(step) {
+    if (step === 1) {
+      elements.step1.classList.add('active');
+      elements.step2.classList.remove('active');
+    } else {
+      elements.step1.classList.remove('active');
+      elements.step2.classList.add('active');
+    }
+  }
+
+  function maskEmail(email) {
+    const parts = email.split('@');
+    const local = parts[0];
+    const domain = parts[1];
+    if (local.length <= 2) return email;
+    return local.charAt(0) + '***' + local.charAt(local.length - 1) + '@' + domain;
+  }
+
+  function updateVerifyButtonState() {
+    let allFilled = true;
+    elements.codeInputs.forEach(input => {
+      if (input.value.length !== 1) allFilled = false;
+    });
+    if (elements.verifyCodeBtn) elements.verifyCodeBtn.disabled = !allFilled;
+  }
+
+  function resetCodeInputs() {
+    elements.codeInputs.forEach(input => input.value = '');
+    if (elements.codeInputs[0]) elements.codeInputs[0].focus();
+    updateVerifyButtonState();
+  }
+
+  function startResendCountdown(seconds) {
+    if (AppState.countdownInterval) clearInterval(AppState.countdownInterval);
+    const link = elements.resendLink;
+    if (!link) return;
+    
+    link.style.pointerEvents = 'none';
+    link.textContent = `Resend (${seconds}s)`;
+    
+    AppState.countdownInterval = setInterval(() => {
+      seconds--;
+      if (seconds <= 0) {
+        clearInterval(AppState.countdownInterval);
+        link.style.pointerEvents = 'auto';
+        link.textContent = 'Resend code';
+      } else {
+        link.textContent = `Resend (${seconds}s)`;
+      }
+    }, 1000);
+  }
+
+  function startRedirectCountdown(seconds) {
+    const countdownSpan = document.getElementById('countdown');
+    if (!countdownSpan) return;
+    countdownSpan.textContent = seconds;
+    if (window.redirectCountdown) clearInterval(window.redirectCountdown);
+    window.redirectCountdown = setInterval(() => {
+      seconds--;
+      if (seconds <= 0) {
+        clearInterval(window.redirectCountdown);
+        window.location.href = '/shell.html?page=home';
+      } else {
+        countdownSpan.textContent = seconds;
+      }
+    }, 1000);
+  }
+
+  // 从后端获取图形验证码
+  async function refreshCaptchaFromServer() {
+    try {
+      const response = await fetch('/api/v1/captcha/generate', {
+        headers: { 'X-CSRF-Token': csrfToken, 'Cache-Control': 'no-cache' },
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success && data.data && data.data.image) {
+        // 后端返回的是 base64 图片
+        elements.captchaImage.textContent = '';
+        const img = document.createElement('img');
+        img.src = data.data.image;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        elements.captchaBox.innerHTML = '';
+        elements.captchaBox.appendChild(img);
+        currentCaptchaId = data.data.captchaId || data.data.id;
+        console.log('Captcha loaded, ID:', currentCaptchaId);
+      }
+    } catch (err) {
+      console.error('Failed to load captcha:', err);
+      // 降级：使用本地生成
+      elements.captchaImage.textContent = Math.random().toString(36).substring(2, 6).toUpperCase();
+    }
+  }
+
+  // 发送邮箱验证码
+  async function sendCode() {
+    if (AppState.requestInProgress) return;
+    
+    const email = elements.emailInput.value.trim();
+    if (!validateEmail(email)) {
+      showToast('Please enter a valid email address', 'error');
+      return;
+    }
+    
+    const captchaCode = elements.captchaInput?.value.trim();
+    if (!captchaCode) {
+      showToast('Please enter the verification code', 'error');
+      return;
+    }
+    
+    if (!currentCaptchaId) {
+      showToast('Captcha expired, please refresh', 'error');
+      refreshCaptchaFromServer();
+      return;
+    }
+    
+    setLoading(elements.sendCodeBtn, true, 'Sending...');
+    
+    try {
+      // 验证图形验证码
+      const verifyRes = await fetch('/api/v1/captcha/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        credentials: 'include',
+        body: JSON.stringify({ captchaId: currentCaptchaId, userInput: captchaCode })
+      });
+      const verifyData = await verifyRes.json();
+      
+      if (!verifyRes.ok || !verifyData.success) {
+        showToast('Invalid captcha code', 'error');
+        refreshCaptchaFromServer();
+        if (elements.captchaInput) elements.captchaInput.value = '';
+        setLoading(elements.sendCodeBtn, false);
+        return;
+      }
+      
+      // 发送邮箱验证码
+      const response = await fetch('/api/v1/auth/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        credentials: 'include',
+        body: JSON.stringify({ email: email })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        AppState.email = email;
+        if (elements.displayEmail) elements.displayEmail.textContent = maskEmail(email);
+        showStep(2);
+        startResendCountdown(60);
+        resetCodeInputs();
+        if (elements.captchaInput) elements.captchaInput.value = '';
+        showToast('Verification code sent to your email', 'success');
+        setTimeout(() => elements.codeInputs[0]?.focus(), 300);
+      } else {
+        let errorMsg = 'Failed to send code';
+        if (data.error === 'EMAIL_ALREADY_REGISTERED') errorMsg = 'Email already registered';
+        showToast(errorMsg, 'error');
+        refreshCaptchaFromServer();
+        if (elements.captchaInput) elements.captchaInput.value = '';
+      }
+    } catch (error) {
+      console.error('Send code error:', error);
+      showToast('Network error, please try again', 'error');
+    } finally {
+      setLoading(elements.sendCodeBtn, false);
+    }
+  }
+
+  // 验证邮箱验证码
+  async function verifyCode() {
+    if (AppState.requestInProgress) return;
+    
+    let code = '';
+    elements.codeInputs.forEach(input => code += input.value);
+    if (code.length !== 6 || !/^\d+$/.test(code)) {
+      showToast('Please enter a valid 6-digit code', 'error');
+      return;
+    }
+    
+    if (!AppState.email) {
+      showToast('Session expired, please start over', 'error');
+      showStep(1);
+      return;
+    }
+    
+    setLoading(elements.verifyCodeBtn, true, 'Verifying...');
+    
+    try {
+      const response = await fetch('/api/v1/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        credentials: 'include',
+        body: JSON.stringify({ email: AppState.email, code: code })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        AppState.tempToken = data.data?.token;
+        openModal(elements.passwordModal);
+        setTimeout(() => elements.newPassword?.focus(), 300);
+      } else {
+        let errorMsg = 'Invalid verification code';
+        if (data.error === 'INVALID_OR_EXPIRED_CODE') errorMsg = 'Code expired, please request a new one';
+        showToast(errorMsg, 'error');
+        resetCodeInputs();
+        if (data.error === 'INVALID_OR_EXPIRED_CODE') startResendCountdown(60);
+      }
+    } catch (error) {
+      console.error('Verify code error:', error);
+      showToast('Network error, please try again', 'error');
+    } finally {
+      setLoading(elements.verifyCodeBtn, false);
+    }
+  }
+
+  // 重发验证码
+  async function resendCode(e) {
+    e.preventDefault();
+    if (AppState.requestInProgress || !AppState.email) {
+      showToast('Please start over', 'error');
+      showStep(1);
+      return;
+    }
+    
+    setLoading(elements.resendLink, true, 'Sending...');
+    
+    try {
+      const response = await fetch('/api/v1/auth/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        credentials: 'include',
+        body: JSON.stringify({ email: AppState.email })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        showToast('New code sent', 'success');
+        startResendCountdown(60);
+        resetCodeInputs();
+      } else {
+        showToast('Failed to resend code', 'error');
+      }
+    } catch (error) {
+      showToast('Network error', 'error');
+    } finally {
+      setLoading(elements.resendLink, false);
+    }
+  }
+
+  // 完成注册
+  async function completeRegistration() {
+    if (AppState.requestInProgress) return;
+    
+    const password = elements.newPassword?.value || '';
+    const confirm = elements.confirmNewPassword?.value || '';
+    const termsChecked = elements.termsCheckbox?.checked || false;
+    const validation = validatePassword(password);
+    
+    if (!validation.valid) {
+      showToast('Password does not meet requirements', 'error');
+      return;
+    }
+    if (password !== confirm) {
+      showToast('Passwords do not match', 'error');
+      return;
+    }
+    if (!termsChecked) {
+      showToast('You must agree to the Terms of Service', 'error');
+      return;
+    }
+    if (!AppState.email || !AppState.tempToken) {
+      showToast('Session expired, please start over', 'error');
+      closeModal(elements.passwordModal);
+      showStep(1);
+      return;
+    }
+    
+    setLoading(elements.completeRegistrationBtn, true, 'Creating account...');
+    
+    try {
+      const response = await fetch('/api/v1/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        credentials: 'include',
+        body: JSON.stringify({
+          username: AppState.email,
+          password: password,
+          token: AppState.tempToken
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        closeModal(elements.passwordModal);
+        openModal(elements.trustModal);
+        startRedirectCountdown(5);
+      } else {
+        let errorMsg = 'Registration failed';
+        if (data.error === 'INVALID_TOKEN') errorMsg = 'Verification expired, please start over';
+        showToast(errorMsg, 'error');
+        if (data.error === 'INVALID_TOKEN') {
+          closeModal(elements.passwordModal);
+          showStep(1);
         }
-        
-        if (langBtn && langGroup) {
-            langBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                langGroup.classList.toggle('open');
-            });
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      showToast('Network error, please try again', 'error');
+    } finally {
+      setLoading(elements.completeRegistrationBtn, false);
+    }
+  }
+
+  // 设置验证码输入框事件
+  function setupCodeInputs() {
+    elements.codeInputs.forEach((input, idx) => {
+      input.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        if (e.target.value.length === 1 && idx < 5) {
+          elements.codeInputs[idx + 1].focus();
         }
-        
-        document.querySelectorAll('.lang-option').forEach(opt => {
-            opt.addEventListener('click', function() {
-                setLang(this.getAttribute('data-lang'));
-                if (langGroup) langGroup.classList.remove('open');
-            });
+        updateVerifyButtonState();
+        let allFilled = true;
+        elements.codeInputs.forEach(inp => { if (inp.value.length !== 1) allFilled = false; });
+        if (allFilled && elements.verifyCodeBtn && !elements.verifyCodeBtn.disabled) {
+          setTimeout(() => verifyCode(), 200);
+        }
+      });
+      
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const paste = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+        paste.split('').forEach((char, i) => {
+          if (elements.codeInputs[i]) elements.codeInputs[i].value = char;
         });
-        
-        document.addEventListener('click', function() {
-            if (langGroup) langGroup.classList.remove('open');
-        });
-        
-        setLang(currentLang);
-    })();
-    </script>
-
-    <script>
-    (function() {
-        const pwdInput = document.getElementById('newPassword');
-        const confirmInput = document.getElementById('confirmNewPassword');
-        const completeBtn = document.getElementById('completeRegistrationBtn');
-        
-        if (pwdInput) {
-            const bars = [
-                document.getElementById('strengthBar1'),
-                document.getElementById('strengthBar2'),
-                document.getElementById('strengthBar3')
-            ];
-            const strengthText = document.getElementById('strengthText');
-            const reqLength = document.getElementById('reqLength');
-            const reqUpper = document.getElementById('reqUppercase');
-            const reqLower = document.getElementById('reqLowercase');
-            const reqNumber = document.getElementById('reqNumber');
-            
-            function updateRequirement(el, valid) {
-                if (!el) return;
-                const icon = el.querySelector('i');
-                if (valid) {
-                    el.classList.add('valid');
-                    icon.className = 'fas fa-check-circle';
-                } else {
-                    el.classList.remove('valid');
-                    icon.className = 'far fa-circle';
-                }
-            }
-            
-            function checkStrength(pwd) {
-                let strength = 0;
-                const hasLength = pwd.length >= 8;
-                const hasUpper = /[A-Z]/.test(pwd);
-                const hasLower = /[a-z]/.test(pwd);
-                const hasNumber = /[0-9]/.test(pwd);
-                
-                if (hasLength) strength++;
-                if (hasUpper) strength++;
-                if (hasLower) strength++;
-                if (hasNumber) strength++;
-                
-                updateRequirement(reqLength, hasLength);
-                updateRequirement(reqUpper, hasUpper);
-                updateRequirement(reqLower, hasLower);
-                updateRequirement(reqNumber, hasNumber);
-                
-                return strength;
-            }
-            
-            function updateStrength() {
-                const pwd = pwdInput.value;
-                const strength = checkStrength(pwd);
-                
-                bars.forEach((bar, i) => {
-                    if (bar) {
-                        if (i < strength) {
-                            bar.classList.add('active');
-                        } else {
-                            bar.classList.remove('active');
-                        }
-                    }
-                });
-                
-                if (strengthText) {
-                    if (pwd.length === 0) {
-                        strengthText.textContent = 'Enter password';
-                    } else if (strength < 3) {
-                        strengthText.textContent = 'Weak';
-                    } else if (strength < 4) {
-                        strengthText.textContent = 'Medium';
-                    } else {
-                        strengthText.textContent = 'Strong';
-                    }
-                }
-            }
-            
-            function checkComplete() {
-                if (!completeBtn) return;
-                const pwd = pwdInput.value;
-                const confirm = confirmInput?.value || '';
-                const termsChecked = document.getElementById('termsCheckbox')?.checked;
-                const isValid = checkStrength(pwd) >= 3 && pwd === confirm && pwd.length > 0 && termsChecked;
-                completeBtn.disabled = !isValid;
-            }
-            
-            pwdInput.addEventListener('input', () => {
-                updateStrength();
-                checkComplete();
-            });
-            
-            if (confirmInput) {
-                confirmInput.addEventListener('input', checkComplete);
-            }
-            
-            const termsCheckbox = document.getElementById('termsCheckbox');
-            if (termsCheckbox) {
-                termsCheckbox.addEventListener('change', checkComplete);
-            }
-            
-            updateStrength();
-            checkComplete();
+        if (elements.codeInputs[paste.length - 1]) elements.codeInputs[paste.length - 1].focus();
+        updateVerifyButtonState();
+        if (paste.length === 6) setTimeout(() => verifyCode(), 200);
+      });
+      
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !input.value && idx > 0) {
+          elements.codeInputs[idx - 1].focus();
         }
-    })();
-    </script>
+        if (e.key === 'ArrowLeft' && idx > 0) elements.codeInputs[idx - 1].focus();
+        if (e.key === 'ArrowRight' && idx < 5) elements.codeInputs[idx + 1].focus();
+      });
+    });
+  }
 
-    <!-- 注册控制器（内嵌，已移除图形验证码） -->
-    <script>
-    (function() {
-        'use strict';
-
-        if (!window.FOOTRADAPRO) {
-            console.error('[FATAL] Core config not loaded');
-            return;
+  // 绑定事件
+  function bindEvents() {
+    if (elements.emailInput) elements.emailInput.addEventListener('input', checkFormValidity);
+    if (elements.captchaInput) elements.captchaInput.addEventListener('input', checkFormValidity);
+    if (elements.sendCodeBtn) elements.sendCodeBtn.addEventListener('click', sendCode);
+    if (elements.verifyCodeBtn) elements.verifyCodeBtn.addEventListener('click', verifyCode);
+    if (elements.resendLink) elements.resendLink.addEventListener('click', resendCode);
+    if (elements.backToEmail) elements.backToEmail.addEventListener('click', (e) => {
+      e.preventDefault();
+      showStep(1);
+      AppState.email = '';
+      AppState.tempToken = null;
+      if (elements.emailInput) {
+        elements.emailInput.value = '';
+        elements.emailInput.focus();
+      }
+      if (elements.captchaInput) elements.captchaInput.value = '';
+      refreshCaptchaFromServer();
+      checkFormValidity();
+    });
+    if (elements.completeRegistrationBtn) elements.completeRegistrationBtn.addEventListener('click', completeRegistration);
+    if (elements.goToHomeBtn) elements.goToHomeBtn.addEventListener('click', () => window.location.href = '/shell.html?page=home');
+    if (elements.captchaBox) elements.captchaBox.addEventListener('click', refreshCaptchaFromServer);
+    if (elements.refreshCaptchaBtn) elements.refreshCaptchaBtn.addEventListener('click', refreshCaptchaFromServer);
+    if (elements.newPassword) elements.newPassword.addEventListener('input', updatePasswordValidation);
+    if (elements.confirmNewPassword) elements.confirmNewPassword.addEventListener('input', updatePasswordValidation);
+    if (elements.termsCheckbox) elements.termsCheckbox.addEventListener('change', updatePasswordValidation);
+    
+    if (elements.passwordModal) {
+      elements.passwordModal.addEventListener('click', (e) => {
+        if (e.target === elements.passwordModal && confirm('Are you sure? Your progress will be lost.')) {
+          closeModal(elements.passwordModal);
+          showStep(1);
         }
+      });
+    }
+  }
 
-        var CONFIG = window.FOOTRADAPRO;
-        var UTILS = CONFIG.UTILS;
+  // 主题切换
+  function getThemeMode() { return localStorage.getItem('theme') || 'light'; }
+  function setThemeMode(theme) { localStorage.setItem('theme', theme); updateThemeUI(); }
+  function updateThemeUI() {
+    const theme = getThemeMode();
+    const icon = document.querySelector('#themeToggle i');
+    if (theme === 'dark') {
+      document.body.classList.add('dark');
+      icon?.classList.remove('fa-moon');
+      icon?.classList.add('fa-sun');
+    } else {
+      document.body.classList.remove('dark');
+      icon?.classList.remove('fa-sun');
+      icon?.classList.add('fa-moon');
+    }
+  }
+  document.getElementById('themeToggle')?.addEventListener('click', () => {
+    const newTheme = getThemeMode() === 'dark' ? 'light' : 'dark';
+    setThemeMode(newTheme);
+  });
 
-        var AppState = {
-            email: '',
-            tempToken: null,
-            countdownInterval: null,
-            redirectCountdown: null,
-            csrfToken: document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '',
-            requestInProgress: false,
-            debug: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1',
-            currentLang: 'en'
-        };
-
-        var elements = {
-            step1: document.getElementById('step1'),
-            step2: document.getElementById('step2'),
-            emailInput: document.getElementById('email'),
-            sendCodeBtn: document.getElementById('sendCodeBtn'),
-            displayEmail: document.getElementById('displayEmail'),
-            codeInputs: document.querySelectorAll('.code-digit'),
-            verifyCodeBtn: document.getElementById('verifyCodeBtn'),
-            resendLink: document.getElementById('resendCode'),
-            backToEmail: document.getElementById('backToEmail'),
-            passwordModal: document.getElementById('passwordModal'),
-            newPassword: document.getElementById('newPassword'),
-            confirmNewPassword: document.getElementById('confirmNewPassword'),
-            completeRegistrationBtn: document.getElementById('completeRegistrationBtn'),
-            termsCheckbox: document.getElementById('termsCheckbox'),
-            trustModal: document.getElementById('trustModal'),
-            goToHomeBtn: document.getElementById('goToHomeBtn'),
-            countdownSpan: document.getElementById('countdown')
-        };
-
-        var I18N = {
-            en: {
-                emailInvalid: 'Please enter a valid email address',
-                sending: 'Sending...',
-                emailExists: 'Email already registered',
-                sendFailed: 'Failed to send code',
-                networkError: 'Network error, please try again',
-                codeInvalid: 'Please enter a valid 6-digit code',
-                sessionExpired: 'Session expired, please start over',
-                verifying: 'Verifying...',
-                codeExpired: 'Code expired, please request a new one',
-                codeInvalidMsg: 'Invalid verification code',
-                codeResent: 'New code sent',
-                resendFailed: 'Failed to resend code',
-                passwordRequired: 'Password is required',
-                passwordLength: 'At least 8 characters',
-                passwordUppercase: 'At least 1 uppercase letter',
-                passwordLowercase: 'At least 1 lowercase letter',
-                passwordNumber: 'At least 1 number',
-                passwordMismatch: 'Passwords do not match',
-                termsRequired: 'You must agree to the Terms of Service',
-                creating: 'Creating account...',
-                registrationFailed: 'Registration failed',
-                verificationExpired: 'Verification expired, please start over',
-                codeAutoFilled: 'Code auto-filled!',
-                resendCode: 'Resend code',
-                resendWithCountdown: 'Resend ({seconds}s)',
-                confirmClose: 'Are you sure? Your progress will be lost.',
-                backToEmail: 'Use different email',
-                verifyEmailTitle: 'Verify your email',
-                verifyEmailDesc: 'Enter the code sent to',
-                createAccountTitle: 'Create account',
-                createAccountDesc: 'Start your journey with FootRada',
-                welcomeTitle: 'Welcome!',
-                welcomeDesc: 'Your account is ready',
-                sandboxMode: 'Sandbox mode',
-                testFunds: '10,000 tUSDT',
-                testFundsDesc: 'Test funds',
-                startExploring: 'Start exploring →',
-                redirecting: 'Redirecting in',
-                seconds: 's'
-            }
-        };
-
-        function getText(key, args) {
-            var lang = AppState.currentLang;
-            var text = I18N[lang] ? I18N[lang][key] : I18N.en[key];
-            if (!text) text = key;
-            if (args !== undefined && typeof text === 'string') {
-                return text.replace(/{seconds}/g, args);
-            }
-            return text;
-        }
-
-        function updatePageTexts() {
-            var step1Title = document.querySelector('#step1 .header h1');
-            var step1Desc = document.querySelector('#step1 .header p');
-            if (step1Title) step1Title.textContent = getText('createAccountTitle');
-            if (step1Desc) step1Desc.textContent = getText('createAccountDesc');
-            
-            var step2Title = document.querySelector('#step2 .header h1');
-            var step2Desc = document.querySelector('#step2 .header p');
-            if (step2Title) step2Title.textContent = getText('verifyEmailTitle');
-            if (step2Desc && elements.displayEmail) {
-                step2Desc.innerHTML = getText('verifyEmailDesc') + ' <strong>' + (elements.displayEmail.textContent || '') + '</strong>';
-            }
-            
-            if (elements.sendCodeBtn && !elements.sendCodeBtn.disabled && !elements.sendCodeBtn.dataset.originalText) {
-                elements.sendCodeBtn.textContent = getText('createAccountTitle');
-            }
-            
-            var backLink = document.querySelector('#step2 .secondary-link a');
-            if (backLink && backLink.id === 'backToEmail') {
-                backLink.textContent = getText('backToEmail');
-            }
-            
-            var welcomeTitle = document.querySelector('#trustModal .modal-content h2');
-            var welcomeDesc = document.querySelector('#trustModal .modal-content > p');
-            if (welcomeTitle) welcomeTitle.textContent = getText('welcomeTitle');
-            if (welcomeDesc) welcomeDesc.textContent = getText('welcomeDesc');
-            
-            var trustItems = document.querySelectorAll('#trustModal .trust-item');
-            if (trustItems.length >= 3) {
-                var sandboxItem = trustItems[0].querySelector('span') || trustItems[0];
-                var tUSDTItem = trustItems[1].querySelector('span') || trustItems[1];
-                var testFundsItem = trustItems[2].querySelector('span') || trustItems[2];
-                if (sandboxItem) sandboxItem.textContent = getText('sandboxMode');
-                if (tUSDTItem) tUSDTItem.textContent = getText('testFunds');
-                if (testFundsItem) testFundsItem.textContent = getText('testFundsDesc');
-            }
-            
-            var startBtn = document.querySelector('#trustModal #goToHomeBtn');
-            if (startBtn) startBtn.textContent = getText('startExploring');
-            
-            var redirectText = document.querySelector('#trustModal .auto-redirect');
-            if (redirectText) {
-                redirectText.innerHTML = getText('redirecting') + ' <span id="countdown">5</span> ' + getText('seconds');
-            }
-        }
-
-        function showToast(message, type) {
-            type = type || 'error';
-            var toastContainer = document.querySelector('.toast-container');
-            if (!toastContainer) {
-                toastContainer = document.createElement('div');
-                toastContainer.className = 'toast-container';
-                document.body.appendChild(toastContainer);
-            }
-            var toast = document.createElement('div');
-            toast.className = 'toast toast-' + type;
-            toast.textContent = message;
-            toastContainer.appendChild(toast);
-            setTimeout(function() {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(100%)';
-                setTimeout(function() { toast.remove(); }, 300);
-            }, 3000);
-        }
-
-        function setLoading(btn, isLoading, loadingText) {
-            loadingText = loadingText || 'Processing...';
-            if (!btn) return;
-            if (isLoading) {
-                btn.disabled = true;
-                btn.dataset.originalText = btn.innerHTML;
-                btn.innerHTML = '<span class="spinner"></span> ' + loadingText;
-                AppState.requestInProgress = true;
-            } else {
-                btn.disabled = false;
-                btn.innerHTML = btn.dataset.originalText || btn.innerHTML;
-                AppState.requestInProgress = false;
-            }
-        }
-
-        function openModal(modal) {
-            if (!modal) return;
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeModal(modal) {
-            if (!modal) return;
-            modal.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-
-        function validateEmail(email) {
-            if (!email || typeof email !== 'string') return false;
-            email = email.trim();
-            return /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/.test(email);
-        }
-
-        function validatePassword(password) {
-            var result = { valid: false, errors: [], strength: 0 };
-            if (!password) {
-                result.errors.push(getText('passwordRequired'));
-                return result;
-            }
-            if (password.length >= 8) result.strength++;
-            else result.errors.push(getText('passwordLength'));
-            if (/[A-Z]/.test(password)) result.strength++;
-            else result.errors.push(getText('passwordUppercase'));
-            if (/[a-z]/.test(password)) result.strength++;
-            else result.errors.push(getText('passwordLowercase'));
-            if (/[0-9]/.test(password)) result.strength++;
-            else result.errors.push(getText('passwordNumber'));
-            result.valid = result.errors.length === 0;
-            return result;
-        }
-
-        function setupCodeInputs() {
-            if (!elements.codeInputs || elements.codeInputs.length === 0) return;
-            elements.codeInputs.forEach(function(input, idx) {
-                input.addEventListener('input', function(e) {
-                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                    if (e.target.value.length === 1 && idx < 5) {
-                        elements.codeInputs[idx + 1].focus();
-                    }
-                    updateVerifyButtonState();
-                    var allFilled = Array.from(elements.codeInputs).every(function(inp) { return inp.value.length === 1; });
-                    if (allFilled && elements.verifyCodeBtn && !elements.verifyCodeBtn.disabled) {
-                        setTimeout(function() { verifyCode(); }, 200);
-                    }
-                });
-                input.addEventListener('paste', function(e) {
-                    e.preventDefault();
-                    var paste = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6);
-                    if (paste.length === 6) {
-                        paste.split('').forEach(function(char, i) {
-                            if (elements.codeInputs[i]) elements.codeInputs[i].value = char;
-                        });
-                        if (elements.codeInputs[5]) elements.codeInputs[5].focus();
-                        updateVerifyButtonState();
-                        setTimeout(function() { verifyCode(); }, 200);
-                    }
-                });
-            });
-        }
-
-        function updateVerifyButtonState() {
-            if (!elements.verifyCodeBtn) return;
-            var allFilled = Array.from(elements.codeInputs).every(function(inp) { return inp.value.length === 1; });
-            elements.verifyCodeBtn.disabled = !allFilled;
-        }
-
-        function checkFormValidity() {
-            if (!elements.sendCodeBtn) return;
-            var emailValid = validateEmail(elements.emailInput ? elements.emailInput.value.trim() : '');
-            elements.sendCodeBtn.disabled = !emailValid;
-        }
-
-        async function sendCode() {
-            if (AppState.requestInProgress) return;
-            var email = elements.emailInput.value.trim();
-            if (!validateEmail(email)) {
-                showToast(getText('emailInvalid'), 'error');
-                return;
-            }
-
-            setLoading(elements.sendCodeBtn, true, getText('sending'));
-
-            try {
-                var response = await fetch('https://api.footradapro.com/api/v1/auth/send-code', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': AppState.csrfToken },
-                    credentials: 'include',
-                    body: JSON.stringify({ email: email })
-                });
-                var data = await response.json();
-                if (data.success) {
-                    AppState.email = email;
-                    if (elements.displayEmail) {
-                        elements.displayEmail.textContent = maskEmail(email);
-                        var step2Desc = document.querySelector('#step2 .header p');
-                        if (step2Desc) {
-                            step2Desc.innerHTML = getText('verifyEmailDesc') + ' <strong>' + maskEmail(email) + '</strong>';
-                        }
-                    }
-                    showStep(2);
-                    startResendCountdown(60);
-                    setTimeout(function() {
-                        if (elements.codeInputs && elements.codeInputs[0]) {
-                            elements.codeInputs[0].focus();
-                        }
-                    }, 300);
-                } else {
-                    if (data.error === 'EMAIL_ALREADY_REGISTERED') {
-                        showToast(getText('emailExists'), 'error');
-                    } else {
-                        showToast(data.error || getText('sendFailed'), 'error');
-                    }
-                }
-            } catch (error) {
-                console.error('Send code error:', error);
-                showToast(getText('networkError'), 'error');
-            } finally {
-                setLoading(elements.sendCodeBtn, false);
-            }
-        }
-
-        function maskEmail(email) {
-            var parts = email.split('@');
-            var local = parts[0];
-            var domain = parts[1];
-            if (local.length <= 2) return email;
-            return local.charAt(0) + '***' + local.charAt(local.length - 1) + '@' + domain;
-        }
-
-        async function verifyCode() {
-            if (AppState.requestInProgress) return;
-            var code = '';
-            for (var i = 0; i < elements.codeInputs.length; i++) {
-                code += elements.codeInputs[i].value;
-            }
-            if (!code || code.length !== 6 || !/^\d+$/.test(code)) {
-                showToast(getText('codeInvalid'), 'error');
-                return;
-            }
-            if (!AppState.email) {
-                showToast(getText('sessionExpired'), 'error');
-                showStep(1);
-                return;
-            }
-            setLoading(elements.verifyCodeBtn, true, getText('verifying'));
-            try {
-                var response = await fetch('https://api.footradapro.com/api/v1/auth/verify-code', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': AppState.csrfToken },
-                    credentials: 'include',
-                    body: JSON.stringify({ email: AppState.email, code: code })
-                });
-                var data = await response.json();
-                if (response.ok && data.success) {
-                    AppState.tempToken = data.data ? data.data.token : null;
-                    openModal(elements.passwordModal);
-                    setTimeout(function() {
-                        if (elements.newPassword) elements.newPassword.focus();
-                    }, 300);
-                } else {
-                    var errorMsg = data.error || data.message || 'Verification failed';
-                    if (errorMsg.indexOf('expired') !== -1) {
-                        showToast(getText('codeExpired'), 'error');
-                        resetCodeInputs();
-                        startResendCountdown(60);
-                    } else {
-                        showToast(getText('codeInvalidMsg'), 'error');
-                        resetCodeInputs();
-                    }
-                }
-            } catch (error) {
-                console.error('Verify code error:', error);
-                showToast(getText('networkError'), 'error');
-            } finally {
-                setLoading(elements.verifyCodeBtn, false);
-            }
-        }
-
-        function resetCodeInputs() {
-            for (var i = 0; i < elements.codeInputs.length; i++) {
-                elements.codeInputs[i].value = '';
-            }
-            if (elements.codeInputs[0]) elements.codeInputs[0].focus();
-            updateVerifyButtonState();
-        }
-
-        async function resendCode(e) {
-            e.preventDefault();
-            if (AppState.requestInProgress) return;
-            if (!AppState.email) {
-                showToast(getText('sessionExpired'), 'error');
-                showStep(1);
-                return;
-            }
-            setLoading(elements.sendCodeBtn, true, getText('sending'));
-            try {
-                var response = await fetch('https://api.footradapro.com/api/v1/auth/resend-code', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': AppState.csrfToken },
-                    credentials: 'include',
-                    body: JSON.stringify({ email: AppState.email })
-                });
-                var data = await response.json();
-                if (data.success) {
-                    showToast(getText('codeResent'), 'success');
-                    startResendCountdown(60);
-                    resetCodeInputs();
-                } else {
-                    showToast(data.error || getText('resendFailed'), 'error');
-                }
-            } catch (error) {
-                console.error('Resend code error:', error);
-                showToast(getText('networkError'), 'error');
-            } finally {
-                setLoading(elements.sendCodeBtn, false);
-            }
-        }
-
-        async function completeRegistration() {
-            if (AppState.requestInProgress) return;
-            var password = elements.newPassword ? elements.newPassword.value : '';
-            var confirm = elements.confirmNewPassword ? elements.confirmNewPassword.value : '';
-            var termsChecked = elements.termsCheckbox ? elements.termsCheckbox.checked : false;
-            var pwdValidation = validatePassword(password);
-            if (!pwdValidation.valid) {
-                showToast(pwdValidation.errors[0], 'error');
-                return;
-            }
-            if (password !== confirm) {
-                showToast(getText('passwordMismatch'), 'error');
-                return;
-            }
-            if (!termsChecked) {
-                showToast(getText('termsRequired'), 'error');
-                return;
-            }
-            if (!AppState.email || !AppState.tempToken) {
-                showToast(getText('sessionExpired'), 'error');
-                closeModal(elements.passwordModal);
-                showStep(1);
-                return;
-            }
-            setLoading(elements.completeRegistrationBtn, true, getText('creating'));
-            try {
-                var response = await fetch('https://api.footradapro.com/api/v1/auth/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': AppState.csrfToken },
-                    credentials: 'include',
-                    body: JSON.stringify({ username: AppState.email, password: password, token: AppState.tempToken })
-                });
-                var data = await response.json();
-                if (response.ok && data.success) {
-                    UTILS.setStorage('user', { email: AppState.email, username: AppState.email });
-                    closeModal(elements.passwordModal);
-                    openModal(elements.trustModal);
-                    startRedirectCountdown(5);
-                } else {
-                    var errorMsg = data.error || data.message || getText('registrationFailed');
-                    if (errorMsg.indexOf('token') !== -1 || errorMsg.indexOf('expired') !== -1) {
-                        showToast(getText('verificationExpired'), 'error');
-                        closeModal(elements.passwordModal);
-                        showStep(1);
-                    } else {
-                        showToast(errorMsg, 'error');
-                    }
-                }
-            } catch (error) {
-                console.error('Registration error:', error);
-                showToast(getText('networkError'), 'error');
-            } finally {
-                setLoading(elements.completeRegistrationBtn, false);
-            }
-        }
-
-        function startResendCountdown(seconds) {
-            if (AppState.countdownInterval) clearInterval(AppState.countdownInterval);
-            var link = elements.resendLink;
-            if (!link) return;
-            link.style.pointerEvents = 'none';
-            link.textContent = getText('resendWithCountdown', seconds);
-            AppState.countdownInterval = setInterval(function() {
-                seconds--;
-                if (seconds <= 0) {
-                    clearInterval(AppState.countdownInterval);
-                    link.style.pointerEvents = 'auto';
-                    link.textContent = getText('resendCode');
-                } else {
-                    link.textContent = getText('resendWithCountdown', seconds);
-                }
-            }, 1000);
-        }
-
-        function startRedirectCountdown(seconds) {
-            var countdownSpan = document.getElementById('countdown');
-            if (!countdownSpan) return;
-            countdownSpan.textContent = seconds;
-            if (AppState.redirectCountdown) clearInterval(AppState.redirectCountdown);
-            AppState.redirectCountdown = setInterval(function() {
-                seconds--;
-                if (seconds <= 0) {
-                    clearInterval(AppState.redirectCountdown);
-                    window.location.href = '/index.html';
-                } else {
-                    var span = document.getElementById('countdown');
-                    if (span) span.textContent = seconds;
-                }
-            }, 1000);
-        }
-
-        function showStep(step) {
-            if (step === 1) {
-                if (elements.step1) elements.step1.classList.add('active');
-                if (elements.step2) elements.step2.classList.remove('active');
-            } else {
-                if (elements.step1) elements.step1.classList.remove('active');
-                if (elements.step2) elements.step2.classList.add('active');
-            }
-        }
-
-        function handleLanguageChange(event) {
-            var lang = event.detail.lang;
-            AppState.currentLang = lang;
-            updatePageTexts();
-        }
-
-        function bindEvents() {
-            if (elements.emailInput) {
-                elements.emailInput.addEventListener('input', checkFormValidity);
-                elements.emailInput.addEventListener('blur', checkFormValidity);
-            }
-            if (elements.sendCodeBtn) elements.sendCodeBtn.addEventListener('click', sendCode);
-            if (elements.resendLink) elements.resendLink.addEventListener('click', resendCode);
-            if (elements.codeInputs && elements.codeInputs.length > 0) setupCodeInputs();
-            if (elements.verifyCodeBtn) elements.verifyCodeBtn.addEventListener('click', verifyCode);
-            if (elements.completeRegistrationBtn) elements.completeRegistrationBtn.addEventListener('click', completeRegistration);
-            if (elements.goToHomeBtn) elements.goToHomeBtn.addEventListener('click', function() { window.location.href = '/index.html'; });
-            if (elements.backToEmail) {
-                elements.backToEmail.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    showStep(1);
-                    if (elements.emailInput) {
-                        elements.emailInput.value = '';
-                        elements.emailInput.focus();
-                    }
-                    checkFormValidity();
-                });
-            }
-            if (elements.passwordModal) {
-                elements.passwordModal.addEventListener('click', function(e) {
-                    if (e.target === elements.passwordModal) {
-                        if (confirm(getText('confirmClose'))) {
-                            closeModal(elements.passwordModal);
-                            showStep(1);
-                        }
-                    }
-                });
-            }
-            window.addEventListener('languageChanged', handleLanguageChange);
-        }
-
-        function init() {
-            try {
-                var savedLang = localStorage.getItem('lang') || localStorage.getItem('user_language') || 'en';
-                AppState.currentLang = savedLang;
-            } catch (e) {
-                AppState.currentLang = 'en';
-            }
-            
-            bindEvents();
-            updatePageTexts();
-        }
-
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
-        } else {
-            init();
-        }
-    })();
-    </script>
+  // 初始化
+  async function init() {
+    setupCodeInputs();
+    bindEvents();
+    updateThemeUI();
+    checkFormValidity();
+    await refreshCaptchaFromServer();
+    showStep(1);
+    console.log('Register page initialized - real backend integration');
+  }
+  
+  init();
+</script>
 </body>
 </html>

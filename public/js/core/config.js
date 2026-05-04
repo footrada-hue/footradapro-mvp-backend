@@ -18,7 +18,7 @@
         // 注意：必须使用主域名 www.footradapro.com 而非 api 子域名，以确保 Cookie 正确传递
         apiBaseUrl: {
             dev: 'http://localhost:3000/api/v1',
-            prod: 'https://www.footradapro.com/api/v1'
+            prod: 'http://localhost:3000/api/v1'
         },
         // API请求超时时间（毫秒）
         requestTimeout: 30000,

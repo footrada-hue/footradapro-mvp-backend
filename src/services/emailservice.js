@@ -47,12 +47,12 @@ console.log('');
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 const SENDER_EMAIL = process.env.SENDER_EMAIL || 'noreply@footradapro.com';
-const SENDER_NAME = 'FOOTDARAPRO';
+const SENDER_NAME = 'FOOTRADAPRO';  // 修正拼写错误
 const CODE_EXPIRE_MINUTES = 10;
 
 // ==================== Direct HTML Content ====================
 function getDirectHtmlContent(code, email = '', lang = 'en') {
-    const verifyLink = `https://yourdomain.com/verify?code=${code}&email=${encodeURIComponent(email)}`;
+    const verifyLink = `https://footradapro.com/verify?code=${code}&email=${encodeURIComponent(email)}`;
 
     return `
 <!DOCTYPE html>
@@ -115,7 +115,7 @@ function getDirectHtmlContent(code, email = '', lang = 'en') {
     <hr style="border:none;border-top:1px solid #374151;margin:25px 0">
 
     <p style="font-size:12px;color:#6b7280;">
-        If you didn’t request this, you can safely ignore this email.
+        If you didn't request this, you can safely ignore this email.
     </p>
 
 </div>
@@ -128,10 +128,9 @@ function getDirectHtmlContent(code, email = '', lang = 'en') {
 // ==================== Direct Plain Text Content ====================
 function getDirectTextContent(code) {
     return `
-FOOTDARAPRO
+FOOTRADAPRO
 
-Thank you for registering with FootDaraPro. To continue, please enter the verification code on the registration screen.
-
+Thank you for registering with FootRadaPro. To continue, please enter the verification code on the registration screen.
 
 Your FOOTRADAPRO verification code is:
 
@@ -141,11 +140,9 @@ This code expires in 10 minutes.
 
 Please note that this code can only be used once.
 
-
 Thank you,
 
-FootDaraPro Support 
-
+FootRadaPro Support Team
 
 Note: Please do not reply to this email as this group is not monitored.
     `;
@@ -163,6 +160,10 @@ async function sendWithBrevo(toEmail, code) {
         throw new Error('BREVO_API_KEY is not configured - please check your .env file');
     }
 
+    console.log(`[Email] Preparing to send to: ${toEmail}`);
+    console.log(`[Email] Using sender: ${SENDER_EMAIL}`);
+    console.log(`[Email] Code: ${code}`);
+
     logger.info('Preparing to send email via Brevo (direct content)', {
         to: toEmail,
         sender: SENDER_EMAIL,
@@ -170,10 +171,10 @@ async function sendWithBrevo(toEmail, code) {
     });
 
     // 直接生成内容，不依赖任何外部模板
-    const htmlContent = getDirectHtmlContent(code);
+    const htmlContent = getDirectHtmlContent(code, toEmail);
     const textContent = getDirectTextContent(code);
 
-    // 构建请求体 - 修复：添加 name 字段
+    // 构建请求体
     const requestBody = {
         sender: {
             name: SENDER_NAME,
@@ -182,13 +183,13 @@ async function sendWithBrevo(toEmail, code) {
         to: [
             {
                 email: toEmail,
-                name: 'User'  // 必须提供 name 字段
+                name: toEmail.split('@')[0]  // 使用邮箱用户名作为名称
             }
         ],
-        subject: 'Verify Your Email - FOOTDARAPRO',
+        subject: 'Verify Your Email - FOOTRADAPRO',
         htmlContent: htmlContent,
         textContent: textContent,
-        tags: ['verification'],
+        tags: ['verification', 'register'],
         headers: {
             'X-Entity-Ref-ID': `verification-${Date.now()}`
         }
@@ -233,6 +234,8 @@ async function sendWithBrevo(toEmail, code) {
                 to: toEmail
             });
             
+            console.error(`[Email] Brevo API error: ${response.status}`, responseData);
+            
             // 根据状态码返回具体错误
             if (response.status === 401) {
                 throw new Error('Brevo API authentication failed - invalid API key');
@@ -249,6 +252,7 @@ async function sendWithBrevo(toEmail, code) {
         }
 
         // 成功日志
+        console.log(`[Email] ✅ Email sent successfully to ${toEmail}`);
         logger.info('Email sent successfully via Brevo (direct content)', {
             to: toEmail,
             messageId: responseData?.messageId || 'unknown',
@@ -260,6 +264,7 @@ async function sendWithBrevo(toEmail, code) {
 
     } catch (error) {
         // 网络错误或其他异常
+        console.error(`[Email] ❌ Failed to send email to ${toEmail}:`, error.message);
         logger.error('Failed to send email via Brevo', {
             to: toEmail,
             error: error.message,
@@ -299,6 +304,7 @@ export async function sendVerificationEmail(toEmail, code) {
         return false;
     }
 
+    console.log(`[Email] Starting send process for: ${toEmail}`);
     logger.info('Starting sendVerificationEmail process', { 
         to: toEmail,
         codeLength: code.length,

@@ -1,4 +1,5 @@
 import database from '../database/connection.js';
+import { getIO } from '../socket/index.js';
 import logger from '../utils/logger.js';
 
 class SupportService {
@@ -83,6 +84,11 @@ class SupportService {
     
     addUserMessage(convId, userId, content) {
         try {
+            console.log('🔍 [addUserMessage] 被调用');
+            console.log('🔍 convId:', convId);
+            console.log('🔍 userId:', userId);
+            console.log('🔍 content:', content);
+            
             const db = this.getDb();
             const now = this.getCurrentTimestamp();
             
@@ -103,6 +109,27 @@ class SupportService {
             const message = db.prepare('SELECT * FROM support_messages WHERE rowid = ?').get(info.lastInsertRowid);
             
             logger.info(`[SupportService] User ${userId} sent message in conversation ${convId}`);
+            
+            // ========== WebSocket 广播 ==========
+            try {
+                const io = getIO();
+                if (io) {
+                    io.to('admin-support').emit('new-message', {
+                        id: message.id,
+                        conv_id: convId,
+                        content: message.content,
+                        sender_type: 'user',
+                        sender_id: userId,
+                        created_at: message.created_at
+                    });
+                    console.log(`📡 WebSocket 广播消息到 admin-support 房间`);
+                } else {
+                    console.log('⚠️ WebSocket 未初始化');
+                }
+            } catch (wsErr) {
+                console.error('WebSocket 广播失败:', wsErr.message);
+            }
+            // =================================
             
             return message;
         } catch (error) {
@@ -131,6 +158,28 @@ class SupportService {
             }
             
             const message = db.prepare('SELECT * FROM support_messages WHERE rowid = ?').get(info.lastInsertRowid);
+            
+            // ========== WebSocket 广播 ==========
+            try {
+                const io = getIO();
+                if (io && message.conv_id) {
+                    const conversation = db.prepare('SELECT user_id FROM support_conversations WHERE id = ?').get(message.conv_id);
+                    if (conversation) {
+                        io.to(`user_${conversation.user_id}`).emit('new-message', {
+                            id: message.id,
+                            conv_id: message.conv_id,
+                            content: message.content,
+                            sender_type: 'admin',
+                            sender_id: adminId,
+                            created_at: message.created_at
+                        });
+                        console.log(`📡 WebSocket 广播消息到用户 ${conversation.user_id}`);
+                    }
+                }
+            } catch (wsErr) {
+                console.error('WebSocket 广播失败:', wsErr.message);
+            }
+            // =================================
             
             return message;
         } catch (error) {
@@ -358,9 +407,6 @@ class SupportService {
         }
     }
 
-    /**
-     * 获取用户未读消息数量
-     */
     getUserUnreadCount(userId) {
         try {
             const db = this.getDb();
@@ -379,9 +425,6 @@ class SupportService {
         }
     }
 
-    /**
-     * 获取管理员未读统计（每个会话的未读数）
-     */
     getAdminUnreadStats() {
         try {
             const db = this.getDb();
@@ -406,9 +449,6 @@ class SupportService {
         }
     }
 
-    /**
-     * 获取管理员总未读消息数
-     */
     getAdminTotalUnread() {
         try {
             const db = this.getDb();
@@ -427,9 +467,6 @@ class SupportService {
         }
     }
 
-    /**
-     * 添加带附件的消息
-     */
     addMessageWithAttachments(convId, userId, content, senderType, attachments = []) {
         try {
             const db = this.getDb();
@@ -451,9 +488,6 @@ class SupportService {
         }
     }
 
-    /**
-     * 标记会话中所有用户消息为已读
-     */
     markConversationMessagesRead(convId, adminId = null) {
         try {
             const db = this.getDb();
@@ -475,9 +509,7 @@ class SupportService {
             throw error;
         }
     }
-        /**
-     * 获取客服状态
-     */
+    
     getAdminStatus(adminId) {
         try {
             const db = this.getDb();
@@ -497,9 +529,6 @@ class SupportService {
         }
     }
 
-    /**
-     * 更新客服状态
-     */
     updateAdminStatus(adminId, isOnline, status = 'online') {
         try {
             const db = this.getDb();
@@ -527,9 +556,7 @@ class SupportService {
             return false;
         }
     }
-        /**
-     * 获取在线客服数量
-     */
+    
     getOnlineAdminCount() {
         try {
             const db = this.getDb();
@@ -545,6 +572,5 @@ class SupportService {
         }
     }
 }
-
 
 export default new SupportService();

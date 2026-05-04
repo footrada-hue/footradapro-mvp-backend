@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>FootRadaPro · AI Trading Dashboard</title>
+  <meta name="description" content="AI-Powered Football Trading Platform — Transparent, Verifiable, Non-Custodial">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Light Theme (Glass) */
+    :root {
+      --bg-gradient-start: rgba(245, 247, 250, 0.92);
+      --bg-gradient-end: rgba(255, 255, 255, 0.96);
+      --glass-bg: rgba(255, 255, 255, 0.55);
+      --glass-border: rgba(59, 130, 246, 0.2);
+      --glass-shadow: 0 8px 20px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
+      --accent: #2563eb;
+      --accent-glow: rgba(37, 99, 235, 0.3);
+      --accent-gradient: linear-gradient(135deg, #2563eb, #4f46e5);
+      --sandbox-gradient: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      --live-gradient: linear-gradient(135deg, #f97316, #ea580c);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --border-light: rgba(148, 163, 184, 0.2);
+      --card-bg: rgba(255, 255, 255, 0.7);
+      --ticker-bg: rgba(37, 99, 235, 0.85);
+      --ticker-text: #ffffff;
+      --badge-soft: rgba(37, 99, 235, 0.12);
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.03);
+      --shadow-hover: 0 12px 24px -8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Dark Theme (Glass) */
+    body.dark {
+      --bg-gradient-start: rgba(15, 23, 42, 0.96);
+      --bg-gradient-end: rgba(2, 6, 23, 0.98);
+      --glass-bg: rgba(30, 41, 59, 0.55);
+      --glass-border: rgba(59, 130, 246, 0.3);
+      --glass-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.4);
+      --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      --sandbox-gradient: linear-gradient(135deg, #a855f7, #7c3aed);
+      --live-gradient: linear-gradient(135deg, #fb923c, #ea580c);
+      --success: #34d399;
+      --warning: #fbbf24;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --border-light: rgba(255, 255, 255, 0.08);
+      --card-bg: rgba(30, 41, 59, 0.6);
+      --ticker-bg: rgba(30, 58, 138, 0.9);
+      --ticker-text: #e2e8f0;
+      --badge-soft: rgba(59, 130, 246, 0.2);
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
+      --shadow-hover: 0 12px 24px -8px rgba(0, 0, 0, 0.4);
+    }
+
+    body {
+      background: radial-gradient(circle at 10% 20%, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+      transition: background 0.3s, color 0.2s;
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--border-light); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+
+    .app-wrapper { min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* Ticker */
+    .ticker {
+      background: var(--ticker-bg);
+      backdrop-filter: blur(12px);
+      color: var(--ticker-text);
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .ticker-content {
+      display: inline-block;
+      animation: ticker 24s linear infinite;
+      padding-left: 100%;
+    }
+    @keyframes ticker { to { transform: translateX(-100%); } }
+
+    /* Header */
+    .header {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 14px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--glass-shadow);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-size: 22px;
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .header-actions {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+    .header-actions i {
+      font-size: 20px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .user-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--badge-soft);
+      backdrop-filter: blur(4px);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      border: 1px solid var(--glass-border);
+    }
+
+    /* Layout */
+    .container {
+      display: flex;
+      flex: 1;
+      padding: 24px;
+      gap: 24px;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border-radius: 32px;
+      border: 1px solid var(--glass-border);
+      padding: 24px 20px;
+      height: fit-content;
+      position: sticky;
+      top: 88px;
+      box-shadow: var(--glass-shadow);
+    }
+    .sidebar-section { margin-bottom: 28px; }
+    .sidebar-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sidebar-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      font-size: 14px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .positive { color: var(--success); font-weight: 600; }
+    .announcement-item {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .announcement-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+    .announcement-date { font-size: 12px; color: var(--text-muted); }
+
+    /* Main content */
+    .content { flex: 1; display: flex; flex-direction: column; gap: 28px; }
+
+    /* Mode Tabs */
+    .mode-tabs {
+      display: flex;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border-radius: 60px;
+      border: 1px solid var(--glass-border);
+      padding: 6px;
+      gap: 6px;
+      width: fit-content;
+    }
+    .mode-tab {
+      padding: 10px 28px;
+      border-radius: 60px;
+      font-size: 14px;
+      font-weight: 600;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .mode-tab.sandbox.active {
+      background: var(--sandbox-gradient);
+      color: white;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+    }
+    .mode-tab.live.active {
+      background: var(--live-gradient);
+      color: white;
+      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+    }
+    .mode-note {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--text-muted);
+      padding-left: 8px;
+    }
+
+    /* Cards */
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border-radius: 32px;
+      border: 1px solid var(--glass-border);
+      padding: 24px;
+      transition: all 0.25s;
+      box-shadow: var(--shadow-sm);
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-hover);
+      border-color: var(--accent);
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-title i { color: var(--accent); }
+    .amount {
+      font-size: 36px;
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin: 12px 0;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px dashed var(--border-light);
+      font-size: 14px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 60px;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 20px;
+      backdrop-filter: blur(4px);
+    }
+    .badge.success { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .badge.sandbox-mode { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+    .badge.live-mode { background: rgba(249, 115, 22, 0.15); color: #f97316; }
+
+    /* Events grid */
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .section-more { font-size: 13px; color: var(--accent); font-weight: 500; text-decoration: none; }
+    .events-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .event-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border-radius: 28px;
+      border: 1px solid var(--glass-border);
+      padding: 20px;
+      transition: all 0.25s;
+      box-shadow: var(--shadow-sm);
+    }
+    .event-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--accent);
+      box-shadow: var(--shadow-hover);
+    }
+    .matchup {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .team {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+    .team-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--badge-soft);
+      backdrop-filter: blur(4px);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      border: 1px solid var(--glass-border);
+    }
+    .team-name { font-size: 14px; font-weight: 600; white-space: nowrap; }
+    .vs {
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--badge-soft);
+      padding: 4px 12px;
+      border-radius: 40px;
+      font-size: 12px;
+    }
+    .event-league, .event-time {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    .event-btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 60px;
+      background: var(--accent-gradient);
+      color: white;
+      font-weight: 600;
+      border: none;
+      margin-top: 16px;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 2px 6px var(--accent-glow);
+    }
+
+    /* Desktop Table */
+    .desktop-table { display: block; }
+    .mobile-history-list { display: none; }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      text-align: left;
+      padding: 16px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border-light);
+    }
+    td { padding: 14px; font-size: 14px; border-bottom: 1px solid var(--border-light); }
+    .link { color: var(--accent); font-weight: 500; text-decoration: none; }
+
+    /* Mobile History Cards */
+    .mobile-history-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      border: 1px solid var(--glass-border);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .history-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--border-light);
+    }
+    .history-row:last-child { border-bottom: none; }
+    .history-label { font-size: 13px; color: var(--text-muted); }
+    .history-value { font-weight: 500; color: var(--text-primary); }
+    .history-profit { color: var(--success); font-weight: 600; }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card-bg);
+      backdrop-filter: blur(28px);
+      border-top: 1px solid var(--glass-border);
+      padding: 12px 20px;
+      z-index: 60;
+    }
+    .bottom-nav-items {
+      display: flex;
+      justify-content: space-around;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: 0.2s;
+    }
+    .nav-item.active { color: var(--accent); }
+    .nav-item i { font-size: 22px; }
+
+    /* Floating Button */
+    .fab {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      width: 56px;
+      height: 56px;
+      border-radius: 30px;
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px var(--accent-glow);
+      z-index: 55;
+      cursor: pointer;
+      transition: 0.2s;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .fab:hover { transform: scale(1.05); }
+    .fab i { font-size: 26px; color: white; }
+
+    /* Responsive */
+    @media (max-width: 1199px) { .events-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 899px) {
+      .sidebar { display: none; }
+      .container { padding: 16px; gap: 16px; flex-direction: column; }
+      .grid { grid-template-columns: 1fr; gap: 16px; }
+      .mode-tabs { width: 100%; justify-content: stretch; }
+      .mode-tab { flex: 1; text-align: center; }
+      .bottom-nav { display: block; }
+      body { padding-bottom: 72px; }
+      .fab { bottom: 80px; right: 20px; }
+      .events-grid { gap: 16px; }
+      .event-card { padding: 16px; }
+      .team-icon { width: 48px; height: 48px; font-size: 20px; }
+      .desktop-table { display: none; }
+      .mobile-history-list { display: block; }
+    }
+    @media (max-width: 599px) {
+      .events-grid { grid-template-columns: 1fr; }
+      .header { padding: 12px 16px; }
+      .logo { font-size: 18px; }
+      .card { padding: 18px; }
+      .amount { font-size: 28px; }
+      .team-name { font-size: 13px; white-space: normal; }
+      .matchup { gap: 6px; }
+      .team-icon { width: 44px; height: 44px; }
+      .section-title { font-size: 18px; }
+      .container { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+  <div class="ticker">
+    <div class="ticker-content">
+      <i class="fa-regular fa-circle-check"></i> SYSTEM STATUS: ACTIVE · ALL OPERATIONS VERIFIABLE ON-CHAIN &nbsp;|&nbsp;
+      <i class="fa-regular fa-clock"></i> AUTHORIZATION CUTOFF ENFORCED · NO POST-MODIFICATION &nbsp;|&nbsp;
+      <i class="fa-solid fa-chart-line"></i> AI TODAY'S HIGH-CONFIDENCE PICKS: LIVERPOOL/MCI · REAL MADRID/BARCA &nbsp;|&nbsp;
+      <i class="fa-regular fa-gem"></i> 20% PERFORMANCE FEE ONLY ON PROFITS &nbsp;|&nbsp;
+      <i class="fa-regular fa-futbol"></i> WORLD CUP 2026 PREHEAT — EARLY ACCESS SOON
+    </div>
+  </div>
+
+  <div class="header">
+    <div class="logo">FootRadaPro</div>
+    <div class="header-actions">
+      <i class="fa-regular fa-moon" id="themeToggle"></i>
+      <i class="fa-regular fa-bell"></i>
+      <div class="user-badge">EN</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-title"><i class="fa-solid fa-chart-line"></i> Live Markets</div>
+        <div class="sidebar-item"><span>BTC/USDT</span><span class="positive">43,250 <i class="fa-solid fa-arrow-up"></i></span></div>
+        <div class="sidebar-item"><span>ETH/USDT</span><span class="positive">2,340 <i class="fa-solid fa-arrow-up"></i></span></div>
+        <div class="sidebar-item"><span>USDT/CNY</span><span>7.25</span></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-title"><i class="fa-solid fa-trophy"></i> Top Leagues</div>
+        <div class="sidebar-item"><span>Premier League</span><span>12</span></div>
+        <div class="sidebar-item"><span>La Liga</span><span>8</span></div>
+        <div class="sidebar-item"><span>UEFA CL</span><span>4</span></div>
+        <div class="sidebar-item"><span>Bundesliga</span><span>6</span></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-title"><i class="fa-regular fa-bullhorn"></i> Announcements</div>
+        <div class="announcement-item"><div class="announcement-title">✨ Sandbox mode upgraded</div><div class="announcement-date">Jan 15, 2025</div></div>
+        <div class="announcement-item"><div class="announcement-title">🏆 World Cup hub coming soon</div><div class="announcement-date">Jan 10, 2025</div></div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <!-- 沙盒/实盘切换 -->
+      <div>
+        <div class="mode-tabs" id="modeTabs">
+          <button class="mode-tab sandbox active" data-mode="sandbox">
+            <i class="fa-solid fa-flask"></i> Sandbox
+          </button>
+          <button class="mode-tab live" data-mode="live">
+            <i class="fa-solid fa-bolt"></i> Live
+          </button>
+        </div>
+        <div class="mode-note" id="modeNote">
+          <i class="fa-regular fa-circle-info"></i> Sandbox uses virtual funds — no real asset risk.
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="card-title"><i class="fa-solid fa-database"></i> Liquidity Pool</div>
+          <div class="amount" id="poolAmount">10,000.00</div>
+          <div class="row"><span class="row-label">Available balance</span><span class="row-value" id="availableBalance">10,000.00 USDT</span></div>
+          <div class="row"><span class="row-label">Authorized</span><span class="row-value" id="authorizedAmount">0.00 USDT</span></div>
+          <div class="row"><span class="row-label">Today P&L</span><span class="row-value positive" id="todayPnl">+0.00 USDT</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="fa-solid fa-shield-haltered"></i> Trust Anchor</div>
+          <div class="badge success"><i class="fa-solid fa-check-circle"></i> System operational</div>
+          <div class="row"><span class="row-label">Current Mode</span><span class="row-value" id="currentModeBadge"><span class="badge sandbox-mode" style="margin:0;">Sandbox</span></span></div>
+          <div class="row"><span class="row-label">Time lock</span><span class="row-value"><i class="fa-regular fa-lock"></i> Irreversible after cutoff</span></div>
+          <div class="row"><span class="row-label">Result publication</span><span class="row-value">Decentralized, unified gate</span></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-head">
+          <h3 class="section-title">AI Spotlight</h3>
+          <a href="#" class="section-more">All matches <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <div class="events-grid">
+          <div class="event-card">
+            <div class="matchup"><div class="team"><div class="team-icon"><i class="fa-solid fa-futbol"></i></div><div class="team-name">Liverpool</div></div><div class="vs">VS</div><div class="team"><div class="team-icon"><i class="fa-solid fa-futbol"></i></div><div class="team-name">Man City</div></div></div>
+            <div class="event-league"><i class="fa-solid fa-trophy"></i> Premier League</div>
+            <div class="event-time"><i class="fa-regular fa-clock"></i> Today 20:45 cutoff</div>
+            <button class="event-btn">Authorize <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+          <div class="event-card">
+            <div class="matchup"><div class="team"><div class="team-icon"><i class="fa-solid fa-futbol"></i></div><div class="team-name">Real Madrid</div></div><div class="vs">VS</div><div class="team"><div class="team-icon"><i class="fa-solid fa-futbol"></i></div><div class="team-name">Barcelona</div></div></div>
+            <div class="event-league"><i class="fa-solid fa-trophy"></i> La Liga</div>
+            <div class="event-time"><i class="fa-regular fa-clock"></i> Today 22:00 cutoff</div>
+            <button class="event-btn">Authorize <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+          <div class="event-card">
+            <div class="matchup"><div class="team"><div class="team-icon"><i class="fa-solid fa-futbol"></i></div><div class="team-name">Bayern</div></div><div class="vs">VS</div><div class="team"><div class="team-icon"><i class="fa-solid fa-futbol"></i></div><div class="team-name">Dortmund</div></div></div>
+            <div class="event-league"><i class="fa-solid fa-trophy"></i> Bundesliga</div>
+            <div class="event-time"><i class="fa-regular fa-clock"></i> Tomorrow 00:30 cutoff</div>
+            <button class="event-btn">Authorize <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+          <div class="event-card">
+            <div class="matchup"><div class="team"><div class="team-icon"><i class="fa-solid fa-futbol"></i></div><div class="team-name">PSG</div></div><div class="vs">VS</div><div class="team"><div class="team-icon"><i class="fa-solid fa-futbol"></i></div><div class="team-name">Marseille</div></div></div>
+            <div class="event-league"><i class="fa-solid fa-trophy"></i> Ligue 1</div>
+            <div class="event-time"><i class="fa-regular fa-clock"></i> Tomorrow 03:00 cutoff</div>
+            <button class="event-btn">Authorize <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-head"><h3 class="section-title">Recent Authorizations</h3><a href="#" class="section-more">View all <i class="fa-solid fa-arrow-right"></i></a></div>
+        
+        <div class="card desktop-table" style="padding: 0; overflow-x: auto;">
+          <table>
+            <thead><tr><th>Timestamp</th><th>Match</th><th>Amount</th><th>Status</th><th>Mode</th><th></th></tr></thead>
+            <tbody>
+              <tr><td class="link">2025-01-15 10:30</td><td>Liverpool vs Man City</td><td>200 USDT</td><td>Pending</td><td><span class="badge sandbox-mode" style="margin:0;">Sandbox</span></td><td><a href="#" class="link">Verify</a></td></tr>
+              <tr><td class="link">2025-01-14 15:20</td><td>Real Madrid vs Barcelona</td><td>300 USDT</td><td class="positive">+45.20</td><td><span class="badge sandbox-mode" style="margin:0;">Sandbox</span></td><td><a href="#" class="link">Details</a></td></tr>
+              <tr><td class="link">2025-01-13 20:00</td><td>Bayern vs Dortmund</td><td>150 USDT</td><td class="positive">+22.50</td><td><span class="badge sandbox-mode" style="margin:0;">Sandbox</span></td><td><a href="#" class="link">Details</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mobile-history-list">
+          <div class="mobile-history-card">
+            <div class="history-row"><span class="history-label">Timestamp</span><span class="history-value">2025-01-15 10:30</span></div>
+            <div class="history-row"><span class="history-label">Match</span><span class="history-value">Liverpool vs Man City</span></div>
+            <div class="history-row"><span class="history-label">Amount</span><span class="history-value">200 USDT</span></div>
+            <div class="history-row"><span class="history-label">Status</span><span class="history-value">Pending</span></div>
+            <div class="history-row"><span class="history-label">Mode</span><span class="badge sandbox-mode" style="margin:0;">Sandbox</span></div>
+            <div class="history-row"><a href="#" class="link">Verify →</a></div>
+          </div>
+          <div class="mobile-history-card">
+            <div class="history-row"><span class="history-label">Timestamp</span><span class="history-value">2025-01-14 15:20</span></div>
+            <div class="history-row"><span class="history-label">Match</span><span class="history-value">Real Madrid vs Barcelona</span></div>
+            <div class="history-row"><span class="history-label">Amount</span><span class="history-value">300 USDT</span></div>
+            <div class="history-row"><span class="history-label">Profit</span><span class="history-value history-profit">+45.20 USDT</span></div>
+            <div class="history-row"><span class="history-label">Mode</span><span class="badge sandbox-mode" style="margin:0;">Sandbox</span></div>
+            <div class="history-row"><a href="#" class="link">Details →</a></div>
+          </div>
+          <div class="mobile-history-card">
+            <div class="history-row"><span class="history-label">Timestamp</span><span class="history-value">2025-01-13 20:00</span></div>
+            <div class="history-row"><span class="history-label">Match</span><span class="history-value">Bayern vs Dortmund</span></div>
+            <div class="history-row"><span class="history-label">Amount</span><span class="history-value">150 USDT</span></div>
+            <div class="history-row"><span class="history-label">Profit</span><span class="history-value history-profit">+22.50 USDT</span></div>
+            <div class="history-row"><span class="history-label">Mode</span><span class="badge sandbox-mode" style="margin:0;">Sandbox</span></div>
+            <div class="history-row"><a href="#" class="link">Details →</a></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="bottom-nav-items">
+      <a href="#" class="nav-item active"><i class="fa-solid fa-home"></i><span>Home</span></a>
+      <a href="#" class="nav-item"><i class="fa-solid fa-chart-line"></i><span>Market</span></a>
+      <a href="#" class="nav-item"><i class="fa-solid fa-list"></i><span>Records</span></a>
+      <a href="#" class="nav-item"><i class="fa-solid fa-headset"></i><span>Support</span></a>
+      <a href="#" class="nav-item"><i class="fa-solid fa-user"></i><span>Profile</span></a>
+    </div>
+  </div>
+
+  <div class="fab" onclick="alert('Support: contact via Telegram or Email')">
+    <i class="fa-solid fa-comment-dots"></i>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // 数字滚动动画函数
+  // ============================================================
+  function animateNumber(element, start, end, duration = 500) {
+    const startTime = performance.now();
+    const updateNumber = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      // 缓动函数 easeOutQuart
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const currentValue = start + (end - start) * easeOutQuart;
+      element.innerText = currentValue.toFixed(2);
+      if (progress < 1) {
+        requestAnimationFrame(updateNumber);
+      }
+    };
+    requestAnimationFrame(updateNumber);
+  }
+
+  // ============================================================
+  // 全局状态管理
+  // ============================================================
+  
+  function getAppMode() {
+    return localStorage.getItem('appMode') || 'sandbox';
+  }
+  
+  function setAppMode(mode) {
+    localStorage.setItem('appMode', mode);
+    window.dispatchEvent(new CustomEvent('appModeChanged', { detail: { mode } }));
+  }
+  
+  function getThemeMode() {
+    return localStorage.getItem('theme') || 'light';
+  }
+  
+  function setThemeMode(theme) {
+    localStorage.setItem('theme', theme);
+    window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme } }));
+  }
+  
+  // ============================================================
+  // 余额配置
+  // ============================================================
+  const SANDBOX_BALANCE = 10000;
+  const LIVE_BALANCE = 2500;
+  
+  // DOM 元素
+  const poolAmountEl = document.getElementById('poolAmount');
+  const availableBalanceEl = document.getElementById('availableBalance');
+  const currentModeBadgeEl = document.getElementById('currentModeBadge');
+  const modeNoteEl = document.getElementById('modeNote');
+  
+  // 获取当前显示的数值（用于动画起始值）
+  function getCurrentNumericValue(element) {
+    const text = element.innerText;
+    const match = text.match(/[\d,]+\.?\d*/);
+    if (match) {
+      return parseFloat(match[0].replace(/,/g, ''));
+    }
+    return 0;
+  }
+  
+  // 更新 UI 带动画
+  function updateUIByModeWithAnimation() {
+    const currentMode = getAppMode();
+    const isSandbox = currentMode === 'sandbox';
+    const targetValue = isSandbox ? SANDBOX_BALANCE : LIVE_BALANCE;
+    
+    // 获取当前值
+    const currentPoolValue = getCurrentNumericValue(poolAmountEl);
+    const currentAvailableValue = getCurrentNumericValue(availableBalanceEl);
+    
+    // 滚动动画更新金额
+    animateNumber(poolAmountEl, currentPoolValue, targetValue, 400);
+    animateNumber(availableBalanceEl, currentAvailableValue, targetValue, 400);
+    
+    // 更新模式标签（无动画）
+    if (currentModeBadgeEl) {
+      currentModeBadgeEl.innerHTML = isSandbox 
+        ? '<span class="badge sandbox-mode" style="margin:0;">Sandbox</span>' 
+        : '<span class="badge live-mode" style="margin:0;">Live</span>';
+    }
+    
+    // 更新提示文字
+    if (modeNoteEl) {
+      modeNoteEl.innerHTML = isSandbox 
+        ? '<i class="fa-regular fa-circle-info"></i> Sandbox uses virtual funds — no real asset risk.'
+        : '<i class="fa-regular fa-circle-info"></i> Live mode uses real funds. Please ensure sufficient balance.';
+    }
+    
+    // 更新所有模式标签
+    document.querySelectorAll('.badge.sandbox-mode, .badge.live-mode').forEach(badge => {
+      if (isSandbox) {
+        badge.className = 'badge sandbox-mode';
+        badge.innerText = 'Sandbox';
+      } else {
+        badge.className = 'badge live-mode';
+        badge.innerText = 'Live';
+      }
+    });
+  }
+  
+  // 无动画版本（初始化用）
+  function updateUIByMode() {
+    const currentMode = getAppMode();
+    const isSandbox = currentMode === 'sandbox';
+    const targetValue = isSandbox ? SANDBOX_BALANCE : LIVE_BALANCE;
+    
+    if (poolAmountEl) poolAmountEl.innerText = targetValue.toFixed(2);
+    if (availableBalanceEl) availableBalanceEl.innerText = targetValue.toFixed(2) + ' USDT';
+    
+    if (currentModeBadgeEl) {
+      currentModeBadgeEl.innerHTML = isSandbox 
+        ? '<span class="badge sandbox-mode" style="margin:0;">Sandbox</span>' 
+        : '<span class="badge live-mode" style="margin:0;">Live</span>';
+    }
+    
+    if (modeNoteEl) {
+      modeNoteEl.innerHTML = isSandbox 
+        ? '<i class="fa-regular fa-circle-info"></i> Sandbox uses virtual funds — no real asset risk.'
+        : '<i class="fa-regular fa-circle-info"></i> Live mode uses real funds. Please ensure sufficient balance.';
+    }
+    
+    document.querySelectorAll('.badge.sandbox-mode, .badge.live-mode').forEach(badge => {
+      if (isSandbox) {
+        badge.className = 'badge sandbox-mode';
+        badge.innerText = 'Sandbox';
+      } else {
+        badge.className = 'badge live-mode';
+        badge.innerText = 'Live';
+      }
+    });
+  }
+  
+  function updateUITabActive() {
+    const currentMode = getAppMode();
+    const sandboxTab = document.querySelector('.mode-tab.sandbox');
+    const liveTab = document.querySelector('.mode-tab.live');
+    if (sandboxTab && liveTab) {
+      if (currentMode === 'sandbox') {
+        sandboxTab.classList.add('active');
+        liveTab.classList.remove('active');
+      } else {
+        liveTab.classList.add('active');
+        sandboxTab.classList.remove('active');
+      }
+    }
+  }
+  
+  function updateThemeUI() {
+    const currentTheme = getThemeMode();
+    const body = document.body;
+    const themeIcon = document.getElementById('themeToggle');
+    
+    if (currentTheme === 'dark') {
+      body.classList.add('dark');
+      if (themeIcon) {
+        themeIcon.classList.remove('fa-moon');
+        themeIcon.classList.add('fa-sun');
+      }
+    } else {
+      body.classList.remove('dark');
+      if (themeIcon) {
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
+      }
+    }
+  }
+  
+  // ============================================================
+  // 初始化 & 事件绑定
+  // ============================================================
+  
+  const themeToggle = document.getElementById('themeToggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const newTheme = getThemeMode() === 'dark' ? 'light' : 'dark';
+      setThemeMode(newTheme);
+      updateThemeUI();
+    });
+  }
+  
+  const sandboxTab = document.querySelector('.mode-tab.sandbox');
+  const liveTab = document.querySelector('.mode-tab.live');
+  
+  if (sandboxTab) {
+    sandboxTab.addEventListener('click', () => {
+      if (getAppMode() === 'sandbox') return;
+      setAppMode('sandbox');
+      updateUIByModeWithAnimation();  // 带动画切换
+      updateUITabActive();
+    });
+  }
+  
+  if (liveTab) {
+    liveTab.addEventListener('click', () => {
+      if (getAppMode() === 'live') return;
+      setAppMode('live');
+      updateUIByModeWithAnimation();  // 带动画切换
+      updateUITabActive();
+    });
+  }
+  
+  window.addEventListener('appModeChanged', (e) => {
+    updateUIByModeWithAnimation();
+    updateUITabActive();
+  });
+  
+  window.addEventListener('themeChanged', (e) => {
+    updateThemeUI();
+  });
+  
+  function init() {
+    if (!localStorage.getItem('appMode')) localStorage.setItem('appMode', 'sandbox');
+    if (!localStorage.getItem('theme')) localStorage.setItem('theme', 'light');
+    
+    updateThemeUI();
+    updateUIByMode();
+    updateUITabActive();
+  }
+  
+  init();
+  
+  document.querySelectorAll('.event-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const currentMode = getAppMode();
+      alert(`✅ Authorization submitted in ${currentMode.toUpperCase()} mode. AI will execute the strategy. Cutoff lock enforced.`);
+    });
+  });
+</script>
+</body>
+</html>

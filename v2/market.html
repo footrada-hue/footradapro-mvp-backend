@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Match Market · FootRadaPro</title>
+  <meta name="description" content="Browse all upcoming football matches. Filter by league, time, and AI confidence.">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 32px;
+      --space-8: 40px;
+      --space-9: 48px;
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-base: 1rem;
+      --font-lg: 1.125rem;
+      --font-xl: 1.25rem;
+      --font-2xl: 1.5rem;
+      --font-3xl: 1.875rem;
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-base: 0.24s;
+      --duration-fast: 0.15s;
+    }
+
+    /* 玻璃质感主题 */
+    :root {
+      --bg-gradient-start: rgba(248, 250, 252, 0.92);
+      --bg-gradient-end: rgba(241, 245, 249, 0.96);
+      --glass-bg: rgba(255, 255, 255, 0.48);
+      --glass-border: rgba(59, 130, 246, 0.18);
+      --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.01), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      --glass-shadow-hover: 0 20px 35px -12px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      --accent: #2563eb;
+      --accent-glow: rgba(37, 99, 235, 0.25);
+      --accent-gradient: linear-gradient(135deg, #2563eb, #4f46e5);
+      --success: #10b981;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --border-light: rgba(148, 163, 184, 0.18);
+      --card-bg: rgba(255, 255, 255, 0.62);
+      --ticker-bg: rgba(37, 99, 235, 0.92);
+      --ticker-text: #ffffff;
+      --badge-soft: rgba(37, 99, 235, 0.1);
+    }
+
+    body.dark {
+      --bg-gradient-start: rgba(10, 16, 30, 0.94);
+      --bg-gradient-end: rgba(2, 6, 18, 0.98);
+      --glass-bg: rgba(20, 28, 44, 0.52);
+      --glass-border: rgba(59, 130, 246, 0.28);
+      --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      --glass-shadow-hover: 0 20px 35px -12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.35);
+      --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      --success: #34d399;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --border-light: rgba(255, 255, 255, 0.08);
+      --card-bg: rgba(20, 28, 44, 0.58);
+      --ticker-bg: rgba(30, 58, 138, 0.92);
+      --ticker-text: #e2e8f0;
+      --badge-soft: rgba(59, 130, 246, 0.18);
+    }
+
+    body {
+      background: radial-gradient(ellipse at 30% 40%, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+      transition: background var(--duration-base) var(--ease-out);
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: repeating-linear-gradient(90deg, rgba(59,130,246,0.02) 0px, rgba(59,130,246,0.02) 1px, transparent 1px, transparent 40px),
+                        repeating-linear-gradient(0deg, rgba(59,130,246,0.02) 0px, rgba(59,130,246,0.02) 1px, transparent 1px, transparent 40px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--border-light); border-radius: 12px; }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 12px; }
+
+    .app-wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 跑马灯 */
+    .ticker {
+      background: var(--ticker-bg);
+      backdrop-filter: blur(16px);
+      color: var(--ticker-text);
+      padding: 10px 0;
+      font-size: var(--font-sm);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      border-bottom: 1px solid var(--glass-border);
+      position: relative;
+    }
+    .ticker::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 80px;
+      background: linear-gradient(90deg, transparent, var(--ticker-bg));
+      pointer-events: none;
+    }
+    .ticker-content {
+      display: inline-block;
+      animation: ticker 32s linear infinite;
+      padding-left: 100%;
+    }
+    @keyframes ticker { to { transform: translateX(-100%); } }
+
+    /* 头部导航 */
+    .header {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: var(--space-4) var(--space-6);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--glass-shadow);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: var(--space-3); }
+    .logo-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+    .logo-text { font-size: var(--font-xl); font-weight: 700; background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .header-actions { display: flex; gap: var(--space-5); align-items: center; }
+    .header-actions i { font-size: 20px; color: var(--text-secondary); cursor: pointer; transition: all var(--duration-fast) var(--ease-out); }
+    .user-badge { width: 38px; height: 38px; border-radius: 50%; background: var(--badge-soft); backdrop-filter: blur(8px); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 600; border: 1px solid var(--glass-border); }
+
+    /* 主内容区 */
+    .container { display: flex; flex: 1; padding: var(--space-6); gap: var(--space-6); max-width: 1600px; margin: 0 auto; width: 100%; }
+
+    /* 侧边栏 */
+    .sidebar { width: 280px; background: var(--card-bg); backdrop-filter: blur(24px); border-radius: 36px; border: 1px solid var(--glass-border); padding: var(--space-6) var(--space-5); height: fit-content; position: sticky; top: 88px; box-shadow: var(--glass-shadow); }
+    .sidebar-section { margin-bottom: var(--space-7); }
+    .sidebar-title { font-size: var(--font-xs); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: var(--space-4); display: flex; align-items: center; gap: var(--space-2); }
+    .sidebar-item { display: flex; justify-content: space-between; padding: var(--space-3) 0; font-size: var(--font-sm); color: var(--text-secondary); border-bottom: 1px solid var(--border-light); }
+    .positive { color: var(--success); font-weight: 600; }
+
+    /* 主内容 */
+    .content { flex: 1; }
+
+    /* 筛选栏 */
+    .filter-bar { background: var(--card-bg); backdrop-filter: blur(24px); border-radius: 60px; border: 1px solid var(--glass-border); padding: 8px 20px; margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+    .status-group, .league-group, .time-group { display: flex; gap: 12px; align-items: center; }
+    .status-chip, .time-chip { background: rgba(30, 38, 50, 0.6); border: none; padding: 8px 20px; border-radius: 40px; color: var(--text-secondary); font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .status-chip.active, .time-chip.active { background: var(--accent); color: white; }
+    .league-select { background: rgba(30, 38, 50, 0.8); border: 1px solid var(--glass-border); border-radius: 40px; padding: 8px 20px; color: var(--text-primary); font-weight: 500; cursor: pointer; }
+
+    /* 区域标题 */
+    .section-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-5); flex-wrap: wrap; gap: 12px; }
+    .section-title { font-size: var(--font-xl); font-weight: 700; background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; display: flex; align-items: center; gap: var(--space-2); }
+    .match-count { background: var(--badge-soft); padding: 2px 10px; border-radius: 40px; font-size: var(--font-sm); margin-left: 8px; }
+
+    /* 比赛网格 */
+    .featured-grid, .matches-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-5); margin-bottom: var(--space-5); }
+    .match-card { background: var(--card-bg); backdrop-filter: blur(28px); border-radius: 28px; border: 1px solid var(--glass-border); padding: var(--space-5); transition: all 0.2s; }
+    .match-card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: var(--glass-shadow-hover); }
+    .match-logos-wrapper { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .match-logo-item { text-align: center; flex: 1; }
+    .logo-fallback { width: 56px; height: 56px; background: var(--badge-soft); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-size: 24px; color: var(--accent); }
+    .match-team-name { font-weight: 600; font-size: var(--font-sm); }
+    .match-vs-badge { font-weight: 700; color: var(--accent); background: var(--badge-soft); padding: 4px 12px; border-radius: 40px; font-size: var(--font-xs); }
+    .match-info { margin: 16px 0; }
+    .match-league-time { display: flex; justify-content: space-between; font-size: var(--font-xs); color: var(--text-muted); margin-bottom: 12px; }
+    .confidence-bar { display: flex; align-items: center; gap: 10px; font-size: var(--font-xs); }
+    .confidence-progress { flex: 1; height: 6px; background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden; }
+    .confidence-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #8b5cf6); width: 0%; border-radius: 10px; }
+    .authorize-btn { width: 100%; background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,153,204,0.1)); border: 1px solid var(--accent); padding: 12px; border-radius: 40px; font-weight: 600; color: var(--accent); cursor: pointer; transition: all 0.2s; margin-top: 12px; }
+    .authorize-btn:hover { background: var(--accent); color: white; }
+
+    /* 空状态 */
+    .empty-state { text-align: center; padding: 60px 20px; background: var(--card-bg); backdrop-filter: blur(20px); border-radius: 36px; border: 1px solid var(--glass-border); }
+    .empty-state i { font-size: 64px; color: var(--text-muted); margin-bottom: 16px; }
+
+    /* 加载更多 */
+    .load-more-container { display: flex; justify-content: center; margin: var(--space-6) 0; }
+    .load-more-btn { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); padding: 12px 32px; border-radius: 60px; color: var(--accent); font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: var(--font-sm); }
+    .load-more-btn:hover { background: var(--accent); color: white; }
+    .loading-indicator { text-align: center; padding: 20px; color: var(--text-muted); display: none; }
+    .loading-indicator i { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 底部导航 */
+    .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); backdrop-filter: blur(32px); border-top: 1px solid var(--glass-border); padding: var(--space-3) var(--space-5); z-index: 60; }
+    .bottom-nav-items { display: flex; justify-content: space-around; max-width: 500px; margin: 0 auto; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); font-size: var(--font-xs); color: var(--text-muted); text-decoration: none; cursor: pointer; }
+    .nav-item.active { color: var(--accent); }
+    .nav-item i { font-size: 22px; }
+
+    /* 悬浮按钮 */
+    .fab { position: fixed; bottom: 28px; right: 28px; width: 56px; height: 56px; border-radius: 30px; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px var(--accent-glow); z-index: 55; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); }
+
+    /* 移动端性能优化 */
+    @media (max-width: 768px) {
+      .match-card { backdrop-filter: blur(8px); transition: none; }
+      .match-card:hover { transform: none; border-color: var(--glass-border); }
+      .confidence-fill { background: var(--accent); }
+      .authorize-btn { padding: 12px; font-size: 14px; }
+    }
+
+    /* 响应式 */
+    @media (max-width: 1199px) { .featured-grid, .matches-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 899px) { 
+      .sidebar { display: none; } 
+      .container { padding: var(--space-4); flex-direction: column; } 
+      .bottom-nav { display: block; } 
+      body { padding-bottom: 70px; } 
+      .fab { bottom: 80px; } 
+      .filter-bar { flex-direction: column; align-items: stretch; } 
+      .status-group, .league-group, .time-group { justify-content: center; } 
+      .featured-grid, .matches-grid { grid-template-columns: 1fr; } 
+    }
+    @media (max-width: 599px) { 
+      .header { padding: var(--space-3) var(--space-4); } 
+      .logo-text { font-size: var(--font-lg); } 
+      .section-head { flex-direction: column; } 
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <!-- 跑马灯 -->
+  <div class="ticker">
+    <div class="ticker-content">
+      <i class="fa-regular fa-circle-check"></i> SYSTEM STATUS: ACTIVE · ALL OPERATIONS VERIFIABLE ON-CHAIN &nbsp;|&nbsp;
+      <i class="fa-regular fa-clock"></i> AUTHORIZATION CUTOFF ENFORCED · NO POST-MODIFICATION &nbsp;|&nbsp;
+      <i class="fa-solid fa-chart-line"></i> AI TODAY'S HIGH-CONFIDENCE PICKS AVAILABLE &nbsp;|&nbsp;
+      <i class="fa-regular fa-futbol"></i> WORLD CUP 2026 PREHEAT — EARLY ACCESS SOON
+    </div>
+  </div>
+
+  <!-- 头部导航 -->
+  <div class="header">
+    <div class="logo"><div class="logo-icon">⚽</div><div class="logo-text">FootRadaPro</div></div>
+    <div class="header-actions"><i class="fa-regular fa-moon" id="themeToggle"></i><i class="fa-regular fa-bell"></i><div class="user-badge">EN</div></div>
+  </div>
+
+  <div class="container">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="sidebar-section"><div class="sidebar-title"><i class="fa-solid fa-chart-line"></i> Live Markets</div><div class="sidebar-item"><span>BTC/USDT</span><span class="positive">43,250 ↑</span></div><div class="sidebar-item"><span>ETH/USDT</span><span class="positive">2,340 ↑</span></div></div>
+      <div class="sidebar-section"><div class="sidebar-title"><i class="fa-solid fa-trophy"></i> Top Leagues</div><div class="sidebar-item"><span>Premier League</span><span>12</span></div><div class="sidebar-item"><span>La Liga</span><span>8</span></div><div class="sidebar-item"><span>UEFA CL</span><span>4</span></div></div>
+      <div class="sidebar-section"><div class="sidebar-title"><i class="fa-regular fa-bullhorn"></i> Announcements</div><div class="sidebar-item"><span>Sandbox mode upgraded</span></div><div class="sidebar-item"><span>World Cup hub coming soon</span></div></div>
+    </aside>
+
+    <!-- 主内容 -->
+    <main class="content">
+      <!-- 筛选栏 -->
+      <div class="filter-bar">
+        <div class="status-group"><button class="status-chip active" data-status="upcoming"><i class="fas fa-calendar"></i> Upcoming</button></div>
+        <div class="league-group"><select class="league-select" id="leagueSelect"><option value="all">🌍 All Leagues</option><option value="Premier League">⚡ Premier League</option><option value="La Liga">🇪🇸 La Liga</option><option value="Bundesliga">🇩🇪 Bundesliga</option><option value="Serie A">🇮🇹 Serie A</option><option value="Ligue 1">🇫🇷 Ligue 1</option><option value="Champions League">🏆 Champions League</option></select></div>
+        <div class="time-group"><button class="time-chip active" data-time="all">All</button><button class="time-chip" data-time="today">Today</button><button class="time-chip" data-time="tomorrow">Tomorrow</button></div>
+      </div>
+
+      <!-- Featured Matches -->
+      <div class="section-head"><h3 class="section-title"><i class="fas fa-star"></i> Featured Matches</h3></div>
+      <div class="featured-grid" id="featuredGrid"></div>
+
+      <!-- All Matches -->
+      <div class="section-head"><h3 class="section-title"><i class="fas fa-list"></i> All Matches <span class="match-count" id="matchCount">0</span></h3></div>
+      <div class="matches-grid" id="allMatchesGrid"></div>
+
+      <!-- 加载更多按钮 -->
+      <div class="load-more-container" id="loadMoreContainer">
+        <button class="load-more-btn" id="loadMoreBtn">Load More</button>
+      </div>
+      <div class="loading-indicator" id="loadingIndicator"><i class="fas fa-spinner"></i> Loading...</div>
+    </main>
+  </div>
+
+  <!-- 底部导航 -->
+  <div class="bottom-nav">
+    <div class="bottom-nav-items">
+      <div class="nav-item" data-nav="home"><i class="fa-solid fa-home"></i><span>Home</span></div>
+      <div class="nav-item active" data-nav="market"><i class="fa-solid fa-chart-line"></i><span>Market</span></div>
+      <div class="nav-item" data-nav="records"><i class="fa-solid fa-list"></i><span>Records</span></div>
+      <div class="nav-item" data-nav="support"><i class="fa-solid fa-headset"></i><span>Support</span></div>
+      <div class="nav-item" data-nav="profile"><i class="fa-solid fa-user"></i><span>Profile</span></div>
+    </div>
+  </div>
+
+  <!-- 悬浮按钮 -->
+  <div class="fab" onclick="alert('Support: contact via Telegram or Email')"><i class="fa-solid fa-comment-dots"></i></div>
+</div>
+
+<script>
+  // 生成模拟比赛数据
+  const generateMockMatches = () => {
+    const leagues = ['Premier League', 'La Liga', 'Bundesliga', 'Serie A', 'Ligue 1', 'Champions League'];
+    const teams = {
+      'Premier League': [['Liverpool', 'Man City'], ['Arsenal', 'Chelsea'], ['Man United', 'Tottenham']],
+      'La Liga': [['Real Madrid', 'Barcelona'], ['Atletico Madrid', 'Sevilla']],
+      'Bundesliga': [['Bayern Munich', 'Dortmund'], ['RB Leipzig', 'Bayer Leverkusen']],
+      'Serie A': [['Juventus', 'Inter Milan'], ['AC Milan', 'Roma']],
+      'Ligue 1': [['PSG', 'Marseille'], ['Monaco', 'Lyon']],
+      'Champions League': [['Real Madrid', 'Bayern'], ['Liverpool', 'PSG']]
+    };
+    const matches = [];
+    let now = new Date();
+    for (let i = 0; i < 48; i++) {
+      const league = leagues[i % leagues.length];
+      const pair = teams[league][i % teams[league].length];
+      const matchTime = new Date(now.getTime() + (i * 2 * 60 * 60 * 1000));
+      const confidenceMap = { 'Champions League': 92, 'Premier League': 84, 'La Liga': 81, 'Serie A': 79, 'Bundesliga': 77, 'Ligue 1': 74 };
+      matches.push({
+        id: i + 1000,
+        home_team: pair[0],
+        away_team: pair[1],
+        league: league,
+        match_time: matchTime.toISOString(),
+        confidence: confidenceMap[league] || 75
+      });
+    }
+    return matches;
+  };
+
+  let allMatches = generateMockMatches();
+  let filteredMatches = [];
+  let currentDisplayCount = 12;
+  const BATCH_SIZE = 12;
+  let selectedLeague = 'all';
+  let timeFilter = 'all';
+
+  function formatMatchTime(utcString) {
+    const d = new Date(utcString);
+    return `${d.getUTCMonth()+1}/${d.getUTCDate()} ${d.getUTCHours().toString().padStart(2,'0')}:${d.getUTCMinutes().toString().padStart(2,'0')}`;
+  }
+
+  function getRelativeTime(utcString) {
+    const diff = (new Date(utcString) - new Date()) / 3600000;
+    if (diff < 0) return 'Started';
+    if (diff < 1) return 'Now';
+    if (diff < 24) return `${Math.floor(diff)}h`;
+    return `${Math.floor(diff/24)}d`;
+  }
+
+  function filterByTime(match) {
+    if (timeFilter === 'all') return true;
+    const matchTime = new Date(match.match_time);
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+    if (timeFilter === 'today') return matchTime >= todayStart && matchTime < tomorrowStart;
+    if (timeFilter === 'tomorrow') return matchTime >= tomorrowStart && matchTime < new Date(tomorrowStart.getTime() + 86400000);
+    return true;
+  }
+
+  function applyFilters() {
+    let filtered = [...allMatches];
+    if (selectedLeague !== 'all') filtered = filtered.filter(m => m.league === selectedLeague);
+    filtered = filtered.filter(m => filterByTime(m));
+    const priority = { 'Champions League': 1, 'Premier League': 3, 'La Liga': 4, 'Serie A': 5, 'Bundesliga': 6, 'Ligue 1': 7 };
+    filtered.sort((a, b) => (priority[a.league] || 99) - (priority[b.league] || 99));
+    filteredMatches = filtered;
+    currentDisplayCount = 12;
+    document.getElementById('matchCount').innerText = filteredMatches.length;
+    renderFeaturedMatches();
+    renderAllMatches();
+    updateLoadMoreButton();
+  }
+
+  function renderMatchCard(match) {
+    return `<div class="match-card" data-match-id="${match.id}">
+      <div class="match-logos-wrapper">
+        <div class="match-logo-item"><div class="logo-fallback"><i class="fas fa-futbol"></i></div><div class="match-team-name">${match.home_team}</div></div>
+        <div class="match-vs-badge">VS</div>
+        <div class="match-logo-item"><div class="logo-fallback"><i class="fas fa-futbol"></i></div><div class="match-team-name">${match.away_team}</div></div>
+      </div>
+      <div class="match-info">
+        <div class="match-league-time"><span>🏆 ${match.league}</span><span>${formatMatchTime(match.match_time)} (${getRelativeTime(match.match_time)})</span></div>
+        <div class="confidence-bar"><span>AI Confidence</span><div class="confidence-progress"><div class="confidence-fill" style="width:${match.confidence}%"></div></div><span>${match.confidence}%</span></div>
+      </div>
+      <button class="authorize-btn" onclick="alert('Authorize match ${match.id}')">Authorize <i class="fa-solid fa-arrow-right"></i></button>
+    </div>`;
+  }
+
+  function renderFeaturedMatches() {
+    const featured = filteredMatches.slice(0, 4);
+    const container = document.getElementById('featuredGrid');
+    if (featured.length === 0) {
+      container.innerHTML = '<div class="empty-state"><i class="fas fa-futbol"></i><p>No featured matches available</p></div>';
+    } else {
+      container.innerHTML = featured.map(m => renderMatchCard(m)).join('');
+    }
+  }
+
+  function renderAllMatches() {
+    const displayMatches = filteredMatches.slice(0, currentDisplayCount);
+    const container = document.getElementById('allMatchesGrid');
+    if (displayMatches.length === 0) {
+      container.innerHTML = '<div class="empty-state"><i class="fas fa-futbol"></i><p>No matches available</p><button class="authorize-btn" id="resetFiltersBtn" style="margin-top:16px;">Reset Filters</button></div>';
+      const resetBtn = document.getElementById('resetFiltersBtn');
+      if (resetBtn) resetBtn.onclick = () => resetFilters();
+    } else {
+      container.innerHTML = displayMatches.map(m => renderMatchCard(m)).join('');
+    }
+  }
+
+  function updateLoadMoreButton() {
+    const btn = document.getElementById('loadMoreBtn');
+    const container = document.getElementById('loadMoreContainer');
+    if (currentDisplayCount >= filteredMatches.length) {
+      container.style.display = 'none';
+    } else {
+      container.style.display = 'flex';
+      btn.innerText = `Load More (${filteredMatches.length - currentDisplayCount} remaining)`;
+    }
+  }
+
+  function loadMore() {
+    currentDisplayCount += BATCH_SIZE;
+    renderAllMatches();
+    updateLoadMoreButton();
+  }
+
+  function resetFilters() {
+    selectedLeague = 'all';
+    timeFilter = 'all';
+    const leagueSelect = document.getElementById('leagueSelect');
+    if (leagueSelect) leagueSelect.value = 'all';
+    document.querySelectorAll('.time-chip').forEach(c => {
+      c.classList.toggle('active', c.dataset.time === 'all');
+    });
+    applyFilters();
+  }
+
+  function bindEvents() {
+    const leagueSelect = document.getElementById('leagueSelect');
+    if (leagueSelect) {
+      leagueSelect.onchange = (e) => { selectedLeague = e.target.value; applyFilters(); };
+    }
+    document.querySelectorAll('.time-chip').forEach(chip => {
+      chip.onclick = () => {
+        timeFilter = chip.dataset.time;
+        document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        applyFilters();
+      };
+    });
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    if (loadMoreBtn) loadMoreBtn.onclick = () => loadMore();
+  }
+
+  // 主题切换
+  function getThemeMode() { return localStorage.getItem('theme') || 'light'; }
+  function setThemeMode(theme) { localStorage.setItem('theme', theme); updateThemeUI(); }
+  function updateThemeUI() {
+    const theme = getThemeMode();
+    if (theme === 'dark') document.body.classList.add('dark');
+    else document.body.classList.remove('dark');
+    const icon = document.getElementById('themeToggle');
+    if (icon) {
+      if (theme === 'dark') { icon.classList.remove('fa-moon'); icon.classList.add('fa-sun'); }
+      else { icon.classList.remove('fa-sun'); icon.classList.add('fa-moon'); }
+    }
+  }
+
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    setThemeMode(getThemeMode() === 'dark' ? 'light' : 'dark');
+  });
+
+  // 底部导航高亮
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+
+  // 初始化
+  bindEvents();
+  applyFilters();
+  updateThemeUI();
+</script>
+</body>
+</html>

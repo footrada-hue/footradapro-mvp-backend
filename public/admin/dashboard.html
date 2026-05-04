@@ -1,93 +1,475 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>仪表盘 - FOOTRADAPRO 后台</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- 全局配置 -->
+    <!-- 全局配置 - 保留原有引用 -->
     <script src="/js/core/config.js"></script>
     <script src="/js/core/timezone.js"></script>
     <script src="/js/admin/admin_auth_guard.js"></script>
     
-    <!-- 样式文件 -->
-    <link rel="stylesheet" href="/css/admin-base.css">
-    <link rel="stylesheet" href="/css/admin-nav.css">
-    <link rel="stylesheet" href="/css/admin-dashboard.css">
+    <!-- 主要邏輯 - 保留原有引用 -->
+    <script src="/js/admin/dashboard_controller.js"></script>
+    
+    <!-- 世界級 CSS 樣式佈局（完全內嵌，替代原有三個 CSS 文件） -->
+    <style>
+        /* ============================================
+           世界級後台管理系統 - 完整設計系統
+           深色主題 | 玻璃態效果 | 響應式佈局
+        ============================================ */
+        
+        /* ----- RESET & 全局變量 ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --primary-light: #60A5FA;
+            --secondary: #8B5CF6;
+            --accent: #F59E0B;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F97316;
+            --dark-bg: #0A0F1C;
+            --card-bg: rgba(18, 28, 44, 0.75);
+            --border-glow: rgba(59, 130, 246, 0.25);
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at 20% 30%, #0B1120, #050814);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* 自定義滾動條 */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1E293B;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        /* 主佈局 */
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ========= 側邊欄 - 玻璃質感 ========= */
+        .admin-sidebar {
+            width: 280px;
+            background: rgba(10, 18, 32, 0.85);
+            backdrop-filter: blur(16px);
+            border-right: 1px solid var(--border-glow);
+            box-shadow: 8px 0 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 20;
+        }
+
+        /* 側邊欄 Logo 樣式 - 兼容 sidebar.html 結構 */
+        .admin-sidebar-logo {
+            padding: 28px 24px;
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #FFFFFF, var(--primary-light), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            border-bottom: 1px solid var(--border-glow);
+            margin-bottom: 20px;
+        }
+        .admin-sidebar-logo span {
+            color: var(--primary);
+            background: none;
+            -webkit-background-clip: unset;
+            background-clip: unset;
+        }
+
+        /* 導航菜單 */
+        .admin-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 0 16px 20px 16px;
+        }
+        .admin-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-size: 0.9rem;
+            position: relative;
+        }
+        .admin-nav-item i {
+            width: 24px;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        .admin-nav-item:hover {
+            background: rgba(59, 130, 246, 0.15);
+            color: white;
+            transform: translateX(4px);
+        }
+        .admin-nav-item.active {
+            background: linear-gradient(95deg, rgba(59,130,246,0.2), rgba(139,92,246,0.1));
+            color: white;
+            border-left: 3px solid var(--primary);
+        }
+        
+        /* 未讀消息徽章 */
+        .unread-badge {
+            margin-left: auto;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: var(--warning);
+            color: white;
+        }
+
+        /* 滾動條美化（側邊欄） */
+        .admin-sidebar::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        /* ========= 主內容區域 ========= */
+        .admin-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* 頂部導航欄 */
+        .admin-header {
+            background: rgba(10, 18, 32, 0.7);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-glow);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 15;
+        }
+        .admin-header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(120deg, #F1F5F9, var(--primary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .admin-header h1 i {
+            background: none;
+            -webkit-background-clip: unset;
+            color: var(--primary);
+            margin-right: 12px;
+        }
+        .admin-user {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(255,255,255,0.04);
+            padding: 6px 18px;
+            border-radius: 60px;
+        }
+        #adminName {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.2s;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .icon-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        /* 內容區域 */
+        .admin-content {
+            padding: 32px 36px;
+            max-width: 1600px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* 統計卡片網格 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 28px;
+            border: 1px solid var(--border-glow);
+            padding: 22px 24px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(59, 130, 246, 0.5);
+            background: rgba(25, 38, 60, 0.8);
+        }
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+        .stat-icon.blue { background: linear-gradient(145deg, #1E3A8A, #2563EB); }
+        .stat-icon.green { background: linear-gradient(145deg, #14532D, #16A34A); }
+        .stat-icon.orange { background: linear-gradient(145deg, #9A3412, #EA580C); }
+        .stat-icon.purple { background: linear-gradient(145deg, #4C1D95, #8B5CF6); }
+
+        .stat-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: white;
+            line-height: 1.2;
+            margin-top: 4px;
+        }
+
+        /* 區塊卡片 */
+        .admin-section {
+            background: rgba(10, 20, 34, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 32px;
+            border: 1px solid var(--border-glow);
+            overflow: hidden;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 28px 12px 28px;
+            border-bottom: 1px solid rgba(71, 85, 105, 0.5);
+        }
+        .section-header h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-header h2 i {
+            color: var(--primary);
+        }
+        .view-all {
+            color: var(--primary-light);
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.2s;
+            background: rgba(59,130,246,0.1);
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+        }
+        .view-all:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* 表格設計 */
+        .table-container {
+            overflow-x: auto;
+            padding: 0 20px 20px 20px;
+        }
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .admin-table th {
+            text-align: left;
+            padding: 14px 12px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-glow);
+        }
+        .admin-table td {
+            padding: 12px 12px;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+            color: var(--text-primary);
+        }
+        .admin-table tr:hover td {
+            background: rgba(59, 130, 246, 0.08);
+        }
+        .loading {
+            text-align: center;
+            padding: 48px !important;
+            color: var(--text-secondary);
+        }
+
+        /* 響應式 */
+        @media (max-width: 768px) {
+            .admin-layout {
+                flex-direction: column;
+            }
+            .admin-sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            .admin-nav {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .admin-nav-item {
+                flex: 0 0 auto;
+            }
+            .admin-content {
+                padding: 20px;
+            }
+            .stats-grid {
+                gap: 16px;
+            }
+            .stat-value {
+                font-size: 1.6rem;
+            }
+            .admin-header h1 {
+                font-size: 1.2rem;
+            }
+        }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .stat-card, .admin-section {
+            animation: fadeSlideUp 0.4s ease forwards;
+        }
+    </style>
 </head>
 <body>
     <div class="admin-layout">
-        <!-- 侧边导航栏 -->
+        <!-- 側邊導航欄 - 保留原有 fetch 加載邏輯 -->
         <aside class="admin-sidebar" id="sidebar-container"></aside>
 
-<script>
-    // 加载侧边栏组件
-    fetch('/admin/components/sidebar.html')
-        .then(res => res.text())
-        .then(html => {
-            document.getElementById('sidebar-container').innerHTML = html;
-            // 高亮当前菜单
-            const currentPath = window.location.pathname;
-            document.querySelectorAll('.admin-nav-item').forEach(link => {
-                if (link.getAttribute('href') === currentPath) {
-                    link.classList.add('active');
-                }
-            });
-        })
-        .catch(err => console.error('加载侧边栏失败:', err));
-</script>
+        <script>
+            // 加載側邊欄組件 - 完全保留原有邏輯
+            fetch('/admin/components/sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('sidebar-container').innerHTML = html;
+                    // 高亮當前菜單
+                    const currentPath = window.location.pathname;
+                    document.querySelectorAll('.admin-nav-item').forEach(link => {
+                        if (link.getAttribute('href') === currentPath) {
+                            link.classList.add('active');
+                        }
+                    });
+                })
+                .catch(err => console.error('加載側邊欄失敗:', err));
+        </script>
 
-        <!-- 主内容 -->
+        <!-- 主內容 -->
         <main class="admin-main">
             <header class="admin-header">
-                <h1><i class="fas fa-tachometer-alt"></i> 仪表盘</h1>
+                <h1><i class="fas fa-tachometer-alt"></i> 儀表盤</h1>
                 <div class="admin-user">
-                    <span id="adminName">管理员</span>
-                    <button class="icon-btn" id="logoutBtn" title="退出登录">
+                    <span id="adminName">管理員</span>
+                    <button class="icon-btn" id="logoutBtn" title="退出登錄">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
                 </div>
             </header>
 
             <div class="admin-content">
-                <!-- 统计卡片 -->
+                <!-- 統計卡片 -->
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-icon blue"><i class="fas fa-users"></i></div>
                         <div class="stat-info">
-                            <span class="stat-label">总用户数</span>
+                            <span class="stat-label">總用戶數</span>
                             <span class="stat-value" id="totalUsers">-</span>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
                         <div class="stat-info">
-                            <span class="stat-label">总交易额</span>
+                            <span class="stat-label">總交易額</span>
                             <span class="stat-value" id="totalVolume">-</span>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon orange"><i class="fas fa-gift"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-label">已领体验金</span>
-                            <span class="stat-value" id="claimedBonus">-</span>
-                        </div>
-                    </div>
+
                     <div class="stat-card">
                         <div class="stat-icon purple"><i class="fas fa-futbol"></i></div>
                         <div class="stat-info">
-                            <span class="stat-label">进行中比赛</span>
+                            <span class="stat-label">進行中比賽</span>
                             <span class="stat-value" id="activeMatches">-</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- 最近用户 -->
+                <!-- 最近用戶 -->
                 <div class="admin-section">
                     <div class="section-header">
-                        <h2><i class="fas fa-clock"></i> 最近注册用户</h2>
+                        <h2><i class="fas fa-clock"></i> 最近註冊用戶</h2>
                         <a href="/admin/users.html" class="view-all">查看全部 <i class="fas fa-arrow-right"></i></a>
                     </div>
                     <div class="table-container">
@@ -95,14 +477,14 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>用户名</th>
+                                    <th>用戶名</th>
                                     <th>UID</th>
-                                    <th>余额</th>
-                                    <th>注册时间</th>
+                                    <th>餘額</th>
+                                    <th>註冊時間</th>
                                 </tr>
                             </thead>
                             <tbody id="recentUsers">
-                                <tr><td colspan="5" class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</td></tr>
+                                <tr><td colspan="5" class="loading"><i class="fas fa-spinner fa-spin"></i> 加載中...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -111,6 +493,6 @@
         </main>
     </div>
 
-    <script src="/js/admin/dashboard_controller.js"></script>
+    <!-- dashboard_controller.js 已保留引用，會自動執行 -->
 </body>
 </html>

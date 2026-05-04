@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>My Profile · FootRadaPro</title>
+  <meta name="description" content="User profile, assets, security settings">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* ========== 8px 网格系统 ========== */
+    :root {
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 32px;
+      --space-8: 40px;
+      --space-9: 48px;
+      --space-10: 64px;
+      
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-base: 1rem;
+      --font-lg: 1.125rem;
+      --font-xl: 1.25rem;
+      --font-2xl: 1.5rem;
+      --font-3xl: 1.875rem;
+      --font-4xl: 2.25rem;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-bounce: cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      --duration-fast: 0.15s;
+      --duration-base: 0.24s;
+      --duration-slow: 0.4s;
+    }
+
+    /* ========== 玻璃质感主题 ========== */
+    :root {
+      --bg-gradient-start: rgba(248, 250, 252, 0.92);
+      --bg-gradient-end: rgba(241, 245, 249, 0.96);
+      --glass-bg: rgba(255, 255, 255, 0.48);
+      --glass-border: rgba(59, 130, 246, 0.18);
+      --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.01), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      --glass-shadow-hover: 0 20px 35px -12px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.02), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      --accent: #2563eb;
+      --accent-glow: rgba(37, 99, 235, 0.25);
+      --accent-gradient: linear-gradient(135deg, #2563eb, #4f46e5);
+      --sandbox-gradient: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      --live-gradient: linear-gradient(135deg, #f97316, #ea580c);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --border-light: rgba(148, 163, 184, 0.18);
+      --card-bg: rgba(255, 255, 255, 0.62);
+      --ticker-bg: rgba(37, 99, 235, 0.92);
+      --ticker-text: #ffffff;
+      --badge-soft: rgba(37, 99, 235, 0.1);
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    body.dark {
+      --bg-gradient-start: rgba(10, 16, 30, 0.94);
+      --bg-gradient-end: rgba(2, 6, 18, 0.98);
+      --glass-bg: rgba(20, 28, 44, 0.52);
+      --glass-border: rgba(59, 130, 246, 0.28);
+      --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      --glass-shadow-hover: 0 20px 35px -12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.35);
+      --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      --sandbox-gradient: linear-gradient(135deg, #a855f7, #7c3aed);
+      --live-gradient: linear-gradient(135deg, #fb923c, #ea580c);
+      --success: #34d399;
+      --warning: #fbbf24;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --border-light: rgba(255, 255, 255, 0.08);
+      --card-bg: rgba(20, 28, 44, 0.58);
+      --ticker-bg: rgba(30, 58, 138, 0.92);
+      --ticker-text: #e2e8f0;
+      --badge-soft: rgba(59, 130, 246, 0.18);
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.15);
+    }
+
+    body {
+      background: radial-gradient(ellipse at 30% 40%, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+      transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: repeating-linear-gradient(90deg, rgba(59,130,246,0.02) 0px, rgba(59,130,246,0.02) 1px, transparent 1px, transparent 40px),
+                        repeating-linear-gradient(0deg, rgba(59,130,246,0.02) 0px, rgba(59,130,246,0.02) 1px, transparent 1px, transparent 40px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--border-light); border-radius: 12px; }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 12px; }
+
+    .app-wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ========== 跑马灯 ========== */
+    .ticker {
+      background: var(--ticker-bg);
+      backdrop-filter: blur(16px);
+      color: var(--ticker-text);
+      padding: 10px 0;
+      font-size: var(--font-sm);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      border-bottom: 1px solid var(--glass-border);
+      position: relative;
+    }
+    .ticker::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 80px;
+      background: linear-gradient(90deg, transparent, var(--ticker-bg));
+      pointer-events: none;
+    }
+    .ticker-content {
+      display: inline-block;
+      animation: ticker 32s linear infinite;
+      padding-left: 100%;
+    }
+    .ticker:hover .ticker-content { animation-play-state: paused; }
+    @keyframes ticker { to { transform: translateX(-100%); } }
+
+    /* ========== 头部导航 ========== */
+    .header {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: var(--space-4) var(--space-6);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--glass-shadow);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: var(--space-3); }
+    .logo-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+    .logo-text { font-size: var(--font-xl); font-weight: 700; background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .header-actions { display: flex; gap: var(--space-5); align-items: center; }
+    .header-actions i { font-size: 20px; color: var(--text-secondary); cursor: pointer; transition: all var(--duration-fast) var(--ease-out); }
+    .user-badge { width: 38px; height: 38px; border-radius: 50%; background: var(--badge-soft); backdrop-filter: blur(8px); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 600; border: 1px solid var(--glass-border); }
+
+    /* ========== 三栏布局 ========== */
+    .container {
+      display: flex;
+      flex: 1;
+      padding: var(--space-6);
+      gap: var(--space-6);
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* 侧边栏 */
+    .sidebar {
+      width: 280px;
+      background: var(--card-bg);
+      backdrop-filter: blur(24px);
+      border-radius: 36px;
+      border: 1px solid var(--glass-border);
+      padding: var(--space-6) var(--space-5);
+      height: fit-content;
+      position: sticky;
+      top: 88px;
+      box-shadow: var(--glass-shadow);
+      transition: all var(--duration-base) var(--ease-out);
+    }
+    .sidebar:hover {
+      border-color: var(--accent);
+      box-shadow: var(--glass-shadow-hover);
+    }
+    .sidebar-section { margin-bottom: var(--space-7); }
+    .sidebar-title {
+      font-size: var(--font-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: var(--space-4);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .sidebar-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-3) 0;
+      font-size: var(--font-sm);
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-light);
+      transition: all var(--duration-fast) var(--ease-out);
+    }
+    .sidebar-item:hover {
+      background: var(--badge-soft);
+      padding-left: var(--space-2);
+      border-radius: var(--space-3);
+    }
+    .positive { color: var(--success); font-weight: 600; }
+    .announcement-item {
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .announcement-title { font-size: var(--font-sm); font-weight: 500; margin-bottom: var(--space-1); }
+    .announcement-date { font-size: var(--font-xs); color: var(--text-muted); }
+
+    /* ========== 主内容区 ========== */
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+    }
+
+    /* 模式状态指示器（只读，不可切换） */
+    .mode-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: var(--badge-soft);
+      backdrop-filter: blur(8px);
+      padding: 6px 16px;
+      border-radius: 60px;
+      width: fit-content;
+    }
+    .mode-indicator i { font-size: 14px; }
+    .mode-indicator .sandbox-mode-text { color: #8b5cf6; font-weight: 600; }
+    .mode-indicator .live-mode-text { color: #f97316; font-weight: 600; }
+
+    /* 个人中心卡片 */
+    .profile-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(28px);
+      border-radius: 36px;
+      border: 1px solid var(--glass-border);
+      padding: var(--space-6);
+      transition: all var(--duration-base) var(--ease-out);
+      box-shadow: var(--glass-shadow);
+    }
+    .profile-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--glass-shadow-hover);
+      border-color: var(--accent);
+    }
+
+    /* 用户信息区域 */
+    .user-section {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-6);
+      padding-bottom: var(--space-5);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .user-left {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+    .avatar {
+      width: 72px;
+      height: 72px;
+      background: var(--accent-gradient);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      color: white;
+      box-shadow: 0 4px 12px var(--accent-glow);
+    }
+    .user-info h2 {
+      font-size: var(--font-2xl);
+      font-weight: 700;
+      margin-bottom: var(--space-1);
+    }
+    .user-info p {
+      color: var(--text-muted);
+      font-size: var(--font-sm);
+    }
+    .test-badge {
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      color: white;
+      padding: 6px 14px;
+      border-radius: 40px;
+      font-size: var(--font-xs);
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    /* 资产网格 */
+    .assets-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+    .asset-item {
+      text-align: center;
+      padding: var(--space-4);
+      background: rgba(255,255,255,0.05);
+      border-radius: 24px;
+      transition: all var(--duration-fast);
+    }
+    .asset-item:hover {
+      background: var(--badge-soft);
+    }
+    .asset-label {
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+      margin-bottom: var(--space-2);
+    }
+    .asset-value {
+      font-size: var(--font-2xl);
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    /* 操作按钮组 */
+    .action-buttons {
+      display: flex;
+      gap: var(--space-4);
+    }
+    .action-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: 14px;
+      border-radius: 60px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-bounce);
+      font-size: var(--font-sm);
+    }
+    .action-btn.deposit {
+      background: var(--accent-gradient);
+      color: white;
+      box-shadow: 0 4px 12px var(--accent-glow);
+    }
+    .action-btn.withdraw {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+    .action-btn.deposit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px var(--accent-glow);
+    }
+    .action-btn.withdraw:hover {
+      background: var(--accent);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    /* 功能卡片网格 */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-5);
+    }
+    .feature-card {
+      background: rgba(255,255,255,0.03);
+      border-radius: 24px;
+      padding: var(--space-5);
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--duration-base) var(--ease-out);
+      border: 1px solid transparent;
+    }
+    .feature-card:hover {
+      border-color: var(--accent);
+      background: var(--badge-soft);
+      transform: translateY(-4px);
+    }
+    .feature-card i {
+      font-size: 32px;
+      color: var(--accent);
+      margin-bottom: var(--space-3);
+    }
+    .feature-card h4 {
+      font-size: var(--font-base);
+      font-weight: 600;
+      margin-bottom: var(--space-1);
+    }
+    .feature-card p {
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+    }
+
+    /* 退出按钮 */
+    .logout-btn {
+      width: 100%;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+      padding: 14px;
+      border-radius: 60px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--duration-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+    }
+    .logout-btn:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
+      transform: translateY(-2px);
+    }
+
+    /* 底部导航 */
+    .bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card-bg);
+      backdrop-filter: blur(32px);
+      border-top: 1px solid var(--glass-border);
+      padding: var(--space-3) var(--space-5);
+      z-index: 60;
+    }
+    .bottom-nav-items {
+      display: flex;
+      justify-content: space-around;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: all var(--duration-fast) var(--ease-out);
+      cursor: pointer;
+    }
+    .nav-item.active { color: var(--accent); }
+    .nav-item i { font-size: 22px; }
+
+    /* 悬浮按钮 */
+    .fab {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      width: 56px;
+      height: 56px;
+      border-radius: 30px;
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px var(--accent-glow);
+      z-index: 55;
+      cursor: pointer;
+      transition: all var(--duration-base) var(--ease-bounce);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .fab:hover { transform: scale(1.05); }
+    .fab:active { transform: scale(0.95); }
+
+    /* 响应式 */
+    @media (max-width: 1199px) {
+      .features-grid { gap: var(--space-4); }
+    }
+    @media (max-width: 899px) {
+      .sidebar { display: none; }
+      .container { padding: var(--space-4); gap: var(--space-4); flex-direction: column; }
+      .bottom-nav { display: block; }
+      body { padding-bottom: 70px; }
+      .fab { bottom: 80px; right: 20px; }
+      .features-grid { gap: var(--space-4); }
+      .user-section { flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+      .assets-grid { gap: var(--space-2); }
+      .action-buttons { gap: var(--space-3); }
+    }
+    @media (max-width: 599px) {
+      .header { padding: var(--space-3) var(--space-4); }
+      .logo-text { font-size: var(--font-lg); }
+      .profile-card { padding: var(--space-4); }
+      .avatar { width: 56px; height: 56px; font-size: 24px; }
+      .asset-value { font-size: var(--font-xl); }
+      .feature-card { padding: var(--space-4); }
+      .feature-card i { font-size: 24px; }
+      .action-buttons { flex-direction: column; gap: var(--space-3); }
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <!-- 跑马灯 -->
+  <div class="ticker">
+    <div class="ticker-content">
+      <i class="fa-regular fa-circle-check"></i> SYSTEM STATUS: ACTIVE · ALL OPERATIONS VERIFIABLE ON-CHAIN &nbsp;|&nbsp;
+      <i class="fa-regular fa-clock"></i> AUTHORIZATION CUTOFF ENFORCED · NO POST-MODIFICATION &nbsp;|&nbsp;
+      <i class="fa-regular fa-futbol"></i> WORLD CUP 2026 PREHEAT — EARLY ACCESS SOON
+    </div>
+  </div>
+
+  <!-- 头部导航 -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">⚽</div>
+      <div class="logo-text">FootRadaPro</div>
+    </div>
+    <div class="header-actions">
+      <i class="fa-regular fa-moon" id="themeToggle"></i>
+      <i class="fa-regular fa-bell"></i>
+      <div class="user-badge">EN</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-title"><i class="fa-solid fa-chart-line"></i> Live Markets</div>
+        <div class="sidebar-item"><span>BTC/USDT</span><span class="positive">43,250 ↑</span></div>
+        <div class="sidebar-item"><span>ETH/USDT</span><span class="positive">2,340 ↑</span></div>
+        <div class="sidebar-item"><span>USDT/CNY</span><span>7.25</span></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-title"><i class="fa-solid fa-trophy"></i> Top Leagues</div>
+        <div class="sidebar-item"><span>Premier League</span><span>12</span></div>
+        <div class="sidebar-item"><span>La Liga</span><span>8</span></div>
+        <div class="sidebar-item"><span>UEFA CL</span><span>4</span></div>
+        <div class="sidebar-item"><span>Bundesliga</span><span>6</span></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-title"><i class="fa-regular fa-bullhorn"></i> Announcements</div>
+        <div class="announcement-item"><div class="announcement-title">✨ Sandbox mode upgraded</div><div class="announcement-date">Jan 15, 2025</div></div>
+        <div class="announcement-item"><div class="announcement-title">🏆 World Cup hub coming soon</div><div class="announcement-date">Jan 10, 2025</div></div>
+      </div>
+    </aside>
+
+    <!-- 主内容 -->
+    <main class="content">
+      <!-- 模式状态指示器（只读，显示当前模式） -->
+      <div class="mode-indicator" id="modeIndicator">
+        <i class="fa-solid fa-info-circle"></i>
+        <span>Current Mode: </span>
+        <span id="currentModeText" class="sandbox-mode-text">Sandbox</span>
+      </div>
+
+      <!-- 用户资产卡片 -->
+      <div class="profile-card">
+        <!-- 用户信息 -->
+        <div class="user-section">
+          <div class="user-left">
+            <div class="avatar">👤</div>
+            <div class="user-info">
+              <h2 id="username">Trader_2024</h2>
+              <p id="uid"><i class="fas fa-id-card"></i> UID: 100001</p>
+            </div>
+          </div>
+          <div id="testModeHint" class="test-badge" style="display: none;">
+            <i class="fa-solid fa-flask"></i> Test Mode
+          </div>
+        </div>
+
+        <!-- 资产网格 -->
+        <div class="assets-grid">
+          <div class="asset-item">
+            <div class="asset-label">Total Assets</div>
+            <div class="asset-value" id="totalAssets">10,000.00</div>
+          </div>
+          <div class="asset-item">
+            <div class="asset-label">Available</div>
+            <div class="asset-value" id="availableBalance">10,000.00</div>
+          </div>
+          <div class="asset-item">
+            <div class="asset-label">Locked</div>
+            <div class="asset-value" id="lockedFunds">0.00</div>
+          </div>
+        </div>
+
+        <!-- 充值/提现按钮 -->
+        <div class="action-buttons">
+          <button class="action-btn deposit" id="depositBtn">
+            <i class="fa-solid fa-circle-dollar-to-slot"></i> Deposit
+          </button>
+          <button class="action-btn withdraw" id="withdrawBtn">
+            <i class="fa-solid fa-arrow-up-from-bracket"></i> Withdraw
+          </button>
+        </div>
+      </div>
+
+      <!-- 功能卡片网格 -->
+      <div class="features-grid">
+        <div class="feature-card" id="fundFlowCard">
+          <i class="fa-solid fa-coins"></i>
+          <h4>Fund Flow</h4>
+          <p>View transaction history</p>
+        </div>
+        <div class="feature-card" id="authCard">
+          <i class="fa-solid fa-file-signature"></i>
+          <h4>My Authorizations</h4>
+          <p>Track your trades</p>
+        </div>
+        <div class="feature-card" id="securityCard">
+          <i class="fa-solid fa-shield-alt"></i>
+          <h4>Security</h4>
+          <p>Payment password & settings</p>
+        </div>
+        <div class="feature-card" id="supportCard">
+          <i class="fa-solid fa-headset"></i>
+          <h4>Support</h4>
+          <p>Get help 24/7</p>
+        </div>
+      </div>
+
+      <!-- 退出登录 -->
+      <button class="logout-btn" id="logoutBtn">
+        <i class="fa-solid fa-sign-out-alt"></i> Logout
+      </button>
+    </main>
+  </div>
+
+  <!-- 底部导航 -->
+  <div class="bottom-nav">
+    <div class="bottom-nav-items">
+      <div class="nav-item" data-nav="home"><i class="fa-solid fa-home"></i><span>Home</span></div>
+      <div class="nav-item" data-nav="market"><i class="fa-solid fa-chart-line"></i><span>Market</span></div>
+      <div class="nav-item" data-nav="records"><i class="fa-solid fa-list"></i><span>Records</span></div>
+      <div class="nav-item" data-nav="support"><i class="fa-solid fa-headset"></i><span>Support</span></div>
+      <div class="nav-item active" data-nav="profile"><i class="fa-solid fa-user"></i><span>Profile</span></div>
+    </div>
+  </div>
+
+  <!-- 悬浮按钮 -->
+  <div class="fab" onclick="alert('Support: contact via Telegram or Email')">
+    <i class="fa-solid fa-comment-dots"></i>
+  </div>
+</div>
+
+<script>
+  // ========== 全局状态管理（监听首页变化） ==========
+  function getAppMode() { return localStorage.getItem('appMode') || 'sandbox'; }
+  function getThemeMode() { return localStorage.getItem('theme') || 'light'; }
+
+  // 余额配置
+  const SANDBOX_BAL = 10000;
+  const LIVE_BAL = 2500;
+
+  // 数字滚动动画
+  function animateNumber(element, start, end, duration = 500) {
+    const startTime = performance.now();
+    function update(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const easeOut = 1 - Math.pow(1 - progress, 4);
+      const current = start + (end - start) * easeOut;
+      element.innerText = current.toFixed(2);
+      if (progress < 1) requestAnimationFrame(update);
+      else { element.classList.add('amount-flash'); setTimeout(() => element.classList.remove('amount-flash'), 200); }
+    }
+    requestAnimationFrame(update);
+  }
+
+  function getCurrentNumber(el) {
+    const txt = el.innerText;
+    const match = txt.match(/[\d,]+\.?\d*/);
+    return match ? parseFloat(match[0].replace(/,/g, '')) : 0;
+  }
+
+  // 更新UI（带动画）
+  function updateUIWithAnimation() {
+    const isSandbox = getAppMode() === 'sandbox';
+    const target = isSandbox ? SANDBOX_BAL : LIVE_BAL;
+    
+    const totalEl = document.getElementById('totalAssets');
+    const availEl = document.getElementById('availableBalance');
+    const currentTotal = getCurrentNumber(totalEl);
+    const currentAvail = getCurrentNumber(availEl);
+    
+    animateNumber(totalEl, currentTotal, target, 400);
+    animateNumber(availEl, currentAvail, target, 400);
+    
+    // 更新模式文本
+    const modeText = document.getElementById('currentModeText');
+    const testBadge = document.getElementById('testModeHint');
+    if (modeText) {
+      modeText.textContent = isSandbox ? 'Sandbox' : 'Live';
+      modeText.className = isSandbox ? 'sandbox-mode-text' : 'live-mode-text';
+    }
+    if (testBadge) testBadge.style.display = isSandbox ? 'inline-flex' : 'none';
+  }
+
+  function updateUIStatic() {
+    const isSandbox = getAppMode() === 'sandbox';
+    const target = isSandbox ? SANDBOX_BAL : LIVE_BAL;
+    document.getElementById('totalAssets').innerText = target.toFixed(2);
+    document.getElementById('availableBalance').innerText = target.toFixed(2);
+    const modeText = document.getElementById('currentModeText');
+    const testBadge = document.getElementById('testModeHint');
+    if (modeText) {
+      modeText.textContent = isSandbox ? 'Sandbox' : 'Live';
+      modeText.className = isSandbox ? 'sandbox-mode-text' : 'live-mode-text';
+    }
+    if (testBadge) testBadge.style.display = isSandbox ? 'inline-flex' : 'none';
+  }
+
+  function updateThemeUI() {
+    const theme = getThemeMode();
+    if (theme === 'dark') document.body.classList.add('dark');
+    else document.body.classList.remove('dark');
+    const icon = document.getElementById('themeToggle');
+    if (icon) {
+      if (theme === 'dark') { icon.classList.remove('fa-moon'); icon.classList.add('fa-sun'); }
+      else { icon.classList.remove('fa-sun'); icon.classList.add('fa-moon'); }
+    }
+  }
+
+  // 监听全局状态变化
+  window.addEventListener('appModeChanged', () => { updateUIWithAnimation(); });
+  window.addEventListener('themeChanged', () => updateThemeUI());
+
+  // 主题切换
+  document.getElementById('themeToggle')?.addEventListener('click', () => {
+    const newTheme = getThemeMode() === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', newTheme);
+    window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
+  });
+
+  // 功能跳转
+  document.getElementById('depositBtn')?.addEventListener('click', () => window.location.href = '/deposit.html');
+  document.getElementById('withdrawBtn')?.addEventListener('click', () => window.location.href = '/withdraw.html');
+  document.getElementById('fundFlowCard')?.addEventListener('click', () => window.location.href = '/fund-detail.html');
+  document.getElementById('authCard')?.addEventListener('click', () => window.location.href = '/authorizations.html');
+  document.getElementById('securityCard')?.addEventListener('click', () => window.location.href = '/set-paypassword.html');
+  document.getElementById('supportCard')?.addEventListener('click', () => window.location.href = '/support.html');
+  
+  // 退出登录
+  document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+    if (confirm('Are you sure you want to logout?')) {
+      localStorage.removeItem('auth_token');
+      window.location.href = '/login.html';
+    }
+  });
+
+  // 底部导航
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const nav = item.dataset.nav;
+      if (nav === 'home') window.location.href = '/index.html';
+      if (nav === 'market') window.location.href = '/match-market.html';
+      if (nav === 'records') window.location.href = '/transaction-list.html';
+      if (nav === 'support') window.location.href = '/support.html';
+      if (nav === 'profile') window.location.href = '/profile.html';
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+
+  // 模拟用户数据
+  document.getElementById('username').textContent = 'Trader_2024';
+  document.getElementById('uid').innerHTML = `<i class="fas fa-id-card"></i> UID: 100001`;
+
+  // 初始化
+  (function init() {
+    if (!localStorage.getItem('appMode')) localStorage.setItem('appMode', 'sandbox');
+    if (!localStorage.getItem('theme')) localStorage.setItem('theme', 'light');
+    updateThemeUI();
+    updateUIStatic();
+  })();
+</script>
+</body>
+</html>

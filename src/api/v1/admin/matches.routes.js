@@ -11,6 +11,7 @@ import fetch from 'node-fetch';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { autoFetchAndInsertMatches } from '../../../services/match-auto-fetch.service.js';
 
 const router = express.Router();
 
@@ -92,43 +93,68 @@ router.get('/stats/overview', (req, res) => {
     }
 });
 
-// ==================== 获取所有球队队徽信息（用于管理）====================
-router.get('/all-team-logos', (req, res) => {
-    const { league, search } = req.query;
+// ==================== 從 matches 表獲取所有球隊信息（直接用於管理）====================
+router.get('/all-teams-from-matches', (req, res) => {
+    const { search } = req.query;
     const db = getDb();
     
     try {
+        // 先獲取所有不重複的球隊名稱
         let sql = `
-            SELECT 
-                tl.team_name,
-                tl.logo_status,
-                tl.logo_url,
-                tl.involved_matches,
-                tl.last_updated,
-                COALESCE(
-                    (SELECT league FROM matches WHERE home_team = tl.team_name OR away_team = tl.team_name LIMIT 1),
-                    'Unknown'
-                ) as league
-            FROM team_logos tl
+            SELECT DISTINCT 
+                team_name,
+                COUNT(*) as involved_matches
+            FROM (
+                SELECT home_team as team_name FROM matches
+                UNION ALL
+                SELECT away_team as team_name FROM matches
+            )
             WHERE 1=1
         `;
         const params = [];
         
-        if (league && league !== 'all') {
-            sql += ` AND league = ?`;
-            params.push(league);
-        }
         if (search) {
-            sql += ` AND tl.team_name LIKE ?`;
+            sql += ` AND team_name LIKE ?`;
             params.push(`%${search}%`);
         }
         
-        sql += ` ORDER BY tl.logo_status ASC, tl.team_name`;
+        sql += ` GROUP BY team_name ORDER BY team_name`;
         
         const teams = db.prepare(sql).all(...params);
-        res.json({ success: true, data: teams });
+        
+        // 為每個球隊獲取隊徽 URL（從任意一場比賽中獲取）
+        const results = teams.map(team => {
+            let logoUrl = null;
+            try {
+                const logoResult = db.prepare(`
+                    SELECT home_logo as logo_url FROM matches WHERE home_team = ? AND home_logo IS NOT NULL AND home_logo != ''
+                    UNION ALL
+                    SELECT away_logo as logo_url FROM matches WHERE away_team = ? AND away_logo IS NOT NULL AND away_logo != ''
+                    LIMIT 1
+                `).get(team.team_name, team.team_name);
+                if (logoResult) logoUrl = logoResult.logo_url;
+            } catch(e) {}
+            
+            // 獲取聯賽名稱（從任意一場比賽中獲取）
+            let league = null;
+            try {
+                const leagueResult = db.prepare(`
+                    SELECT league FROM matches WHERE home_team = ? OR away_team = ? LIMIT 1
+                `).get(team.team_name, team.team_name);
+                if (leagueResult) league = leagueResult.league;
+            } catch(e) {}
+            
+            return {
+                team_name: team.team_name,
+                league: league || 'Unknown',
+                involved_matches: team.involved_matches,
+                logo_url: logoUrl || null
+            };
+        });
+        
+        res.json({ success: true, data: results });
     } catch (error) {
-        logger.error('Get all team logos error:', error);
+        logger.error('Get all teams from matches error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -210,6 +236,41 @@ router.get('/list', (req, res) => {
     } catch (error) {
         logger.error('Fetch matches list error:', error);
         res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
+    }
+});
+
+// ==================== 自动从 DeepSeek AI 获取比赛数据 ====================
+
+
+router.post('/auto-fetch', async (req, res) => {
+    try {
+        logger.info('Starting auto-fetch matches from DeepSeek AI...');
+        
+        // 直接調用 DeepSeek API 服務，不使用任何硬編碼數據
+        const results = await autoFetchAndInsertMatches();
+        
+        logger.info(`Auto-fetch completed: ${results.newToMatches} new matches added, total: ${results.total}`);
+        
+        res.json({
+            success: true,
+            message: `成功获取 ${results.newToMatches} 场新比赛`,
+            data: {
+                total: results.total,
+                newToPool: results.newToPool,
+                newToMatches: results.newToMatches,
+                skipped: results.skipped,
+                errors: results.errors,
+                matches: results.matches
+            }
+        });
+        
+    } catch (error) {
+        logger.error('Auto-fetch matches error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'INTERNAL_ERROR',
+            message: error.message
+        });
     }
 });
 
@@ -425,7 +486,87 @@ router.post('/upload-logo', (req, res) => {
         }
     });
 });
+// ==================== 编辑球队信息（名称 + 队徽）====================
+const editTeamUploadDir = path.join(process.cwd(), 'public', 'uploads', 'teams');
+if (!fs.existsSync(editTeamUploadDir)) fs.mkdirSync(editTeamUploadDir, { recursive: true });
 
+const editTeamStorage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, editTeamUploadDir),
+    filename: (req, file, cb) => {
+        const teamName = req.body.new_name || req.body.original_name || 'unknown';
+        const safeName = teamName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        const ext = path.extname(file.originalname);
+        cb(null, `${safeName}${ext}`);
+    }
+});
+const uploadEditTeamLogo = multer({ storage: editTeamStorage, limits: { fileSize: 2 * 1024 * 1024 } }).single('logo');
+
+router.post('/edit-team', (req, res) => {
+    uploadEditTeamLogo(req, res, async (err) => {
+        if (err) {
+            logger.error('Upload error:', err);
+            return res.status(400).json({ success: false, error: err.message });
+        }
+        
+        const { original_name, new_name } = req.body;
+        const db = getDb();
+        
+        if (!original_name) {
+            return res.status(400).json({ success: false, error: '缺少原始球隊名稱' });
+        }
+        
+        const finalNewName = (new_name && new_name.trim()) ? new_name.trim() : original_name;
+        
+        try {
+            db.prepare('BEGIN TRANSACTION').run();
+            
+            let updatedMatches = 0;
+            
+            // 1. 更新 matches 表中的 home_team
+            const homeResult = db.prepare(`UPDATE matches SET home_team = ? WHERE home_team = ?`).run(finalNewName, original_name);
+            updatedMatches += homeResult.changes;
+            
+            // 2. 更新 matches 表中的 away_team
+            const awayResult = db.prepare(`UPDATE matches SET away_team = ? WHERE away_team = ?`).run(finalNewName, original_name);
+            updatedMatches += awayResult.changes;
+            
+            // 3. 更新 match_pool 表中的 home_team
+            db.prepare(`UPDATE match_pool SET home_team = ? WHERE home_team = ?`).run(finalNewName, original_name);
+            
+            // 4. 更新 match_pool 表中的 away_team
+            db.prepare(`UPDATE match_pool SET away_team = ? WHERE away_team = ?`).run(finalNewName, original_name);
+            
+            // 5. 更新 team_logos 表
+            let logoUrl = null;
+            if (req.file) {
+                logoUrl = `/uploads/teams/${req.file.filename}`;
+                db.prepare(`UPDATE team_logos SET team_name = ?, logo_url = ?, logo_status = 'ok', last_updated = CURRENT_TIMESTAMP WHERE team_name = ?`).run(finalNewName, logoUrl, original_name);
+            } else {
+                db.prepare(`UPDATE team_logos SET team_name = ? WHERE team_name = ?`).run(finalNewName, original_name);
+            }
+            
+            db.prepare('COMMIT').run();
+            
+            logger.info(`Team edited: ${original_name} -> ${finalNewName}, affected matches: ${updatedMatches}`);
+            
+            res.json({
+                success: true,
+                message: `球隊信息已更新`,
+                updated_matches: updatedMatches,
+                data: {
+                    original_name,
+                    new_name: finalNewName,
+                    logo_url: logoUrl
+                }
+            });
+            
+        } catch (error) {
+            db.prepare('ROLLBACK').run();
+            logger.error('Edit team error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+});
 // ==================== 清理过期数据 ====================
 router.post('/cleanup', (req, res) => {
     const db = getDb();
@@ -439,7 +580,5 @@ router.post('/cleanup', (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
-
-
 
 export default router;

@@ -10,7 +10,35 @@ router.use(auth);
 
 /**
  * ======================================================
- * 真實提現（需要審核）
+ * 获取网络手续费配置
+ * ======================================================
+ */
+function getNetworkConfig(db, network) {
+    try {
+        const config = db.prepare(`
+            SELECT fee, min_amount, max_amount, is_active 
+            FROM withdraw_config 
+            WHERE network = ? AND is_active = 1
+        `).get(network);
+        
+        if (config) {
+            return {
+                fee: config.fee,
+                min_amount: config.min_amount,
+                max_amount: config.max_amount
+            };
+        }
+    } catch (error) {
+        console.error('获取网络配置失败:', error);
+    }
+    
+    // 默认配置
+    return { fee: 1.00, min_amount: 10.00, max_amount: null };
+}
+
+/**
+ * ======================================================
+ * 真實提現（需要審核）- 包含手续费
  * ======================================================
  */
 
@@ -34,11 +62,32 @@ router.post('/submit', requireLiveMode, async (req, res) => {
         });
     }
 
-    if (amount < 10) {
+    // 获取网络手续费配置
+    const networkConfig = getNetworkConfig(db, network);
+    const fee = networkConfig.fee;
+    const minAmount = networkConfig.min_amount;
+    const netAmount = amount - fee;
+
+    console.log('手續費:', fee);
+    console.log('到賬金額:', netAmount);
+
+    // 验证最小提现金额
+    if (amount < minAmount) {
         return res.status(400).json({ 
             success: false, 
             error: 'MINIMUM_AMOUNT',
-            message: 'Minimum withdrawal amount is 10 USDT'
+            message: `Minimum withdrawal amount is ${minAmount} USDT`,
+            min_amount: minAmount
+        });
+    }
+
+    // 验证到账金额是否有效
+    if (netAmount <= 0) {
+        return res.status(400).json({
+            success: false,
+            error: 'AMOUNT_TOO_SMALL',
+            message: `After deducting ${fee} USDT fee, the net amount is too small`,
+            fee: fee
         });
     }
 
@@ -73,7 +122,9 @@ router.post('/submit', requireLiveMode, async (req, res) => {
                 success: false, 
                 error: 'INSUFFICIENT_BALANCE',
                 current_balance: user.balance,
-                required: amount
+                required: amount,
+                fee: fee,
+                net_amount: netAmount
             });
         }
 
@@ -88,19 +139,23 @@ router.post('/submit', requireLiveMode, async (req, res) => {
         `).get();
 
         if (!tableExists) {
-            // 創建 withdraw_requests 表
+            // 創建 withdraw_requests 表（包含手续费字段）
             db.prepare(`
                 CREATE TABLE withdraw_requests (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
                     amount DECIMAL(10,2) NOT NULL,
+                    fee DECIMAL(10,2) DEFAULT 1.00,
+                    net_amount DECIMAL(10,2),
                     address TEXT NOT NULL,
                     network TEXT NOT NULL,
                     status TEXT DEFAULT 'pending',
+                    tx_hash TEXT,
+                    reject_reason TEXT,
+                    admin_note TEXT,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     reviewed_by INTEGER,
                     reviewed_at DATETIME,
-                    tx_hash TEXT,
                     remark TEXT,
                     FOREIGN KEY (user_id) REFERENCES users(id)
                 )
@@ -109,19 +164,20 @@ router.post('/submit', requireLiveMode, async (req, res) => {
             // 創建索引
             db.prepare(`CREATE INDEX idx_withdraw_user ON withdraw_requests(user_id)`).run();
             db.prepare(`CREATE INDEX idx_withdraw_status ON withdraw_requests(status)`).run();
+            db.prepare(`CREATE INDEX idx_withdraw_created ON withdraw_requests(created_at)`).run();
             
             console.log('✅ withdraw_requests 表已自動創建');
         }
 
-        // 寫入 withdraw_requests 表（待審核）
+        // 寫入 withdraw_requests 表（包含手续费信息）
         const result = db.prepare(`
             INSERT INTO withdraw_requests (
-                user_id, amount, address, network, status, created_at
-            ) VALUES (?, ?, ?, ?, 'pending', datetime('now'))
-        `).run(userId, amount, address, network);
+                user_id, amount, fee, net_amount, address, network, status, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, 'pending', datetime('now'))
+        `).run(userId, amount, fee, netAmount, address, network);
 
         // 記錄到 balance_logs
-        const reason = `提現申請: ${amount} USDT, 網絡: ${network}, 地址: ${address}, 狀態: pending`;
+        const reason = `提現申請: ${amount} USDT, 手續費: ${fee} USDT, 到賬: ${netAmount} USDT, 網絡: ${network}, 地址: ${address}, 狀態: pending`;
         
         db.prepare(`
             INSERT INTO balance_logs (
@@ -139,7 +195,7 @@ router.post('/submit', requireLiveMode, async (req, res) => {
         // 提交事務
         db.exec('COMMIT');
 
-        logger.info(`用戶 ${userId} 提交真實提現申請: ${amount} USDT 到 ${address} (${network})`);
+        logger.info(`用戶 ${userId} (${user.username}) 提交真實提現申請: ${amount} USDT, 手續費 ${fee} USDT, 到賬 ${netAmount} USDT, 地址: ${address} (${network})`);
 
         // 发送 Telegram 通知
         try {
@@ -153,7 +209,7 @@ router.post('/submit', requireLiveMode, async (req, res) => {
                 amount,
                 address,
                 network,
-                null
+                { fee: fee, net_amount: netAmount }
             );
             console.log('Telegram notification sent for withdraw request');
         } catch (telegramErr) {
@@ -165,7 +221,9 @@ router.post('/submit', requireLiveMode, async (req, res) => {
             message: 'Withdrawal request submitted, pending review',
             data: {
                 id: result.lastInsertRowid,
-                amount,
+                amount: amount,
+                fee: fee,
+                net_amount: netAmount,
                 address,
                 network,
                 status: 'pending',
@@ -178,7 +236,8 @@ router.post('/submit', requireLiveMode, async (req, res) => {
         console.error('提現失敗:', error);
         res.status(500).json({ 
             success: false, 
-            error: 'INTERNAL_ERROR' 
+            error: 'INTERNAL_ERROR',
+            message: error.message 
         });
     }
 });
@@ -209,11 +268,25 @@ router.post('/test/submit', (req, res) => {
         });
     }
 
-    if (amount < 10) {
+    // 获取测试模式的手续费配置（测试模式也扣手续费）
+    const networkConfig = getNetworkConfig(db, network);
+    const fee = networkConfig.fee;
+    const minAmount = networkConfig.min_amount;
+    const netAmount = amount - fee;
+
+    if (amount < minAmount) {
         return res.status(400).json({ 
             success: false, 
             error: 'MINIMUM_AMOUNT',
-            message: 'Minimum withdrawal amount is 10 tUSDT'
+            message: `Minimum withdrawal amount is ${minAmount} tUSDT`
+        });
+    }
+
+    if (netAmount <= 0) {
+        return res.status(400).json({
+            success: false,
+            error: 'AMOUNT_TOO_SMALL',
+            message: `After deducting ${fee} USDT fee, the net amount is too small`
         });
     }
 
@@ -222,7 +295,7 @@ router.post('/test/submit', (req, res) => {
 
     try {
         // 檢查用戶模式和測試資金
-        const user = db.prepare('SELECT id, test_balance, is_test_mode FROM users WHERE id = ?').get(userId);
+        const user = db.prepare('SELECT id, test_balance, is_test_mode, username, email, uid FROM users WHERE id = ?').get(userId);
         
         if (!user) {
             db.exec('ROLLBACK');
@@ -252,11 +325,11 @@ router.post('/test/submit', (req, res) => {
             });
         }
 
-        // 扣除測試資金
+        // 扣除測試資金（扣除申请金额）
         const newBalance = user.test_balance - amount;
         db.prepare('UPDATE users SET test_balance = ? WHERE id = ?').run(newBalance, userId);
 
-        // 記錄到 test_balance_logs
+        // 記錄到 test_balance_logs（包含手续费信息）
         db.prepare(`
             INSERT INTO test_balance_logs (
                 user_id, amount, balance_before, balance_after, 
@@ -267,7 +340,7 @@ router.post('/test/submit', (req, res) => {
             -amount,
             user.test_balance,
             newBalance,
-            `Test withdrawal: ${amount} tUSDT to ${address} (${network})`
+            `Test withdrawal: ${amount} tUSDT, fee: ${fee} tUSDT, net: ${netAmount} tUSDT to ${address} (${network})`
         );
 
         // 提交事務
@@ -277,13 +350,15 @@ router.post('/test/submit', (req, res) => {
         const mockTxHash = '0x' + Array.from({length: 64}, () => 
             Math.floor(Math.random() * 16).toString(16)).join('');
 
-        logger.info(`用戶 ${userId} 提交測試提現: ${amount} tUSDT 到 ${address} (${network})`);
+        logger.info(`用戶 ${userId} 提交測試提現: ${amount} tUSDT (fee: ${fee}, net: ${netAmount}) 到 ${address} (${network})`);
 
         res.json({
             success: true,
             message: 'Test withdrawal completed successfully',
             data: {
-                amount,
+                amount: amount,
+                fee: fee,
+                net_amount: netAmount,
                 address,
                 network,
                 status: 'completed',
@@ -305,7 +380,7 @@ router.post('/test/submit', (req, res) => {
 
 /**
  * ======================================================
- * 獲取提現歷史（仅真实模式有记录）
+ * 獲取提現歷史（包含手续费信息）
  * ======================================================
  */
 
@@ -336,7 +411,7 @@ router.get('/history', (req, res) => {
             });
         }
 
-        // 真实模式下查询提现记录，测试模式返回空列表
+        // 真实模式下查询提现记录（包含手续费字段）
         let withdrawals = [];
         
         if (!isTestMode) {
@@ -344,11 +419,16 @@ router.get('/history', (req, res) => {
                 SELECT 
                     id,
                     amount,
+                    fee,
+                    net_amount,
                     address,
                     network,
                     status,
                     created_at,
-                    tx_hash
+                    tx_hash,
+                    reject_reason,
+                    admin_note,
+                    reviewed_at
                 FROM withdraw_requests 
                 WHERE user_id = ?
                 ORDER BY created_at DESC
@@ -376,7 +456,7 @@ router.get('/history', (req, res) => {
 
 /**
  * ======================================================
- * 獲取提現統計
+ * 獲取提現統計（包含手续费统计）
  * ======================================================
  */
 
@@ -390,7 +470,15 @@ router.get('/stats', (req, res) => {
         const isTestMode = user?.is_test_mode === 1;
 
         // 真实模式提现统计
-        let liveStats = { total_count: 0, total_amount: 0, pending_count: 0, completed_count: 0 };
+        let liveStats = { 
+            total_count: 0, 
+            total_amount: 0, 
+            total_fee: 0,
+            total_net_amount: 0,
+            pending_count: 0, 
+            completed_count: 0,
+            rejected_count: 0
+        };
         
         if (!isTestMode) {
             const tableExists = db.prepare(`
@@ -403,8 +491,11 @@ router.get('/stats', (req, res) => {
                     SELECT 
                         COUNT(*) as total_count,
                         COALESCE(SUM(amount), 0) as total_amount,
+                        COALESCE(SUM(fee), 0) as total_fee,
+                        COALESCE(SUM(net_amount), 0) as total_net_amount,
                         COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
-                        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_count
+                        COUNT(CASE WHEN status = 'approved' THEN 1 END) as completed_count,
+                        COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_count
                     FROM withdraw_requests 
                     WHERE user_id = ?
                 `).get(userId);
@@ -417,12 +508,17 @@ router.get('/stats', (req, res) => {
                 live: {
                     count: liveStats?.total_count || 0,
                     amount: liveStats?.total_amount || 0,
+                    fee: liveStats?.total_fee || 0,
+                    net_amount: liveStats?.total_net_amount || 0,
                     pending: liveStats?.pending_count || 0,
-                    completed: liveStats?.completed_count || 0
+                    completed: liveStats?.completed_count || 0,
+                    rejected: liveStats?.rejected_count || 0
                 },
                 test: {
                     count: 0,
-                    amount: 0
+                    amount: 0,
+                    fee: 0,
+                    net_amount: 0
                 },
                 current_mode: isTestMode ? 'test' : 'live'
             }
@@ -437,4 +533,4 @@ router.get('/stats', (req, res) => {
     }
 });
 
-export default router;
+export default router;  

@@ -1,167 +1,820 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#0B0E11" media="(prefers-color-scheme: dark)">
-    <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)">
-    <meta name="description" content="FOOTRADAPRO - 1-Click Authorization">
-    <title>Authorize · FOOTRADAPRO</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-<!-- 核心样式（与首页/比赛超市共享）-->
-<link rel="stylesheet" href="/css/core/variables.css">
-<link rel="stylesheet" href="/css/core/layout.css">
-<link rel="stylesheet" href="/css/core/components.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Authorize Trade · FootRadaPro</title>
+  <meta name="description" content="Authorize AI-powered football trading">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-<!-- 页面特有样式 -->
-<link rel="stylesheet" href="/css/pages/authorize.css">
+    :root {
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 32px;
+      --space-8: 40px;
+      
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-base: 1rem;
+      --font-lg: 1.125rem;
+      --font-xl: 1.25rem;
+      --font-2xl: 1.5rem;
+      --font-3xl: 1.875rem;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-fast: 0.15s;
+      --duration-base: 0.24s;
+    }
+
+    /* 亮色主题（默认） */
+    :root {
+      --bg-gradient-start: rgba(248, 250, 252, 0.92);
+      --bg-gradient-end: rgba(241, 245, 249, 0.96);
+      --glass-bg: rgba(255, 255, 255, 0.48);
+      --glass-border: rgba(59, 130, 246, 0.18);
+      --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.01), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      --glass-shadow-hover: 0 20px 35px -12px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      --accent: #2563eb;
+      --accent-glow: rgba(37, 99, 235, 0.25);
+      --accent-gradient: linear-gradient(135deg, #2563eb, #4f46e5);
+      --sandbox-gradient: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      --live-gradient: linear-gradient(135deg, #f97316, #ea580c);
+      --success: #10b981;
+      --danger: #ef4444;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --border-light: rgba(148, 163, 184, 0.18);
+      --card-bg: rgba(255, 255, 255, 0.62);
+      --ticker-bg: rgba(37, 99, 235, 0.92);
+      --badge-soft: rgba(37, 99, 235, 0.1);
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    /* 暗色主题 */
+    body.dark {
+      --bg-gradient-start: rgba(10, 16, 30, 0.94);
+      --bg-gradient-end: rgba(2, 6, 18, 0.98);
+      --glass-bg: rgba(20, 28, 44, 0.52);
+      --glass-border: rgba(59, 130, 246, 0.28);
+      --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      --glass-shadow-hover: 0 20px 35px -12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.35);
+      --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      --sandbox-gradient: linear-gradient(135deg, #a855f7, #7c3aed);
+      --live-gradient: linear-gradient(135deg, #fb923c, #ea580c);
+      --success: #34d399;
+      --danger: #f87171;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --border-light: rgba(255, 255, 255, 0.08);
+      --card-bg: rgba(20, 28, 44, 0.58);
+      --ticker-bg: rgba(30, 58, 138, 0.92);
+      --badge-soft: rgba(59, 130, 246, 0.18);
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.15);
+    }
+
+    body {
+      background: radial-gradient(ellipse at 30% 40%, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+      transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: repeating-linear-gradient(90deg, rgba(59,130,246,0.02) 0px, rgba(59,130,246,0.02) 1px, transparent 1px, transparent 40px),
+                        repeating-linear-gradient(0deg, rgba(59,130,246,0.02) 0px, rgba(59,130,246,0.02) 1px, transparent 1px, transparent 40px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app-wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 跑马灯 */
+    .ticker {
+      background: var(--ticker-bg);
+      backdrop-filter: blur(16px);
+      color: white;
+      padding: 10px 0;
+      font-size: var(--font-sm);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      border-bottom: 1px solid var(--glass-border);
+      position: relative;
+    }
+    .ticker-content {
+      display: inline-block;
+      animation: ticker 32s linear infinite;
+      padding-left: 100%;
+    }
+    @keyframes ticker { to { transform: translateX(-100%); } }
+
+    /* 头部导航 */
+    .header {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: var(--space-4) var(--space-6);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .logo { display: flex; align-items: center; gap: var(--space-3); cursor: pointer; }
+    .logo-icon { font-size: 28px; }
+    .logo-text {
+      font-size: var(--font-xl);
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .header-actions { display: flex; gap: var(--space-5); align-items: center; }
+    .header-actions i { font-size: 20px; color: var(--text-secondary); cursor: pointer; transition: 0.2s; }
+    .user-badge {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--badge-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      border: 1px solid var(--glass-border);
+      cursor: pointer;
+    }
+
+    /* 主内容区 */
+    .container {
+      flex: 1;
+      padding: var(--space-6);
+      max-width: 800px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* 模式指示器 */
+    .mode-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: var(--badge-soft);
+      backdrop-filter: blur(8px);
+      padding: 6px 16px;
+      border-radius: 60px;
+      margin-bottom: var(--space-5);
+      font-size: var(--font-sm);
+    }
+    .sandbox-text { color: #8b5cf6; font-weight: 600; }
+    .live-text { color: #f97316; font-weight: 600; }
+
+    /* 卡片 */
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(24px);
+      border-radius: 32px;
+      border: 1px solid var(--glass-border);
+      padding: var(--space-7);
+      transition: all var(--duration-base) var(--ease-out);
+      box-shadow: var(--glass-shadow);
+      margin-bottom: var(--space-6);
+    }
+    .card:last-child { margin-bottom: 0; }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--glass-shadow-hover);
+      border-color: var(--accent);
+    }
+    .card-title {
+      font-size: var(--font-base);
+      font-weight: 600;
+      margin-bottom: var(--space-5);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      color: var(--text-secondary);
+    }
+    .card-title i { color: var(--accent); font-size: var(--font-lg); }
+
+    /* 比赛信息 */
+    .match-teams { text-align: center; margin-bottom: var(--space-6); }
+    .match-teams h2 { font-size: var(--font-2xl); font-weight: 700; margin-bottom: var(--space-2); }
+    .match-meta { display: flex; justify-content: center; gap: var(--space-5); color: var(--text-muted); font-size: var(--font-sm); flex-wrap: wrap; }
+
+    /* 球队Logo */
+    .team-logos {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: var(--space-7);
+      margin: var(--space-7) 0;
+    }
+    .team-logo {
+      text-align: center;
+      flex: 1;
+      max-width: 140px;
+    }
+    .team-logo-circle {
+      width: 100px;
+      height: 100px;
+      background: var(--badge-soft);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto var(--space-3);
+      border: 2px solid var(--glass-border);
+      overflow: hidden;
+      transition: all var(--duration-fast);
+    }
+    .team-logo-img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .team-logo-circle i {
+      font-size: 44px;
+      color: var(--accent);
+    }
+    .team-logo span {
+      font-size: var(--font-sm);
+      font-weight: 600;
+      display: block;
+    }
+    .vs-badge {
+      font-size: var(--font-base);
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--badge-soft);
+      padding: 8px 20px;
+      border-radius: 60px;
+      letter-spacing: 1px;
+    }
+
+    /* 余额卡片 */
+    .balance-card {
+      background: linear-gradient(135deg, rgba(37,99,235,0.06), rgba(79,70,229,0.03));
+    }
+    .balance-amount {
+      font-size: var(--font-3xl);
+      font-weight: 700;
+      font-family: monospace;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .balance-label {
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+      margin-top: var(--space-2);
+    }
+
+    /* 金额选择 */
+    .amount-presets {
+      display: flex;
+      gap: var(--space-3);
+      margin: var(--space-6) 0;
+      flex-wrap: wrap;
+    }
+    .preset-btn {
+      flex: 1;
+      background: var(--badge-soft);
+      border: 1px solid transparent;
+      padding: 12px 16px;
+      border-radius: 60px;
+      color: var(--text-secondary);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--duration-fast);
+      font-size: var(--font-sm);
+      min-width: 70px;
+    }
+    .preset-btn:hover {
+      background: var(--accent-gradient);
+      color: white;
+      transform: translateY(-2px);
+    }
+    .amount-input {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      background: var(--badge-soft);
+      border-radius: 60px;
+      padding: 6px var(--space-5);
+      border: 1px solid var(--glass-border);
+      transition: all var(--duration-fast);
+    }
+    .amount-input:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .amount-input input {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      font-size: var(--font-lg);
+      outline: none;
+      font-weight: 600;
+      padding: var(--space-3) 0;
+    }
+    .amount-input span {
+      font-weight: 600;
+      color: var(--accent);
+      font-size: var(--font-sm);
+    }
+
+    /* 倒计时 */
+    .countdown-container {
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 24px;
+      padding: var(--space-5);
+      text-align: center;
+      margin: var(--space-6) 0 0;
+    }
+    .countdown-label {
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+      margin-bottom: var(--space-2);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .countdown-display {
+      font-size: var(--font-2xl);
+      font-weight: 700;
+      font-family: monospace;
+      color: var(--accent);
+      letter-spacing: 2px;
+    }
+    .countdown-display.started {
+      color: var(--danger);
+    }
+
+    /* 授权按钮 */
+    .authorize-btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 60px;
+      background: var(--accent-gradient);
+      color: white;
+      font-weight: 700;
+      font-size: var(--font-base);
+      border: none;
+      cursor: pointer;
+      transition: all var(--duration-fast);
+      margin-top: var(--space-7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+    }
+    .authorize-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .authorize-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px var(--accent-glow);
+    }
+
+    /* 加载和错误状态 */
+    .loading-state, .error-state {
+      text-align: center;
+      padding: 60px 20px;
+      background: var(--card-bg);
+      backdrop-filter: blur(24px);
+      border-radius: 32px;
+      border: 1px solid var(--glass-border);
+    }
+    .loading-state i, .error-state i {
+      font-size: 48px;
+      opacity: 0.5;
+      margin-bottom: var(--space-4);
+    }
+    .retry-btn {
+      margin-top: 20px;
+      padding: 10px 24px;
+      background: var(--accent-gradient);
+      color: white;
+      border: none;
+      border-radius: 60px;
+      cursor: pointer;
+    }
+
+    /* 成功模态框 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: var(--card-bg);
+      backdrop-filter: blur(28px);
+      border-radius: 32px;
+      border: 1px solid var(--glass-border);
+      padding: var(--space-8);
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+    .modal-content i {
+      font-size: 56px;
+      color: var(--success);
+      margin-bottom: var(--space-5);
+    }
+    .modal-content h3 {
+      font-size: var(--font-xl);
+      font-weight: 700;
+      margin-bottom: var(--space-3);
+    }
+    .modal-buttons {
+      display: flex;
+      gap: var(--space-4);
+      margin-top: var(--space-7);
+    }
+    .modal-buttons button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 60px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--duration-fast);
+      border: none;
+    }
+    .modal-btn-primary {
+      background: var(--accent-gradient);
+      color: white;
+    }
+    .modal-btn-secondary {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+
+    /* 底部导航 */
+    .bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card-bg);
+      backdrop-filter: blur(32px);
+      border-top: 1px solid var(--glass-border);
+      padding: var(--space-3);
+      z-index: 60;
+    }
+    .bottom-nav-items {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+      text-decoration: none;
+      cursor: pointer;
+      transition: color var(--duration-fast);
+    }
+    .nav-item.active {
+      color: var(--accent);
+    }
+    .nav-item i {
+      font-size: 20px;
+    }
+
+    /* Toast */
+    #toastContainer {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .toast-notification {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border-radius: 16px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* ==================== 響應式佈局 ==================== */
+    @media (max-width: 768px) {
+      .container {
+        padding: var(--space-4);
+      }
+      .card {
+        padding: var(--space-5);
+        border-radius: 24px;
+      }
+      .card-title {
+        font-size: var(--font-sm);
+        margin-bottom: var(--space-4);
+      }
+      .match-teams h2 {
+        font-size: var(--font-lg);
+      }
+      .match-meta {
+        gap: var(--space-3);
+        font-size: var(--font-xs);
+        flex-direction: column;
+        align-items: center;
+      }
+      .team-logos {
+        gap: var(--space-4);
+        margin: var(--space-5) 0;
+      }
+      .team-logo-circle {
+        width: 70px;
+        height: 70px;
+      }
+      .team-logo-circle i {
+        font-size: 32px;
+      }
+      .team-logo span {
+        font-size: var(--font-xs);
+      }
+      .vs-badge {
+        font-size: var(--font-xs);
+        padding: 6px 14px;
+      }
+      .balance-amount {
+        font-size: var(--font-2xl);
+      }
+      .amount-presets {
+        gap: var(--space-2);
+      }
+      .preset-btn {
+        padding: 10px 12px;
+        font-size: var(--font-xs);
+      }
+      .amount-input {
+        padding: 4px var(--space-4);
+      }
+      .amount-input input {
+        font-size: var(--font-base);
+      }
+      .countdown-container {
+        padding: var(--space-4);
+      }
+      .countdown-display {
+        font-size: var(--font-lg);
+      }
+      .authorize-btn {
+        padding: 14px;
+        font-size: var(--font-sm);
+        margin-top: var(--space-6);
+      }
+      .modal-content {
+        padding: var(--space-6);
+        width: 85%;
+      }
+      .modal-content i {
+        font-size: 48px;
+      }
+      .modal-content h3 {
+        font-size: var(--font-lg);
+      }
+      .modal-buttons {
+        gap: var(--space-3);
+      }
+      .modal-buttons button {
+        padding: 10px;
+        font-size: var(--font-sm);
+      }
+      .bottom-nav {
+        display: block;
+      }
+      body {
+        padding-bottom: 70px;
+      }
+      .mode-indicator {
+        padding: 4px 14px;
+        font-size: var(--font-xs);
+        margin-bottom: var(--space-4);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: var(--space-3);
+      }
+      .card {
+        padding: var(--space-4);
+        border-radius: 20px;
+      }
+      .team-logo-circle {
+        width: 55px;
+        height: 55px;
+      }
+      .team-logo-circle i {
+        font-size: 26px;
+      }
+      .vs-badge {
+        padding: 4px 10px;
+      }
+      .preset-btn {
+        padding: 8px 8px;
+        min-width: 60px;
+      }
+      .balance-amount {
+        font-size: var(--font-xl);
+      }
+    }
+  </style>
 </head>
 <body>
+<div id="appRoot">
+<div class="app-wrapper">
+  <div class="ticker">
+    <div class="ticker-content" id="tickerContent">⚡ AI-POWERED FOOTBALL LIQUIDITY ⚡ VERIFIABLE ON-CHAIN ⚡</div>
+  </div>
 
-<div class="authorize-container">
-    <!-- 返回頭部 -->
-    <div class="back-header">
-        <button class="back-btn" onclick="history.back()">
-            <i class="fas fa-arrow-left"></i>
-        </button>
-        <h1 data-i18n="authorization">Authorization</h1>
+  <div class="header">
+    <div class="logo" onclick="location.href='/index.html'">
+      <div class="logo-icon">⚽</div>
+      <div class="logo-text">FootRadaPro</div>
+    </div>
+    <div class="header-actions">
+      <i class="fa-regular fa-moon" id="themeToggle"></i>
+      <div class="user-badge" id="langToggle">EN</div>
+    </div>
+  </div>
+
+  <main class="container">
+    <!-- 模式指示器 -->
+    <div class="mode-indicator">
+      <i class="fa-solid fa-info-circle"></i>
+      <span>Current Mode: </span>
+      <span id="currentModeText" class="sandbox-text">Sandbox</span>
     </div>
 
-    <!-- Loading State -->
-    <div id="loadingState" class="loading-state">
-        <i class="fas fa-spinner fa-spin"></i>
-        <p data-i18n="loading_match_details">Loading match details...</p>
+    <!-- 加载状态 -->
+    <div id="loadingState" class="loading-state" style="display: none;">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Loading match details...</p>
     </div>
 
-    <!-- Error State -->
+    <!-- 错误状态 -->
     <div id="errorState" class="error-state" style="display: none;">
-        <i class="fas fa-exclamation-circle"></i>
-        <p data-i18n="match_not_found">Match not found</p>
-        <button class="btn-primary" onclick="history.back()" data-i18n="go_back">Go Back</button>
+      <i class="fas fa-exclamation-triangle"></i>
+      <p id="errorMessage">Failed to load match</p>
+      <button class="retry-btn" onclick="location.reload()">Retry</button>
     </div>
 
-    <!-- Match Content -->
-    <div id="matchContent" style="display: none;">
-        <!-- 比賽卡片 -->
-        <div class="match-card">
-            <div class="team-logos">
-                <div class="team-logo home">
-                    <div class="logo-container" id="homeLogoContainer">
-                        <i class="fas fa-shield-alt default-logo"></i>
-                        <img id="homeLogo" src="" alt="" style="display: none;">
-                    </div>
-                    <span class="team-abbr" id="homeTeamAbbr">MCI</span>
-                </div>
-                <div class="vs-badge" data-i18n="vs">VS</div>
-                <div class="team-logo away">
-                    <div class="logo-container" id="awayLogoContainer">
-                        <i class="fas fa-futbol default-logo"></i>
-                        <img id="awayLogo" src="" alt="" style="display: none;">
-                    </div>
-                    <span class="team-abbr" id="awayTeamAbbr">LIV</span>
-                </div>
+    <!-- 比赛内容容器 -->
+    <div id="matchContent">
+      <!-- 比赛信息卡片 -->
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-trophy"></i> Match Details</div>
+        <div class="match-teams">
+          <h2 id="matchTeams">-- vs --</h2>
+          <div class="match-meta">
+            <span id="matchLeague"><i class="fa-solid fa-trophy"></i> --</span>
+            <span id="matchTime"><i class="fa-regular fa-clock"></i> --</span>
+          </div>
+        </div>
+        <div class="team-logos">
+          <div class="team-logo">
+            <div class="team-logo-circle" id="homeLogoContainer">
+              <img id="homeLogo" class="team-logo-img" style="display: none;" alt="Home Team">
+              <i class="fa-solid fa-futbol default-logo"></i>
             </div>
-            <div class="match-teams" id="matchTeams">Loading...</div>
-            <div class="match-league" id="matchLeague"></div>
-            <div class="match-time" id="matchTimeDisplay">
-                <i class="fas fa-clock"></i>
-                <span id="matchTime">2024-01-20 22:00</span>
+            <span id="homeTeamAbbr">---</span>
+          </div>
+          <div class="vs-badge">VS</div>
+          <div class="team-logo">
+            <div class="team-logo-circle" id="awayLogoContainer">
+              <img id="awayLogo" class="team-logo-img" style="display: none;" alt="Away Team">
+              <i class="fa-solid fa-futbol default-logo"></i>
             </div>
+            <span id="awayTeamAbbr">---</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 余额卡片 -->
+      <div class="card balance-card">
+        <div class="card-title"><i class="fa-solid fa-wallet"></i> Your Balance</div>
+        <div class="balance-amount" id="userBalance">0.00</div>
+        <div class="balance-label" id="balanceCurrency">USDT</div>
+      </div>
+
+      <!-- 授权表单卡片 -->
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-file-signature"></i> Authorization Amount</div>
+        <div class="amount-presets">
+          <button class="preset-btn" data-amount="100">100</button>
+          <button class="preset-btn" data-amount="200">200</button>
+          <button class="preset-btn" data-amount="300">300</button>
+          <button class="preset-btn" data-amount="500">500</button>
+          <button class="preset-btn" data-amount="max">Max</button>
+        </div>
+        <div class="amount-input">
+          <input type="number" id="amount" value="100" step="10" min="100" max="500">
+          <span id="currencyUnit">USDT</span>
         </div>
 
-        <!-- 授權表單 -->
-        <div class="authorize-form">
-            <div class="balance-display">
-                <span class="balance-label" data-i18n="your_balance">Your Balance</span>
-                <div>
-                    <span class="balance-amount" id="userBalance">0.00</span>
-                    <span class="balance-currency" id="balanceCurrency">USDT</span>
-                </div>
-            </div>
-
-            <div class="amount-input-group">
-                <label for="amount" data-i18n="amount_to_authorize">Amount to Authorize</label>
-                <div class="amount-field">
-                    <input type="number" id="amount" min="100" step="10" value="100" placeholder="Enter amount">
-                    <span class="currency">USDT</span>
-                </div>
-            </div>
-
-            <div class="preset-buttons">
-                <button class="preset-btn" data-amount="100">100</button>
-                <button class="preset-btn" data-amount="200">200</button>
-                <button class="preset-btn" data-amount="500">500</button>
-                <button class="preset-btn" data-amount="1000">1000</button>
-                <button class="preset-btn" data-amount="max" data-i18n="max">MAX</button>
-            </div>
-
-            <div class="trust-block">
-                <div class="trust-header">
-                    <i class="fas fa-bolt"></i>
-                    <span data-i18n="authorize_and_trust">Authorize & Trust</span>
-                </div>
-                <div class="trust-content">
-                    <p data-i18n="funds_managed_by">Your funds will be managed by AI Strategy Engine:</p>
-                    <div class="trust-items">
-                        <div class="trust-item">
-                            <i class="fas fa-chart-line"></i>
-                            <span data-i18n="real_time_market_analysis">Real-time market analysis</span>
-                        </div>
-                        <div class="trust-item">
-                            <i class="fas fa-database"></i>
-                            <span data-i18n="multi_dimensional_data_validation">Multi-dimensional data validation</span>
-                        </div>
-                        <div class="trust-item">
-                            <i class="fas fa-robot"></i>
-                            <span data-i18n="intelligent_capital_deployment">Intelligent capital deployment</span>
-                        </div>
-                    </div>
-                    <div class="trust-footer">
-                        <i class="fas fa-shield-alt"></i>
-                        <span data-i18n="execution_history_traceable">Full execution history traceable</span>
-                    </div>
-                </div>
-            </div>
-
-            <button class="authorize-submit-btn" id="authorizeBtn">
-                <i class="fas fa-bolt"></i> <span data-i18n="confirm_authorization">Confirm Authorization</span>
-            </button>
+        <div class="countdown-container">
+          <div class="countdown-label"><i class="fa-regular fa-clock"></i> Match starts in</div>
+          <div class="countdown-display" id="countdownDisplay">--:--:--</div>
         </div>
+
+        <button class="authorize-btn" id="authorizeBtn">
+          <i class="fa-solid fa-bolt"></i> Confirm Authorization
+        </button>
+        <p style="text-align: center; font-size: var(--font-xs); color: var(--text-muted); margin-top: var(--space-5);">
+          <i class="fa-solid fa-shield"></i> AI will execute the strategy automatically
+        </p>
+      </div>
     </div>
+  </main>
+
+  <div class="bottom-nav">
+    <div class="bottom-nav-items">
+      <a href="/index.html" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+      <a href="/match-market.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Markets</span></a>
+      <a href="/profile.html" class="nav-item active"><i class="fas fa-user"></i><span>Account</span></a>
+    </div>
+  </div>
+
+  <!-- 成功模态框 -->
+  <div id="successModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <i class="fa-solid fa-circle-check"></i>
+      <h3>Authorization Successful!</h3>
+      <p id="successTeams">--</p>
+      <div id="successAmount" style="margin: 16px 0;"></div>
+      <div class="modal-buttons">
+        <button id="viewDetailsBtn" class="modal-btn-primary">View Details</button>
+        <button id="continueBtn" class="modal-btn-secondary">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer"></div>
+</div>
 </div>
 
-<!-- Success Modal -->
-<div class="success-modal" id="successModal">
-    <div class="success-card">
-        <div class="success-icon">
-            <i class="fas fa-check-circle"></i>
-        </div>
-        <h2 data-i18n="authorization_successful">Authorization Successful</h2>
-        <p data-i18n="authorization_confirmed">Your authorization has been confirmed</p>
-        
-        <div class="match-info" id="successMatchInfo">
-            <div class="teams" id="successTeams">Manchester United vs Liverpool</div>
-            <div class="amount" id="successAmount">100 USDT</div>
-        </div>
-        
-        <div class="success-actions">
-            <button class="btn-details" id="viewDetailsBtn">
-                <i class="fas fa-chart-line"></i> <span data-i18n="details">Details</span>
-            </button>
-            <button class="btn-continue" id="continueBtn">
-                <span data-i18n="continue">Continue</span> <i class="fas fa-arrow-right"></i>
-            </button>
-        </div>
-    </div>
-</div>
-
+<script src="/js/core/api-client.js"></script>
 <script src="/js/core/theme.js"></script>
+<script src="/js/core/sync.js"></script>
 <script src="/js/user/authorize_controller.js"></script>
-
 </body>
 </html>

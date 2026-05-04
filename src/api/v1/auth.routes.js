@@ -7,6 +7,36 @@ import { getDb } from '../../database/connection.js';
 import logger from '../../utils/logger.js';
 import { captchaStore } from './captcha.routes.js';
 import { generateToken } from '../../middlewares/jwt.middleware.js';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+// ==================== 确保环境变量加载 ====================
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const envPath = path.join(__dirname, '../../../.env');
+
+console.log('\n[AUTH] Loading environment variables...');
+if (fs.existsSync(envPath)) {
+    console.log('[AUTH] ✅ .env file found at:', envPath);
+    dotenv.config({ path: envPath });
+} else {
+    console.log('[AUTH] ⚠️ .env file not found at:', envPath);
+    // 尝试从当前工作目录加载
+    const cwdPath = path.join(process.cwd(), '.env');
+    if (fs.existsSync(cwdPath)) {
+        console.log('[AUTH] ✅ .env file found at:', cwdPath);
+        dotenv.config({ path: cwdPath });
+    } else {
+        console.log('[AUTH] ❌ No .env file found');
+    }
+}
+
+console.log('[AUTH] BREVO_API_KEY:', process.env.BREVO_API_KEY ? '✅ Loaded' : '❌ Missing');
+console.log('[AUTH] SENDER_EMAIL:', process.env.SENDER_EMAIL || '❌ Missing');
+console.log('[AUTH] JWT_SECRET:', process.env.JWT_SECRET ? '✅ Loaded' : '❌ Missing');
+console.log('');
 
 const router = express.Router();
 
@@ -86,32 +116,66 @@ router.post('/send-code',
         
         console.log('✅ Generated email code for', email, ':', code);
 
+        // 检查 API Key 是否可用
+        if (!BREVO_API_KEY) {
+            console.error('❌ BREVO_API_KEY is missing! Cannot send email.');
+            console.log('⚠️ [DEV MODE] Returning success with dev code for testing');
+            // 开发模式：返回成功，验证码在控制台显示
+            return res.json({ success: true, devCode: code, devMode: true });
+        }
+
         try {
             console.log('Sending email via Brevo...');
+            console.log('  - To:', email);
+            console.log('  - From:', SENDER_EMAIL);
+            console.log('  - API Key exists:', !!BREVO_API_KEY);
+            
             const response = await fetch(BREVO_API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'api-key': BREVO_API_KEY
+                    'api-key': BREVO_API_KEY,
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify({
                     sender: { email: SENDER_EMAIL, name: SENDER_NAME },
-                    to: [{ email }],
+                    to: [{ email, name: email.split('@')[0] }],
                     subject: 'Your FOOTRADAPRO Verification Code',
                     htmlContent: generateEmailHtml(code)
                 })
             });
 
+            const responseText = await response.text();
+            let responseData;
+            try {
+                responseData = JSON.parse(responseText);
+            } catch {
+                responseData = responseText;
+            }
+
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error('❌ Brevo API error:', response.status, errorText);
+                console.error('❌ Brevo API error:', response.status, responseData);
+                
+                // 如果是认证错误，提示检查 API Key
+                if (response.status === 401) {
+                    console.error('   → Invalid API Key. Please check your BREVO_API_KEY in .env');
+                }
+                
                 return res.status(500).json({ success: false, error: 'SEND_FAILED' });
             }
 
-            console.log('✅ Email sent successfully');
+            console.log('✅ Email sent successfully to', email);
             res.json({ success: true });
         } catch (err) {
-            console.error('❌ Error sending email:', err);
+            console.error('❌ Error sending email:', err.message);
+            console.error('   Stack:', err.stack);
+            
+            // 开发模式：即使发送失败也返回成功（用于测试）
+            if (process.env.NODE_ENV === 'development') {
+                console.log('⚠️ [DEV MODE] Returning success despite email failure');
+                return res.json({ success: true, devCode: code, devMode: true });
+            }
+            
             res.status(500).json({ success: false, error: 'SEND_FAILED' });
         }
     }
@@ -156,7 +220,7 @@ router.post('/verify-code',
         }
 
         if (record.code !== code) {
-            console.log('Code mismatch');
+            console.log('Code mismatch - Expected:', record.code, 'Got:', code);
             
             record.attempts = (record.attempts || 0) + 1;
             const maxAttempts = parseInt(process.env.CODE_MAX_ATTEMPTS || 5);
@@ -205,6 +269,7 @@ router.post('/register', registerValidation, async (req, res) => {
     try {
         const jwtSecret = process.env.JWT_SECRET || 'footradapro-jwt-secret-key-2024';
         decoded = jwt.verify(token, jwtSecret);
+        console.log('Token decoded successfully:', decoded);
     } catch (err) {
         console.log('Token verification failed:', err.message);
         return res.status(401).json({ success: false, error: 'INVALID_TOKEN' });
@@ -217,7 +282,7 @@ router.post('/register', registerValidation, async (req, res) => {
     console.log('Normalized token email:', normalizedTokenEmail);
     
     if (normalizedRequestEmail !== normalizedTokenEmail || decoded.purpose !== 'registration') {
-        console.log('Email mismatch');
+        console.log('Email mismatch or wrong purpose');
         return res.status(401).json({ success: false, error: 'INVALID_TOKEN' });
     }
 
@@ -239,14 +304,14 @@ router.post('/register', registerValidation, async (req, res) => {
 
         const stmt = db.prepare(`
             INSERT INTO users (
-                uid, username, password, first_name, last_name, country, occupation,
+                uid, username, email, password, first_name, last_name, country, occupation,
                 balance, role, status, is_new_user, has_claimed_bonus, completed_steps,
                 reg_ip, reg_verified_at, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 'user', 'active', 1, 0, 0, ?, datetime('now'), datetime('now'), datetime('now'))
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 'user', 'active', 1, 0, 0, ?, datetime('now'), datetime('now'), datetime('now'))
         `);
-        
+
         stmt.run(
-            uid, username, hashedPassword, firstName, lastName, country, occupation,
+            uid, username, username, hashedPassword, firstName, lastName, country, occupation,
             req.ip
         );
 
@@ -257,13 +322,15 @@ router.post('/register', registerValidation, async (req, res) => {
         const jwtToken = generateToken(newUser);
 
         // 设置 Cookie - 兼容 HTTP 和 HTTPS
-res.cookie('footradapro_token', jwtToken, {
-    httpOnly: true,
-    secure: false,      // 先改为 false 测试
-    sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    domain: '.footradapro.com'  // 添加 domain，支持子域名
-});
+        const isProduction = process.env.NODE_ENV === 'production';
+        const cookieOptions = {
+            httpOnly: true,
+            secure: false,  // 开发环境设为 false
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        };
+
+        res.cookie('footradapro_token', jwtToken, cookieOptions);
 
         // 自动登录：设置 session（兼容旧代码）
         req.session.userId = newUser.id;
@@ -351,17 +418,16 @@ router.post('/login', loginValidation, async (req, res) => {
             });
         }
 
-// 生成 JWT token
-const jwtToken = generateToken(user);
+        // 生成 JWT token
+        const jwtToken = generateToken(user);
 
-// 设置 Cookie - 与注册保持一致
-res.cookie('footradapro_token', jwtToken, {
-    httpOnly: true,
-    secure: false,      // 改为 false 与注册一致
-    sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    domain: '.footradapro.com'  // 添加 domain
-});
+        // 设置 Cookie
+        res.cookie('footradapro_token', jwtToken, {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
 
         // 设置 session（兼容旧代码）
         req.session.userId = user.id;

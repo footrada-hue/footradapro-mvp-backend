@@ -3,6 +3,8 @@
  * @description 支持新清算規則：執行比例、盈利/虧損狀態切換、平台抽成20%
  * @fix 修復授權明細查詢：移除不存在的 execution_rate 字段
  * @feature 支援沙盒用戶 (is_test_mode)，測試用戶體驗完整清算流程
+ * @update 2026-04-11 优化亏损逻辑，支持按利率结算，平台承担比例可配置
+ * @update 2026-04-11 修复测试模式余额日志记录
  */
 
 import express from 'express';
@@ -10,10 +12,30 @@ import { getDb } from '../../../database/connection.js';
 import { adminAuth } from '../../../middlewares/admin.middleware.js';
 import { hasPermission } from '../../../middlewares/permission.middleware.js';
 import logger from '../../../utils/logger.js';
+import { createNotification } from '../user/notifications.routes.js';
 
 const router = express.Router();
 
 router.use(adminAuth);
+
+// ==================== 获取清算配置 ====================
+const getSettlementConfig = (db) => {
+    const rows = db.prepare(`
+        SELECT config_key, config_value FROM global_config 
+        WHERE config_key IN ('platform_fee_rate', 'platform_loss_rate', 'default_execution_rate')
+    `).all();
+    
+    const config = {
+        platform_fee_rate: 0.2,
+        platform_loss_rate: 0.4,
+        default_execution_rate: 30
+    };
+    
+    rows.forEach(row => {
+        config[row.config_key] = parseFloat(row.config_value);
+    });
+    return config;
+};
 
 // ==================== 获取待结算比赛列表 ====================
 router.get('/pending', hasPermission('matches.settle'), (req, res) => {
@@ -22,7 +44,7 @@ router.get('/pending', hasPermission('matches.settle'), (req, res) => {
     try {
         console.log('=== 获取待结算比赛 ===');
         
-        const matches = db.prepare(`
+const matches = db.prepare(`
 SELECT 
     m.id,
     m.match_id,
@@ -34,14 +56,16 @@ SELECT
     m.execution_rate,
     m.home_score,
     m.away_score,
-    COUNT(a.id) as auth_count,
-    COALESCE(SUM(a.amount), 0) as total_amount
-            FROM matches m
-            LEFT JOIN authorizations a ON a.match_id = m.match_id AND a.status = 'pending'
-            WHERE m.status = 'finished'
-            GROUP BY m.id
-            ORDER BY m.match_time DESC
-        `).all();
+    COUNT(CASE WHEN a.status = 'pending' THEN 1 END) as auth_count,
+    COALESCE(SUM(CASE WHEN a.status = 'pending' THEN a.amount ELSE 0 END), 0) as total_amount,
+    SUM(CASE WHEN a.is_test = 1 AND a.status = 'pending' THEN 1 ELSE 0 END) > 0 as has_test_auth,
+    SUM(CASE WHEN a.is_test = 0 AND a.status = 'pending' THEN 1 ELSE 0 END) > 0 as has_live_auth
+FROM matches m
+LEFT JOIN authorizations a ON a.match_id = m.match_id
+WHERE m.status = 'finished'
+GROUP BY m.id
+ORDER BY m.match_time DESC
+`).all();
         
         console.log(`✅ 找到 ${matches.length} 场待结算比赛`);
         
@@ -63,6 +87,15 @@ router.get('/history', hasPermission('matches.settle'), (req, res) => {
     try {
         console.log('=== 获取清算历史 ===');
         
+        // 获取今日清算数量
+        const todayCount = db.prepare(`
+            SELECT COUNT(*) as count
+            FROM matches 
+            WHERE status = 'settled' 
+            AND date(updated_at) = date('now')
+        `).get();
+        
+        // 获取清算历史列表
         const matches = db.prepare(`
             SELECT 
                 m.id,
@@ -86,11 +119,19 @@ router.get('/history', hasPermission('matches.settle'), (req, res) => {
             LIMIT 100
         `).all();
         
-        console.log(`✅ 找到 ${matches.length} 条清算历史`);
+        // 计算总清算金额
+        const totalAmount = matches.reduce((sum, m) => sum + (m.total_amount || 0), 0);
+        
+        console.log(`✅ 找到 ${matches.length} 条清算历史，今日清算: ${todayCount?.count || 0} 场`);
         
         res.json({
             success: true,
-            data: matches
+            data: matches,
+            stats: {
+                today_count: todayCount?.count || 0,
+                total_count: matches.length,
+                total_amount: totalAmount
+            }
         });
     } catch (error) {
         console.error('❌ 获取清算历史失败:', error);
@@ -128,7 +169,7 @@ router.get('/preview/:matchId', hasPermission('matches.settle'), (req, res) => {
 
         console.log(`比賽信息: ${match.home_team} vs ${match.away_team}, match_id: ${match.match_id}`);
         
-        // 獲取該比賽的所有待結算授權 - 移除不存在的 execution_rate 字段
+        // 獲取該比賽的所有待結算授權
         let authorizations = [];
         try {
             const tableCheck = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='authorizations'").get();
@@ -141,6 +182,7 @@ authorizations = db.prepare(`
         a.created_at,
         u.username,
         u.balance as user_balance,
+        u.test_balance,
         u.is_test_mode
     FROM authorizations a
     LEFT JOIN users u ON a.user_id = u.id
@@ -223,10 +265,14 @@ router.post('/execute', hasPermission('matches.settle'), (req, res) => {
         return res.status(400).json({ success: false, error: 'INVALID_STATUS' });
     }
     
-    const finalProfitRate = status === 'loss' ? -100 : profitRate;
+    const finalProfitRate = status === 'loss' ? profitRate : profitRate;
     const db = getDb();
     
     try {
+        // 获取清算配置
+        const config = getSettlementConfig(db);
+        console.log(`📋 清算配置: 平台抽成=${config.platform_fee_rate * 100}%, 平台承担亏损=${config.platform_loss_rate * 100}%`);
+        
         const transaction = db.transaction(() => {
             // 获取比赛信息
             const match = db.prepare(`
@@ -256,7 +302,7 @@ router.post('/execute', hasPermission('matches.settle'), (req, res) => {
             
             // 处理每个授权
             for (const auth of authorizations) {
-                const executionRate = match.execution_rate || 30;
+                const executionRate = match.execution_rate || config.default_execution_rate;
                 const deployedAmount = Number((auth.amount * (executionRate / 100)).toFixed(2));
                 const reservedAmount = Number((auth.amount - deployedAmount).toFixed(2));
                 
@@ -267,44 +313,85 @@ router.post('/execute', hasPermission('matches.settle'), (req, res) => {
                 let authStatus = '';
                 
                 if (status === 'win') {
+                    // 盈利逻辑
                     authStatus = 'won';
                     profit = Number((deployedAmount * (finalProfitRate / 100)).toFixed(2));
-                    platformFee = Number((profit * 0.2).toFixed(2));
+                    platformFee = Number((profit * config.platform_fee_rate).toFixed(2));
                     userProfit = Number((profit - platformFee).toFixed(2));
                     returnAmount = Number((deployedAmount + reservedAmount + userProfit).toFixed(2));
+                    
+                    console.log(`💰 盈利结算: 用户=${auth.user_id}, 部署=${deployedAmount}, 盈利=${profit}, 平台费=${platformFee}, 用户盈利=${userProfit}, 返还=${returnAmount}`);
                 } else {
+                    // 亏损逻辑 - 按利率结算，平台承担部分亏损
                     authStatus = 'lost';
-                    profit = -deployedAmount;
-                    platformFee = 0;
-                    userProfit = -deployedAmount;
-                    returnAmount = reservedAmount;
+                    
+                    const lossRate = Math.abs(finalProfitRate);
+                    const lossAmount = Number((deployedAmount * (lossRate / 100)).toFixed(2));
+                    
+                    const platformShare = Number((lossAmount * config.platform_loss_rate).toFixed(2));
+                    const userLoss = Number((lossAmount * (1 - config.platform_loss_rate)).toFixed(2));
+                    
+                    profit = -lossAmount;
+                    platformFee = platformShare;
+                    userProfit = -userLoss;
+                    returnAmount = Number((deployedAmount - userLoss + reservedAmount).toFixed(2));
+                    
+                    console.log(`📉 亏损结算: 用户=${auth.user_id}, 部署=${deployedAmount}, 亏损率=${lossRate}%, 亏损额=${lossAmount}, 平台承担=${platformShare}, 用户亏损=${userLoss}, 返还=${returnAmount}`);
                 }
                 
-                // 获取用户信息
+                // 获取用户信息（包括测试余额）
                 const user = db.prepare(`
-                    SELECT id, balance FROM users WHERE id = ?
+                    SELECT id, balance, test_balance FROM users WHERE id = ?
                 `).get(auth.user_id);
                 
                 if (!user) throw new Error(`USER_NOT_FOUND: ${auth.user_id}`);
                 
-                const oldBalance = user.balance;
-                const newBalance = Number((oldBalance + returnAmount).toFixed(2));
+                const isTestAuth = auth.is_test === 1;
                 
-                // 更新用户余额
-                db.prepare('UPDATE users SET balance = ? WHERE id = ?').run(newBalance, auth.user_id);
-                
-                // 记录余额变动
-                db.prepare(`
-                    INSERT INTO balance_logs (
-                        user_id, amount, balance_before, balance_after,
-                        type, reason, admin_id
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                `).run(
-                    auth.user_id, returnAmount, oldBalance, newBalance,
-                    'settlement',
-                    `Match settlement: ${match.home_team} vs ${match.away_team}`,
-                    adminId
-                );
+                if (isTestAuth) {
+                    // ========== 测试模式：更新 test_balance 和 test_balance_logs ==========
+                    const oldBalance = user.test_balance;
+                    const newBalance = Number((oldBalance + returnAmount).toFixed(2));
+                    
+                    console.log(`🧪 测试模式结算: 用户=${auth.user_id}, 旧余额=${oldBalance}, 返还=${returnAmount}, 新余额=${newBalance}`);
+                    
+                    // 更新用户测试余额
+                    db.prepare('UPDATE users SET test_balance = ? WHERE id = ?').run(newBalance, auth.user_id);
+                    
+                    // 记录测试余额变动日志
+                    db.prepare(`
+                        INSERT INTO test_balance_logs (
+                            user_id, amount, balance_before, balance_after,
+                            type, description
+                        ) VALUES (?, ?, ?, ?, ?, ?)
+                    `).run(
+                        auth.user_id, returnAmount, oldBalance, newBalance,
+                        'settlement',
+                        `Match settlement: ${match.home_team} vs ${match.away_team} (${status === 'win' ? 'WIN' : 'LOSS'})`
+                    );
+                } else {
+                    // ========== 真实模式：更新 balance 和 balance_logs ==========
+                    const oldBalance = user.balance;
+                    const newBalance = Number((oldBalance + returnAmount).toFixed(2));
+                    
+                    console.log(`💰 真实模式结算: 用户=${auth.user_id}, 旧余额=${oldBalance}, 返还=${returnAmount}, 新余额=${newBalance}`);
+                    
+                    // 更新用户真实余额
+                    db.prepare('UPDATE users SET balance = ? WHERE id = ?').run(newBalance, auth.user_id);
+                    
+                    // 记录真实余额变动日志
+                    db.prepare(`
+                        INSERT INTO balance_logs (
+                            user_id, amount, balance_before, balance_after,
+                            type, reason, admin_id
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    `).run(
+                        auth.user_id, returnAmount, oldBalance, newBalance,
+                        'settlement',
+                        `Match settlement: ${match.home_team} vs ${match.away_team} (${status === 'win' ? 'WIN' : 'LOSS'})`,
+                        adminId
+                    );
+                }
                 
                 // 更新授权状态
                 const tableInfo = db.prepare("PRAGMA table_info(authorizations)").all();
@@ -349,66 +436,122 @@ router.post('/execute', hasPermission('matches.settle'), (req, res) => {
                     updateValues.push(auth.id);
                     db.prepare(`UPDATE authorizations SET ${updateFields.join(', ')} WHERE id = ?`).run(...updateValues);
                 }
-            }
-            // 调试：输出清算时的比分
-console.log(`📊 清算时比分: ${match.home_team} ${match.home_score} : ${match.away_score} ${match.away_team}`);
-// 创建报告草稿
-try {
-    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='reports'").get();
-    if (tables) {
-        const existingReport = db.prepare('SELECT id FROM reports WHERE match_id = ?').get(match.match_id);
-        if (!existingReport) {
-            const reportTableInfo = db.prepare("PRAGMA table_info(reports)").all();
-            const reportColumns = reportTableInfo.map(col => col.name);
-            
-            const insertFields = ['match_id', 'status', 'created_at', 'updated_at'];
-            const insertPlaceholders = ['?', '?', 'CURRENT_TIMESTAMP', 'CURRENT_TIMESTAMP'];
-            const insertValues = [match.match_id, 'pending'];
-            
-            if (reportColumns.includes('match_time')) {
-                insertFields.push('match_time');
-                insertPlaceholders.push('?');
-                insertValues.push(match.match_time);
-            }
-            if (reportColumns.includes('home_team')) {
-                insertFields.push('home_team');
-                insertPlaceholders.push('?');
-                insertValues.push(match.home_team);
-            }
-            if (reportColumns.includes('away_team')) {
-                insertFields.push('away_team');
-                insertPlaceholders.push('?');
-                insertValues.push(match.away_team);
-            }
-            if (reportColumns.includes('league')) {
-                insertFields.push('league');
-                insertPlaceholders.push('?');
-                insertValues.push(match.league);
-            }
-            // ✅ 新增：写入比分
-            if (reportColumns.includes('home_score')) {
-                insertFields.push('home_score');
-                insertPlaceholders.push('?');
-                insertValues.push(match.home_score || null);
-            }
-            if (reportColumns.includes('away_score')) {
-                insertFields.push('away_score');
-                insertPlaceholders.push('?');
-                insertValues.push(match.away_score || null);
-            }
-            
-            db.prepare(`INSERT INTO reports (${insertFields.join(', ')}) VALUES (${insertPlaceholders.join(', ')})`).run(...insertValues);
-            console.log(`✅ 已创建报告草稿: ${match.match_id}`);
-        }
+                
+             
+// 插入 settlements 记录
+db.prepare(`
+    INSERT INTO settlements (
+        auth_id, user_id, match_id, amount, profit, is_test, settled_at
+    ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+`).run(
+    auth.auth_id,
+    auth.user_id,
+    match.match_id,
+    auth.amount,
+    profit,
+    auth.is_test || 0
+);
+// ========== 添加通知 ==========
+if (profit !== 0) {
+    const isWin = profit > 0;
+    const profitAbs = Math.abs(profit).toFixed(2);
+    const matchName = `${match.home_team} vs ${match.away_team}`;
+    
+    let title = '';
+    let content = '';
+    let notificationType = '';
+    
+    if (isWin) {
+        title = '🎉 比赛结算完成';
+        content = `${matchName} 盈利 ${profitAbs} USDT`;
+        notificationType = 'settlement_win';
+    } else {
+        title = '📉 比赛结算完成';
+        content = `${matchName} 亏损 ${profitAbs} USDT`;
+        notificationType = 'settlement_loss';
     }
-} catch (err) {
-    console.log('⚠️ 報告草稿創建失敗:', err.message);
+    
+    try {
+        createNotification(
+            auth.user_id,
+            notificationType,
+            title,
+            content,
+            {
+                match_id: match.match_id,
+                match_name: matchName,
+                profit: profit,
+                amount: auth.amount,
+                status: status
+            }
+        );
+        console.log(`📧 已发送通知给用户 ${auth.user_id}: ${title}`);
+    } catch (notifyErr) {
+        console.error('发送通知失败:', notifyErr);
+    }
 }
+            }
+
+            
+            // 调试：输出清算时的比分
+            console.log(`📊 清算时比分: ${match.home_team} ${match.home_score} : ${match.away_score} ${match.away_team}`);
+            // 创建报告草稿
+            try {
+                const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='reports'").get();
+                if (tables) {
+                    const existingReport = db.prepare('SELECT id FROM reports WHERE match_id = ?').get(match.match_id);
+                    if (!existingReport) {
+                        const reportTableInfo = db.prepare("PRAGMA table_info(reports)").all();
+                        const reportColumns = reportTableInfo.map(col => col.name);
+                        
+                        const insertFields = ['match_id', 'status', 'created_at', 'updated_at'];
+                        const insertPlaceholders = ['?', '?', 'CURRENT_TIMESTAMP', 'CURRENT_TIMESTAMP'];
+                        const insertValues = [match.match_id, 'pending'];
+                        
+                        if (reportColumns.includes('match_time')) {
+                            insertFields.push('match_time');
+                            insertPlaceholders.push('?');
+                            insertValues.push(match.match_time);
+                        }
+                        if (reportColumns.includes('home_team')) {
+                            insertFields.push('home_team');
+                            insertPlaceholders.push('?');
+                            insertValues.push(match.home_team);
+                        }
+                        if (reportColumns.includes('away_team')) {
+                            insertFields.push('away_team');
+                            insertPlaceholders.push('?');
+                            insertValues.push(match.away_team);
+                        }
+                        if (reportColumns.includes('league')) {
+                            insertFields.push('league');
+                            insertPlaceholders.push('?');
+                            insertValues.push(match.league);
+                        }
+                        // ✅ 新增：写入比分
+                        if (reportColumns.includes('home_score')) {
+                            insertFields.push('home_score');
+                            insertPlaceholders.push('?');
+                            insertValues.push(match.home_score || null);
+                        }
+                        if (reportColumns.includes('away_score')) {
+                            insertFields.push('away_score');
+                            insertPlaceholders.push('?');
+                            insertValues.push(match.away_score || null);
+                        }
+                        
+                        db.prepare(`INSERT INTO reports (${insertFields.join(', ')}) VALUES (${insertPlaceholders.join(', ')})`).run(...insertValues);
+                        console.log(`✅ 已创建报告草稿: ${match.match_id}`);
+                    }
+                }
+            } catch (err) {
+                console.log('⚠️ 報告草稿創建失敗:', err.message);
+            }
         });
         
         transaction();
         
-        logger.info(`管理员 ${adminId} 完成清算: ${matchId}, ${status}`);
+        logger.info(`管理员 ${adminId} 完成清算: ${matchId}, ${status}, 利率=${profitRate}%`);
         
         res.json({
             success: true,

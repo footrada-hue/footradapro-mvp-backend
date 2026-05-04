@@ -2,24 +2,64 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>动态管理 · FOOTRADA 后台</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>动态管理 · FOOTRADAPRO 后台</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/admin-settle.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- 全局配置 - 保留原有引用 -->
     <script src="/js/core/config.js"></script>
     <script src="/js/core/timezone.js"></script>
     <script src="/js/admin/admin_auth_guard.js"></script>
+    
     <style>
+        /* ============================================
+           世界級後台管理系統 - 动态管理頁面
+           深色主題 | 玻璃態效果 | 響應式佈局
+        ============================================ */
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        :root {
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --primary-light: #60A5FA;
+            --secondary: #8B5CF6;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --info: #06B6D4;
+            --dark-bg: #0A0F1C;
+            --card-bg: rgba(18, 28, 44, 0.75);
+            --border-glow: rgba(59, 130, 246, 0.25);
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+        }
+
         body {
-            background: #0a0c10;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            color: #e5e7eb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at 20% 30%, #0B1120, #050814);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1E293B;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
         }
 
         .admin-layout {
@@ -27,627 +67,351 @@
             min-height: 100vh;
         }
 
+        /* ========= 側邊欄 ========= */
         .admin-sidebar {
-            width: 260px;
-            background: #0f1117;
-            border-right: 1px solid #1f2937;
-            position: fixed;
-            left: 0;
+            width: 280px;
+            background: rgba(10, 18, 32, 0.85);
+            backdrop-filter: blur(16px);
+            border-right: 1px solid var(--border-glow);
+            box-shadow: 8px 0 32px rgba(0, 0, 0, 0.3);
+            position: sticky;
             top: 0;
-            bottom: 0;
+            height: 100vh;
             overflow-y: auto;
-            z-index: 100;
+            z-index: 20;
         }
 
+        .admin-sidebar::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .admin-sidebar-logo {
+            padding: 28px 24px;
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFFFFF, var(--primary-light), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            border-bottom: 1px solid var(--border-glow);
+            margin-bottom: 20px;
+        }
+        .admin-sidebar-logo span {
+            color: var(--primary);
+            background: none;
+        }
+
+        .admin-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 0 16px 20px 16px;
+        }
+        .admin-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .admin-nav-item i {
+            width: 24px;
+            font-size: 1.2rem;
+        }
+        .admin-nav-item:hover {
+            background: rgba(59, 130, 246, 0.15);
+            color: white;
+            transform: translateX(4px);
+        }
+        .admin-nav-item.active {
+            background: linear-gradient(95deg, rgba(59,130,246,0.2), rgba(139,92,246,0.1));
+            color: white;
+            border-left: 3px solid var(--primary);
+        }
+        
+        .unread-badge {
+            margin-left: auto;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: var(--warning);
+            color: white;
+        }
+
+        /* ========= 主內容區域 ========= */
         .admin-main {
             flex: 1;
-            margin-left: 260px;
-            padding: 24px 32px;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
         }
 
         .admin-header {
+            background: rgba(10, 18, 32, 0.7);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-glow);
+            padding: 16px 32px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 28px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #1f2937;
+            position: sticky;
+            top: 0;
+            z-index: 15;
         }
-
-        .header-left h1 {
-            font-size: 24px;
-            font-weight: 600;
-            color: #fff;
+        .admin-header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(120deg, #F1F5F9, var(--primary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
-
-        .header-left h1 i {
-            color: #f97316;
+        .admin-header h1 i {
+            color: var(--primary);
             margin-right: 12px;
         }
-
         .admin-user {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 20px;
+            background: rgba(255,255,255,0.04);
+            padding: 6px 18px;
+            border-radius: 60px;
         }
-
+        #adminName {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
         .icon-btn {
-            background: #1f2937;
-            border: 1px solid #374151;
-            border-radius: 8px;
-            padding: 8px 12px;
-            color: #9ca3af;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
             cursor: pointer;
-            transition: all 0.2s;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-
         .icon-btn:hover {
-            border-color: #f97316;
-            color: #f97316;
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
         }
 
+        .admin-content {
+            padding: 28px 32px;
+            max-width: 1600px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* ========= 統計卡片 ========= */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 28px;
         }
-
         .stat-card {
-            background: #111827;
-            border-radius: 16px;
-            padding: 20px;
-            border: 1px solid #1f2937;
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            border: 1px solid var(--border-glow);
+            padding: 20px 24px;
             display: flex;
             align-items: center;
-            gap: 16px;
-            transition: all 0.2s;
+            gap: 18px;
+            transition: all 0.3s;
         }
-
         .stat-card:hover {
-            border-color: #f97316;
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            border-color: rgba(59,130,246,0.5);
         }
-
         .stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
+            width: 52px;
+            height: 52px;
+            border-radius: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 24px;
         }
-
-        .stat-icon.blue { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-        .stat-icon.green { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-        .stat-icon.orange { background: rgba(249, 115, 22, 0.15); color: #f97316; }
-        .stat-icon.purple { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
-
+        .stat-icon.blue { background: linear-gradient(145deg, #1E3A8A, #2563EB); }
+        .stat-icon.green { background: linear-gradient(145deg, #14532D, #16A34A); }
+        .stat-icon.orange { background: linear-gradient(145deg, #9A3412, #EA580C); }
+        .stat-icon.purple { background: linear-gradient(145deg, #4C1D95, #8B5CF6); }
         .stat-info {
             flex: 1;
         }
-
-        .stat-value {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 4px;
-            color: #fff;
-        }
-
         .stat-label {
-            font-size: 13px;
-            color: #9ca3af;
-        }
-
-        .ai-section {
-            background: linear-gradient(135deg, rgba(249, 115, 22, 0.08), rgba(59, 130, 246, 0.08));
-            border: 1px solid rgba(249, 115, 22, 0.2);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 24px;
-        }
-
-        .ai-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .ai-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            color: #fff;
-        }
-
-        .ai-title i {
-            color: #f97316;
-            font-size: 20px;
-        }
-
-        .badge {
-            background: #f97316;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 30px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-
-        .stats-preview {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-
-        .stat-item {
-            background: #1f2937;
-            border-radius: 12px;
-            padding: 14px;
-            text-align: center;
-            transition: all 0.2s;
-        }
-
-        .stat-item:hover {
-            transform: translateY(-2px);
-            border-color: #f97316;
-        }
-
-        .stat-item .label {
-            font-size: 12px;
-            color: #9ca3af;
-            margin-bottom: 6px;
-        }
-
-        .stat-item .number {
-            font-size: 20px;
-            font-weight: 700;
-            color: #f97316;
-            font-family: monospace;
-        }
-
-        .tabs-container {
-            display: flex;
-            gap: 8px;
-            border-bottom: 1px solid #1f2937;
-            margin-bottom: 24px;
-        }
-
-        .tab-btn {
-            padding: 10px 20px;
-            background: transparent;
-            border: none;
-            color: #9ca3af;
-            font-size: 14px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             font-weight: 500;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
+            color: var(--text-secondary);
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: white;
+            line-height: 1.2;
+            margin-top: 4px;
         }
 
-        .tab-btn i {
-            margin-right: 8px;
-        }
-
-        .tab-btn:hover {
-            color: #f97316;
-        }
-
-        .tab-btn.active {
-            color: #f97316;
-            border-bottom-color: #f97316;
-        }
-
-        .tab-pane {
-            display: none;
-        }
-
-        .tab-pane.active {
-            display: block;
-        }
-
+        /* ========= 編輯器卡片 ========= */
         .editor-card {
-            background: #111827;
-            border-radius: 16px;
-            border: 1px solid #1f2937;
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 24px;
+            border: 1px solid var(--border-glow);
             margin-bottom: 24px;
             overflow: hidden;
         }
-
         .card-header {
             display: flex;
             align-items: center;
             gap: 14px;
-            padding: 20px 24px;
-            background: #1f2937;
-            border-bottom: 1px solid #374151;
+            padding: 18px 24px;
+            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid var(--border-glow);
         }
-
         .card-icon {
             width: 48px;
             height: 48px;
-            border-radius: 12px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 22px;
         }
-
-        .card-icon.auth { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
-        .card-icon.profit { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-        .card-icon.virtual { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
-
+        .card-icon.virtual { background: rgba(139, 92, 246, 0.2); color: #A78BFA; }
         .card-title {
-            font-size: 18px;
+            font-size: 1rem;
             font-weight: 600;
-            color: #fff;
+            color: var(--text-primary);
         }
-
         .card-desc {
-            font-size: 13px;
-            color: #9ca3af;
-            margin-top: 4px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
         }
-
         .card-body {
             padding: 24px;
         }
 
-        .param-label {
-            font-size: 12px;
-            font-weight: 500;
-            color: #9ca3af;
-            margin-bottom: 8px;
-            letter-spacing: 0.3px;
-        }
-
+        /* 參數行 */
         .param-row {
             display: flex;
             gap: 20px;
-            margin: 20px 0;
+            margin-bottom: 20px;
             flex-wrap: wrap;
         }
-
         .param-item {
             flex: 1;
             min-width: 140px;
         }
-
+        .param-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
         .param-item input, .filter-select {
             width: 100%;
             padding: 10px 12px;
-            background: #1f2937;
-            border: 1px solid #374151;
-            border-radius: 8px;
-            color: #fff;
-            font-size: 14px;
-            transition: all 0.2s;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: white;
+            font-size: 0.85rem;
         }
-
-        .param-item input:focus, .filter-select:focus {
-            outline: none;
-            border-color: #f97316;
-        }
-
         .range-group {
             display: flex;
             align-items: center;
             gap: 8px;
         }
-
         .range-group input {
             width: 100px;
         }
 
+        /* 比賽選擇器 */
         .match-selector {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 10px;
             margin: 16px 0;
             max-height: 280px;
             overflow-y: auto;
             padding: 12px;
-            background: #1f2937;
-            border-radius: 12px;
-            border: 1px solid #374151;
+            background: rgba(0,0,0,0.2);
+            border-radius: 14px;
         }
-
         .match-checkbox {
             display: flex;
             align-items: center;
             gap: 10px;
             padding: 8px 12px;
-            background: #111827;
-            border: 1px solid #2d3748;
-            border-radius: 8px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
             cursor: pointer;
-            transition: all 0.2s;
-            font-size: 12px;
+            font-size: 0.75rem;
         }
-
         .match-checkbox:hover {
-            border-color: #f97316;
-            background: #1f2937;
+            border-color: var(--primary);
         }
 
-        .match-checkbox input {
-            accent-color: #f97316;
-            width: 16px;
-            height: 16px;
-            margin: 0;
-        }
-
+        /* 按鈕 */
         .btn-primary, .btn-secondary, .btn-success {
             padding: 10px 20px;
-            border-radius: 8px;
+            border-radius: 12px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
             border: none;
-            font-size: 14px;
+            font-size: 0.85rem;
             display: inline-flex;
             align-items: center;
             gap: 8px;
         }
-
         .btn-primary {
-            background: #f97316;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
         }
-
         .btn-primary:hover {
-            background: #ea580c;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
         }
-
         .btn-success {
-            background: #10b981;
+            background: linear-gradient(135deg, #10B981, #059669);
             color: white;
         }
-
         .btn-success:hover {
-            background: #059669;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
         }
-
         .btn-secondary {
-            background: #1f2937;
-            border: 1px solid #374151;
-            color: #9ca3af;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-secondary);
         }
-
         .btn-secondary:hover {
-            border-color: #f97316;
-            color: #f97316;
-        }
-
-        .action-btn {
-            background: none;
-            border: none;
-            color: #9ca3af;
-            cursor: pointer;
-            padding: 6px 10px;
-            border-radius: 6px;
-            transition: all 0.2s;
-        }
-
-        .action-btn:hover {
-            color: #f97316;
-            background: rgba(249, 115, 22, 0.1);
-        }
-
-        .message-list {
-            background: #1f2937;
-            border-radius: 12px;
-            padding: 8px;
-            max-height: 380px;
-            overflow-y: auto;
-        }
-
-        .message-item {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 12px 16px;
-            border-bottom: 1px solid #374151;
-            transition: all 0.2s;
-        }
-
-        .message-item:last-child {
-            border-bottom: none;
-        }
-
-        .message-item:hover {
-            background: #2d3748;
-            border-radius: 8px;
-        }
-
-        .message-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-
-        .message-content {
-            flex: 1;
-            font-size: 13px;
-            color: #e5e7eb;
-        }
-
-        .message-time {
-            font-size: 10px;
-            color: #6b7280;
-            margin-top: 4px;
-        }
-
-        .table-wrapper {
-            background: #111827;
-            border-radius: 12px;
-            border: 1px solid #1f2937;
-            overflow-x: auto;
-            margin-bottom: 20px;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 700px;
-        }
-
-        .data-table th {
-            padding: 14px 16px;
-            text-align: left;
-            color: #9ca3af;
-            font-weight: 500;
-            font-size: 13px;
-            background: #0f1117;
-            border-bottom: 1px solid #1f2937;
-        }
-
-        .data-table td {
-            padding: 12px 16px;
-            font-size: 13px;
-            border-bottom: 1px solid #1f2937;
-            color: #e5e7eb;
-        }
-
-        .data-table tr:hover td {
-            background: #1a1f2e;
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 20px;
-        }
-
-        .page-btn {
-            min-width: 36px;
-            height: 36px;
-            padding: 0 12px;
-            background: #1f2937;
-            border: 1px solid #374151;
-            border-radius: 8px;
-            color: #9ca3af;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .page-btn:hover:not(:disabled) {
-            border-color: #f97316;
-            color: #f97316;
-        }
-
-        .page-btn.active {
-            background: #f97316;
-            border-color: #f97316;
+            background: rgba(59,130,246,0.15);
             color: white;
+            border-color: var(--primary);
         }
 
-        .page-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .loading-cell, .empty-cell {
-            text-align: center;
-            padding: 48px;
-            color: #6b7280;
-        }
-
-        .text-success {
-            color: #10b981;
-        }
-
-        .preview-section {
-            background: #1f2937;
-            border-radius: 12px;
-            margin-top: 20px;
-            overflow: hidden;
-        }
-
-        .preview-header {
-            padding: 16px 20px;
-            background: #0f1117;
-            border-bottom: 1px solid #374151;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .preview-content {
-            padding: 16px;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .preview-item {
-            padding: 10px 12px;
-            background: #111827;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            font-size: 12px;
-            font-family: monospace;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-        }
-
-        .preview-item-checkbox {
-            margin-top: 2px;
-        }
-
-        .preview-item-checkbox input {
-            accent-color: #f97316;
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
-
-        .preview-item-content {
-            flex: 1;
-        }
-
-        .config-row {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
-
-        .config-row label {
-            width: 140px;
-            font-size: 13px;
-            color: #9ca3af;
-        }
-
-        .config-row input {
-            flex: 1;
-            min-width: 150px;
-            padding: 8px 12px;
-            background: #1f2937;
-            border: 1px solid #374151;
-            border-radius: 8px;
-            color: #fff;
-        }
-
+        /* 自動生成控制 */
         .auto-generate-control {
-            background: #1f2937;
-            border-radius: 12px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 14px;
             padding: 16px;
             margin-top: 16px;
             display: flex;
@@ -656,51 +420,153 @@
             flex-wrap: wrap;
             gap: 12px;
         }
-
         .auto-generate-control .status {
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
-        .auto-generate-control .status i {
-            font-size: 20px;
+        /* 預覽區域 */
+        .preview-section {
+            background: rgba(0,0,0,0.2);
+            border-radius: 14px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        .preview-header {
+            padding: 14px 16px;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid var(--border-glow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .preview-content {
+            padding: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .preview-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 12px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            margin-bottom: 8px;
         }
 
-        .status-running {
-            color: #10b981;
-            animation: pulse 2s infinite;
+        /* 表格 */
+        .table-wrapper {
+            background: rgba(0,0,0,0.2);
+            border-radius: 14px;
+            overflow-x: auto;
+            margin-bottom: 16px;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .data-table th {
+            padding: 12px 16px;
+            text-align: left;
+            color: var(--text-secondary);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-glow);
+        }
+        .data-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.4);
+        }
+        .action-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 6px;
+        }
+        .action-btn:hover {
+            color: var(--danger);
+            background: rgba(239, 68, 68, 0.1);
         }
 
-        .status-stopped {
-            color: #ef4444;
+        /* 標籤頁 */
+        .tabs-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-glow);
+        }
+        .tab-btn {
+            padding: 10px 24px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-btn:hover {
+            color: var(--primary);
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .tab-pane {
+            display: none;
+        }
+        .tab-pane.active {
+            display: block;
         }
 
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        /* 分頁 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 8px 14px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+        .page-btn.active {
+            background: var(--primary);
+            color: white;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        /* 徽章 */
+        .badge {
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
         }
 
-        .pulse {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        @media (max-width: 1024px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .stats-preview { grid-template-columns: repeat(3, 1fr); }
-        }
-
+        /* 響應式 */
         @media (max-width: 768px) {
-            .admin-main { margin-left: 0; padding: 16px; }
-            .stats-grid { grid-template-columns: 1fr; }
-            .stats-preview { grid-template-columns: repeat(2, 1fr); }
+            .admin-layout { flex-direction: column; }
+            .admin-sidebar { width: 100%; height: auto; position: relative; }
+            .admin-nav { flex-direction: row; flex-wrap: wrap; }
+            .admin-content { padding: 20px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
             .param-row { flex-direction: column; }
-            .ai-header { flex-direction: column; align-items: flex-start; }
+        }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .stat-card, .editor-card {
+            animation: fadeSlideUp 0.4s ease forwards;
         }
     </style>
 </head>
@@ -710,240 +576,92 @@
 
         <main class="admin-main">
             <header class="admin-header">
-                <div class="header-left">
-                    <h1><i class="fas fa-ticket-alt"></i> 动态管理</h1>
-                </div>
+                <h1><i class="fas fa-ticket-alt"></i> 动态管理</h1>
                 <div class="admin-user">
                     <span id="adminName">管理员</span>
                     <button class="icon-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i></button>
                 </div>
             </header>
 
-            <!-- 统计卡片 -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon blue"><i class="fas fa-database"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="totalCount">0</div>
-                        <div class="stat-label">总消息数</div>
-                    </div>
+            <div class="admin-content">
+                <!-- 统计卡片 -->
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-database"></i></div><div class="stat-info"><div class="stat-value" id="totalCount">0</div><div class="stat-label">总消息数</div></div></div>
+                    <div class="stat-card"><div class="stat-icon green"><i class="fas fa-bolt"></i></div><div class="stat-info"><div class="stat-value" id="authCount">0</div><div class="stat-label">授权记录</div></div></div>
+                    <div class="stat-card"><div class="stat-icon orange"><i class="fas fa-coins"></i></div><div class="stat-info"><div class="stat-value" id="profitCount">0</div><div class="stat-label">收益记录</div></div></div>
+                    <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-chart-line"></i></div><div class="stat-info"><div class="stat-value" id="todayGeneratedCount">0</div><div class="stat-label">今日生成</div></div></div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon green"><i class="fas fa-bolt"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="authCount">0</div>
-                        <div class="stat-label">授权记录</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon orange"><i class="fas fa-coins"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="profitCount">0</div>
-                        <div class="stat-label">收益记录</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon purple"><i class="fas fa-chart-line"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="todayGeneratedCount">0</div>
-                        <div class="stat-label">今日生成</div>
-                    </div>
-                </div>
-            </div>
 
-
-
-            <!-- 批量生成区域 -->
-            <div class="editor-card">
-                <div class="card-header">
-                    <div class="card-icon virtual"><i class="fas fa-dice-d6"></i></div>
-                    <div>
-                        <div class="card-title">🎲 批量生成消息</div>
-                        <div class="card-desc">生成英文动态消息，发布后自动存入数据库</div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="param-row">
-                        <div class="param-item">
-                            <div class="param-label">生成数量</div>
-                            <input type="number" id="batchCount" value="100" min="1" max="5000" step="10">
-                        </div>
-                        <div class="param-item">
-                            <div class="param-label">授权消息比例 (%)</div>
-                            <input type="number" id="batchAuthRatio" value="55" min="0" max="100">
-                        </div>
-                    </div>
-
-                    <div class="param-row">
-                        <div class="param-item">
-                            <div class="param-label">授权金额范围 (USDT)</div>
-                            <div class="range-group">
-                                <input type="number" id="batchAuthMin" value="100" min="10">
-                                <span>-</span>
-                                <input type="number" id="batchAuthMax" value="50000" min="100">
-                            </div>
-                        </div>
-                        <div class="param-item">
-                            <div class="param-label">收益金额范围 (USDT)</div>
-                            <div class="range-group">
-                                <input type="number" id="batchProfitMin" value="50" min="10">
-                                <span>-</span>
-                                <input type="number" id="batchProfitMax" value="25000" min="50">
-                            </div>
-                        </div>
-                        <div class="param-item">
-                            <div class="param-label">收益率范围 (%)</div>
-                            <div class="range-group">
-                                <input type="number" id="batchRateMin" value="15" min="1">
-                                <span>-</span>
-                                <input type="number" id="batchRateMax" value="350" min="10">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="param-label">选择比赛（不选则使用全部）</div>
-                    <div class="match-selector" id="matchSelector">
-                        <div class="loading-cell"><i class="fas fa-spinner fa-spin"></i> 加载比赛数据中...</div>
-                    </div>
-
-                    <div class="auto-generate-control">
-                        <div class="status">
-                            <i class="fas fa-play-circle" id="autoStatusIcon" style="font-size: 20px; color: #ef4444;"></i>
-                            <span id="autoStatusText">批量生成器</span>
-                        </div>
-                        <div>
-                            <button class="btn-primary" id="previewBtn">
-                                <i class="fas fa-eye"></i> 预览消息
-                            </button>
-                            <button class="btn-success" id="publishBtn" style="margin-left: 8px;">
-                                <i class="fas fa-cloud-upload-alt"></i> 一键发布
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 预览区域 -->
-                    <div id="previewSection" class="preview-section" style="display: none;">
-                        <div class="preview-header">
-                            <span><i class="fas fa-list"></i> 消息预览（可勾选）</span>
-                            <div>
-                                <button class="btn-secondary" id="selectAllBtn" style="padding: 4px 12px; font-size: 12px;">全选</button>
-                                <button class="btn-secondary" id="deselectAllBtn" style="padding: 4px 12px; font-size: 12px; margin-left: 4px;">取消</button>
-                            </div>
-                        </div>
-                        <div class="preview-content" id="previewContent"></div>
-                        <div class="preview-header" style="border-top: 1px solid #374151;">
-                            <span>已选择 <span id="selectedCount">0</span> 条</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 标签页 -->
-            <div class="tabs-container">
-                <button class="tab-btn active" data-tab="all">
-                    <i class="fas fa-list"></i> 全部消息
-                </button>
-                <button class="tab-btn" data-tab="history">
-                    <i class="fas fa-history"></i> 生成历史
-                </button>
-                <button class="tab-btn" data-tab="matches">
-                    <i class="fas fa-futbol"></i> 比赛池管理
-                </button>
-            </div>
-
-            <!-- 全部消息标签页 -->
-            <div class="tab-pane active" id="allTab">
+                <!-- 批量生成区域 -->
                 <div class="editor-card">
-                    <div class="card-header">
-                        <div class="card-icon" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;"><i class="fas fa-list"></i></div>
-                        <div>
-                            <div class="card-title">全部消息</div>
-                            <div class="card-desc">管理所有动态消息（英文内容）</div>
-                        </div>
-                        <button class="btn-secondary" id="clearAllBtn" style="margin-left: auto;">
-                            <i class="fas fa-trash"></i> 清空全部
-                        </button>
-                    </div>
+                    <div class="card-header"><div class="card-icon virtual"><i class="fas fa-dice-d6"></i></div><div><div class="card-title">🎲 批量生成消息</div><div class="card-desc">生成英文动态消息，发布后自动存入数据库</div></div></div>
                     <div class="card-body">
-                        <div class="param-row" style="margin-bottom: 20px;">
-                            <div class="param-item">
-                                <select id="filterType" class="filter-select">
-                                    <option value="all">全部类型</option>
-                                    <option value="auth">⚡ 授权</option>
-                                    <option value="profit">💰 收益</option>
-                                    <option value="system">📢 系统</option>
-                                </select>
-                            </div>
-                            <div class="param-item">
-                                <input type="text" id="searchMessage" placeholder="搜索消息内容..." class="filter-select">
-                            </div>
-                            <div class="param-item">
-                                <button class="btn-secondary" id="refreshMessagesBtn" style="width: 100%;">
-                                    <i class="fas fa-sync-alt"></i> 刷新
-                                </button>
-                            </div>
+                        <div class="param-row">
+                            <div class="param-item"><div class="param-label">生成数量</div><input type="number" id="batchCount" value="100" min="1" max="5000" step="10"></div>
+                            <div class="param-item"><div class="param-label">授权消息比例 (%)</div><input type="number" id="batchAuthRatio" value="55" min="0" max="100"></div>
+                        </div>
+                        <div class="param-row">
+                            <div class="param-item"><div class="param-label">授权金额范围 (USDT)</div><div class="range-group"><input type="number" id="batchAuthMin" value="100"><span>-</span><input type="number" id="batchAuthMax" value="50000"></div></div>
+                            <div class="param-item"><div class="param-label">收益金额范围 (USDT)</div><div class="range-group"><input type="number" id="batchProfitMin" value="50"><span>-</span><input type="number" id="batchProfitMax" value="25000"></div></div>
+                            <div class="param-item"><div class="param-label">收益率范围 (%)</div><div class="range-group"><input type="number" id="batchRateMin" value="15"><span>-</span><input type="number" id="batchRateMax" value="350"></div></div>
                         </div>
 
-                        <div class="table-wrapper">
-                            <table class="data-table">
-                                <thead>
-                                    <tr><th>类型</th><th>消息内容 (英文)</th><th>权重</th><th>创建时间</th><th>操作</th></tr>
-                                </thead>
-                                <tbody id="allMessagesList"></tbody>
-                            </table>
+                        <div class="param-label">选择比赛（不选则使用全部）</div>
+                        <div class="match-selector" id="matchSelector"><div class="loading-cell">加载中...</div></div>
+
+                        <div class="auto-generate-control">
+                            <div class="status"><i class="fas fa-play-circle" style="font-size: 20px; color: var(--primary);"></i><span>批量生成器</span></div>
+                            <div><button class="btn-primary" id="previewBtn"><i class="fas fa-eye"></i> 预览消息</button><button class="btn-success" id="publishBtn" style="margin-left: 8px;"><i class="fas fa-cloud-upload-alt"></i> 一键发布</button></div>
                         </div>
 
-                        <div class="pagination" id="allMessagesPagination"></div>
+                        <div id="previewSection" class="preview-section" style="display: none;">
+                            <div class="preview-header"><span><i class="fas fa-list"></i> 消息预览（可勾选）</span><div><button class="btn-secondary" id="selectAllBtn" style="padding: 4px 12px;">全选</button><button class="btn-secondary" id="deselectAllBtn" style="padding: 4px 12px; margin-left: 4px;">取消</button></div></div>
+                            <div class="preview-content" id="previewContent"></div>
+                            <div class="preview-header"><span>已选择 <span id="selectedCount">0</span> 条</span></div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- 生成历史标签页 -->
-            <div class="tab-pane" id="historyTab">
-                <div class="editor-card">
-                    <div class="card-header">
-                        <div class="card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;"><i class="fas fa-history"></i></div>
-                        <div>
-                            <div class="card-title">生成历史</div>
-                            <div class="card-desc">查看所有消息生成记录</div>
+                <!-- 标签页 -->
+                <div class="tabs-container">
+                    <button class="tab-btn active" data-tab="all"><i class="fas fa-list"></i> 全部消息</button>
+                    <button class="tab-btn" data-tab="history"><i class="fas fa-history"></i> 生成历史</button>
+                    <button class="tab-btn" data-tab="matches"><i class="fas fa-futbol"></i> 比赛池管理</button>
+                </div>
+
+                <!-- 全部消息 -->
+                <div class="tab-pane active" id="allTab">
+                    <div class="editor-card">
+                        <div class="card-header"><div class="card-icon" style="background: rgba(139,92,246,0.2); color:#A78BFA;"><i class="fas fa-list"></i></div><div><div class="card-title">全部消息</div><div class="card-desc">管理所有动态消息</div></div><button class="btn-secondary" id="clearAllBtn" style="margin-left: auto;"><i class="fas fa-trash"></i> 清空全部</button></div>
+                        <div class="card-body">
+                            <div class="param-row">
+                                <div class="param-item"><select id="filterType" class="filter-select"><option value="all">全部类型</option><option value="auth">⚡ 授权</option><option value="profit">💰 收益</option><option value="system">📢 系统</option></select></div>
+                                <div class="param-item"><input type="text" id="searchMessage" placeholder="搜索消息内容..."></div>
+                                <div class="param-item"><button class="btn-secondary" id="refreshMessagesBtn" style="width: 100%;"><i class="fas fa-sync-alt"></i> 刷新</button></div>
+                            </div>
+                            <div class="table-wrapper"><table class="data-table"><thead><tr><th>类型</th><th>消息内容</th><th>权重</th><th>创建时间</th><th>操作</th></tr></thead><tbody id="allMessagesList"></tbody></table></div>
+                            <div class="pagination" id="allMessagesPagination"></div>
                         </div>
-                        <span class="badge" id="todayGeneratedBadge" style="margin-left: auto;">今日: 0</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-wrapper">
-                            <table class="data-table">
-                                <thead>
-                                    <tr><th>时间</th><th>管理员</th><th>生成数量</th><th>授权</th><th>收益</th><th>系统</th></tr>
-                                </thead>
-                                <tbody id="historyList"></tbody>
-                            </table>
-                        </div>
-                        <div class="pagination" id="historyPagination"></div>
                     </div>
                 </div>
-            </div>
 
-            <!-- 比赛池管理标签页 -->
-            <div class="tab-pane" id="matchesTab">
-                <div class="editor-card">
-                    <div class="card-header">
-                        <div class="card-icon" style="background: rgba(249, 115, 22, 0.15); color: #f97316;"><i class="fas fa-futbol"></i></div>
-                        <div>
-                            <div class="card-title">比赛数据池</div>
-                            <div class="card-desc">管理本地比赛数据，用于生成动态消息</div>
+                <!-- 生成历史 -->
+                <div class="tab-pane" id="historyTab">
+                    <div class="editor-card">
+                        <div class="card-header"><div class="card-icon" style="background: rgba(16,185,129,0.2); color:#10B981;"><i class="fas fa-history"></i></div><div><div class="card-title">生成历史</div><div class="card-desc">查看所有消息生成记录</div></div><span class="badge" id="todayGeneratedBadge">今日: 0</span></div>
+                        <div class="card-body">
+                            <div class="table-wrapper"><table class="data-table"><thead><tr><th>时间</th><th>管理员</th><th>生成数量</th><th>授权</th><th>收益</th><th>系统</th></tr></thead><tbody id="historyList"></tbody></table></div>
+                            <div class="pagination" id="historyPagination"></div>
                         </div>
-                        <button class="btn-success" id="addMatchBtn" style="margin-left: auto;">
-                            <i class="fas fa-plus"></i> 新增比赛
-                        </button>
                     </div>
-                    <div class="card-body">
-                        <div class="table-wrapper">
-                            <table class="data-table">
-                                <thead>
-                                    <tr><th>ID</th><th>联赛</th><th>主队</th><th>客队</th><th>比赛日期</th><th>开赛时间(UTC)</th><th>状态</th><th>权重</th><th>操作</th></tr>
-                                </thead>
-                                <tbody id="matchesList"></tbody>
-                            </table>
+                </div>
+
+                <!-- 比赛池管理 -->
+                <div class="tab-pane" id="matchesTab">
+                    <div class="editor-card">
+                        <div class="card-header"><div class="card-icon" style="background: rgba(249,115,22,0.2); color:#F97316;"><i class="fas fa-futbol"></i></div><div><div class="card-title">比赛数据池</div><div class="card-desc">管理本地比赛数据</div></div><button class="btn-success" id="addMatchBtn" style="margin-left: auto;"><i class="fas fa-plus"></i> 新增比赛</button></div>
+                        <div class="card-body">
+                            <div class="table-wrapper"><table class="data-table"><thead><tr><th>ID</th><th>联赛</th><th>主队</th><th>客队</th><th>比赛日期</th><th>开赛时间</th><th>状态</th><th>权重</th><th>操作</th></tr></thead><tbody id="matchesList"></tbody></table></div>
                         </div>
                     </div>
                 </div>
@@ -956,623 +674,170 @@
         const API_BASE = '/api/v1/admin/ticker-manager';
         
         const UTILS = {
-            formatNumber: (num) => {
-                if (num === undefined || num === null) return '0';
-                return Number(num).toLocaleString('en-US');
-            },
-            formatDateTime: (dateStr) => {
-                if (!dateStr) return '-';
-                try {
-                    const date = new Date(dateStr);
-                    return date.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-                } catch(e) { return '-'; }
-            },
-            escapeHtml: (str) => {
-                if (!str) return '';
-                return str.replace(/[&<>]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
-            },
+            formatNumber: (num) => Number(num || 0).toLocaleString('en-US'),
+            formatDateTime: (dateStr) => { if (!dateStr) return '-'; try { return new Date(dateStr).toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }); } catch(e) { return '-'; } },
+            escapeHtml: (str) => { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m] || m)); },
             getToken: () => localStorage.getItem('admin_token'),
-            
-            // 生成U型用户ID
-            generateUserId: () => {
-                const digits = Math.floor(Math.random() * 1000000000).toString().padStart(9, '0');
-                const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-                const letter = letters[Math.floor(Math.random() * letters.length)];
-                return `U${digits}${letter}`;
-            },
-            
-            // 掩码用户ID
-            maskUserId: (userId) => {
-                if (!userId || userId.length < 5) return userId;
-                return userId.substring(0, 2) + '***' + userId.substring(userId.length - 3);
-            },
-            
-            showToast: (msg, type = 'success') => {
-                const toast = document.createElement('div');
-                toast.className = `toast toast-${type}`;
-                toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${msg}`;
-                toast.style.cssText = `position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; background: ${type === 'success' ? '#10b981' : '#ef4444'}; color: white; border-radius: 12px; z-index: 10000; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: slideIn 0.3s ease; z-index: 10001;`;
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 3000);
-            }
+            generateUserId: () => { const digits = Math.floor(Math.random() * 1000000000).toString().padStart(9,'0'); const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; return `U${digits}${letters[Math.floor(Math.random()*letters.length)]}`; },
+            maskUserId: (userId) => { if (!userId || userId.length<5) return userId; return userId.substring(0,2)+'***'+userId.substring(userId.length-3); },
+            showToast: (msg, type='success') => { const toast = document.createElement('div'); toast.innerHTML = `<i class="fas ${type==='success'?'fa-check-circle':'fa-exclamation-circle'}"></i> ${msg}`; toast.style.cssText = `position:fixed; bottom:24px; right:24px; padding:12px 20px; background:${type==='success'?'#10b981':'#ef4444'}; color:white; border-radius:12px; z-index:10001; display:flex; align-items:center; gap:8px; animation:slideIn 0.3s ease;`; document.body.appendChild(toast); setTimeout(()=>toast.remove(),3000); }
         };
 
-        // 添加动画样式
-        const style = document.createElement('style');
-        style.textContent = `@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}`;
-        document.head.appendChild(style);
-
-        // ==================== API 请求 ====================
-        async function apiRequest(url, options = {}) {
+        async function apiRequest(url, options={}) {
             const token = UTILS.getToken();
-            const response = await fetch(url, {
-                ...options,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': token ? `Bearer ${token}` : '',
-                    ...options.headers
-                }
-            });
-            
+            const response = await fetch(url, { ...options, headers: { 'Content-Type':'application/json', 'Authorization': token ? `Bearer ${token}` : '', ...options.headers } });
             const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.error || data.message || 'Request failed');
-            }
+            if (!response.ok) throw new Error(data.error || 'Request failed');
             return data;
         }
 
-        // ==================== 比赛池管理 ====================
+        // 加载比赛
         async function loadMatches() {
-            try {
-                const result = await apiRequest(`${API_BASE}/matches/pool`);
-                if (result.success) {
-                    return result.data;
-                }
-                return [];
-            } catch (err) {
-                console.error('加载比赛失败:', err);
-                return [];
-            }
+            try { const result = await apiRequest(`${API_BASE}/matches/pool`); return result.success ? result.data : []; } catch(err) { return []; }
         }
-
         async function renderMatchesList() {
-    const tbody = document.getElementById('matchesList');
-    const matches = await loadMatches();
-    
-    if (matches.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="empty-cell">暂无比赛数据，请点击"新增比赛"添加</td></tr>';
-        return;
-    }
-    
-    let html = '';
-    matches.forEach(m => {
-        // 使用后端返回的 calculated_status 而不是数据库中的 status
-        const realStatus = m.calculated_status || m.status;
-        const statusMap = { 
-            upcoming: '<span style="color: #10b981;">🟢 未开始</span>', 
-            ongoing: '<span style="color: #f97316;">🟡 进行中</span>', 
-            finished: '<span style="color: #ef4444;">🔴 已结束</span>' 
-        };
-        const statusHtml = statusMap[realStatus] || realStatus;
-        
-        html += `
-            <tr>
-                <td>${m.id}</td>
-                <td>${UTILS.escapeHtml(m.league)}</td>
-                <td>${UTILS.escapeHtml(m.home_team)}</td>
-                <td>${UTILS.escapeHtml(m.away_team)}</td>
-                <td>${m.match_date}</td>
-                <td>${m.match_time}</td>
-                <td>${statusHtml}</td>
-                <td>${m.weight}</td>
-                <td>
-                    <button class="action-btn" onclick="deleteMatch(${m.id})" style="color: #ef4444;">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-    });
-    tbody.innerHTML = html;
-}
-
-        async function deleteMatch(id) {
-            if (!confirm('确定要删除这场比赛吗？')) return;
-            try {
-                await apiRequest(`${API_BASE}/matches/pool/${id}`, { method: 'DELETE' });
-                UTILS.showToast('删除成功', 'success');
-                renderMatchesList();
-                loadMatchSelector();
-            } catch (err) {
-                UTILS.showToast('删除失败: ' + err.message, 'error');
-            }
+            const tbody = document.getElementById('matchesList');
+            const matches = await loadMatches();
+            if (matches.length === 0) { tbody.innerHTML = '<td><td colspan="9" class="empty-cell">暂无比赛数据</td></tr>'; return; }
+            let html = '';
+            matches.forEach(m => { const statusMap = { upcoming:'🟢 未开始', ongoing:'🟡 进行中', finished:'🔴 已结束' }; html += `<tr><td>${m.id}</td><td>${UTILS.escapeHtml(m.league)}</td><td>${UTILS.escapeHtml(m.home_team)}</td><td>${UTILS.escapeHtml(m.away_team)}</td><td>${m.match_date}</td><td>${m.match_time}</td><td>${statusMap[m.calculated_status||m.status]||m.status}</td><td>${m.weight}</td><td><button class="action-btn" onclick="deleteMatch(${m.id})"><i class="fas fa-trash"></i></button></td></tr>`; });
+            tbody.innerHTML = html;
         }
-
-        // 加载比赛选择器
+        async function deleteMatch(id) { if(!confirm('确定删除？')) return; await apiRequest(`${API_BASE}/matches/pool/${id}`,{method:'DELETE'}); UTILS.showToast('删除成功'); renderMatchesList(); loadMatchSelector(); }
         async function loadMatchSelector() {
             const container = document.getElementById('matchSelector');
-            try {
-                const matches = await loadMatches();
-                if (matches.length === 0) {
-                    container.innerHTML = '<div class="empty-cell">暂无比赛数据，请先在"比赛池管理"中添加</div>';
-                    return;
-                }
-                
-                let html = '';
-                matches.forEach(match => {
-                    html += `
-                        <label class="match-checkbox">
-                            <input type="checkbox" class="match-checkbox-item" value="${match.id}" data-name="${UTILS.escapeHtml(match.home_team)} vs ${UTILS.escapeHtml(match.away_team)}">
-                            <span><strong>${UTILS.escapeHtml(match.home_team)}</strong> vs <strong>${UTILS.escapeHtml(match.away_team)}</strong></span>
-                            <span style="margin-left: auto; font-size: 11px; color: #6b7280;">${UTILS.escapeHtml(match.league)}</span>
-                        </label>
-                    `;
-                });
-                container.innerHTML = html;
-            } catch (err) {
-                container.innerHTML = '<div class="empty-cell">加载比赛失败</div>';
-            }
+            const matches = await loadMatches();
+            if (matches.length === 0) { container.innerHTML = '<div class="empty-cell">暂无比赛数据</div>'; return; }
+            let html = '';
+            matches.forEach(m => { html += `<label class="match-checkbox"><input type="checkbox" class="match-checkbox-item" value="${m.id}" data-name="${UTILS.escapeHtml(m.home_team)} vs ${UTILS.escapeHtml(m.away_team)}"><span><strong>${UTILS.escapeHtml(m.home_team)}</strong> vs <strong>${UTILS.escapeHtml(m.away_team)}</strong></span><span style="margin-left:auto;">${UTILS.escapeHtml(m.league)}</span></label>`; });
+            container.innerHTML = html;
         }
 
-
-
-
-        // ==================== 批量生成 ====================
         let currentPreviewMessages = [];
-        
         async function previewMessages() {
-            const params = {
-                count: parseInt(document.getElementById('batchCount').value) || 100,
-                authRatio: parseInt(document.getElementById('batchAuthRatio').value) || 55,
-                authMin: parseInt(document.getElementById('batchAuthMin').value) || 100,
-                authMax: parseInt(document.getElementById('batchAuthMax').value) || 50000,
-                profitMin: parseInt(document.getElementById('batchProfitMin').value) || 50,
-                profitMax: parseInt(document.getElementById('batchProfitMax').value) || 25000,
-                profitRateMin: parseInt(document.getElementById('batchRateMin').value) || 15,
-                profitRateMax: parseInt(document.getElementById('batchRateMax').value) || 350
-            };
-            
-            // 获取选中的比赛
-            const selectedMatches = Array.from(document.querySelectorAll('#matchSelector .match-checkbox-item:checked'))
-                .map(cb => ({ id: cb.value, name: cb.dataset.name }));
-            
-            if (selectedMatches.length === 0) {
-                UTILS.showToast('请至少选择一场比赛', 'error');
-                return;
-            }
-            
-            UTILS.showToast('正在生成预览...', 'success');
-            
-            // 模拟生成预览（实际调用后端预览接口）
+            const params = { count: parseInt(document.getElementById('batchCount').value)||100, authRatio: parseInt(document.getElementById('batchAuthRatio').value)||55, authMin: parseInt(document.getElementById('batchAuthMin').value)||100, authMax: parseInt(document.getElementById('batchAuthMax').value)||50000, profitMin: parseInt(document.getElementById('batchProfitMin').value)||50, profitMax: parseInt(document.getElementById('batchProfitMax').value)||25000, profitRateMin: parseInt(document.getElementById('batchRateMin').value)||15, profitRateMax: parseInt(document.getElementById('batchRateMax').value)||350 };
+let selectedMatches = Array.from(document.querySelectorAll('#matchSelector .match-checkbox-item:checked')).map(cb => ({ id: cb.value, name: cb.dataset.name }));
+
+// 如果没有选择任何比赛，则使用全部比赛
+if (selectedMatches.length === 0) {
+    const allCheckboxes = document.querySelectorAll('#matchSelector .match-checkbox-item');
+    selectedMatches = Array.from(allCheckboxes).map(cb => ({ id: cb.value, name: cb.dataset.name }));
+}
+
+if (selectedMatches.length === 0) { 
+    UTILS.showToast('暂无比赛数据，请先添加比赛', 'error'); 
+    return; 
+}
+            UTILS.showToast('正在生成预览...');
             try {
-                // 先保存配置到后端
                 await saveConfig();
-                
-                // 调用批量生成接口（实际发布时使用）
-                // 这里先模拟预览
                 const messages = generateMockMessages(params, selectedMatches);
                 currentPreviewMessages = messages;
-                
-                const previewSection = document.getElementById('previewSection');
                 const previewContent = document.getElementById('previewContent');
-                const selectedCountSpan = document.getElementById('selectedCount');
-                
                 let html = '';
-                messages.forEach((msg, idx) => {
-                    let icon = msg.type === 'auth' ? '⚡' : (msg.type === 'profit' ? '💰' : '📢');
-                    html += `
-                        <div class="preview-item">
-                            <div class="preview-item-checkbox">
-                                <input type="checkbox" class="preview-checkbox" data-index="${idx}" checked>
-                            </div>
-                            <div class="preview-item-content">
-                                ${icon} ${UTILS.escapeHtml(msg.message)}
-                            </div>
-                        </div>
-                    `;
-                });
+                messages.forEach((msg, idx) => { html += `<div class="preview-item"><div class="preview-item-checkbox"><input type="checkbox" class="preview-checkbox" data-index="${idx}" checked></div><div class="preview-item-content">${msg.type==='auth'?'⚡':(msg.type==='profit'?'💰':'📢')} ${UTILS.escapeHtml(msg.message)}</div></div>`; });
                 previewContent.innerHTML = html;
-                selectedCountSpan.textContent = messages.length;
-                previewSection.style.display = 'block';
-                
-                // 绑定复选框事件
-                document.querySelectorAll('.preview-checkbox').forEach(cb => {
-                    cb.addEventListener('change', updateSelectedCount);
-                });
-                
-                UTILS.showToast(`生成了 ${messages.length} 条预览消息`, 'success');
-            } catch (err) {
-                UTILS.showToast('预览失败: ' + err.message, 'error');
-            }
+                document.getElementById('selectedCount').textContent = messages.length;
+                document.getElementById('previewSection').style.display = 'block';
+                document.querySelectorAll('.preview-checkbox').forEach(cb => cb.addEventListener('change', updateSelectedCount));
+            } catch(err) { UTILS.showToast('预览失败: '+err.message, 'error'); }
         }
-        
         function generateMockMessages(params, matches) {
-            const messages = [];
-            const totalCount = Math.min(params.count, 500);
-            const systemCount = Math.floor(totalCount * 0.1);
-            const userCount = totalCount - systemCount;
-            const authTargetCount = Math.floor(userCount * params.authRatio / 100);
-            const profitTargetCount = userCount - authTargetCount;
-            
-            const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+            const messages = []; const totalCount = Math.min(params.count,500); const systemCount = Math.floor(totalCount*0.1); const userCount = totalCount-systemCount; const authTargetCount = Math.floor(userCount*params.authRatio/100); const profitTargetCount = userCount-authTargetCount;
+            const random = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
             const formatAmount = (num) => num.toLocaleString('en-US');
-            
-            // 系统消息 - 随机生成数值
-function getRandomSystemMessage(index) {
-    const totalVolume = Math.floor(Math.random() * (10000000 - 1000000) + 1000000);
-    const dailyAuth = Math.floor(totalVolume * (Math.random() * 0.12 + 0.03));
-    const yesterdayProfit = Math.floor(dailyAuth * (Math.random() * 0.3 + 0.2));
-    const activeUsers = Math.floor(Math.random() * (100000 - 5000) + 5000);
-    
-    const templates = [
-        `🎉 Total authorization volume exceeds ${formatAmount(totalVolume)} USDT`,
-        `⚡ Last 24h authorization volume ${formatAmount(dailyAuth)} USDT`,
-        `💰 Yesterday user profit ${formatAmount(yesterdayProfit)} USDT`,
-        `👥 Active users exceed ${formatAmount(activeUsers)}`
-    ];
-    return templates[index % 4];
-}
-
-const systemTemplates = [];
-for (let i = 0; i < systemCount; i++) {
-    systemTemplates.push(getRandomSystemMessage(i));
-}
-            
-            for (let i = 0; i < systemCount; i++) {
-                messages.push({
-                    type: 'system',
-                    message: systemTemplates[i % systemTemplates.length]
-                });
-            }
-            
-            // 授权消息
-            for (let i = 0; i < authTargetCount; i++) {
-                const match = matches[Math.floor(Math.random() * matches.length)];
-                const userId = UTILS.generateUserId();
-                const maskedUserId = UTILS.maskUserId(userId);
-                const amount = random(params.authMin, params.authMax);
-                messages.push({
-                    type: 'auth',
-                    message: `⚡ User ${maskedUserId} authorized ${formatAmount(amount)} USDT on [${match.name}]`
-                });
-            }
-            
-            // 收益消息
-            for (let i = 0; i < profitTargetCount; i++) {
-                const match = matches[Math.floor(Math.random() * matches.length)];
-                const userId = UTILS.generateUserId();
-                const maskedUserId = UTILS.maskUserId(userId);
-                const amount = random(params.profitMin, params.profitMax);
-                const rate = random(params.profitRateMin, params.profitRateMax);
-                messages.push({
-                    type: 'profit',
-                    message: `💰 User ${maskedUserId} earned ${formatAmount(amount)} USDT (+${rate}%) from [${match.name}]`
-                });
-            }
-            
-            // 打乱顺序
-            for (let i = messages.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [messages[i], messages[j]] = [messages[j], messages[i]];
-            }
-            
+            const systemTemplates = [`🎉 Total volume exceeds ${formatAmount(random(1000000,10000000))} USDT`, `⚡ Last 24h volume ${formatAmount(random(50000,500000))} USDT`, `💰 Yesterday profit ${formatAmount(random(10000,100000))} USDT`, `👥 Active users ${formatAmount(random(5000,50000))}`];
+            for(let i=0;i<systemCount;i++) messages.push({ type:'system', message: systemTemplates[i%4] });
+            for(let i=0;i<authTargetCount;i++) { const match=matches[Math.floor(Math.random()*matches.length)]; messages.push({ type:'auth', message: `⚡ User ${UTILS.maskUserId(UTILS.generateUserId())} authorized ${formatAmount(random(params.authMin,params.authMax))} USDT on [${match.name}]` }); }
+            for(let i=0;i<profitTargetCount;i++) { const match=matches[Math.floor(Math.random()*matches.length)]; messages.push({ type:'profit', message: `💰 User ${UTILS.maskUserId(UTILS.generateUserId())} earned ${formatAmount(random(params.profitMin,params.profitMax))} USDT (+${random(params.profitRateMin,params.profitRateMax)}%) from [${match.name}]` }); }
+            for(let i=messages.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [messages[i],messages[j]]=[messages[j],messages[i]]; }
             return messages;
         }
-        
-        function updateSelectedCount() {
-            const checkboxes = document.querySelectorAll('.preview-checkbox');
-            const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
-            document.getElementById('selectedCount').textContent = checked;
-        }
-        
+        function updateSelectedCount() { document.getElementById('selectedCount').textContent = document.querySelectorAll('.preview-checkbox:checked').length; }
+        function selectAllPreview() { document.querySelectorAll('.preview-checkbox').forEach(cb=>cb.checked=true); updateSelectedCount(); }
+        function deselectAllPreview() { document.querySelectorAll('.preview-checkbox').forEach(cb=>cb.checked=false); updateSelectedCount(); }
         async function publishMessages() {
-            const checkboxes = document.querySelectorAll('.preview-checkbox');
-            const selectedIndices = Array.from(checkboxes)
-                .filter(cb => cb.checked)
-                .map(cb => parseInt(cb.dataset.index));
-            
-            if (selectedIndices.length === 0) {
-                UTILS.showToast('请至少选择一条消息发布', 'error');
-                return;
-            }
-            
-            const params = {
-                count: selectedIndices.length,
-                authRatio: parseInt(document.getElementById('batchAuthRatio').value) || 55,
-                authMin: parseInt(document.getElementById('batchAuthMin').value) || 100,
-                authMax: parseInt(document.getElementById('batchAuthMax').value) || 50000,
-                profitMin: parseInt(document.getElementById('batchProfitMin').value) || 50,
-                profitMax: parseInt(document.getElementById('batchProfitMax').value) || 25000,
-                profitRateMin: parseInt(document.getElementById('batchRateMin').value) || 15,
-                profitRateMax: parseInt(document.getElementById('batchRateMax').value) || 350
-            };
-            
-            UTILS.showToast('正在发布...', 'success');
-            
+            const checkboxes = document.querySelectorAll('.preview-checkbox:checked');
+            if(checkboxes.length===0) { UTILS.showToast('请至少选择一条消息', 'error'); return; }
+            UTILS.showToast('正在发布...');
             try {
-                const result = await apiRequest(`${API_BASE}/batch-generate`, {
-                    method: 'POST',
-                    body: JSON.stringify(params)
-                });
-                
-                if (result.success) {
-                    UTILS.showToast(`成功发布 ${result.data.total} 条消息`, 'success');
-                    document.getElementById('previewSection').style.display = 'none';
-                    loadAllMessages();
-                    loadGenerationHistory();
-                    updateStats();
-                } else {
-                    UTILS.showToast('发布失败: ' + (result.message || '未知错误'), 'error');
-                }
-            } catch (err) {
-                UTILS.showToast('发布失败: ' + err.message, 'error');
-            }
-        }
-        
-        function selectAllPreview() {
-            document.querySelectorAll('.preview-checkbox').forEach(cb => cb.checked = true);
-            updateSelectedCount();
-        }
-        
-        function deselectAllPreview() {
-            document.querySelectorAll('.preview-checkbox').forEach(cb => cb.checked = false);
-            updateSelectedCount();
+                const params = { count: checkboxes.length, authRatio: parseInt(document.getElementById('batchAuthRatio').value)||55, authMin: parseInt(document.getElementById('batchAuthMin').value)||100, authMax: parseInt(document.getElementById('batchAuthMax').value)||50000, profitMin: parseInt(document.getElementById('batchProfitMin').value)||50, profitMax: parseInt(document.getElementById('batchProfitMax').value)||25000, profitRateMin: parseInt(document.getElementById('batchRateMin').value)||15, profitRateMax: parseInt(document.getElementById('batchRateMax').value)||350 };
+                const result = await apiRequest(`${API_BASE}/batch-generate`, { method:'POST', body: JSON.stringify(params) });
+                if(result.success) { UTILS.showToast(`成功发布 ${result.data.total} 条消息`); document.getElementById('previewSection').style.display='none'; loadAllMessages(); loadGenerationHistory(); updateStats(); }
+                else UTILS.showToast('发布失败: '+result.message, 'error');
+            } catch(err) { UTILS.showToast('发布失败: '+err.message, 'error'); }
         }
 
-        // ==================== 消息管理 ====================
-        let currentPage = 1;
-        let totalPages = 1;
-        let historyPage = 1;
-        let historyTotalPages = 1;
-        
+        let currentPage=1, totalPages=1, historyPage=1, historyTotalPages=1;
         async function loadAllMessages() {
             const type = document.getElementById('filterType').value;
             const search = document.getElementById('searchMessage').value;
-            const page = currentPage;
-            
             try {
-                let url = `${API_BASE}/messages?page=${page}&limit=20`;
-                if (type !== 'all') url += `&type=${type}`;
-                if (search) url += `&search=${encodeURIComponent(search)}`;
-                
-                const result = await apiRequest(url);
-                if (result.success) {
-                    const messages = result.data;
-                    totalPages = result.pagination.pages;
-                    
+                const result = await apiRequest(`${API_BASE}/messages?page=${currentPage}&limit=20&type=${type !== 'all' ? type : ''}&search=${encodeURIComponent(search)}`);
+                if(result.success) {
+                    const messages = result.data; totalPages = result.pagination.pages;
                     const tbody = document.getElementById('allMessagesList');
-                    if (messages.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">暂无消息</td></tr>';
-                    } else {
+                    if(messages.length===0) tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">暂无消息</td</tr>';
+                    else {
                         let html = '';
-                        messages.forEach(msg => {
-                            let icon = msg.type === 'auth' ? '⚡' : (msg.type === 'profit' ? '💰' : '📢');
-                            let typeText = msg.type === 'auth' ? '授权' : (msg.type === 'profit' ? '收益' : '系统');
-                            html += `
-                                <tr>
-                                    <td><span style="font-size: 16px;">${icon}</span> ${typeText}</td>
-                                    <td style="font-family: monospace;">${UTILS.escapeHtml(msg.message)}</td>
-                                    <td>${msg.weight || 100}</td>
-                                    <td>${UTILS.formatDateTime(msg.created_at)}</td>
-                                    <td>
-                                        <button class="action-btn" onclick="deleteMessage(${msg.id})" style="color: #ef4444;">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            `;
-                        });
+                        messages.forEach(msg => { html += `<tr><td>${msg.type==='auth'?'⚡ 授权':(msg.type==='profit'?'💰 收益':'📢 系统')}</td><td>${UTILS.escapeHtml(msg.message)}</td><td>${msg.weight||100}</td><td>${UTILS.formatDateTime(msg.created_at)}</td><td><button class="action-btn" onclick="deleteMessage(${msg.id})"><i class="fas fa-trash"></i></button></td>`; });
                         tbody.innerHTML = html;
                     }
-                    
-                    renderPagination('all');
+                    renderPagination();
                 }
-            } catch (err) {
-                console.error('加载消息失败:', err);
-            }
+            } catch(err) { console.error(err); }
         }
-        
         async function loadGenerationHistory() {
-            const page = historyPage;
             try {
-                const result = await apiRequest(`${API_BASE}/generation-history?page=${page}&limit=15`);
-                if (result.success) {
-                    const history = result.data;
-                    historyTotalPages = result.pagination.pages;
-                    
+                const result = await apiRequest(`${API_BASE}/generation-history?page=${historyPage}&limit=15`);
+                if(result.success) {
+                    const history = result.data; historyTotalPages = result.pagination.pages;
                     const tbody = document.getElementById('historyList');
-                    if (history.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" class="empty-cell">暂无生成历史</td></tr>';
-                    } else {
+                    if(history.length===0) tbody.innerHTML = '<tr><td colspan="6" class="empty-cell">暂无生成历史</td</tr>';
+                    else {
                         let html = '';
-                        history.forEach(item => {
-                            html += `
-                                <tr>
-                                    <td>${UTILS.formatDateTime(item.created_at)}</td>
-                                    <td>${UTILS.escapeHtml(item.admin_name || 'Admin')}</td>
-                                    <td class="text-success">${item.generated_count}</td>
-                                    <td>${item.auth_count || 0}</td>
-                                    <td>${item.profit_count || 0}</td>
-                                    <td>${item.system_count || 0}</td>
-                                </tr>
-                            `;
-                        });
+                        history.forEach(item => { html += `<tr><td>${UTILS.formatDateTime(item.created_at)}</td><td>${UTILS.escapeHtml(item.admin_name||'Admin')}</td><td class="text-success">${item.generated_count}</td><td>${item.auth_count||0}</td><td>${item.profit_count||0}</td><td>${item.system_count||0}</td>`; });
                         tbody.innerHTML = html;
                     }
-                    
                     renderHistoryPagination();
                 }
-            } catch (err) {
-                console.error('加载历史失败:', err);
-            }
+            } catch(err) { console.error(err); }
         }
-        
         async function updateStats() {
             try {
                 const result = await apiRequest(`${API_BASE}/stats`);
-                if (result.success) {
-                    document.getElementById('totalCount').textContent = result.data.total || 0;
-                    document.getElementById('authCount').textContent = result.data.auth_count || 0;
-                    document.getElementById('profitCount').textContent = result.data.profit_count || 0;
-                }
-                
+                if(result.success) { document.getElementById('totalCount').textContent = result.data.total||0; document.getElementById('authCount').textContent = result.data.auth_count||0; document.getElementById('profitCount').textContent = result.data.profit_count||0; }
                 const todayResult = await apiRequest(`${API_BASE}/today-stats`);
-                if (todayResult.success) {
-                    const total = todayResult.data.total_generated || 0;
-                    document.getElementById('todayGeneratedCount').textContent = total;
-                    document.getElementById('todayGeneratedBadge').textContent = `今日: ${total}`;
-                }
-            } catch (err) {
-                console.error('更新统计失败:', err);
-            }
+                if(todayResult.success) { const total = todayResult.data.total_generated||0; document.getElementById('todayGeneratedCount').textContent = total; document.getElementById('todayGeneratedBadge').textContent = `今日: ${total}`; }
+            } catch(err) {}
         }
-        
-        async function deleteMessage(id) {
-            if (!confirm('确定要删除此消息吗？')) return;
-            try {
-                await apiRequest(`${API_BASE}/message/${id}`, { method: 'DELETE' });
-                UTILS.showToast('删除成功', 'success');
-                loadAllMessages();
-                updateStats();
-            } catch (err) {
-                UTILS.showToast('删除失败: ' + err.message, 'error');
-            }
-        }
-        
-        async function clearAllMessages() {
-            if (!confirm('⚠️ 确定要清空所有消息吗？此操作不可恢复！')) return;
-            try {
-                await apiRequest(`${API_BASE}/clear`, { method: 'DELETE' });
-                UTILS.showToast('已清空所有消息', 'success');
-                loadAllMessages();
-                updateStats();
-            } catch (err) {
-                UTILS.showToast('清空失败: ' + err.message, 'error');
-            }
-        }
-        
-        function renderPagination(type) {
-            const paginationDiv = document.getElementById('allMessagesPagination');
-            if (totalPages <= 1) {
-                paginationDiv.innerHTML = '';
-                return;
-            }
-            
-            let html = '';
-            html += `<button class="page-btn" onclick="changePage(${currentPage - 1}, 'all')" ${currentPage === 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
-            for (let i = 1; i <= Math.min(totalPages, 5); i++) {
-                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i}, 'all')">${i}</button>`;
-            }
-            if (totalPages > 5) html += `<button class="page-btn" disabled>...</button>`;
-            html += `<button class="page-btn" onclick="changePage(${currentPage + 1}, 'all')" ${currentPage === totalPages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
-            paginationDiv.innerHTML = html;
-        }
-        
-        function renderHistoryPagination() {
-            const paginationDiv = document.getElementById('historyPagination');
-            if (historyTotalPages <= 1) {
-                paginationDiv.innerHTML = '';
-                return;
-            }
-            
-            let html = '';
-            html += `<button class="page-btn" onclick="changeHistoryPage(${historyPage - 1})" ${historyPage === 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
-            for (let i = 1; i <= Math.min(historyTotalPages, 5); i++) {
-                html += `<button class="page-btn ${i === historyPage ? 'active' : ''}" onclick="changeHistoryPage(${i})">${i}</button>`;
-            }
-            if (historyTotalPages > 5) html += `<button class="page-btn" disabled>...</button>`;
-            html += `<button class="page-btn" onclick="changeHistoryPage(${historyPage + 1})" ${historyPage === historyTotalPages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
-            paginationDiv.innerHTML = html;
-        }
-        
-        function changePage(page, type) {
-            if (type === 'all') {
-                currentPage = page;
-                loadAllMessages();
-            }
-        }
-        
-        function changeHistoryPage(page) {
-            historyPage = page;
-            loadGenerationHistory();
-        }
-        
-        // ==================== 初始化 ====================
+        async function deleteMessage(id) { if(!confirm('确定删除？')) return; await apiRequest(`${API_BASE}/message/${id}`,{method:'DELETE'}); UTILS.showToast('删除成功'); loadAllMessages(); updateStats(); }
+        async function clearAllMessages() { if(!confirm('⚠️ 确定清空所有消息？不可恢复！')) return; await apiRequest(`${API_BASE}/clear`,{method:'DELETE'}); UTILS.showToast('已清空'); loadAllMessages(); updateStats(); }
+        function renderPagination() { const div = document.getElementById('allMessagesPagination'); if(totalPages<=1) { div.innerHTML=''; return; } let html = `<button class="page-btn" onclick="changePage(${currentPage-1})" ${currentPage===1?'disabled':''}><i class="fas fa-chevron-left"></i></button>`; for(let i=1;i<=Math.min(totalPages,5);i++) html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="changePage(${i})">${i}</button>`; if(totalPages>5) html += `<button class="page-btn" disabled>...</button>`; html += `<button class="page-btn" onclick="changePage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}><i class="fas fa-chevron-right"></i></button>`; div.innerHTML = html; }
+        function renderHistoryPagination() { const div = document.getElementById('historyPagination'); if(historyTotalPages<=1) { div.innerHTML=''; return; } let html = `<button class="page-btn" onclick="changeHistoryPage(${historyPage-1})" ${historyPage===1?'disabled':''}><i class="fas fa-chevron-left"></i></button>`; for(let i=1;i<=Math.min(historyTotalPages,5);i++) html += `<button class="page-btn ${i===historyPage?'active':''}" onclick="changeHistoryPage(${i})">${i}</button>`; if(historyTotalPages>5) html += `<button class="page-btn" disabled>...</button>`; html += `<button class="page-btn" onclick="changeHistoryPage(${historyPage+1})" ${historyPage===historyTotalPages?'disabled':''}><i class="fas fa-chevron-right"></i></button>`; div.innerHTML = html; }
+        function changePage(page) { currentPage = page; loadAllMessages(); }
+        function changeHistoryPage(page) { historyPage = page; loadGenerationHistory(); }
+        async function saveConfig() { try { await apiRequest(`${API_BASE}/config`, { method:'POST', body: JSON.stringify({}) }); } catch(err) {} }
+
+        // 初始化
         async function init() {
-            console.log('📊 动态管理控制器 V2 - 本地比赛池版本');
-            
-            // 加载侧边栏
-            fetch('/admin/components/sidebar.html')
-                .then(res => res.text())
-                .then(html => {
-                    document.getElementById('sidebar-container').innerHTML = html;
-                })
-                .catch(err => console.error('加载侧边栏失败:', err));
-            
-            const storedAdmin = localStorage.getItem('admin_name');
-            if (storedAdmin) document.getElementById('adminName').textContent = storedAdmin;
-            
-            // 加载数据
-            
-            await loadMatchSelector();
-            await renderMatchesList();
-            await loadAllMessages();
-            await loadGenerationHistory();
-            await updateStats();
-            
-            // 事件绑定
-            
+            fetch('/admin/components/sidebar.html').then(res=>res.text()).then(html=>{ document.getElementById('sidebar-container').innerHTML=html; }).catch(err=>console.error(err));
+            const storedAdmin = localStorage.getItem('admin_name'); if(storedAdmin) document.getElementById('adminName').textContent = storedAdmin;
+            await loadMatchSelector(); await renderMatchesList(); await loadAllMessages(); await loadGenerationHistory(); await updateStats();
             document.getElementById('previewBtn').addEventListener('click', previewMessages);
             document.getElementById('publishBtn').addEventListener('click', publishMessages);
             document.getElementById('selectAllBtn').addEventListener('click', selectAllPreview);
             document.getElementById('deselectAllBtn').addEventListener('click', deselectAllPreview);
             document.getElementById('clearAllBtn').addEventListener('click', clearAllMessages);
-            document.getElementById('refreshMessagesBtn').addEventListener('click', () => {
-                currentPage = 1;
-                loadAllMessages();
-            });
-            document.getElementById('addMatchBtn').addEventListener('click', () => {
-                window.location.href = '/admin/matches.html';
-            });
-            
-            const filterType = document.getElementById('filterType');
-            const searchMessage = document.getElementById('searchMessage');
-            if (filterType) filterType.addEventListener('change', () => { currentPage = 1; loadAllMessages(); });
-            if (searchMessage) searchMessage.addEventListener('input', () => { currentPage = 1; loadAllMessages(); });
-            
-            // 标签页切换
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const tab = this.dataset.tab;
-                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-                    this.classList.add('active');
-                    document.getElementById(tab + 'Tab').classList.add('active');
-                    if (tab === 'all') loadAllMessages();
-                    if (tab === 'history') loadGenerationHistory();
-                    if (tab === 'matches') renderMatchesList();
-                });
-            });
-            
-            // 退出登录
-            document.getElementById('logoutBtn').addEventListener('click', () => {
-                localStorage.removeItem('admin_token');
-                localStorage.removeItem('admin_name');
-                window.location.href = '/admin/index.html';
-            });
+            document.getElementById('refreshMessagesBtn').addEventListener('click', () => { currentPage=1; loadAllMessages(); });
+            document.getElementById('addMatchBtn').addEventListener('click', () => window.location.href='/admin/matches.html');
+            document.getElementById('filterType').addEventListener('change', () => { currentPage=1; loadAllMessages(); });
+            document.getElementById('searchMessage').addEventListener('input', () => { currentPage=1; loadAllMessages(); });
+            document.querySelectorAll('.tab-btn').forEach(btn => { btn.addEventListener('click', function() { const tab=this.dataset.tab; document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active')); this.classList.add('active'); document.getElementById(tab+'Tab').classList.add('active'); if(tab==='all') loadAllMessages(); if(tab==='history') loadGenerationHistory(); if(tab==='matches') renderMatchesList(); }); });
+            document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.removeItem('admin_token'); localStorage.removeItem('admin_name'); window.location.href='/admin/index.html'; });
         }
-        
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
-        } else {
-            init();
-        }
-        
-        // 导出全局函数
-        window.deleteMessage = deleteMessage;
-        window.deleteMatch = deleteMatch;
-        window.changePage = changePage;
-        window.changeHistoryPage = changeHistoryPage;
+        if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init); else init();
+        window.deleteMessage = deleteMessage; window.deleteMatch = deleteMatch; window.changePage = changePage; window.changeHistoryPage = changeHistoryPage;
     </script>
 </body>
 </html>

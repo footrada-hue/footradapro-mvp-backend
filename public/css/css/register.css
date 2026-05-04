@@ -1,0 +1,782 @@
+/**
+ * FOOTRADAPRO - 注册页面样式
+ * @file /css/register.css
+ * @version 7.0.0
+ * 全新設計：現代、高級、專業
+ * 右上角純文字按鈕，無圖標，大小完全一致
+ */
+
+/* ==================== 設計令牌 ==================== */
+:root {
+    --accent: #FF6B00;
+    --accent-hover: #F05A00;
+    --accent-soft: rgba(255, 107, 0, 0.1);
+    --accent-rgb: 255, 107, 0;
+    --success: #10B981;
+    --error: #EF4444;
+    
+    --bg: #FFFFFF;
+    --bg-secondary: #F8F9FC;
+    --bg-card: #FFFFFF;
+    --text-primary: #1A1F36;
+    --text-secondary: #5A6A7E;
+    --text-tertiary: #8A99AA;
+    --border: #E9EDF2;
+    --shadow-focus: 0 0 0 3px rgba(255, 107, 0, 0.15);
+    
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-full: 9999px;
+    
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    --transition: all 0.2s ease;
+}
+
+[data-theme="dark"] {
+    --bg: #0A0C12;
+    --bg-secondary: #11141C;
+    --bg-card: #11141C;
+    --text-primary: #EDEDF0;
+    --text-secondary: #9CA3AF;
+    --text-tertiary: #6B7280;
+    --border: #1F242F;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text-primary);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease;
+}
+
+/* ==================== 主容器 ==================== */
+.auth-container {
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+    padding: 24px;
+    position: relative;
+}
+
+/* ==================== 品牌區域 ==================== */
+.brand-section {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+.brand-icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, var(--accent) 0%, #FF8A3C 100%);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    box-shadow: 0 12px 24px rgba(255, 107, 0, 0.25);
+}
+
+.brand-icon i {
+    font-size: 32px;
+    color: white;
+}
+
+.brand-logo {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    text-decoration: none;
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+
+[data-theme="dark"] .brand-logo {
+    background: linear-gradient(135deg, #FFFFFF 0%, var(--accent) 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.brand-tagline {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-top: 12px;
+    letter-spacing: 0.3px;
+}
+
+/* ==================== 右上角設置欄 ==================== */
+.settings-bar {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 1000;
+}
+
+@media (max-width: 480px) {
+    .settings-bar {
+        top: 12px;
+        right: 12px;
+        gap: 8px;
+    }
+}
+
+/* 主題切換按鈕組 */
+.theme-switcher {
+    display: flex;
+    align-items: center;
+    background: #F8F9FC;
+    border: 1px solid #E9EDF2;
+    border-radius: 40px;
+    padding: 4px;
+    height: 40px;
+    box-sizing: border-box;
+}
+
+[data-theme="dark"] .theme-switcher {
+    background: #11141C;
+    border-color: #1F242F;
+}
+
+.theme-btn {
+    padding: 0 14px;
+    height: 32px;
+    font-size: 13px;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    border-radius: 32px;
+    color: #8A99AA;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+    line-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+[data-theme="dark"] .theme-btn {
+    color: #9CA3AF;
+}
+
+.theme-btn:hover {
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.theme-btn.active {
+    background: var(--accent);
+    color: white;
+}
+
+/* 語言切換按鈕 - 與主題切換組完全一致 */
+.lang-switcher {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.lang-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 4px 14px;
+    height: 40px;
+    background: #F8F9FC;
+    border: 1px solid #E9EDF2;
+    border-radius: 40px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #8A99AA;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+    line-height: 1;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+[data-theme="dark"] .lang-btn {
+    background: #11141C;
+    border-color: #1F242F;
+    color: #9CA3AF;
+}
+
+.lang-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--bg);
+}
+
+.lang-btn .fa-chevron-down {
+    font-size: 10px;
+    transition: transform 0.2s;
+}
+
+.lang-switcher.open .lang-btn .fa-chevron-down {
+    transform: rotate(180deg);
+}
+
+.lang-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 100px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all 0.2s;
+    z-index: 101;
+    overflow: hidden;
+}
+
+[data-theme="dark"] .lang-dropdown {
+    background: #11141C;
+    border-color: #1F242F;
+}
+
+.lang-switcher.open .lang-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.lang-option {
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.2s;
+    text-align: center;
+}
+
+[data-theme="dark"] .lang-option {
+    color: #9CA3AF;
+}
+
+.lang-option:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.lang-option.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 500;
+}
+
+/* ==================== 步驟切換 ==================== */
+.step {
+    display: none;
+}
+
+.step.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==================== 標題區域 ==================== */
+.header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.8px;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+.header p {
+    font-size: 15px;
+    color: var(--text-secondary);
+}
+
+/* ==================== 表單 ==================== */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.form-input {
+    width: 100%;
+    height: 52px;
+    padding: 0 16px;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 16px;
+    color: var(--text-primary);
+    transition: var(--transition);
+    outline: none;
+}
+
+.form-input:focus {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-focus);
+}
+
+.form-input::placeholder {
+    color: var(--text-tertiary);
+}
+
+.helper-text {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-top: 8px;
+}
+
+/* ==================== 驗證碼輸入 ==================== */
+.code-inputs {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin: 24px 0;
+}
+
+.code-digit {
+    width: 56px;
+    height: 64px;
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-family: monospace;
+    transition: var(--transition);
+    outline: none;
+}
+
+.code-digit:focus {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-focus);
+}
+
+@media (max-width: 480px) {
+    .code-digit {
+        width: 48px;
+        height: 56px;
+        font-size: 24px;
+    }
+    .code-inputs {
+        gap: 8px;
+    }
+}
+
+/* ==================== 按鈕 ==================== */
+.btn-primary {
+    width: 100%;
+    height: 52px;
+    background: var(--accent);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-top: 8px;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.secondary-link {
+    text-align: center;
+    margin-top: 24px;
+}
+
+.secondary-link a {
+    color: var(--text-tertiary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.secondary-link a:hover {
+    color: var(--accent);
+}
+
+/* ==================== 密碼規則 ==================== */
+.password-requirements {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+}
+
+.requirement-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+}
+
+.requirement-item:last-child {
+    margin-bottom: 0;
+}
+
+.requirement-item.valid {
+    color: var(--success);
+}
+
+.requirement-item i {
+    width: 14px;
+    font-size: 12px;
+}
+
+.strength-meter {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.strength-bar {
+    height: 4px;
+    flex: 1;
+    background: var(--border);
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.strength-bar.active {
+    background: var(--accent);
+}
+
+.strength-text {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+}
+
+/* ==================== 複選框 ==================== */
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0;
+}
+
+.checkbox-group input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.checkbox-group label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.checkbox-group a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.checkbox-group a:hover {
+    text-decoration: underline;
+}
+
+/* ==================== 模態框 ==================== */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+}
+
+.modal.active {
+    display: flex;
+    animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    border-radius: 24px;
+    padding: 32px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.2);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-content h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.modal-content p {
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+}
+
+.success-icon {
+    width: 64px;
+    height: 64px;
+    background: rgba(16, 185, 129, 0.12);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    color: var(--success);
+    font-size: 32px;
+}
+
+.trust-list {
+    text-align: left;
+    margin: 24px 0;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+}
+
+.trust-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.trust-item i {
+    color: var(--accent);
+    width: 20px;
+}
+
+.auto-redirect {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-top: 16px;
+}
+
+.auto-redirect span {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* ==================== Toast 通知 ==================== */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.toast {
+    padding: 12px 20px;
+    background: var(--bg-card);
+    border-radius: 40px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border);
+    animation: slideInRight 0.3s ease;
+}
+
+.toast-success {
+    border-left: 3px solid var(--success);
+    color: var(--success);
+}
+
+.toast-error {
+    border-left: 3px solid var(--error);
+    color: var(--error);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ==================== 加載動畫 ==================== */
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ==================== 響應式設計 ==================== */
+@media (max-width: 480px) {
+    .auth-container {
+        padding: 16px;
+    }
+    
+    .brand-logo {
+        font-size: 28px;
+    }
+    
+    .header h1 {
+        font-size: 28px;
+    }
+    
+    .modal-content {
+        padding: 24px;
+    }
+    
+    .modal-content h2 {
+        font-size: 20px;
+    }
+    
+    .theme-switcher {
+        height: 36px;
+        padding: 3px;
+    }
+    
+    .theme-btn {
+        padding: 0 10px;
+        height: 30px;
+        line-height: 30px;
+        font-size: 12px;
+    }
+    
+    .lang-btn {
+        padding: 3px 10px;
+        height: 36px;
+        font-size: 12px;
+    }
+    
+    .settings-bar {
+        gap: 8px;
+    }
+}
+
+/* ==================== 無障礙支援 ==================== */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ==================== 列印樣式 ==================== */
+@media print {
+    .settings-bar,
+    .modal,
+    .toast-container {
+        display: none;
+    }
+    
+    .auth-container {
+        max-width: 100%;
+        padding: 0;
+    }
+}

@@ -1,0 +1,33 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body {
+  background: var(--bg-body);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+a {
+  text-decoration: none;
+  color: inherit;
+}
+button, input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+}
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+img, svg {
+  display: block;
+  max-width: 100%;
+}

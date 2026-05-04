@@ -201,37 +201,61 @@ router.post('/submit', async (req, res) => {
 
         db.prepare(insertAuthSql).run(...insertAuthParams);
 
-        // 6. 根據模式扣除相應的餘額
-        const oldBalance = isTestMode ? (user.test_balance || 10000) : user.balance;
-        const newBalance = oldBalance - amount;
+// 6. 根據模式扣除相應的餘額
+const oldBalance = isTestMode ? (user.test_balance || 10000) : user.balance;
+const newBalance = oldBalance - amount;
+
+if (isTestMode) {
+    // 測試模式：扣測試資金
+    db.prepare(`UPDATE users SET test_balance = ? WHERE id = ?`).run(newBalance, userId);
+    
+    // ✅ 增強版：記錄測試資金變動（帶錯誤處理）
+    try {
+        db.prepare(`
+            INSERT INTO test_balance_logs (
+                user_id, amount, balance_before, balance_after, 
+                type, reference_id, match_id, description, created_at
+            ) VALUES (?, ?, ?, ?, 'authorize', ?, ?, ?, datetime('now', 'utc'))
+        `).run(
+            userId, 
+            -amount, 
+            oldBalance, 
+            newBalance,
+            null,
+            match.match_id,
+            `Authorization for match: ${match.home_team} vs ${match.away_team}`
+        );
+    } catch (logErr) {
+        console.error('❌ 写入 test_balance_logs 失败:', logErr);
+        // 不影响主流程，但记录错误以便排查
+    }
+} else {
+    // 真實模式：扣真實資金
+    db.prepare(`UPDATE users SET balance = ? WHERE id = ?`).run(newBalance, userId);
+    
+    // ✅ 增強版：記錄真實資金變動（帶錯誤處理）
+    try {
+        const balanceLogColumns = db.prepare("PRAGMA table_info(balance_logs)").all().map(col => col.name);
+        const reason = `Authorization for match: ${match.home_team} vs ${match.away_team}`;
         
-        if (isTestMode) {
-            // 測試模式：扣測試資金
+        if (balanceLogColumns.includes('balance_before') && balanceLogColumns.includes('balance_after')) {
             db.prepare(`
-                UPDATE users SET test_balance = ? WHERE id = ?
-            `).run(newBalance, userId);
-            
-            // 記錄測試資金變動
-            db.prepare(`
-                INSERT INTO test_balance_logs (
+                INSERT INTO balance_logs (
                     user_id, amount, balance_before, balance_after, 
-                    type, reference_id, match_id, description, created_at
-                ) VALUES (?, ?, ?, ?, 'authorize', ?, ?, ?, datetime('now', 'utc'))
-            `).run(
-                userId, 
-                -amount, 
-                oldBalance, 
-                newBalance,
-                null, // reference_id 暫無
-                match.match_id,
-                `Authorization for match: ${match.home_team} vs ${match.away_team}`
-            );
+                    type, reason, created_at
+                ) VALUES (?, ?, ?, ?, 'authorization', ?, datetime('now', 'utc'))
+            `).run(userId, -amount, oldBalance, newBalance, reason);
         } else {
-            // 真實模式：扣真實資金
             db.prepare(`
-                UPDATE users SET balance = ? WHERE id = ?
-            `).run(newBalance, userId);
+                INSERT INTO balance_logs (
+                    user_id, amount, type, reason, created_at
+                ) VALUES (?, ?, 'authorization', ?, datetime('now', 'utc'))
+            `).run(userId, -amount, reason);
         }
+    } catch (logErr) {
+        console.error('❌ 写入 balance_logs 失败:', logErr);
+    }
+}
 
         // 7. 記錄餘額變動（僅真實模式需要）
         if (!isTestMode) {
@@ -379,25 +403,27 @@ router.get('/list', (req, res) => {
 
         // 根據模式過濾授權記錄
 const authorizations = db.prepare(`
-    SELECT 
-        a.id,
-        a.auth_id,
-        a.amount,
-        a.profit,
-        a.status,
-        a.created_at,
-        a.is_test,
-        m.home_team,
-        m.away_team,
-        m.league,
-        m.match_time,
-        m.home_score,
-        m.away_score
-    FROM authorizations a
-    LEFT JOIN matches m ON a.match_id = m.match_id
-    WHERE a.user_id = ? AND a.is_test = ? ${statusCondition}
-    ORDER BY a.created_at DESC
-    LIMIT ? OFFSET ?
+SELECT 
+    a.id,
+    a.auth_id,
+    a.amount,
+    a.profit,
+    a.status,
+    a.created_at,
+    a.is_test,
+    m.home_team,
+    m.away_team,
+    m.home_logo,     -- 👈 添加这行
+    m.away_logo,     -- 👈 添加这行
+    m.league,
+    m.match_time,
+    m.home_score,
+    m.away_score
+FROM authorizations a
+LEFT JOIN matches m ON a.match_id = m.match_id
+WHERE a.user_id = ? AND a.is_test = ? ${statusCondition}
+ORDER BY a.created_at DESC
+LIMIT ? OFFSET ?
 `).all(userId, isTestValue, limit, offset);
 
         // 獲取總數（也要加 status 條件）
@@ -436,6 +462,7 @@ const authorizations = db.prepare(`
 });
 
 // ==================== 獲取單次授權詳情 ====================
+// ==================== 獲取單次授權詳情 ====================
 router.get('/:authId', (req, res) => {
     const { authId } = req.params;
     const userId = req.session.userId;
@@ -447,6 +474,8 @@ router.get('/:authId', (req, res) => {
                 a.*,
                 m.home_team,
                 m.away_team,
+                m.home_logo,
+                m.away_logo,
                 m.league,
                 m.match_time,
                 m.execution_rate as match_execution_rate

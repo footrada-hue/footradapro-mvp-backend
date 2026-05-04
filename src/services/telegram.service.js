@@ -58,10 +58,13 @@ class TelegramService {
         const userInfo = userEmail ? `\n📧 Email: ${userEmail}` : '';
         const appUrl = process.env.APP_URL || 'http://localhost:3000';
         
+        // 确保 userName 不为空
+        const displayName = userName && userName !== '' && userName !== 'User' ? userName : (userEmail ? userEmail.split('@')[0] : 'User');
+        
         return `
 🔔 <b>New Customer Message</b>
 
-👤 <b>User:</b> ${this.escapeHtml(userName)}${userInfo}
+👤 <b>User:</b> ${this.escapeHtml(displayName)}${userInfo}
 💬 <b>Message:</b> ${this.escapeHtml(message.substring(0, 200))}${message.length > 200 ? '...' : ''}${countryFlag}
 🆔 <b>Conversation ID:</b> ${convId}
 ⏰ <b>Time:</b> ${new Date().toLocaleString()}
@@ -73,9 +76,18 @@ class TelegramService {
     async notifyNewMessage(user, message, convId, country = null) {
         if (!this.isEnabled) return false;
         
+        // 获取用户名：优先使用传入的 username，其次使用 email 前缀
+        let userName = user?.username || 'User';
+        const userEmail = user?.email;
+        
+        // 如果 userName 是默认值但有 email，使用 email 前缀
+        if ((userName === 'User' || !userName) && userEmail && userEmail !== '') {
+            userName = userEmail.split('@')[0];
+        }
+        
         const notification = this.formatNewMessageNotification(
-            user.username || 'User',
-            user.email,
+            userName,
+            userEmail,
             message,
             convId,
             country
@@ -95,7 +107,8 @@ class TelegramService {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
     }
-        /**
+    
+    /**
      * 发送充值申请通知（用户提交充值后）
      */
     async notifyDepositRequest(user, amount, network, screenshotPath = null, txid = null) {
@@ -108,7 +121,7 @@ class TelegramService {
         const message = `
 💰 #充值申请 - 待审核
 
-👤 用户: ${this.escapeHtml(user.username || 'User')}
+👤 用户: ${this.escapeHtml(user.username || user.email?.split('@')[0] || 'User')}
 📧 邮箱: ${this.escapeHtml(user.email || '未设置')}
 🆔 UID: ${user.uid || user.id}
 💵 金额: ${amount} USDT
@@ -120,7 +133,8 @@ class TelegramService {
         
         return await this.sendToAdmins(message);
     }
-        /**
+    
+    /**
      * 发送提现申请通知（用户提交提现后）
      */
     async notifyWithdrawRequest(user, amount, address, network, txid = null) {
@@ -132,7 +146,7 @@ class TelegramService {
         const message = `
 💸 #提现申请 - 待审核
 
-👤 用户: ${this.escapeHtml(user.username || 'User')}
+👤 用户: ${this.escapeHtml(user.username || user.email?.split('@')[0] || 'User')}
 📧 邮箱: ${this.escapeHtml(user.email || '未设置')}
 🆔 UID: ${user.uid || user.id}
 💵 金额: ${amount} USDT
@@ -159,7 +173,7 @@ class TelegramService {
         const message = `
 ✅ #提现完成
 
-👤 用户: ${this.escapeHtml(user.username || 'User')}
+👤 用户: ${this.escapeHtml(user.username || user.email?.split('@')[0] || 'User')}
 📧 邮箱: ${this.escapeHtml(user.email || '未设置')}
 🆔 UID: ${user.uid || user.id}
 💵 金额: ${amount} USDT
@@ -185,7 +199,7 @@ class TelegramService {
         const message = `
 ❌ #提现驳回
 
-👤 用户: ${this.escapeHtml(user.username || 'User')}
+👤 用户: ${this.escapeHtml(user.username || user.email?.split('@')[0] || 'User')}
 📧 邮箱: ${this.escapeHtml(user.email || '未设置')}
 🆔 UID: ${user.uid || user.id}
 💵 金额: ${amount} USDT

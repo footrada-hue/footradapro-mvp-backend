@@ -2,24 +2,534 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>网络地址管理 - FOOTRADAPRO 后台</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- 全局配置 -->
+    <!-- 全局配置 - 保留原有引用 -->
     <script src="/js/core/config.js"></script>
     <script src="/js/core/timezone.js"></script>
     <script src="/js/admin/admin_auth_guard.js"></script>
     
-    <!-- 样式文件 -->
-    <link rel="stylesheet" href="/css/admin-base.css">
-    <link rel="stylesheet" href="/css/admin-nav.css">
-    <link rel="stylesheet" href="/css/admin-network-addresses.css">
+    <style>
+        /* ============================================
+           世界級後台管理系統 - 网络地址管理頁面
+           深色主題 | 玻璃態效果 | 響應式佈局
+        ============================================ */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --primary-light: #60A5FA;
+            --secondary: #8B5CF6;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --info: #06B6D4;
+            --dark-bg: #0A0F1C;
+            --card-bg: rgba(18, 28, 44, 0.75);
+            --border-glow: rgba(59, 130, 246, 0.25);
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at 20% 30%, #0B1120, #050814);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1E293B;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ========= 側邊欄 ========= */
+        .admin-sidebar {
+            width: 280px;
+            background: rgba(10, 18, 32, 0.85);
+            backdrop-filter: blur(16px);
+            border-right: 1px solid var(--border-glow);
+            box-shadow: 8px 0 32px rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 20;
+        }
+
+        .admin-sidebar::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .admin-sidebar-logo {
+            padding: 28px 24px;
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFFFFF, var(--primary-light), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            border-bottom: 1px solid var(--border-glow);
+            margin-bottom: 20px;
+        }
+        .admin-sidebar-logo span {
+            color: var(--primary);
+            background: none;
+        }
+
+        .admin-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 0 16px 20px 16px;
+        }
+        .admin-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .admin-nav-item i {
+            width: 24px;
+            font-size: 1.2rem;
+        }
+        .admin-nav-item:hover {
+            background: rgba(59, 130, 246, 0.15);
+            color: white;
+            transform: translateX(4px);
+        }
+        .admin-nav-item.active {
+            background: linear-gradient(95deg, rgba(59,130,246,0.2), rgba(139,92,246,0.1));
+            color: white;
+            border-left: 3px solid var(--primary);
+        }
+        
+        .unread-badge {
+            margin-left: auto;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: var(--warning);
+            color: white;
+        }
+
+        /* ========= 主內容區域 ========= */
+        .admin-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .admin-header {
+            background: rgba(10, 18, 32, 0.7);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-glow);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 15;
+        }
+        .admin-header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(120deg, #F1F5F9, var(--primary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .admin-header h1 i {
+            color: var(--primary);
+            margin-right: 12px;
+        }
+        .admin-user {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(255,255,255,0.04);
+            padding: 6px 18px;
+            border-radius: 60px;
+        }
+        #adminName {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .icon-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .admin-content {
+            padding: 28px 32px;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* ========= 地址表單卡片 ========= */
+        .address-form {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 24px;
+            border: 1px solid var(--border-glow);
+            padding: 28px;
+            margin-bottom: 28px;
+        }
+
+        /* 網絡標籤頁 */
+        .network-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 28px;
+            border-bottom: 1px solid var(--border-glow);
+            padding-bottom: 0;
+        }
+        .network-tab {
+            background: transparent;
+            border: none;
+            padding: 12px 24px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 12px 12px 0 0;
+            position: relative;
+        }
+        .network-tab i {
+            margin-right: 8px;
+        }
+        .network-tab:hover {
+            color: var(--primary);
+            background: rgba(59, 130, 246, 0.1);
+        }
+        .network-tab.active {
+            color: var(--primary);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        /* 表單樣式 */
+        .form-group {
+            margin-bottom: 24px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+        .form-group label i {
+            margin-right: 8px;
+            color: var(--primary);
+        }
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            color: white;
+            font-size: 0.9rem;
+            font-family: 'Inter', monospace;
+            transition: all 0.2s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+        textarea {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            color: white;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            resize: vertical;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        select {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            color: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* 地址預覽 */
+        .address-preview {
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            word-break: break-all;
+            border: 1px dashed var(--border-glow);
+        }
+
+        /* 保存按鈕 */
+        .btn-save {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            border-radius: 14px;
+            padding: 14px 28px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            justify-content: center;
+        }
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.35);
+        }
+
+        /* ========= 當前配置列表 ========= */
+        .current-configs {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 24px;
+            border: 1px solid var(--border-glow);
+            padding: 24px;
+        }
+        .current-configs h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-glow);
+        }
+        .current-configs h3 i {
+            color: var(--primary);
+        }
+
+        /* 配置卡片網格 */
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+        }
+        .config-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.2s;
+        }
+        .config-card:hover {
+            border-color: var(--border-glow);
+        }
+        .config-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.4);
+        }
+        .config-network {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(59, 130, 246, 0.15);
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--primary-light);
+        }
+        .config-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .config-status.active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10B981;
+        }
+        .config-status.inactive {
+            background: rgba(239, 68, 68, 0.2);
+            color: #EF4444;
+        }
+        .config-address {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            word-break: break-all;
+            margin-bottom: 12px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+        .config-note {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+        .config-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        .config-actions button {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 6px 12px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .config-actions button.edit:hover {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+        .config-actions button.delete:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: #EF4444;
+            border-color: #EF4444;
+        }
+
+        /* 加載狀態 */
+        .loading {
+            text-align: center;
+            padding: 48px;
+            color: var(--text-secondary);
+        }
+        .loading i {
+            font-size: 2rem;
+            margin-bottom: 12px;
+            display: block;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: var(--text-secondary);
+        }
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* ========= 響應式 ========= */
+        @media (max-width: 768px) {
+            .admin-layout {
+                flex-direction: column;
+            }
+            .admin-sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            .admin-nav {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .admin-nav-item {
+                flex: 0 0 auto;
+            }
+            .admin-content {
+                padding: 20px;
+            }
+            .admin-header h1 {
+                font-size: 1.2rem;
+            }
+            .network-tabs {
+                flex-wrap: wrap;
+            }
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .address-form, .current-configs {
+            animation: fadeSlideUp 0.4s ease forwards;
+        }
+    </style>
 </head>
 <body>
     <div class="admin-layout">
-        <!-- 侧边栏容器 - 动态加载 -->
+        <!-- 側邊導航欄 -->
         <aside class="admin-sidebar" id="sidebar-container"></aside>
         
         <script>
@@ -28,7 +538,6 @@
                 .then(res => res.text())
                 .then(html => {
                     document.getElementById('sidebar-container').innerHTML = html;
-                    // 高亮当前菜单
                     const currentPath = window.location.pathname;
                     setTimeout(() => {
                         document.querySelectorAll('.admin-nav-item').forEach(link => {
@@ -41,7 +550,6 @@
                 .catch(err => console.error('加载侧边栏失败:', err));
         </script>
         
-        <!-- 主内容区域 -->
         <main class="admin-main">
             <header class="admin-header">
                 <h1>
@@ -57,7 +565,6 @@
             </header>
             
             <div class="admin-content">
-                <!-- 地址表单 -->
                 <div class="address-form">
                     <div class="network-tabs" id="networkTabs">
                         <button class="network-tab active" data-network="TRC20">
@@ -77,7 +584,7 @@
                         <div class="form-group">
                             <label>
                                 <i class="fas fa-qrcode"></i> 充值地址 
-                                <span style="color: #ef4444;">*</span>
+                                <span style="color: var(--danger);">*</span>
                             </label>
                             <input type="text" id="address" class="form-input" 
                                    placeholder="请输入充值地址" autocomplete="off">
@@ -110,7 +617,6 @@
                     </form>
                 </div>
                 
-                <!-- 当前配置列表 -->
                 <div class="current-configs">
                     <h3>
                         <i class="fas fa-list"></i> 
@@ -127,7 +633,6 @@
         </main>
     </div>
     
-    <!-- 页面逻辑脚本 -->
     <script src="/js/admin/network-addresses.js"></script>
     
     <script>
@@ -146,6 +651,12 @@
                     window.location.href = '/admin/index.html';
                 }
             });
+        }
+
+        // 显示管理员名称
+        const storedAdmin = localStorage.getItem('admin_name');
+        if (storedAdmin) {
+            document.getElementById('adminName').textContent = storedAdmin;
         }
     </script>
 </body>

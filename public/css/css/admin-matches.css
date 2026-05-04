@@ -1,0 +1,781 @@
+/* ===== 比賽管理專屬樣式 ===== */
+
+/* 操作欄 */
+.action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.action-bar-left {
+    display: flex;
+    gap: 12px;
+}
+
+.action-bar-right {
+    display: flex;
+    align-items: center;
+}
+
+/* 時間篩選欄 */
+.time-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius-xl);
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border-gold);
+    flex-wrap: wrap;
+}
+
+.filter-label {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.time-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.time-btn {
+    padding: 6px 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-gold);
+    border-radius: var(--radius-full);
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.time-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.time-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+.sort-buttons {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.sort-btn {
+    padding: 6px 14px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-gold);
+    border-radius: var(--radius-full);
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sort-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.sort-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+/* 搜索篩選欄 */
+.search-filter-bar {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.search-box {
+    flex: 2;
+    min-width: 280px;
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-tertiary);
+}
+
+.search-box input {
+    width: 100%;
+    padding: 12px 12px 12px 42px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-strong);
+    border-radius: 40px;
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.filter-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-select {
+    padding: 12px 20px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-strong);
+    border-radius: 40px;
+    color: var(--text-primary);
+    font-size: 14px;
+    cursor: pointer;
+    min-width: 120px;
+    transition: all 0.2s;
+}
+
+.filter-select:hover {
+    border-color: var(--accent);
+}
+
+/* 批量操作欄 */
+.bulk-bar {
+    background: var(--glass-bg);
+    backdrop-filter: blur(8px);
+    border-radius: var(--radius-lg);
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    border: 1px solid var(--border-gold);
+}
+
+.bulk-bar .title {
+    color: var(--text-tertiary);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bulk-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.selection-info {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-left: auto;
+}
+
+.selection-info span {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* 表格容器 - 支持橫向滾動 */
+.table-container {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-gold);
+    overflow-x: auto;
+    overflow-y: visible;
+    margin-bottom: 24px;
+    box-shadow: var(--glass-shadow);
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 表格 - 最小寬度確保內容完整顯示 */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+.admin-table th {
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-gold);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.admin-table td {
+    padding: 16px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-gold);
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.admin-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* 比賽名稱列 - 允許換行 */
+.admin-table td:first-child,
+.admin-table th:first-child {
+    position: sticky;
+    left: 0;
+    background: inherit;
+    z-index: 1;
+}
+
+.admin-table td:nth-child(2),
+.admin-table th:nth-child(2) {
+    min-width: 180px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* 比賽預覽區 */
+.match-info-preview {
+    background: var(--accent-light);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.match-info-preview .teams {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.match-info-preview .vs {
+    color: var(--accent);
+    margin: 0 12px;
+}
+
+.match-info-preview .time {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+/* 執行比例預設按鈕 */
+.rate-presets {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.rate-presets button {
+    padding: 6px 14px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-gold);
+    border-radius: var(--radius-full);
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.rate-presets button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.slider-container input {
+    flex: 1;
+}
+
+.rate-value {
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 16px;
+    min-width: 50px;
+    text-align: center;
+}
+
+/* ==================== 響應式 - 手機端完美適配 ==================== */
+
+/* 平板 (768px - 1024px) */
+@media (max-width: 1024px) {
+    .admin-table {
+        min-width: 800px;
+    }
+    
+    .admin-table th,
+    .admin-table td {
+        padding: 12px;
+        font-size: 13px;
+    }
+    
+    .filter-select {
+        min-width: 100px;
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+}
+
+/* 手機 (小於768px) */
+@media (max-width: 768px) {
+    /* 整體間距縮小 */
+    .admin-content {
+        padding: 12px;
+    }
+    
+    /* 操作欄 */
+    .action-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    
+    .action-bar-left {
+        justify-content: center;
+    }
+    
+    .btn-primary, .btn-secondary {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+    
+    /* 時間篩選欄 - 手機優化 */
+    .time-filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 12px 16px;
+        gap: 12px;
+    }
+    
+    .filter-label {
+        font-size: 12px;
+    }
+    
+    .time-buttons {
+        justify-content: space-between;
+        gap: 6px;
+    }
+    
+    .time-btn {
+        flex: 1;
+        text-align: center;
+        padding: 8px 0;
+        font-size: 12px;
+    }
+    
+    .sort-buttons {
+        margin-left: 0;
+        justify-content: space-between;
+    }
+    
+    .sort-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 8px 0;
+        font-size: 11px;
+    }
+    
+    /* 搜索篩選欄 */
+    .search-filter-bar {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .search-box {
+        min-width: 100%;
+        width: 100%;
+    }
+    
+    .search-box input {
+        padding: 10px 12px 10px 38px;
+        font-size: 13px;
+    }
+    
+    .filter-group {
+        width: 100%;
+        gap: 8px;
+    }
+    
+    .filter-select {
+        flex: 1;
+        min-width: 0;
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    
+    /* 批量操作欄 */
+    .bulk-bar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 12px 16px;
+        gap: 12px;
+    }
+    
+    .bulk-actions {
+        justify-content: space-between;
+    }
+    
+    .bulk-actions .action-btn {
+        flex: 1;
+        text-align: center;
+        justify-content: center;
+        padding: 8px 4px;
+        font-size: 11px;
+    }
+    
+    .selection-info {
+        margin-left: 0;
+        text-align: center;
+        font-size: 12px;
+    }
+    
+    /* 表格容器 - 確保可以橫向滾動 */
+    .table-container {
+        border-radius: var(--radius-lg);
+        margin-bottom: 16px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* 表格 - 手機端寬度適中，可滾動 */
+    .admin-table {
+        min-width: 680px;
+    }
+    
+    .admin-table th,
+    .admin-table td {
+        padding: 10px 12px;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+    
+    /* 比賽名稱列允許換行 */
+    .admin-table td:nth-child(2),
+    .admin-table th:nth-child(2) {
+        white-space: normal;
+        min-width: 140px;
+        max-width: 180px;
+    }
+    
+    .admin-table th {
+        font-size: 11px;
+    }
+    
+    /* 顯示滾動提示 */
+    .table-container::after {
+        content: '← 左右滑動查看更多 →';
+        display: block;
+        text-align: center;
+        padding: 8px;
+        font-size: 10px;
+        color: var(--text-tertiary);
+        background: rgba(0, 0, 0, 0.3);
+        border-top: 1px solid var(--border-gold);
+    }
+    
+    /* 狀態標籤 */
+    .status-badge {
+        padding: 2px 8px;
+        font-size: 10px;
+        white-space: nowrap;
+    }
+    
+    /* 開關按鈕 */
+    .toggle-switch {
+        width: 44px;
+        height: 22px;
+    }
+    
+    .toggle-slider:before {
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        bottom: 3px;
+    }
+    
+    input:checked + .toggle-slider:before {
+        transform: translateX(22px);
+    }
+    
+    /* 操作按鈕 */
+    .action-buttons {
+        display: flex;
+        flex-direction: row;
+        gap: 6px;
+    }
+    
+    .action-btn-sm {
+        padding: 4px 8px;
+        font-size: 10px;
+        white-space: nowrap;
+    }
+    
+    /* 分頁 */
+    .pagination {
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .page-btn {
+        min-width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+}
+
+/* 小屏手機 (小於480px) */
+@media (max-width: 480px) {
+    .admin-content {
+        padding: 8px;
+    }
+    
+    /* 表格 */
+    .admin-table {
+        min-width: 620px;
+    }
+    
+    .admin-table th,
+    .admin-table td {
+        padding: 8px 10px;
+        font-size: 11px;
+    }
+    
+    .admin-table td:nth-child(2),
+    .admin-table th:nth-child(2) {
+        min-width: 120px;
+    }
+    
+    /* 時間按鈕 */
+    .time-buttons {
+        flex-wrap: wrap;
+    }
+    
+    .time-btn {
+        flex: calc(25% - 6px);
+        font-size: 11px;
+        padding: 6px 0;
+    }
+    
+    /* 篩選下拉框 */
+    .filter-group {
+        flex-wrap: wrap;
+    }
+    
+    .filter-select {
+        flex: calc(33.33% - 6px);
+        min-width: 0;
+        font-size: 11px;
+        padding: 6px 8px;
+    }
+    
+    /* 批量操作按鈕 */
+    .bulk-actions {
+        flex-wrap: wrap;
+    }
+    
+    .bulk-actions .action-btn {
+        flex: calc(33.33% - 6px);
+        font-size: 10px;
+        padding: 6px 4px;
+    }
+    
+    /* 聯賽標籤 */
+    .league-tag {
+        padding: 2px 6px;
+        font-size: 10px;
+        white-space: nowrap;
+    }
+    
+    /* 執行比例 */
+    .rate-badge {
+        padding: 2px 6px;
+        font-size: 10px;
+        white-space: nowrap;
+    }
+    
+    /* 分頁 */
+    .page-btn {
+        min-width: 28px;
+        height: 28px;
+        font-size: 11px;
+    }
+    
+    /* 滾動提示文字縮小 */
+    .table-container::after {
+        font-size: 9px;
+        padding: 6px;
+    }
+}
+
+/* 超小屏手機 (小於380px) */
+@media (max-width: 380px) {
+    /* 表格 */
+    .admin-table {
+        min-width: 560px;
+    }
+    
+    .admin-table th,
+    .admin-table td {
+        padding: 6px 8px;
+        font-size: 10px;
+    }
+    
+    .admin-table td:nth-child(2),
+    .admin-table th:nth-child(2) {
+        min-width: 100px;
+    }
+    
+    /* 時間按鈕 */
+    .time-btn {
+        font-size: 10px;
+        padding: 5px 0;
+    }
+    
+    /* 篩選下拉框 */
+    .filter-select {
+        font-size: 10px;
+        padding: 5px 6px;
+    }
+    
+    /* 批量操作按鈕 */
+    .bulk-actions .action-btn {
+        font-size: 9px;
+        padding: 5px 2px;
+    }
+    
+    /* 開關按鈕 */
+    .toggle-switch {
+        width: 40px;
+        height: 20px;
+    }
+    
+    .toggle-slider:before {
+        height: 14px;
+        width: 14px;
+        left: 3px;
+        bottom: 3px;
+    }
+    
+    input:checked + .toggle-slider:before {
+        transform: translateX(20px);
+    }
+}
+
+/* 橫屏模式優化 */
+@media (max-width: 768px) and (orientation: landscape) {
+    .admin-content {
+        padding: 12px;
+    }
+    
+    .time-filter-bar {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .time-buttons {
+        flex: 1;
+    }
+    
+    .sort-buttons {
+        width: auto;
+    }
+    
+    .search-filter-bar {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .search-box {
+        flex: 2;
+    }
+    
+    .filter-group {
+        flex: 1;
+    }
+    
+    .bulk-bar {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .bulk-actions {
+        flex: 1;
+    }
+    
+    .selection-info {
+        margin-left: auto;
+    }
+    
+    /* 橫屏時移除滾動提示 */
+    .table-container::after {
+        display: none;
+    }
+}
+
+/* 安全區域適配 (全面屏) */
+@supports (padding: max(0px)) {
+    .admin-content {
+        padding-left: max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+    }
+}
+
+/* 自定義滾動條 */
+.table-container::-webkit-scrollbar {
+    height: 6px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: var(--border-gold);
+    border-radius: 3px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 3px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-light);
+}

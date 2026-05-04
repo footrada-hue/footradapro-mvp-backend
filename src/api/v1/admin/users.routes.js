@@ -3,6 +3,7 @@ import { getDb } from '../../../database/connection.js';
 import { adminAuth } from '../../../middlewares/admin.middleware.js';
 import { hasPermission, logAdminAction } from '../../../middlewares/permission.middleware.js';
 import logger from '../../../utils/logger.js';
+import bcrypt from 'bcrypt';
 
 const router = express.Router();
 
@@ -10,7 +11,6 @@ const router = express.Router();
 router.use(adminAuth);
 
 // ==================== 获取所有用户列表 ====================
-// 需要 users.view 权限
 router.get('/', hasPermission('users.view'), (req, res) => {
     const db = getDb();
     
@@ -33,9 +33,61 @@ router.get('/', hasPermission('users.view'), (req, res) => {
         res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
     }
 });
-
+// ==================== 获取最近注册用户（用于仪表盘）====================
+/**
+ * GET /api/v1/admin/users/recent
+ * 功能：获取最近注册的用户列表，用于仪表盘显示
+ * 权限：users.view
+ * 参数：limit (可选，默认5)
+ */
+router.get('/recent', hasPermission('users.view'), (req, res) => {
+    const db = getDb();
+    const limit = Math.min(parseInt(req.query.limit) || 5, 50); // 最大50条
+    
+    try {
+        const users = db.prepare(`
+            SELECT 
+                id,
+                uid,
+                username,
+                balance,
+                vip_level,
+                status,
+                is_test_mode,
+                created_at
+            FROM users 
+            ORDER BY created_at DESC 
+            LIMIT ?
+        `).all(limit);
+        
+        // 格式化返回数据
+        const formattedUsers = users.map(user => ({
+            id: user.id,
+            uid: user.uid,
+            username: user.username,
+            balance: user.balance || 0,
+            vip_level: user.vip_level || 0,
+            status: user.status || 'active',
+            is_test_mode: user.is_test_mode === 1,
+            created_at: user.created_at
+        }));
+        
+        res.json({
+            success: true,
+            data: formattedUsers,
+            total: formattedUsers.length
+        });
+        
+    } catch (error) {
+        logger.error('获取最近用户失败:', error);
+        res.status(500).json({
+            success: false,
+            error: 'INTERNAL_ERROR',
+            message: 'Failed to fetch recent users'
+        });
+    }
+});
 // ==================== 获取单个用户详情 ====================
-// 需要 users.detail 权限
 router.get('/:userId', hasPermission('users.detail'), (req, res) => {
     const { userId } = req.params;
     const db = getDb();
@@ -47,13 +99,23 @@ router.get('/:userId', hasPermission('users.detail'), (req, res) => {
                 is_new_user, has_claimed_bonus, completed_steps,
                 is_test_mode, is_mode_locked, account_status, first_deposit_at,
                 bonus_claimed_at, created_at, updated_at,
-                last_login_at, last_active_at
+                last_login_at, last_active_at,
+                password
             FROM users 
             WHERE id = ?
         `).get(userId);
         
         if (!user) {
             return res.status(404).json({ success: false, error: 'USER_NOT_FOUND' });
+        }
+        
+        // 檢查支付密碼是否設置
+        let hasPayPassword = false;
+        try {
+            const payResult = db.prepare('SELECT paypassword FROM users WHERE id = ?').get(userId);
+            hasPayPassword = payResult && payResult.paypassword && payResult.paypassword !== '';
+        } catch (err) {
+            hasPayPassword = false;
         }
         
         const authorizations = db.prepare(`
@@ -83,7 +145,11 @@ router.get('/:userId', hasPermission('users.detail'), (req, res) => {
         res.json({
             success: true,
             data: {
-                user,
+                user: {
+                    ...user,
+                    password: user.password ? '********' : null,
+                    has_paypassword: hasPayPassword
+                },
                 authorizations,
                 balanceLogs
             }
@@ -95,13 +161,9 @@ router.get('/:userId', hasPermission('users.detail'), (req, res) => {
 });
 
 // ==================== 切换用户模式（测试/主网）====================
-// 重要：切换到主网时自动锁定模式，用户无法再切回测试
-// 切换到测试时自动解锁，用户可自由切换
 router.post('/:userId/toggle-mode', hasPermission('users.toggle_mode'), (req, res) => {
     const { userId } = req.params;
-    const { mode } = req.body; // 'test' 或 'live'
-    
-    console.log(`=== 管理员切换用户模式: ${userId} -> ${mode} ===`);
+    const { mode } = req.body;
     
     const db = getDb();
     
@@ -128,9 +190,6 @@ router.post('/:userId/toggle-mode', hasPermission('users.toggle_mode'), (req, re
         
         const isTestMode = mode === 'test' ? 1 : 0;
         const accountStatus = mode === 'test' ? 'test' : 'live';
-        
-        // 核心逻辑：切换到主网时自动锁定模式，切换到测试时解锁
-        // 这样用户一旦切换到主网，就不能再切回测试模式
         const newLockStatus = mode === 'live' ? 1 : 0;
         
         const result = db.prepare(`
@@ -162,8 +221,6 @@ router.post('/:userId/toggle-mode', hasPermission('users.toggle_mode'), (req, re
             ? `用户已切换到主网模式并锁定，无法再切回测试模式` 
             : `用户已切换到测试模式并解锁，可自由切换`;
         
-        console.log(`✅ 用户模式切换成功: ${user.uid} -> ${mode}${mode === 'live' ? ' (已自动锁定)' : ' (已解锁)'}`);
-        
         res.json({ 
             success: true, 
             message: message,
@@ -185,10 +242,9 @@ router.post('/:userId/toggle-mode', hasPermission('users.toggle_mode'), (req, re
 });
 
 // ==================== 手动锁定/解锁用户模式 ====================
-// 用于管理员手动控制用户是否可切换模式
 router.post('/:userId/toggle-mode-lock', hasPermission('users.toggle_mode'), (req, res) => {
     const { userId } = req.params;
-    const { locked } = req.body; // true 锁定, false 解锁
+    const { locked } = req.body;
     
     if (locked === undefined) {
         return res.status(400).json({ 
@@ -230,7 +286,6 @@ router.post('/:userId/toggle-mode-lock', hasPermission('users.toggle_mode'), (re
         }, 'user', user.id);
         
         const actionText = locked ? '锁定' : '解锁';
-        console.log(`${locked ? '🔒 手动锁定' : '🔓 手动解锁'}用户模式: ${user.uid}`);
         
         res.json({ 
             success: true, 
@@ -294,7 +349,6 @@ router.post('/bulk/switch-to-live', hasPermission('users.bulk_toggle'), (req, re
     try {
         const placeholders = userIds.map(() => '?').join(',');
         
-        // 批量切换到主网，并自动锁定模式
         const result = db.prepare(`
             UPDATE users 
             SET is_test_mode = 0,
@@ -389,6 +443,212 @@ router.post('/:userId/toggle', hasPermission('users.toggle'), (req, res) => {
         res.json({ success: true, status: newStatus });
     } catch (error) {
         logger.error('切换用户状态失败:', error);
+        res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
+    }
+});
+
+// ==================== 重置用户登录密码 ====================
+router.post('/:userId/reset-password', hasPermission('users.edit'), async (req, res) => {
+    const { userId } = req.params;
+    const db = getDb();
+    
+    try {
+        const user = db.prepare('SELECT id, username FROM users WHERE id = ?').get(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'USER_NOT_FOUND' });
+        }
+        
+        const generateRandomPassword = () => {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+            let password = '';
+            for (let i = 0; i < 10; i++) {
+                password += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return password;
+        };
+        
+        const newPassword = generateRandomPassword();
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+        
+        db.prepare('UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+            .run(hashedPassword, userId);
+        
+        logAdminAction(req, 'reset_user_password', {
+            userId: user.id,
+            username: user.username
+        }, 'user', userId);
+        
+        res.json({
+            success: true,
+            message: '密码已重置',
+            data: {
+                new_password: newPassword,
+                username: user.username
+            }
+        });
+        
+    } catch (error) {
+        logger.error('重置用户密码失败:', error);
+        res.status(500).json({ success: false, error: 'INTERNAL_ERROR', message: error.message });
+    }
+});
+
+// ==================== 重置用户支付密码 ====================
+router.post('/:userId/reset-paypassword', hasPermission('users.edit'), async (req, res) => {
+    const { userId } = req.params;
+    const db = getDb();
+    
+    try {
+        const user = db.prepare('SELECT id, username FROM users WHERE id = ?').get(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'USER_NOT_FOUND' });
+        }
+        
+        const generateRandomPayPassword = () => {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        };
+        
+        const newPayPassword = generateRandomPayPassword();
+        const saltRounds = 10;
+        const hashedPayPassword = await bcrypt.hash(newPayPassword, saltRounds);
+        
+        try {
+            db.prepare('UPDATE users SET paypassword = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+                .run(hashedPayPassword, userId);
+        } catch (err) {
+            if (err.message.includes('no such column')) {
+                db.exec('ALTER TABLE users ADD COLUMN paypassword TEXT');
+                db.prepare('UPDATE users SET paypassword = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+                    .run(hashedPayPassword, userId);
+            } else {
+                throw err;
+            }
+        }
+        
+        logAdminAction(req, 'reset_user_paypassword', {
+            userId: user.id,
+            username: user.username
+        }, 'user', userId);
+        
+        res.json({
+            success: true,
+            message: '支付密码已重置',
+            data: {
+                new_paypassword: newPayPassword,
+                username: user.username
+            }
+        });
+        
+    } catch (error) {
+        logger.error('重置用户支付密码失败:', error);
+        res.status(500).json({ success: false, error: 'INTERNAL_ERROR', message: error.message });
+    }
+});
+
+// ==================== 获取用户授权记录（按模式区分）====================
+router.get('/:userId/authorizations', hasPermission('users.detail'), (req, res) => {
+    const { userId } = req.params;
+    const { mode, limit = 50 } = req.query;
+    const db = getDb();
+    
+    try {
+        const user = db.prepare('SELECT id, username, is_test_mode FROM users WHERE id = ?').get(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'USER_NOT_FOUND' });
+        }
+        
+        let query = `
+            SELECT 
+                a.id,
+                a.auth_id,
+                a.match_id,
+                a.amount,
+                a.status,
+                a.created_at,
+                a.settled_at,
+                a.profit,
+                a.user_profit,
+                a.platform_fee,
+                a.profit_rate,
+                m.home_team,
+                m.away_team,
+                m.league,
+                m.match_time
+            FROM authorizations a
+            LEFT JOIN matches m ON a.match_id = m.match_id
+            WHERE a.user_id = ?
+        `;
+        
+        const params = [userId];
+        
+        if (mode === 'test') {
+            query += ` AND a.is_test = 1`;
+        } else if (mode === 'live') {
+            query += ` AND (a.is_test = 0 OR a.is_test IS NULL)`;
+        }
+        
+        query += ` ORDER BY a.created_at DESC LIMIT ?`;
+        params.push(parseInt(limit) || 50);
+        
+        const authorizations = db.prepare(query).all(...params);
+        
+        const formattedAuths = authorizations.map(auth => ({
+            id: auth.id,
+            auth_id: auth.auth_id,
+            match_name: auth.home_team && auth.away_team ? `${auth.home_team} vs ${auth.away_team}` : auth.match_id,
+            league: auth.league,
+            amount: auth.amount,
+            status: auth.status,
+            status_text: auth.status === 'pending' ? '進行中' : auth.status === 'settled' ? '已結算' : '已過期',
+            created_at: auth.created_at,
+            settled_at: auth.settled_at,
+            profit: auth.profit || 0,
+            profit_rate: auth.profit_rate || 0,
+            is_profitable: (auth.profit || 0) > 0
+        }));
+        
+        res.json({
+            success: true,
+            data: {
+                user_id: userId,
+                username: user.username,
+                mode: mode === 'test' ? '测试模式' : '真实模式',
+                authorizations: formattedAuths,
+                total: formattedAuths.length
+            }
+        });
+        
+    } catch (error) {
+        logger.error('获取用户授权记录失败:', error);
+        res.status(500).json({ success: false, error: 'INTERNAL_ERROR', message: error.message });
+    }
+});
+
+// ==================== 检查用户是否设置了支付密码 ====================
+router.get('/:userId/has-paypassword', hasPermission('users.detail'), (req, res) => {
+    const { userId } = req.params;
+    const db = getDb();
+    
+    try {
+        let hasPayPassword = false;
+        
+        try {
+            const result = db.prepare('SELECT paypassword FROM users WHERE id = ?').get(userId);
+            hasPayPassword = result && result.paypassword && result.paypassword !== '';
+        } catch (err) {
+            hasPayPassword = false;
+        }
+        
+        res.json({
+            success: true,
+            data: {
+                has_paypassword: hasPayPassword
+            }
+        });
+        
+    } catch (error) {
+        logger.error('检查支付密码失败:', error);
         res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
     }
 });

@@ -234,5 +234,88 @@ router.get('/activities', (req, res) => {
         });
     }
 });
+// 5. 图表数据 API - 按日期统计授权金额和盈亏
+router.get('/chart', (req, res) => {
+    const userId = req.session.userId;
+    const { mode, days = 30 } = req.query; // mode: 'test'/'live', days: 7/30/90/365
+    const db = getDb();
 
+    try {
+        // 获取用户的测试模式状态
+        const user = db.prepare('SELECT is_test_mode FROM users WHERE id = ?').get(userId);
+        const currentUserMode = user?.is_test_mode || false;
+        
+        // 确定要查询的模式
+        const queryMode = mode !== undefined ? (mode === 'test') : currentUserMode;
+        const isTestValue = queryMode ? 1 : 0;
+        
+        const daysNum = parseInt(days) || 30;
+        
+        // 生成日期数组
+        const labels = [];
+        const authorizedData = [];
+        const profitData = [];
+        
+        for (let i = daysNum - 1; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+            
+            // 格式化显示标签
+            let label = '';
+            if (daysNum <= 7) {
+                // 1D 或 1W: 显示 MM/DD
+                label = `${month}/${day}`;
+            } else if (daysNum <= 31) {
+                // 1M: 显示 MM/DD
+                label = `${month}/${day}`;
+            } else if (daysNum <= 93) {
+                // 3M: 显示 MM/DD
+                label = `${month}/${day}`;
+            } else {
+                // 1Y: 显示 MM
+                label = `${month}月`;
+            }
+            labels.push(label);
+            
+            // 查询当日授权金额
+            const auth = db.prepare(`
+                SELECT COALESCE(SUM(amount), 0) as total
+                FROM authorizations
+                WHERE user_id = ? AND is_test = ? AND date(created_at) = ?
+            `).get(userId, isTestValue, dateStr);
+            authorizedData.push(auth.total || 0);
+            
+            // 查询当日盈亏
+            const profit = db.prepare(`
+                SELECT COALESCE(SUM(profit), 0) as total
+                FROM settlements
+                WHERE user_id = ? AND is_test = ? AND date(settled_at) = ?
+            `).get(userId, isTestValue, dateStr);
+            profitData.push(profit.total || 0);
+        }
+        
+        logger.info(`用户 ${userId} 获取图表数据 [${queryMode ? '测试' : '真实'}]: ${daysNum}天`);
+
+        res.json({
+            success: true,
+            data: {
+                labels: labels,
+                authorized: authorizedData,
+                profit: profitData,
+                mode: queryMode ? 'test' : 'live',
+                days: daysNum
+            }
+        });
+    } catch (error) {
+        logger.error('图表数据API错误:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'INTERNAL_ERROR' 
+        });
+    }
+});
 export default router;

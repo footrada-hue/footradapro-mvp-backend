@@ -1,167 +1,560 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FOOTRADAPRO · Sign in to your account</title>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <meta name="csrf-token" content="{{csrfToken}}">
-    <link rel="stylesheet" href="/css/login.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Sign In · FootRadaPro</title>
+  <meta name="description" content="Sign in to your FootRadaPro account">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 32px;
+      --space-8: 40px;
+      
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-base: 1rem;
+      --font-md: 1.125rem;
+      --font-lg: 1.25rem;
+      --font-xl: 1.5rem;
+      --font-2xl: 2rem;
+      --font-3xl: 2.5rem;
+      
+      --radius-sm: 12px;
+      --radius-md: 16px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --radius-2xl: 28px;
+      --radius-full: 9999px;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-fast: 0.15s;
+      --duration-base: 0.24s;
+    }
+
+    :root {
+      --bg-gradient-start: rgba(248, 250, 252, 0.95);
+      --bg-gradient-end: rgba(255, 255, 255, 0.98);
+      --glass-bg: rgba(255, 255, 255, 0.7);
+      --glass-border: rgba(0, 0, 0, 0.06);
+      --glass-shadow: 0 1px 2px rgba(0,0,0,0.02), 0 8px 24px rgba(0,0,0,0.03);
+      --glass-shadow-hover: 0 2px 4px rgba(0,0,0,0.02), 0 16px 32px -12px rgba(0,0,0,0.08);
+      --accent: #0066FF;
+      --accent-glow: rgba(0,102,255,0.1);
+      --accent-gradient: linear-gradient(135deg, #0066FF, #0052CC);
+      --success: #00A86B;
+      --warning: #F5A623;
+      --danger: #FF3B30;
+      --text-primary: #1A1A2E;
+      --text-secondary: #4A4A6A;
+      --text-muted: #8A8AAE;
+      --border-light: rgba(0,0,0,0.06);
+      --card-bg: rgba(255,255,255,0.85);
+      --ticker-bg: #0066FF;
+      --badge-soft: rgba(0,102,255,0.06);
+      --input-bg: #F7F9FC;
+    }
+
+    body.dark {
+      --bg-gradient-start: rgba(10, 16, 30, 0.98);
+      --bg-gradient-end: rgba(2, 6, 18, 0.99);
+      --glass-bg: rgba(20, 28, 44, 0.7);
+      --glass-border: rgba(255,255,255,0.06);
+      --glass-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.25);
+      --glass-shadow-hover: 0 2px 4px rgba(0,0,0,0.2), 0 16px 32px -12px rgba(0,0,0,0.4);
+      --accent: #3B82F6;
+      --accent-glow: rgba(59,130,246,0.15);
+      --accent-gradient: linear-gradient(135deg, #3B82F6, #8B5CF6);
+      --success: #34D399;
+      --warning: #FBBF24;
+      --danger: #F87171;
+      --text-primary: #F1F5F9;
+      --text-secondary: #CBD5E1;
+      --text-muted: #94A3B8;
+      --card-bg: rgba(20,28,44,0.7);
+      --badge-soft: rgba(59,130,246,0.12);
+      --input-bg: #1E293B;
+    }
+
+    body {
+      background: radial-gradient(ellipse at 30% 40%, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    body::before {
+      content: ''; position: fixed; top:0; left:0; width:100%; height:100%;
+      background-image: radial-gradient(circle at 20% 30%, rgba(0,102,255,0.02) 0%, transparent 50%);
+      pointer-events: none; z-index:0;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--border-light); border-radius: var(--radius-full); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: var(--radius-full); }
+
+    .login-container {
+      position: relative; z-index:1; width: 100%; max-width: 480px; margin: var(--space-6);
+    }
+
+    .logo-area {
+      text-align: center; margin-bottom: var(--space-7);
+    }
+    .logo-icon {
+      width: 64px; height: 64px; background: var(--accent-gradient); border-radius: var(--radius-xl);
+      display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-4);
+    }
+    .logo-icon i { font-size: 32px; color: white; }
+    .logo-area h1 {
+      font-size: var(--font-2xl); font-weight: 700; background: var(--accent-gradient);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .logo-area p { color: var(--text-muted); font-size: var(--font-sm); margin-top: var(--space-2); }
+
+    .login-card {
+      background: var(--card-bg); backdrop-filter: blur(24px); border-radius: var(--radius-2xl);
+      border: 1px solid var(--glass-border); padding: var(--space-7);
+      box-shadow: var(--glass-shadow);
+    }
+
+    .form-group {
+      margin-bottom: var(--space-5);
+    }
+    .input-label {
+      display: block; font-size: var(--font-sm); font-weight: 500; margin-bottom: var(--space-2);
+      color: var(--text-secondary);
+    }
+    .input-wrapper {
+      position: relative; display: flex; align-items: center;
+    }
+    .input-wrapper input {
+      width: 100%; padding: 14px 48px 14px 18px; background: var(--input-bg);
+      border: 1px solid var(--glass-border); border-radius: var(--radius-xl);
+      color: var(--text-primary); font-size: var(--font-base);
+      transition: all var(--duration-fast); font-family: inherit;
+    }
+    .input-wrapper input:focus {
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .input-wrapper input:disabled { opacity: 0.6; cursor: not-allowed; }
+    .toggle-password {
+      position: absolute; right: 16px; background: none; border: none;
+      color: var(--text-muted); cursor: pointer; font-size: 18px;
+      transition: color var(--duration-fast);
+    }
+    .toggle-password:hover { color: var(--accent); }
+
+    .error-message {
+      font-size: var(--font-xs); color: var(--danger); margin-top: var(--space-2);
+      display: flex; align-items: center; gap: var(--space-2);
+    }
+    .error-message i { font-size: 12px; }
+
+    .options-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: var(--space-6); font-size: var(--font-sm);
+    }
+    .checkbox-label {
+      display: flex; align-items: center; gap: var(--space-2); cursor: pointer;
+      color: var(--text-secondary);
+    }
+    .checkbox-label input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+    .forgot-link { color: var(--accent); text-decoration: none; transition: opacity var(--duration-fast); }
+    .forgot-link:hover { opacity: 0.8; }
+
+    .login-btn {
+      width: 100%; padding: 14px; border-radius: var(--radius-full); background: var(--accent-gradient);
+      color: white; font-weight: 700; font-size: var(--font-base); border: none; cursor: pointer;
+      transition: all var(--duration-fast); display: flex; align-items: center; justify-content: center; gap: var(--space-2);
+    }
+    .login-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px var(--accent-glow); }
+    .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .register-link {
+      text-align: center; margin-top: var(--space-6); padding-top: var(--space-5);
+      border-top: 1px solid var(--border-light); color: var(--text-secondary);
+      font-size: var(--font-sm);
+    }
+    .register-link a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .register-link a:hover { text-decoration: underline; }
+
+    .spinner {
+      width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .theme-toggle {
+      position: fixed; top: 20px; right: 20px; width: 40px; height: 40px;
+      background: var(--card-bg); backdrop-filter: blur(12px); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      border: 1px solid var(--glass-border); transition: all var(--duration-fast);
+      z-index: 100;
+    }
+    .theme-toggle:hover { transform: scale(1.05); background: var(--badge-soft); }
+    .theme-toggle i { font-size: 18px; color: var(--text-secondary); }
+
+    @media (max-width: 560px) {
+      .login-container { margin: var(--space-4); }
+      .login-card { padding: var(--space-5); }
+      .logo-area { margin-bottom: var(--space-5); }
+      .logo-icon { width: 52px; height: 52px; }
+      .logo-icon i { font-size: 26px; }
+      .logo-area h1 { font-size: var(--font-xl); }
+    }
+  </style>
 </head>
 <body>
-    <div class="auth-container">
-        <!-- 品牌區域 -->
-        <div class="brand">
-            <a href="/" class="brand-logo">FOOTRADA</a>
+<div class="theme-toggle" id="themeToggle">
+  <i class="fa-regular fa-moon"></i>
+</div>
+
+<div class="login-container">
+  <div class="logo-area">
+    <div class="logo-icon"><i class="fas fa-futbol"></i></div>
+    <h1>FootRadaPro</h1>
+    <p data-i18n="login.subtitle">Sign in to your account</p>
+  </div>
+
+  <div class="login-card">
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="input-label" data-i18n="login.email">Email</label>
+        <div class="input-wrapper">
+          <input type="email" id="email" placeholder="Enter your email address" autocomplete="email">
         </div>
-
-        <!-- 右上角設置欄 -->
-        <div class="settings-bar">
-            <!-- 主題切換按鈕組 -->
-            <div class="btn-group">
-                <button class="btn-option" data-theme="light">Light</button>
-                <button class="btn-option" data-theme="auto">Auto</button>
-                <button class="btn-option" data-theme="dark">Dark</button>
-            </div>
-            
-            <!-- 語言切換按鈕組 -->
-            <div class="btn-group lang-group">
-                <button class="btn-option" id="langBtn">
-                    <span id="currentLang">EN</span> <i class="fas fa-chevron-down"></i>
-                </button>
-                <div class="lang-dropdown" id="langDropdown">
-                    <div class="lang-option" data-lang="en">English</div>
-                    <div class="lang-option" data-lang="zh">中文</div>
-                    <div class="lang-option" data-lang="ms">Melayu</div>
-                </div>
-            </div>
+        <div id="email-error" class="error-message" style="display: none;">
+          <i class="fas fa-exclamation-circle"></i>
+          <span></span>
         </div>
+      </div>
 
-        <!-- 登錄表單 -->
-        <div class="login-card">
-            <div class="header">
-                <h1>Welcome back</h1>
-                <p>Sign in to your account to continue</p>
-            </div>
-
-            <form id="loginForm" novalidate>
-                <div class="form-group">
-                    <label class="form-label">Email address</label>
-                    <input type="email" class="form-input" id="email" name="email" 
-                           placeholder="name@example.com" autocomplete="username">
-                    <div class="error-message" id="email-error"></div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">
-                        <span>Password</span>
-                        <a href="/forgot.html" class="forgot-link">Forgot?</a>
-                    </label>
-                    <div class="password-wrapper">
-                        <input type="password" class="form-input" id="password" name="password" 
-                               placeholder="Enter your password" autocomplete="current-password">
-                        <button type="button" class="password-toggle" id="passwordToggle">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                    <div class="error-message" id="password-error"></div>
-                </div>
-
-                <button type="submit" class="btn-primary" id="loginBtn">
-                    <span>Sign in</span>
-                </button>
-
-                <div class="footer-links">
-                    <span>Don't have an account?</span>
-                    <a href="/register.html">Create account</a>
-                </div>
-            </form>
+      <div class="form-group">
+        <label class="input-label" data-i18n="login.password">Password</label>
+        <div class="input-wrapper">
+          <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
+          <button type="button" class="toggle-password" id="passwordToggle">
+            <i class="fas fa-eye"></i>
+          </button>
         </div>
-    </div>
+        <div id="password-error" class="error-message" style="display: none;">
+          <i class="fas fa-exclamation-circle"></i>
+          <span></span>
+        </div>
+      </div>
 
-    <script>
-    // ==================== 主題切換 ====================
-    (function() {
-        let savedTheme = localStorage.getItem('theme') || 'auto';
-        
-        function setTheme(theme) {
-            if (theme === 'auto') {
-                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
-            } else {
-                document.body.setAttribute('data-theme', theme);
-            }
-            localStorage.setItem('theme', theme);
-            
-            document.querySelectorAll('.btn-option[data-theme]').forEach(btn => {
-                if (btn.getAttribute('data-theme') === theme) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
+      <div class="options-row">
+        <label class="checkbox-label">
+          <input type="checkbox" id="rememberMe"> <span data-i18n="login.remember_me">Remember me</span>
+        </label>
+        <a href="/forgot-password.html" class="forgot-link" data-i18n="login.forgot_password">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="login-btn" id="loginBtn" disabled>
+        <i class="fas fa-arrow-right-to-bracket"></i>
+        <span data-i18n="login.sign_in">Sign In</span>
+      </button>
+
+      <div class="register-link">
+        <span data-i18n="login.no_account">Don't have an account?</span> <a href="/register.html" data-i18n="login.create_account">Create account</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ==================== I18N Configuration ====================
+  const I18N_TEXTS = {
+    en: {
+      'login.subtitle': 'Sign in to your account',
+      'login.email': 'Email',
+      'login.password': 'Password',
+      'login.remember_me': 'Remember me',
+      'login.forgot_password': 'Forgot password?',
+      'login.sign_in': 'Sign In',
+      'login.signing_in': 'Signing in...',
+      'login.success': 'Success',
+      'login.no_account': "Don't have an account?",
+      'login.create_account': 'Create account',
+      'error.invalid_email': 'Please enter a valid email address',
+      'error.password_min': 'Password must be at least 6 characters',
+      'error.login_failed': 'Login failed. Please check your credentials',
+      'error.unauthorized': 'Invalid email or password',
+      'error.account_disabled': 'Your account has been disabled. Please contact support.',
+      'error.network': 'Network error. Please try again'
+    },
+    zh: {
+      'login.subtitle': '登录您的账户',
+      'login.email': '邮箱',
+      'login.password': '密码',
+      'login.remember_me': '记住我',
+      'login.forgot_password': '忘记密码？',
+      'login.sign_in': '登录',
+      'login.signing_in': '登录中...',
+      'login.success': '成功',
+      'login.no_account': '还没有账户？',
+      'login.create_account': '创建账户',
+      'error.invalid_email': '请输入有效的邮箱地址',
+      'error.password_min': '密码至少需要6个字符',
+      'error.login_failed': '登录失败，请检查您的账号信息',
+      'error.unauthorized': '邮箱或密码错误',
+      'error.account_disabled': '您的账户已被禁用，请联系客服',
+      'error.network': '网络错误，请稍后重试'
+    }
+  };
+
+  let currentLanguage = localStorage.getItem('language') || 'en';
+
+  function t(key) {
+    const locale = I18N_TEXTS[currentLanguage] || I18N_TEXTS.en;
+    return locale[key] || key;
+  }
+
+  function updateAllTexts() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (key) {
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          el.placeholder = t(key);
+        } else {
+          el.textContent = t(key);
         }
-        
-        document.querySelectorAll('.btn-option[data-theme]').forEach(btn => {
-            btn.addEventListener('click', function() {
-                setTheme(this.getAttribute('data-theme'));
-            });
-        });
-        
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-            if (localStorage.getItem('theme') === 'auto') setTheme('auto');
-        });
-        
-        setTheme(savedTheme);
-    })();
+      }
+    });
+  }
+
+  // ==================== DOM Elements ====================
+  const elements = {
+    loginForm: document.getElementById('loginForm'),
+    emailInput: document.getElementById('email'),
+    passwordInput: document.getElementById('password'),
+    loginBtn: document.getElementById('loginBtn'),
+    passwordToggle: document.getElementById('passwordToggle'),
+    emailError: document.getElementById('email-error'),
+    passwordError: document.getElementById('password-error'),
+    rememberCheck: document.getElementById('rememberMe')
+  };
+
+  // ==================== App State ====================
+  const AppState = {
+    touched: { email: false, password: false },
+    isSubmitting: false
+  };
+
+  // ==================== Theme Management ====================
+  function getThemeMode() { return localStorage.getItem('theme') || 'light'; }
+  function setThemeMode(theme) { localStorage.setItem('theme', theme); updateThemeUI(); }
+
+  function updateThemeUI() {
+    const theme = getThemeMode();
+    const icon = document.querySelector('#themeToggle i');
+    if (theme === 'dark') {
+      document.body.classList.add('dark');
+      icon?.classList.remove('fa-moon');
+      icon?.classList.add('fa-sun');
+    } else {
+      document.body.classList.remove('dark');
+      icon?.classList.remove('fa-sun');
+      icon?.classList.add('fa-moon');
+    }
+  }
+
+  // ==================== Form Validation ====================
+  function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  function validateForm() {
+    const email = elements.emailInput?.value.trim() || '';
+    const password = elements.passwordInput?.value || '';
     
-    // ==================== 語言切換 ====================
-    (function() {
-        const langBtn = document.getElementById('langBtn');
-        const langGroup = document.querySelector('.lang-group');
-        const currentLangSpan = document.getElementById('currentLang');
-        let currentLang = localStorage.getItem('lang') || 'en';
-        const langNames = { en: 'EN', zh: '中文', ms: 'MS' };
-        
-        function setLang(lang) {
-            currentLang = lang;
-            localStorage.setItem('lang', lang);
-            if (currentLangSpan) currentLangSpan.textContent = langNames[lang] || 'EN';
-            document.querySelectorAll('.lang-option').forEach(opt => {
-                if (opt.getAttribute('data-lang') === lang) {
-                    opt.classList.add('active');
-                } else {
-                    opt.classList.remove('active');
-                }
-            });
-            window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang } }));
-        }
-        
-        if (langBtn && langGroup) {
-            langBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                langGroup.classList.toggle('open');
-            });
-        }
-        
-        document.querySelectorAll('.lang-option').forEach(opt => {
-            opt.addEventListener('click', function() {
-                setLang(this.getAttribute('data-lang'));
-                if (langGroup) langGroup.classList.remove('open');
-            });
-        });
-        
-        document.addEventListener('click', function() {
-            if (langGroup) langGroup.classList.remove('open');
-        });
-        
-        setLang(currentLang);
-    })();
-    </script>
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = password.length >= 6;
+    
+    if (elements.loginBtn) {
+      elements.loginBtn.disabled = !(isEmailValid && isPasswordValid);
+    }
+    
+    if (AppState.touched.email && !isEmailValid && email !== '') {
+      elements.emailError.style.display = 'flex';
+      elements.emailError.querySelector('span').textContent = t('error.invalid_email');
+    } else {
+      elements.emailError.style.display = 'none';
+    }
+    
+    if (AppState.touched.password && !isPasswordValid && password !== '') {
+      elements.passwordError.style.display = 'flex';
+      elements.passwordError.querySelector('span').textContent = t('error.password_min');
+    } else {
+      elements.passwordError.style.display = 'none';
+    }
+    
+    return isEmailValid && isPasswordValid;
+  }
 
-    <script src="/js/core/config.js"></script>
-    <script type="module" src="/js/user/login_controller.js"></script>
+function checkRedirect() {
+  const token = localStorage.getItem('footradapro_token') || localStorage.getItem('auth_token');
+  if (token) {
+    window.location.href = '/shell.html?page=home';
+  }
+}
+
+  // ==================== Token Storage ====================
+  function storeToken(token) {
+    if (!token) return;
+    document.cookie = `footradapro_token=${token}; path=/; max-age=604800; SameSite=Lax`;
+    localStorage.setItem('footradapro_token', token);
+    localStorage.setItem('auth_token', token);
+    console.log('[Login] Token stored successfully');
+  }
+
+  // ==================== Login Handler ====================
+  async function handleSubmit(e) {
+    e.preventDefault();
+    
+    if (AppState.isSubmitting) return;
+    
+    AppState.touched.email = true;
+    AppState.touched.password = true;
+    
+    if (!validateForm()) return;
+    
+    const email = elements.emailInput.value.trim();
+    const password = elements.passwordInput.value;
+    const btn = elements.loginBtn;
+    const originalHTML = btn.innerHTML;
+    
+    AppState.isSubmitting = true;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> ${t('login.signing_in')}`;
+    
+    try {
+      const response = await fetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ username: email, password: password }),
+        credentials: 'include'
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        if (result.data?.token) {
+          storeToken(result.data.token);
+        }
+        
+        btn.innerHTML = `<span>✓ ${t('login.success')}</span>`;
+setTimeout(() => {
+  window.location.href = '/shell.html?page=home';
+}, 800);
+      } else {
+        let errorMsg = t('error.login_failed');
+        if (result.error === 'INVALID_CREDENTIALS') {
+          errorMsg = t('error.unauthorized');
+        } else if (result.error === 'ACCOUNT_DISABLED') {
+          errorMsg = t('error.account_disabled');
+        } else if (result.message) {
+          errorMsg = result.message;
+        }
+        throw new Error(errorMsg);
+      }
+    } catch (err) {
+      console.error('[Login] Error:', err);
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
+      elements.passwordError.style.display = 'flex';
+      elements.passwordError.querySelector('span').textContent = err.message;
+    } finally {
+      AppState.isSubmitting = false;
+    }
+  }
+
+  // ==================== Event Bindings ====================
+  function bindEvents() {
+    if (elements.passwordToggle) {
+      elements.passwordToggle.addEventListener('click', () => {
+        const input = elements.passwordInput;
+        if (!input) return;
+        const icon = elements.passwordToggle.querySelector('i');
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        icon.className = isPassword ? 'fas fa-eye-slash' : 'fas fa-eye';
+      });
+    }
+    
+    if (elements.emailInput) {
+      elements.emailInput.addEventListener('blur', () => {
+        AppState.touched.email = true;
+        validateForm();
+      });
+      elements.emailInput.addEventListener('input', validateForm);
+    }
+    
+    if (elements.passwordInput) {
+      elements.passwordInput.addEventListener('blur', () => {
+        AppState.touched.password = true;
+        validateForm();
+      });
+      elements.passwordInput.addEventListener('input', validateForm);
+    }
+    
+    if (elements.loginForm) {
+      elements.loginForm.addEventListener('submit', handleSubmit);
+    }
+    
+    window.addEventListener('languagechange', (e) => {
+      if (e.detail?.language && e.detail.language !== currentLanguage) {
+        currentLanguage = e.detail.language;
+        updateAllTexts();
+        validateForm();
+      }
+    });
+  }
+
+  // ==================== Language Change Listener ====================
+  function initLanguage() {
+    const savedLanguage = localStorage.getItem('language');
+    if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'zh')) {
+      currentLanguage = savedLanguage;
+    }
+    updateAllTexts();
+  }
+
+  // ==================== Initialization ====================
+  function init() {
+    initLanguage();
+    checkRedirect();
+    updateThemeUI();
+    bindEvents();
+    console.log('[Login] Controller initialized (i18n ready)');
+  }
+  
+  document.getElementById('themeToggle')?.addEventListener('click', () => {
+    const newTheme = getThemeMode() === 'dark' ? 'light' : 'dark';
+    setThemeMode(newTheme);
+  });
+  
+  init();
+})();
+</script>
 </body>
 </html>

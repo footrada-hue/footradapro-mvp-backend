@@ -2,8 +2,9 @@
  * Support Chat Module - User Side
  * Fixed: Duplicate message sending issue
  * 
- * @version 3.1.0 - Fixed duplicate message sending
+ * @version 3.2.0 - Fixed duplicate message sending (removed temporary messages)
  */
+console.log('🔥 test - support-chat.js loaded');
 class SupportChat {
     constructor(config = {}) {
         // Core properties
@@ -102,14 +103,17 @@ class SupportChat {
             if (result.success) {
                 this.convId = result.data.conversation.id;
                 this.userId = result.data.conversation.user_id;
-                console.log('[SupportChat] userId set to:', this.userId);  // 添加这行调试
+                console.log('[SupportChat] userId set to:', this.userId);
                 this.renderMessages(result.data.messages);
                 
-this.connectWebSocket();  // 移到最前面
-this.bindEvents();
-this.initEmojiPicker();
-this.startPolling();
-this.startUnreadPolling();
+                // 延迟 300ms 连接 WebSocket，确保所有资源就绪
+                setTimeout(() => {
+                    this.connectWebSocket();
+                }, 300);
+                this.bindEvents();
+                this.initEmojiPicker();
+                this.startPolling();
+                this.startUnreadPolling();
                 
                 console.log('[SupportChat] Initialized successfully, convId:', this.convId);
             } else {
@@ -121,17 +125,18 @@ this.startUnreadPolling();
         }
     }
     
-connectWebSocket() {
-    // 检查 userId 是否已设置
-    if (!this.userId) {
-        console.error('[SupportChat] Cannot connect WebSocket: userId not set');
-        return;
-    }
-    
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}`;
-    
-    console.log('[SupportChat] Connecting to WebSocket:', wsUrl);
+    connectWebSocket() {
+        // 如果 userId 还没有，等待一下再试
+        if (!this.userId) {
+            console.log('[SupportChat] Waiting for userId...');
+            setTimeout(() => this.connectWebSocket(), 500);
+            return;
+        }
+        
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}`;
+        
+        console.log('[SupportChat] Connecting to WebSocket:', wsUrl);
         
         this.socket = io(wsUrl, {
             transports: ['websocket', 'polling'],
@@ -202,6 +207,14 @@ connectWebSocket() {
     
     handleNewMessage(message) {
         console.log('[SupportChat] Handling new message:', message);
+        
+        // ========== 关键修复：忽略自己发送的消息 ==========
+        // 如果消息是用户自己发送的，不处理（避免重复显示）
+        if (message.sender_type === 'user') {
+            console.log('[SupportChat] Ignoring own message from WebSocket');
+            return;
+        }
+        // ================================================
         
         if (message.conv_id !== this.convId && message.convId !== this.convId) {
             console.log('[SupportChat] Message for different conversation, ignoring');
@@ -353,10 +366,9 @@ connectWebSocket() {
         this.markMessagesAsRead();
     }
     
-    // ==================== 关键修复：防止重复发送 ====================
+    // ==================== 修复：删除临时消息，只显示服务器返回的消息 ====================
     
     async sendMessage() {
-        // 防止重复发送
         if (this.isSending) {
             console.log('[SupportChat] Already sending, skipping...');
             return;
@@ -366,13 +378,6 @@ connectWebSocket() {
         if (!content && !this.pendingFile) return;
         
         this.isSending = true;
-        
-        if (this.isLoading) {
-            this.showError(this.t('chat.sending'));
-            this.isSending = false;
-            return;
-        }
-        
         this.isLoading = true;
         if (this.sendBtn) this.sendBtn.disabled = true;
         
@@ -399,15 +404,7 @@ connectWebSocket() {
             this.autoResizeTextarea();
         }
         
-        // 先显示消息在界面上（乐观更新）
-        const tempMessage = {
-            id: 'temp_' + Date.now(),
-            ...messageData,
-            isTemp: true
-        };
-        this.appendMessage(tempMessage);
-        
-        // 发送消息
+        // 发送消息，不显示任何临时消息
         if (this.isConnected && this.socket) {
             console.log('[SupportChat] Sending message via WebSocket:', messageData);
             this.socket.emit('send-message', messageData, (response) => {
@@ -416,24 +413,24 @@ connectWebSocket() {
                 if (this.sendBtn) this.sendBtn.disabled = false;
                 
                 if (response && response.success) {
-                    console.log('[SupportChat] Message sent successfully:', response);
-                    this.removeTempMessage(tempMessage.id);
+                    console.log('[SupportChat] Message sent successfully');
+                    // ========== 只显示服务器返回的消息，不显示临时消息 ==========
                     if (response.data) {
                         this.appendMessage(response.data);
                     }
+                    // ========================================================
                 } else {
                     console.error('[SupportChat] Send failed:', response);
                     this.showError(this.t('chat.send_failed'));
+                    // 发送失败，恢复输入框内容
                     if (this.messageInput) {
                         this.messageInput.value = content;
                     }
-                    this.removeTempMessage(tempMessage.id);
                 }
             });
         } else {
-            // 降级到 HTTP
+            // HTTP 降级
             try {
-                console.log('[SupportChat] Sending message via HTTP');
                 const response = await fetch('/api/v1/user/support/message', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -448,17 +445,11 @@ connectWebSocket() {
                 this.isSending = false;
                 if (this.sendBtn) this.sendBtn.disabled = false;
                 
-                if (result.success) {
-                    this.removeTempMessage(tempMessage.id);
-                    if (result.data) {
-                        this.appendMessage(result.data);
-                    }
+                if (result.success && result.data) {
+                    this.appendMessage(result.data);
                 } else {
                     this.showError(this.t('chat.send_failed'));
-                    if (this.messageInput) {
-                        this.messageInput.value = content;
-                    }
-                    this.removeTempMessage(tempMessage.id);
+                    if (this.messageInput) this.messageInput.value = content;
                 }
             } catch (error) {
                 console.error('[SupportChat] Send error:', error);
@@ -466,10 +457,7 @@ connectWebSocket() {
                 this.isSending = false;
                 if (this.sendBtn) this.sendBtn.disabled = false;
                 this.showError(this.t('chat.send_failed'));
-                if (this.messageInput) {
-                    this.messageInput.value = content;
-                }
-                this.removeTempMessage(tempMessage.id);
+                if (this.messageInput) this.messageInput.value = content;
             }
         }
     }
@@ -1391,7 +1379,7 @@ function initSupportChat() {
     if (document.getElementById('messagesContainer') && !supportChatInstance) {
         console.log('[SupportChat] Creating new instance...');
         supportChatInstance = new SupportChat();
-        window.supportChat = supportChatInstance;  // 添加这行
+        window.supportChat = supportChatInstance;
     }
 }
 

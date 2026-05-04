@@ -1,35 +1,868 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>用户管理 - FOOTRADAPRO 后台</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- JS 引用 - 完全保留 -->
     <script src="/js/core/config.js"></script>
     <script src="/js/core/timezone.js"></script>
     <script src="/js/admin/admin_auth_guard.js"></script>
-    <link rel="stylesheet" href="/css/admin-users.css">
+    
+    <style>
+        /* ============================================
+           世界級後台管理系統 - 用戶管理頁面
+           深色主題 | 玻璃態效果 | 響應式佈局
+        ============================================ */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --primary-light: #60A5FA;
+            --secondary: #8B5CF6;
+            --accent: #F59E0B;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F97316;
+            --info: #06B6D4;
+            --dark-bg: #0A0F1C;
+            --card-bg: rgba(18, 28, 44, 0.75);
+            --border-glow: rgba(59, 130, 246, 0.25);
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+        }
+
+        /* ========== 用户详情弹窗样式 ========== */
+.detail-section {
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border-glow);
+    padding-bottom: 16px;
+}
+.detail-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    padding-left: 8px;
+    border-left: 3px solid var(--primary);
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+
+.info-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.info-value {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* 密码区域 */
+.password-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.password-item {
+    flex: 1;
+    min-width: 250px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+}
+
+.password-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.password-status {
+    font-size: 0.85rem;
+    font-family: monospace;
+}
+
+.password-status.set {
+    color: #10b981;
+}
+
+.password-status.not-set {
+    color: #f59e0b;
+}
+
+.btn-reset {
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    padding: 6px 14px;
+    color: var(--primary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: auto;
+}
+
+.btn-reset:hover {
+    background: var(--primary);
+    color: white;
+}
+
+/* 授权记录 Tab */
+.auth-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border-glow);
+    padding-bottom: 8px;
+}
+
+.auth-tab {
+    background: transparent;
+    border: none;
+    padding: 8px 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 20px;
+    transition: all 0.2s;
+}
+
+.auth-tab:hover {
+    color: var(--primary);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.auth-tab.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* 授权记录表格 */
+.auth-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.auth-table th {
+    text-align: left;
+    padding: 10px 8px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border-glow);
+}
+
+.auth-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid rgba(51, 65, 85, 0.3);
+    color: var(--text-primary);
+}
+
+.auth-table tr:hover td {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.profit-positive {
+    color: #10b981;
+}
+
+.profit-neutral {
+    color: var(--text-secondary);
+}
+
+.status-badge.pending {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+}
+
+.status-badge.settled {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+}
+
+.empty-auths, .loading-auth, .error-auth {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+}
+
+.loading-auth i {
+    margin-right: 8px;
+}
+
+.error-auth {
+    color: #ef4444;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .password-item {
+        flex-wrap: wrap;
+    }
+    
+    .btn-reset {
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .auth-table {
+        font-size: 0.7rem;
+    }
+    
+    .auth-table th,
+    .auth-table td {
+        padding: 6px 4px;
+    }
+}
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at 20% 30%, #0B1120, #050814);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1E293B;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .admin-sidebar {
+            width: 280px;
+            background: rgba(10, 18, 32, 0.85);
+            backdrop-filter: blur(16px);
+            border-right: 1px solid var(--border-glow);
+            box-shadow: 8px 0 32px rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 20;
+        }
+
+        .admin-sidebar::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .admin-sidebar-logo {
+            padding: 28px 24px;
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFFFFF, var(--primary-light), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            border-bottom: 1px solid var(--border-glow);
+            margin-bottom: 20px;
+        }
+        .admin-sidebar-logo span {
+            color: var(--primary);
+            background: none;
+        }
+
+        .admin-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 0 16px 20px 16px;
+        }
+        .admin-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .admin-nav-item i {
+            width: 24px;
+            font-size: 1.2rem;
+        }
+        .admin-nav-item:hover {
+            background: rgba(59, 130, 246, 0.15);
+            color: white;
+            transform: translateX(4px);
+        }
+        .admin-nav-item.active {
+            background: linear-gradient(95deg, rgba(59,130,246,0.2), rgba(139,92,246,0.1));
+            color: white;
+            border-left: 3px solid var(--primary);
+        }
+        
+        .unread-badge {
+            margin-left: auto;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: var(--warning);
+            color: white;
+        }
+
+        .admin-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .admin-header {
+            background: rgba(10, 18, 32, 0.7);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-glow);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 15;
+        }
+        .admin-header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(120deg, #F1F5F9, var(--primary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .admin-header h1 i {
+            color: var(--primary);
+            margin-right: 12px;
+        }
+        .admin-user {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(255,255,255,0.04);
+            padding: 6px 18px;
+            border-radius: 60px;
+        }
+        #adminName {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .icon-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .admin-content {
+            padding: 28px 32px;
+            max-width: 1600px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            border: 1px solid var(--border-glow);
+            padding: 20px 24px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(59,130,246,0.5);
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            line-height: 1.2;
+            margin-bottom: 8px;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .filters-bar {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            border: 1px solid var(--border-glow);
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            display: flex;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 10px 16px;
+            gap: 10px;
+        }
+        .search-box i {
+            color: var(--text-secondary);
+        }
+        .search-box input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 0.9rem;
+            width: 100%;
+            outline: none;
+        }
+        .search-box input::placeholder {
+            color: var(--text-muted);
+        }
+        .filter-select {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 10px 16px;
+            color: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+            min-width: 160px;
+        }
+        .filter-select option {
+            background: #1E293B;
+        }
+        .online-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .online-toggle input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 10px 18px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
+
+        .bulk-actions {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .bulk-actions span {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        .btn-primary {
+            background: var(--primary);
+            border: none;
+            border-radius: 12px;
+            padding: 8px 18px;
+            color: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 24px;
+            border: 1px solid var(--border-glow);
+            overflow-x: auto;
+            margin-bottom: 24px;
+        }
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .admin-table th {
+            text-align: left;
+            padding: 16px 12px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-glow);
+            background: rgba(0,0,0,0.2);
+        }
+        .admin-table td {
+            padding: 14px 12px;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.4);
+            color: var(--text-primary);
+        }
+        .admin-table tr:hover td {
+            background: rgba(59, 130, 246, 0.06);
+        }
+        .admin-table input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+        .loading {
+            text-align: center;
+            padding: 48px !important;
+            color: var(--text-secondary);
+        }
+        .loading i {
+            margin-right: 8px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .status-badge.online {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10B981;
+        }
+        .status-badge.offline {
+            background: rgba(100, 116, 139, 0.2);
+            color: #94A3B8;
+        }
+        .mode-badge.test {
+            background: rgba(245, 158, 11, 0.2);
+            color: #F59E0B;
+        }
+        .mode-badge.live {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60A5FA;
+        }
+        .lock-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .lock-badge.locked {
+            background: rgba(239, 68, 68, 0.2);
+            color: #EF4444;
+        }
+        .lock-badge.unlocked {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10B981;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+        .action-btn {
+            background: rgba(255,255,255,0.05);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .action-btn.view {
+            color: var(--primary-light);
+        }
+        .action-btn.view:hover {
+            background: rgba(59,130,246,0.2);
+            color: var(--primary-light);
+        }
+        .action-btn.switch {
+            color: var(--warning);
+        }
+        .action-btn.switch:hover {
+            background: rgba(245,158,11,0.2);
+            color: var(--warning);
+        }
+        .action-btn.lock {
+            color: var(--danger);
+        }
+        .action-btn.lock:hover {
+            background: rgba(239,68,68,0.2);
+            color: var(--danger);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 16px 0;
+        }
+        .pagination button {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 8px 14px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+        .pagination button:hover:not(:disabled) {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .pagination button.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .pagination button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .pagination .page-info {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin: 0 12px;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+.modal-overlay.active,
+.modal-overlay.show {
+    display: flex;
+}
+        .modal {
+            background: #0F172A;
+            border-radius: 28px;
+            border: 1px solid var(--border-glow);
+            width: 90%;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-glow);
+        }
+        .modal-header h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 1.8rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            line-height: 1;
+        }
+        .modal-close:hover {
+            color: var(--danger);
+        }
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            max-height: calc(85vh - 80px);
+        }
+
+        @media (max-width: 1024px) {
+            .admin-content {
+                padding: 20px;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 768px) {
+            .admin-layout {
+                flex-direction: column;
+            }
+            .admin-sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            .admin-nav {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .admin-nav-item {
+                flex: 0 0 auto;
+            }
+            .filters-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .search-box {
+                width: 100%;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            .stat-value {
+                font-size: 1.4rem;
+            }
+            .admin-header h1 {
+                font-size: 1.2rem;
+            }
+            .admin-table th, .admin-table td {
+                padding: 10px 8px;
+            }
+        }
+        @media (max-width: 550px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .stat-card, .filters-bar, .table-container {
+            animation: fadeSlideUp 0.4s ease forwards;
+        }
+    </style>
 </head>
 <body>
     <div class="admin-layout">
         <aside class="admin-sidebar" id="sidebar-container"></aside>
 
-<script>
-    // 加载侧边栏组件
-    fetch('/admin/components/sidebar.html')
-        .then(res => res.text())
-        .then(html => {
-            document.getElementById('sidebar-container').innerHTML = html;
-            // 高亮当前菜单
-            const currentPath = window.location.pathname;
-            document.querySelectorAll('.admin-nav-item').forEach(link => {
-                if (link.getAttribute('href') === currentPath) {
-                    link.classList.add('active');
-                }
-            });
-        })
-        .catch(err => console.error('加载侧边栏失败:', err));
-</script>
+        <script>
+            fetch('/admin/components/sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('sidebar-container').innerHTML = html;
+                    const currentPath = window.location.pathname;
+                    document.querySelectorAll('.admin-nav-item').forEach(link => {
+                        if (link.getAttribute('href') === currentPath) {
+                            link.classList.add('active');
+                        }
+                    });
+                })
+                .catch(err => console.error('加载侧边栏失败:', err));
+        </script>
 
         <main class="admin-main">
             <header class="admin-header">
@@ -41,15 +874,25 @@
             </header>
 
             <div class="admin-content">
-                <!-- 统计卡片 -->
                 <div class="stats-grid">
-                    <div class="stat-card"><div class="stat-value" id="totalUsers">0</div><div class="stat-label">总用户</div></div>
-                    <div class="stat-card"><div class="stat-value" id="testUsers">0</div><div class="stat-label">测试模式</div></div>
-                    <div class="stat-card"><div class="stat-value" id="liveUsers">0</div><div class="stat-label">主网模式</div></div>
-                    <div class="stat-card"><div class="stat-value" id="onlineUsers">0</div><div class="stat-label">在线用户</div></div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalUsers">0</div>
+                        <div class="stat-label">总用户</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="testUsers">0</div>
+                        <div class="stat-label">测试模式</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="liveUsers">0</div>
+                        <div class="stat-label">主网模式</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="onlineUsers">0</div>
+                        <div class="stat-label">在线用户</div>
+                    </div>
                 </div>
 
-                <!-- 筛选栏 -->
                 <div class="filters-bar">
                     <div class="search-box">
                         <i class="fas fa-search"></i>
@@ -73,14 +916,12 @@
                     <button class="btn-secondary" id="resetFilters"><i class="fas fa-redo-alt"></i> 重置</button>
                 </div>
 
-                <!-- 批量操作栏 -->
                 <div class="bulk-actions" id="bulkActions" style="display: none;">
                     <span>已选择 <span id="selectedCount">0</span> 个用户</span>
                     <button class="btn-primary" id="batchSwitchToLive"><i class="fas fa-rocket"></i> 批量切换到主网</button>
                     <button class="btn-secondary" id="clearSelection"><i class="fas fa-times"></i> 清除选择</button>
                 </div>
 
-                <!-- 用户列表表格 - 删除学习进度列 -->
                 <div class="table-container">
                     <table class="admin-table">
                         <thead>
@@ -100,18 +941,16 @@
                             </tr>
                         </thead>
                         <tbody id="userTableBody">
-                            <tr><td colspan="12" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr>
+                            <tr><td colspan="12" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td</tr>
                         </tbody>
                     </table>
                 </div>
 
-                <!-- 分页控件 -->
                 <div class="pagination" id="pagination"></div>
             </div>
         </main>
     </div>
 
-    <!-- 用户详情模态框 -->
     <div class="modal-overlay" id="userDetailModal">
         <div class="modal">
             <div class="modal-header">

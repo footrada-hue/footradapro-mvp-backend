@@ -1,0 +1,535 @@
+<!-- 
+  fund-detail-content.html - 资金明细内容片段
+  用于 SPA 架构，通过 shell.html 的 #app-content 区域加载
+-->
+
+<div class="fund-detail-container">
+
+
+  <!-- 统计卡片 -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-number" id="totalDeposit">0.00</div>
+      <div class="stat-label">Total Deposit</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="totalWithdraw">0.00</div>
+      <div class="stat-label">Total Withdraw</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="netFund">0.00</div>
+      <div class="stat-label">Net Fund</div>
+    </div>
+  </div>
+
+  <!-- 筛选标签 -->
+  <div class="filter-tabs">
+    <button class="filter-tab active" data-type="all">All</button>
+    <button class="filter-tab" data-type="deposit">Deposit</button>
+    <button class="filter-tab" data-type="withdraw">Withdraw</button>
+  </div>
+
+  <!-- 加载状态 -->
+  <div id="loadingState" class="loading-state">
+    <div class="loading-spinner"></div>
+    <p>Loading fund records...</p>
+  </div>
+
+  <!-- 空状态 -->
+  <div id="emptyState" class="empty-state" style="display: none;">
+    <i class="fa-solid fa-coins"></i>
+    <p>No fund records found</p>
+  </div>
+
+  <!-- 资金记录列表 -->
+  <div id="fundList" class="fund-list" style="display: none;"></div>
+
+  <!-- 加载更多 -->
+  <div id="loadMore" class="load-more" style="display: none;">
+    <button class="load-more-btn" id="loadMoreBtn">Load More</button>
+  </div>
+</div>
+
+<style>
+  .fund-detail-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--space-6);
+    width: 100%;
+  }
+
+  .mode-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: var(--badge-soft);
+    backdrop-filter: blur(8px);
+    padding: 6px 16px;
+    border-radius: var(--radius-full);
+    width: fit-content;
+    margin-bottom: var(--space-5);
+    font-size: var(--font-sm);
+  }
+  .mode-indicator .sandbox-mode-text { color: #8b5cf6; font-weight: 600; }
+  .mode-indicator .live-mode-text { color: #f97316; font-weight: 600; }
+  .test-badge-mode {
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    color: white;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-xs);
+    margin-left: var(--space-3);
+  }
+
+  .stats-row {
+    display: flex;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+  }
+  .stat-card {
+    flex: 1;
+    background: var(--card-bg);
+    backdrop-filter: blur(24px);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--glass-border);
+    padding: var(--space-4) var(--space-3);
+    text-align: center;
+    transition: all var(--duration-fast);
+  }
+  .stat-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+  }
+  .stat-number {
+    font-size: var(--font-xl);
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.2;
+  }
+  .stat-label {
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+    margin-top: var(--space-1);
+  }
+
+  .filter-tabs {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filter-tabs::-webkit-scrollbar { display: none; }
+  .filter-tab {
+    background: var(--badge-soft);
+    border: none;
+    padding: 10px 24px;
+    border-radius: var(--radius-full);
+    color: var(--text-secondary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--duration-fast);
+    font-size: var(--font-sm);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .filter-tab.active {
+    background: var(--accent-gradient);
+    color: white;
+    box-shadow: 0 4px 12px var(--accent-glow);
+  }
+
+  .fund-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .fund-item {
+    background: var(--card-bg);
+    backdrop-filter: blur(24px);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--glass-border);
+    padding: var(--space-5);
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    cursor: pointer;
+    transition: all var(--duration-base);
+  }
+  .fund-item:hover {
+    transform: translateX(4px);
+    border-color: var(--accent);
+    box-shadow: var(--glass-shadow-hover);
+  }
+  .fund-item.highlight {
+    background: var(--accent-gradient);
+    border-color: var(--accent);
+    animation: highlightPulse 0.5s ease;
+  }
+  @keyframes highlightPulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 var(--accent-glow); }
+    50% { transform: scale(1.01); box-shadow: 0 0 0 4px var(--accent-glow); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 var(--accent-glow); }
+  }
+
+  .fund-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .fund-icon.deposit { background: rgba(16,185,129,0.15); color: #10b981; }
+  .fund-icon.withdraw { background: rgba(239,68,68,0.15); color: #ef4444; }
+  .fund-icon i { font-size: 20px; }
+
+  .fund-info { flex: 1; }
+  .fund-type {
+    font-weight: 700;
+    font-size: var(--font-base);
+    margin-bottom: var(--space-1);
+  }
+  .fund-type.deposit { color: #10b981; }
+  .fund-type.withdraw { color: #ef4444; }
+  .fund-desc {
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin-top: var(--space-1);
+  }
+
+  .fund-right { text-align: right; flex-shrink: 0; }
+  .fund-amount {
+    font-weight: 700;
+    font-size: var(--font-base);
+  }
+  .fund-amount.deposit { color: #10b981; }
+  .fund-amount.withdraw { color: #ef4444; }
+  .fund-time {
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+    margin-top: var(--space-1);
+  }
+
+  .loading-state { text-align: center; padding: 60px; }
+  .loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--border-light);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px;
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border-radius: var(--radius-2xl);
+  }
+  .empty-state i {
+    font-size: 64px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  .load-more {
+    display: flex;
+    justify-content: center;
+    margin: var(--space-6) 0;
+  }
+  .load-more-btn {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    padding: 12px 32px;
+    border-radius: var(--radius-full);
+    color: var(--accent);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--duration-fast);
+  }
+  .load-more-btn:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  @media (max-width: 768px) {
+    .fund-detail-container { padding: var(--space-4); }
+    .stat-number { font-size: var(--font-md); }
+    .fund-item { padding: var(--space-4); gap: var(--space-3); }
+    .fund-icon { width: 40px; height: 40px; }
+    .fund-icon i { font-size: 16px; }
+    .fund-type { font-size: var(--font-sm); }
+    .fund-amount { font-size: var(--font-sm); }
+  }
+
+  @media (max-width: 480px) {
+    .fund-detail-container { padding: var(--space-3); }
+    .stats-row { gap: var(--space-2); }
+    .stat-card { padding: var(--space-2); }
+    .stat-number { font-size: var(--font-base); }
+    .fund-item { flex-wrap: wrap; }
+    .fund-right { width: 100%; text-align: left; margin-top: var(--space-2); }
+  }
+</style>
+
+<script>
+(function() {
+  'use strict';
+
+  const pageSize = 20;
+  let currentPage = 1;
+  let currentType = 'all';
+  let hasMore = false;
+  let allRecords = [];
+
+  // 获取 URL 参数
+  const urlParams = new URLSearchParams(window.location.search);
+  const targetId = urlParams.get('id');
+
+  // DOM 元素
+  const DOM = {
+    loadingState: document.getElementById('loadingState'),
+    fundList: document.getElementById('fundList'),
+    emptyState: document.getElementById('emptyState'),
+    loadMore: document.getElementById('loadMore'),
+    loadMoreBtn: document.getElementById('loadMoreBtn'),
+    totalDeposit: document.getElementById('totalDeposit'),
+    totalWithdraw: document.getElementById('totalWithdraw'),
+    netFund: document.getElementById('netFund'),
+    tabBtns: document.querySelectorAll('.filter-tab')
+  };
+
+  // 格式化日期
+  function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleString('en-US', {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+    } catch { return '-'; }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+  }
+
+  // 加载资金统计
+  async function loadFundStats() {
+    try {
+      const isTestMode = window.ThemeManager ? window.ThemeManager.isTestMode : false;
+      const mode = isTestMode ? 'test' : 'live';
+      const res = await fetch(`/api/v1/user/stats/fund?mode=${mode}`, { credentials: 'include' });
+      const data = await res.json();
+      
+      if (data.success) {
+        const currency = isTestMode ? 'tUSDT' : 'USDT';
+        
+        if (isTestMode) {
+          if (DOM.totalDeposit) DOM.totalDeposit.innerHTML = '—';
+          if (DOM.totalWithdraw) DOM.totalWithdraw.innerHTML = '—';
+          if (DOM.netFund) {
+            const testBalance = data.data?.test_balance || 10000;
+            DOM.netFund.innerHTML = testBalance.toFixed(2) + ' <span class="currency">' + currency + '</span>';
+          }
+        } else {
+          if (DOM.totalDeposit) DOM.totalDeposit.innerHTML = (data.data?.total_deposit || 0).toFixed(2) + ' <span class="currency">' + currency + '</span>';
+          if (DOM.totalWithdraw) DOM.totalWithdraw.innerHTML = (data.data?.total_withdraw || 0).toFixed(2) + ' <span class="currency">' + currency + '</span>';
+          if (DOM.netFund) {
+            const netFund = data.data?.net_fund || 0;
+            DOM.netFund.innerHTML = netFund.toFixed(2) + ' <span class="currency">' + currency + '</span>';
+          }
+        }
+      }
+    } catch (err) {
+      console.error('加载资金统计失败:', err);
+    }
+  }
+
+  // 加载资金记录
+  async function loadFundRecords(reset = true) {
+    if (reset) {
+      currentPage = 1;
+      allRecords = [];
+      showLoading();
+    }
+
+    try {
+      const isTestMode = window.ThemeManager ? window.ThemeManager.isTestMode : false;
+      const currency = isTestMode ? 'tUSDT' : 'USDT';
+      const mode = isTestMode ? 'test' : 'live';
+      
+      // 使用统一的路由，通过 mode 参数区分测试/正式模式
+      const url = `/api/v1/user/balance/logs?type=${currentType}&mode=${mode}&page=${currentPage}&limit=${pageSize}`;
+      const res = await fetch(url, { credentials: 'include' });
+      const data = await res.json();
+
+if (data.success) {
+  let newRecords = data.data || [];
+  
+  // ✅ 只保留充值和提现记录，过滤掉授权(authorize)和结算(settle)等
+  newRecords = newRecords.filter(record => 
+    record.type === 'deposit' || record.type === 'withdraw'
+  );
+  
+  if (reset) {
+    allRecords = newRecords;
+  } else {
+    allRecords = [...allRecords, ...newRecords];
+  }
+
+        hasMore = data.pagination?.pages > currentPage;
+        renderRecords(currency);
+        
+        if (targetId) {
+          setTimeout(() => scrollToTarget(targetId), 500);
+        }
+      } else {
+        showEmpty();
+      }
+    } catch (err) {
+      console.error('加载记录失败:', err);
+      showEmpty();
+    }
+  }
+
+  // 渲染记录
+  function renderRecords(currency) {
+    if (allRecords.length === 0) {
+      showEmpty();
+      return;
+    }
+
+    let html = '';
+    allRecords.forEach(record => {
+      const isDeposit = record.amount > 0;
+      const typeText = isDeposit ? 'Deposit' : 'Withdraw';
+      const icon = isDeposit ? 'arrow-down' : 'arrow-up';
+      const amountClass = isDeposit ? 'deposit' : 'withdraw';
+      const amountPrefix = isDeposit ? '+' : '-';
+      const amount = Math.abs(record.amount).toFixed(2);
+      const statusText = record.status === 'completed' ? 'Completed' : (record.reason || 'Processing');
+      const description = record.reason || record.description || '';
+      const isTarget = record.id == targetId;
+      
+      html += `
+        <div class="fund-item" data-id="${record.id}" ${isTarget ? 'data-target="true"' : ''} onclick="window.viewFundDetail(${record.id})">
+          <div class="fund-icon ${amountClass}">
+            <i class="fas fa-${icon}"></i>
+          </div>
+          <div class="fund-info">
+            <div class="fund-type ${amountClass}">${typeText}</div>
+            ${description ? `<div class="fund-desc"><i class="fas fa-info-circle"></i> ${escapeHtml(description)}</div>` : ''}
+            <div class="fund-desc"><i class="fas fa-clock"></i> ${formatDate(record.created_at)}</div>
+          </div>
+          <div class="fund-right">
+            <div class="fund-amount ${amountClass}">${amountPrefix}${amount} ${escapeHtml(currency)}</div>
+            <div class="fund-time">${escapeHtml(statusText)}</div>
+          </div>
+        </div>
+      `;
+    });
+    
+    DOM.fundList.innerHTML = html;
+    DOM.fundList.style.display = 'block';
+    DOM.loadingState.style.display = 'none';
+    DOM.emptyState.style.display = 'none';
+    DOM.loadMore.style.display = hasMore ? 'flex' : 'none';
+  }
+
+  // 滚动到目标记录并高亮
+  function scrollToTarget(id) {
+    const targetElement = document.querySelector(`.fund-item[data-id="${id}"]`);
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      targetElement.classList.add('highlight');
+      setTimeout(() => targetElement.classList.remove('highlight'), 2000);
+    }
+  }
+
+  function showLoading() {
+    DOM.loadingState.style.display = 'flex';
+    DOM.fundList.style.display = 'none';
+    DOM.emptyState.style.display = 'none';
+    DOM.loadMore.style.display = 'none';
+  }
+
+  function showEmpty() {
+    DOM.loadingState.style.display = 'none';
+    DOM.fundList.style.display = 'none';
+    DOM.emptyState.style.display = 'flex';
+    DOM.loadMore.style.display = 'none';
+  }
+
+  function loadMore() {
+    currentPage++;
+    loadFundRecords(false);
+  }
+
+  function switchType(type) {
+    currentType = type;
+    DOM.tabBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.type === type);
+    });
+    showLoading();
+    loadFundRecords(true);
+  }
+
+  // 绑定事件
+  function bindEvents() {
+    DOM.tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        switchType(btn.dataset.type);
+      });
+    });
+
+    if (DOM.loadMoreBtn) {
+      DOM.loadMoreBtn.addEventListener('click', loadMore);
+    }
+  }
+
+  // 监听模式切换
+  function initModeListener() {
+    if (window.ThemeManager) {
+      window.ThemeManager.addListener(async () => {
+        console.log('🔄 资金明细：模式已切换，重新加载数据');
+        await loadFundStats();
+        await loadFundRecords(true);
+      });
+    }
+  }
+
+  // 全局函数
+  window.viewFundDetail = function(id) {
+    console.log('查看详情:', id);
+    window.location.href = '/shell.html?page=transaction-detail&id=' + id;
+  };
+
+  // 初始化
+  async function init() {
+    console.log('🚀 初始化资金明细页面...');
+    await loadFundStats();
+    await loadFundRecords(true);
+    bindEvents();
+    initModeListener();
+    console.log('✅ 资金明细页面初始化完成');
+  }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>

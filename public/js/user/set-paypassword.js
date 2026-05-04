@@ -1,7 +1,7 @@
 /**
  * FOOTRADAPRO - Set Payment Password Controller
  * Real users only, test users are redirected with warning
- * Version: 2.3.0 - 生产版本
+ * Version: 2.4.0 - SPA 架构适配
  */
 
 (function() {
@@ -44,7 +44,7 @@
         if (mode === 'set' && hasPayPassword) {
             showError('Payment password already set. Redirecting to change page...');
             setTimeout(() => {
-                window.location.href = '/set-paypassword.html?mode=change&from=profile';
+                window.location.href = '/shell.html?page=set-paypassword&mode=change&from=profile';
             }, 2000);
             return;
         }
@@ -52,7 +52,7 @@
         if (mode === 'change' && !hasPayPassword) {
             showError('Payment password not set. Redirecting to set page...');
             setTimeout(() => {
-                window.location.href = '/set-paypassword.html?from=profile';
+                window.location.href = '/shell.html?page=set-paypassword&from=profile';
             }, 2000);
             return;
         }
@@ -82,14 +82,14 @@
         }
     }
 
-    // 顯示測試模式警告
+    // 顯示測試模式警告 - 修改為 SPA 跳轉
     function showTestModeWarning() {
         if (DOM.mainContent) DOM.mainContent.style.display = 'none';
         if (DOM.testModeWarning) DOM.testModeWarning.style.display = 'block';
         
         const backBtn = document.querySelector('.back-btn');
         if (backBtn) {
-            backBtn.onclick = () => window.location.href = '/profile.html';
+            backBtn.onclick = () => window.location.href = '/shell.html?page=profile';
         }
     }
 
@@ -271,9 +271,9 @@
                     : 'Payment password set successfully!';
                 showSuccess(successMessage);
 
-                // 2秒後返回個人中心
+                // ✅ 修改：2秒後返回 SPA 個人中心
                 setTimeout(() => {
-                    window.location.href = '/profile.html?refresh=paypassword';
+                    window.location.href = '/shell.html?page=profile&refresh=paypassword';
                 }, 2000);
             } else {
                 // 錯誤處理

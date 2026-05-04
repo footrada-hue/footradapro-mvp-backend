@@ -1,50 +1,8 @@
 /**
  * FOOTRADAPRO - 注册页控制器 (生产版)
  * @file /js/user/register_controller.js
- * @version 7.0.0
- * 优化流程：Email + 图形验证码 → 邮箱验证码 → 密码 → 完成
- * 支援多语言切换事件监听
- * 生产标准：包含图形验证码防机器人攻击
- * 
- * ==================== 多语言文案标记说明 ====================
- * 所有用户可见文案均通过 I18N 对象管理，便于后期批量翻译
- * 标记格式：KEY: 说明
- * - emailInvalid: 邮箱格式错误提示
- * - sending: 发送中状态
- * - emailExists: 邮箱已注册提示
- * - sendFailed: 发送失败提示
- * - networkError: 网络错误提示
- * - codeInvalid: 验证码格式错误
- * - sessionExpired: 会话过期提示
- * - verifying: 验证中状态
- * - codeExpired: 验证码过期提示
- * - codeInvalidMsg: 验证码错误提示
- * - codeResent: 重发成功提示
- * - resendFailed: 重发失败提示
- * - captchaRequired: 图形验证码必填提示
- * - captchaInvalid: 图形验证码错误提示
- * - passwordRequired: 密码必填提示
- * - passwordLength: 密码长度要求
- * - passwordUppercase: 大写字母要求
- * - passwordLowercase: 小写字母要求
- * - passwordNumber: 数字要求
- * - passwordMismatch: 密码不一致提示
- * - termsRequired: 条款同意提示
- * - creating: 创建账户中
- * - registrationFailed: 注册失败提示
- * - verificationExpired: 验证过期提示
- * - codeAutoFilled: 自动填充成功
- * - resendCode: 重新发送按钮
- * - resendWithCountdown: 倒计时重发按钮
- * - confirmClose: 关闭确认弹窗
- * - captchaPlaceholder: 图形验证码输入框占位符
- * - refreshCaptcha: 刷新验证码提示
- * - backToEmail: 返回上一步
- * - verifyEmailTitle: 验证邮箱标题
- * - verifyEmailDesc: 验证邮箱描述
- * - createAccountTitle: 创建账户标题
- * - createAccountDesc: 创建账户描述
- * ==================== 多语言文案标记结束 ====================
+ * @version 7.3.0
+ * 修复：确保邮件验证码发送成功后正确跳转到步骤2
  */
 
 (function() {
@@ -69,7 +27,7 @@
         csrfToken: document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '',
         requestInProgress: false,
         debug: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1',
-        currentLang: 'en'  // 默认英文，面向全球用户
+        currentLang: 'en'
     };
 
     if (AppState.debug) window.AppState = AppState;
@@ -95,21 +53,18 @@
         countdownSpan: document.getElementById('countdown'),
         step1Indicator: document.getElementById('step1-indicator'),
         step2Indicator: document.getElementById('step2-indicator'),
-        // 图形验证码相关元素
         captchaInput: document.getElementById('captchaInput'),
         captchaImage: document.getElementById('captchaImage')
     };
 
-    // ==================== 多语言文案（默认英文，面向全球用户）====================
+    // ==================== 多语言文案 ====================
     var I18N = {
         en: {
-            // 邮箱相关
             emailInvalid: 'Please enter a valid email address',
             sending: 'Sending...',
             emailExists: 'Email already registered',
             sendFailed: 'Failed to send code',
             networkError: 'Network error, please try again',
-            // 验证码相关
             codeInvalid: 'Please enter a valid 6-digit code',
             sessionExpired: 'Session expired, please start over',
             verifying: 'Verifying...',
@@ -117,12 +72,10 @@
             codeInvalidMsg: 'Invalid verification code',
             codeResent: 'New code sent',
             resendFailed: 'Failed to resend code',
-            // 图形验证码相关
             captchaRequired: 'Please enter the verification code',
             captchaInvalid: 'Invalid verification code, please try again',
             captchaPlaceholder: 'Enter code',
             refreshCaptcha: 'Click to refresh',
-            // 密码相关
             passwordRequired: 'Password is required',
             passwordLength: 'At least 8 characters',
             passwordUppercase: 'At least 1 uppercase letter',
@@ -133,19 +86,15 @@
             creating: 'Creating account...',
             registrationFailed: 'Registration failed',
             verificationExpired: 'Verification expired, please start over',
-            // 自动填充
             codeAutoFilled: 'Code auto-filled!',
-            // 按钮和链接
             resendCode: 'Resend code',
             resendWithCountdown: 'Resend ({seconds}s)',
             confirmClose: 'Are you sure? Your progress will be lost.',
             backToEmail: 'Use different email',
-            // 页面标题
             verifyEmailTitle: 'Verify your email',
             verifyEmailDesc: 'Enter the code sent to',
             createAccountTitle: 'Create account',
             createAccountDesc: 'Start your journey with FootRada',
-            // 成功页面
             welcomeTitle: 'Welcome!',
             welcomeDesc: 'Your account is ready',
             sandboxMode: 'Sandbox mode',
@@ -257,39 +206,29 @@
         return text;
     }
 
-    // 更新页面所有动态文案
     function updatePageTexts() {
-        // 更新 step1 文案
         var step1Title = document.querySelector('#step1 .header h1');
         var step1Desc = document.querySelector('#step1 .header p');
         if (step1Title) step1Title.textContent = getText('createAccountTitle');
         if (step1Desc) step1Desc.textContent = getText('createAccountDesc');
         
-        // 更新 step2 文案
         var step2Title = document.querySelector('#step2 .header h1');
         var step2Desc = document.querySelector('#step2 .header p');
         if (step2Title) step2Title.textContent = getText('verifyEmailTitle');
-        if (step2Desc && elements.displayEmail) {
-            step2Desc.innerHTML = getText('verifyEmailDesc') + ' <strong>' + (elements.displayEmail.textContent || '') + '</strong>';
-        }
         
-        // 更新图形验证码占位符
         if (elements.captchaInput) {
             elements.captchaInput.placeholder = getText('captchaPlaceholder');
         }
         
-        // 更新按钮文案
         if (elements.sendCodeBtn && !elements.sendCodeBtn.disabled && !elements.sendCodeBtn.dataset.originalText) {
             elements.sendCodeBtn.textContent = getText('createAccountTitle');
         }
         
-        // 更新返回链接
         var backLink = document.querySelector('#step2 .secondary-link a');
         if (backLink && backLink.id === 'backToEmail') {
             backLink.textContent = getText('backToEmail');
         }
         
-        // 更新成功弹窗文案
         var welcomeTitle = document.querySelector('#trustModal .modal-content h2');
         var welcomeDesc = document.querySelector('#trustModal .modal-content > p');
         if (welcomeTitle) welcomeTitle.textContent = getText('welcomeTitle');
@@ -313,8 +252,6 @@
             redirectText.innerHTML = getText('redirecting') + ' <span id="countdown">5</span> ' + getText('seconds');
         }
     }
-
-    // ==================== 工具函数 ====================
 
     function showToast(message, type) {
         type = type || 'error';
@@ -395,38 +332,34 @@
         return result;
     }
 
-// 刷新图形验证码
-function refreshCaptcha() {
-    if (!elements.captchaImage) return;
-    
-    fetch('/api/v1/captcha/generate', {
-        headers: {
-            'X-CSRF-Token': AppState.csrfToken
-        }
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-        if (data.success && data.data && data.data.image) {
-            elements.captchaImage.src = data.data.image;
-            // 存储 captchaId 用于后续验证（如果需要）
-            window.currentCaptchaId = data.data.captchaId;
-        } else {
-            console.error('Failed to load captcha:', data);
-        }
-    })
-    .catch(function(err) {
-        console.error('Captcha fetch error:', err);
-    });
-    
-    if (elements.captchaImage.parentElement) {
-        var tooltip = elements.captchaImage.getAttribute('title');
-        if (!tooltip) {
-            elements.captchaImage.setAttribute('title', getText('refreshCaptcha'));
-        }
+    // 刷新图形验证码
+    function refreshCaptcha() {
+        if (!elements.captchaImage) return;
+        
+        var timestamp = new Date().getTime();
+        
+        fetch('/api/v1/captcha/generate', {
+            headers: {
+                'X-CSRF-Token': AppState.csrfToken,
+                'Cache-Control': 'no-cache'
+            },
+            credentials: 'include'
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data.success && data.data) {
+                if (data.data.image) {
+                    elements.captchaImage.src = data.data.image + '?t=' + timestamp;
+                }
+                window.currentCaptchaId = data.data.captchaId || data.data.id || data.data.token;
+                console.log('[Captcha] 加载成功, ID:', window.currentCaptchaId);
+            }
+        })
+        .catch(function(err) {
+            console.error('[Captcha] 请求错误:', err);
+        });
     }
-}
 
-    // ==================== 验证码输入框自动处理 ====================
     function setupCodeInputs() {
         if (!elements.codeInputs || elements.codeInputs.length === 0) return;
         
@@ -466,13 +399,6 @@ function refreshCaptcha() {
                 }
                 if (e.key === 'ArrowLeft' && idx > 0) elements.codeInputs[idx - 1].focus();
                 if (e.key === 'ArrowRight' && idx < 5) elements.codeInputs[idx + 1].focus();
-                if (e.key === 'Enter') {
-                    var allFilled = Array.from(elements.codeInputs).every(function(inp) { return inp.value.length === 1; });
-                    if (allFilled && elements.verifyCodeBtn && !elements.verifyCodeBtn.disabled) {
-                        e.preventDefault();
-                        verifyCode();
-                    }
-                }
             });
         });
     }
@@ -485,10 +411,9 @@ function refreshCaptcha() {
 
     function tryAutoFillCode() {
         if (window.OTPCredential) {
-            var abortController = new AbortController();
             navigator.credentials.get({
                 otp: { transport: ['sms'] },
-                signal: abortController.signal
+                signal: AbortSignal.timeout(30000)
             }).then(function(otp) {
                 var code = otp.code;
                 if (code && code.length === 6 && /^\d+$/.test(code)) {
@@ -496,16 +421,7 @@ function refreshCaptcha() {
                     setTimeout(function() { verifyCode(); }, 200);
                 }
             }).catch(function(err) { console.debug('WebOTP unavailable:', err); });
-            setTimeout(function() { abortController.abort(); }, 30000);
         }
-        
-        document.addEventListener('paste', function(e) {
-            var text = e.clipboardData ? e.clipboardData.getData('text') : '';
-            if (text && /^\d{6}$/.test(text)) {
-                fillVerificationCode(text);
-                setTimeout(function() { verifyCode(); }, 200);
-            }
-        });
     }
 
     function fillVerificationCode(code) {
@@ -518,7 +434,6 @@ function refreshCaptcha() {
         showToast(getText('codeAutoFilled'), 'success');
     }
 
-    // ==================== 发送验证码（包含图形验证码）====================
     function checkFormValidity() {
         if (!elements.sendCodeBtn) return;
         var emailValid = validateEmail(elements.emailInput ? elements.emailInput.value.trim() : '');
@@ -526,109 +441,116 @@ function refreshCaptcha() {
         elements.sendCodeBtn.disabled = !(emailValid && captchaValid);
     }
 
-async function sendCode() {
-    if (AppState.requestInProgress) return;
-    
-    var email = elements.emailInput.value.trim();
-    if (!validateEmail(email)) {
-        showToast(getText('emailInvalid'), 'error');
-        return;
-    }
-    
-    var captchaCode = elements.captchaInput ? elements.captchaInput.value.trim() : '';
-    if (!captchaCode) {
-        showToast(getText('captchaRequired'), 'error');
-        return;
-    }
-    
-    if (!window.currentCaptchaId) {
-        showToast(getText('captchaRequired'), 'error');
-        refreshCaptcha();
-        return;
-    }
-
-    setLoading(elements.sendCodeBtn, true, getText('sending'));
-
-    try {
-        // 第一步：验证图形验证码，获取临时令牌
-        var verifyRes = await fetch('/api/v1/captcha/verify', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': AppState.csrfToken
-            },
-            credentials: 'include',
-            body: JSON.stringify({
-                captchaId: window.currentCaptchaId,
-                userInput: captchaCode
-            })
-        });
+    // ==================== 发送验证码 ====================
+    async function sendCode() {
+        if (AppState.requestInProgress) return;
         
-        var verifyData = await verifyRes.json();
-        
-        if (!verifyRes.ok || !verifyData.success) {
-            var errorMsg = getText('captchaInvalid');
-            if (verifyData.error === 'CAPTCHA_EXPIRED') {
-                errorMsg = 'Captcha expired, please refresh';
-            }
-            showToast(errorMsg, 'error');
-            refreshCaptcha();
-            if (elements.captchaInput) elements.captchaInput.value = '';
-            setLoading(elements.sendCodeBtn, false);
+        var email = elements.emailInput.value.trim();
+        if (!validateEmail(email)) {
+            showToast(getText('emailInvalid'), 'error');
             return;
         }
         
-        var captchaToken = verifyData.data.token;
-        
-        // 第二步：发送邮箱验证码
-        var response = await fetch('/api/v1/auth/send-code', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': AppState.csrfToken
-            },
-            credentials: 'include',
-            body: JSON.stringify({ 
-                email: email,
-                captchaToken: captchaToken
-            })
-        });
-        
-        var data = await response.json();
-        
-        if (data.success) {
-            AppState.email = email;
-            if (elements.displayEmail) {
-                elements.displayEmail.textContent = maskEmail(email);
-                var step2Desc = document.querySelector('#step2 .header p');
-                if (step2Desc) {
-                    step2Desc.innerHTML = getText('verifyEmailDesc') + ' <strong>' + maskEmail(email) + '</strong>';
-                }
-            }
-            
-            showStep(2);
-            startResendCountdown(60);
-            tryAutoFillCode();
-            
-            setTimeout(function() {
-                if (elements.codeInputs && elements.codeInputs[0]) {
-                    elements.codeInputs[0].focus();
-                }
-            }, 300);
-        } else {
-            if (data.error === 'EMAIL_ALREADY_REGISTERED') {
-                showToast(getText('emailExists'), 'error');
-            } else {
-                showToast(data.error || getText('sendFailed'), 'error');
-            }
+        var captchaCode = elements.captchaInput ? elements.captchaInput.value.trim() : '';
+        if (!captchaCode) {
+            showToast(getText('captchaRequired'), 'error');
+            return;
         }
-    } catch (error) {
-        console.error('Send code error:', error);
-        showToast(getText('networkError'), 'error');
-    } finally {
-        setLoading(elements.sendCodeBtn, false);
+        
+        if (!window.currentCaptchaId) {
+            showToast('验证码已过期，请刷新', 'error');
+            refreshCaptcha();
+            return;
+        }
+
+        setLoading(elements.sendCodeBtn, true, getText('sending'));
+
+        try {
+            // 验证图形验证码
+            var verifyRes = await fetch('/api/v1/captcha/verify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': AppState.csrfToken
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    captchaId: window.currentCaptchaId,
+                    userInput: captchaCode
+                })
+            });
+            
+            var verifyData = await verifyRes.json();
+            
+            if (!verifyRes.ok || !verifyData.success) {
+                showToast(getText('captchaInvalid'), 'error');
+                refreshCaptcha();
+                if (elements.captchaInput) elements.captchaInput.value = '';
+                setLoading(elements.sendCodeBtn, false);
+                return;
+            }
+            
+            var captchaToken = verifyData.data ? verifyData.data.token : null;
+            
+            // 发送邮箱验证码
+            var response = await fetch('/api/v1/auth/send-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': AppState.csrfToken
+                },
+                credentials: 'include',
+                body: JSON.stringify({ 
+                    email: email
+                })
+            });
+            
+            var data = await response.json();
+            
+            if (response.ok && data.success) {
+                // 保存邮箱
+                AppState.email = email;
+                
+                if (elements.displayEmail) {
+                    elements.displayEmail.textContent = maskEmail(email);
+                    var step2Desc = document.querySelector('#step2 .header p');
+                    if (step2Desc) {
+                        step2Desc.innerHTML = getText('verifyEmailDesc') + ' <strong>' + maskEmail(email) + '</strong>';
+                    }
+                }
+                
+                // 关键修复：切换到步骤2
+                showStep(2);
+                startResendCountdown(60);
+                tryAutoFillCode();
+                
+                // 清空图形验证码
+                if (elements.captchaInput) elements.captchaInput.value = '';
+                window.currentCaptchaId = null;
+                
+                showToast('验证码已发送到您的邮箱', 'success');
+                
+                setTimeout(function() {
+                    if (elements.codeInputs && elements.codeInputs[0]) {
+                        elements.codeInputs[0].focus();
+                    }
+                }, 300);
+            } else {
+                var errorMessage = data.error || data.message || getText('sendFailed');
+                if (data.error === 'EMAIL_ALREADY_REGISTERED') {
+                    errorMessage = getText('emailExists');
+                }
+                showToast(errorMessage, 'error');
+                refreshCaptcha();
+                if (elements.captchaInput) elements.captchaInput.value = '';
+            }
+        } catch (error) {
+            console.error('Send code error:', error);
+            showToast(getText('networkError'), 'error');
+        } finally {
+            setLoading(elements.sendCodeBtn, false);
+        }
     }
-}
 
     function maskEmail(email) {
         var parts = email.split('@');
@@ -676,14 +598,23 @@ async function sendCode() {
             var data = await response.json();
             
             if (response.ok && data.success) {
+                // 验证成功，保存临时token
                 AppState.tempToken = data.data ? data.data.token : null;
+                
+                // 关闭验证码输入步骤的任何弹窗
+                closeModal(null);
+                
+                // 打开密码设置弹窗
                 openModal(elements.passwordModal);
+                
+                showToast('验证成功，请设置密码', 'success');
+                
                 setTimeout(function() {
                     if (elements.newPassword) elements.newPassword.focus();
                 }, 300);
             } else {
                 var errorMsg = data.error || data.message || 'Verification failed';
-                if (errorMsg === 'CODE_EXPIRED' || errorMsg === '验证码已过期' || errorMsg.indexOf('expired') !== -1) {
+                if (errorMsg === 'INVALID_OR_EXPIRED_CODE' || errorMsg.indexOf('expired') !== -1) {
                     showToast(getText('codeExpired'), 'error');
                     resetCodeInputs();
                     startResendCountdown(60);
@@ -719,10 +650,10 @@ async function sendCode() {
             return;
         }
 
-        setLoading(elements.sendCodeBtn, true, getText('sending'));
+        setLoading(elements.resendLink, true, getText('sending'));
 
         try {
-            var response = await fetch('/api/v1/auth/resend-code', {
+            var response = await fetch('/api/v1/auth/send-code', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -745,7 +676,7 @@ async function sendCode() {
             console.error('Resend code error:', error);
             showToast(getText('networkError'), 'error');
         } finally {
-            setLoading(elements.sendCodeBtn, false);
+            setLoading(elements.resendLink, false);
         }
     }
 
@@ -809,7 +740,7 @@ async function sendCode() {
                 startRedirectCountdown(5);
             } else {
                 var errorMsg = data.error || data.message || getText('registrationFailed');
-                if (errorMsg.indexOf('token') !== -1 || errorMsg.indexOf('验证') !== -1 || errorMsg.indexOf('expired') !== -1) {
+                if (errorMsg === 'INVALID_TOKEN') {
                     showToast(getText('verificationExpired'), 'error');
                     closeModal(elements.passwordModal);
                     showStep(1);
@@ -825,7 +756,6 @@ async function sendCode() {
         }
     }
 
-    // ==================== 倒计时 ====================
     function startResendCountdown(seconds) {
         if (AppState.countdownInterval) clearInterval(AppState.countdownInterval);
         
@@ -857,7 +787,7 @@ async function sendCode() {
             seconds--;
             if (seconds <= 0) {
                 clearInterval(AppState.redirectCountdown);
-                window.location.href = '/index.html';
+                window.location.href = '/shell.html?page=home';
             } else {
                 var span = document.getElementById('countdown');
                 if (span) span.textContent = seconds;
@@ -865,26 +795,24 @@ async function sendCode() {
         }, 1000);
     }
 
-    // ==================== 步骤切换 ====================
     function showStep(step) {
+        console.log('[showStep] 切换到步骤:', step);
+        
         if (step === 1) {
             if (elements.step1) elements.step1.classList.add('active');
             if (elements.step2) elements.step2.classList.remove('active');
-        } else {
+        } else if (step === 2) {
             if (elements.step1) elements.step1.classList.remove('active');
             if (elements.step2) elements.step2.classList.add('active');
         }
     }
 
-    // ==================== 语言切换处理 ====================
     function handleLanguageChange(event) {
         var lang = event.detail.lang;
         AppState.currentLang = lang;
         updatePageTexts();
-        console.log('[Register] Language changed to:', lang);
     }
 
-    // ==================== 事件绑定 ====================
     function bindEvents() {
         if (elements.emailInput) {
             elements.emailInput.addEventListener('input', checkFormValidity);
@@ -901,9 +829,12 @@ async function sendCode() {
         if (elements.codeInputs && elements.codeInputs.length > 0) setupCodeInputs();
         if (elements.verifyCodeBtn) elements.verifyCodeBtn.addEventListener('click', verifyCode);
         if (elements.completeRegistrationBtn) elements.completeRegistrationBtn.addEventListener('click', completeRegistration);
-        if (elements.goToHomeBtn) elements.goToHomeBtn.addEventListener('click', function() { window.location.href = '/index.html'; });
+        if (elements.goToHomeBtn) {
+            elements.goToHomeBtn.addEventListener('click', function() { 
+                window.location.href = '/shell.html?page=home';
+            });
+        }
         
-        // 图形验证码刷新
         if (elements.captchaImage) {
             elements.captchaImage.addEventListener('click', function() {
                 refreshCaptcha();
@@ -918,10 +849,12 @@ async function sendCode() {
                     elements.emailInput.value = '';
                     elements.emailInput.focus();
                 }
-                // 清空图形验证码
                 if (elements.captchaInput) elements.captchaInput.value = '';
                 refreshCaptcha();
                 checkFormValidity();
+                // 重置状态
+                AppState.email = '';
+                AppState.tempToken = null;
             });
         }
         
@@ -939,7 +872,6 @@ async function sendCode() {
         window.addEventListener('languageChanged', handleLanguageChange);
     }
 
-    // ==================== 初始化 ====================
     function init() {
         try {
             var savedLang = localStorage.getItem('lang') || localStorage.getItem('user_language') || 'en';
@@ -951,13 +883,16 @@ async function sendCode() {
         document.body.classList.remove('test-mode');
         document.documentElement.classList.remove('test-mode');
         
-        console.log('Register controller initialized (v7.0.0) - Production ready with CAPTCHA');
+        console.log('[Init] Register controller initialized (v7.3.0)');
         
-        // 初始化图形验证码
         refreshCaptcha();
-        
         bindEvents();
         updatePageTexts();
+        
+        if (elements.step1 && elements.step2) {
+            elements.step1.classList.add('active');
+            elements.step2.classList.remove('active');
+        }
         
         document.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {

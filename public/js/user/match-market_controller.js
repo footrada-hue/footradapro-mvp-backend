@@ -1,99 +1,94 @@
 /**
  * FOOTRADAPRO - Match Market Controller
- * English version - ready for i18n
- * @version 17.0.0
- * @since 2026-04-01
+ * @version 3.6.0
+ * 統一排序邏輯：今天比賽優先 → 聯賽優先級 → 時間排序
+ * 队徽显示：直接使用数据库路径
  */
 
 (function() {
     'use strict';
 
-    if (!window.FOOTRADAPRO) {
-        console.error('FOOTRADAPRO config not loaded');
-        return;
+    // ==================== 多语言配置 ====================
+    const LOCALES = {
+        zh: {
+            'filter.upcoming': '即将开始',
+            'filter.all': '全部',
+            'filter.today': '今天',
+            'filter.tomorrow': '明天',
+            'button.authorize': '授权交易',
+            'button.load_more': '加载更多',
+            'status.upcoming': '即将开始',
+            'empty.no_matches': '暂无比赛',
+            'empty.adjust_filters': '请调整筛选条件或稍后再试',
+            'confidence.label': 'AI 置信度',
+            'loading': '加载中...'
+        },
+        en: {
+            'filter.upcoming': 'Upcoming',
+            'filter.all': 'All',
+            'filter.today': 'Today',
+            'filter.tomorrow': 'Tomorrow',
+            'button.authorize': 'Authorize',
+            'button.load_more': 'Load More',
+            'status.upcoming': 'Upcoming',
+            'empty.no_matches': 'No matches available',
+            'empty.adjust_filters': 'Adjust filters or check back later',
+            'confidence.label': 'AI Confidence',
+            'loading': 'Loading...'
+        }
+    };
+
+    let currentLanguage = localStorage.getItem('language') || 'en';
+
+    function t(key) {
+        const locale = LOCALES[currentLanguage] || LOCALES.en;
+        return locale[key] || key;
     }
 
-    const CONFIG = window.FOOTRADAPRO;
-    const UTILS = CONFIG.UTILS;
+    // ==================== 联赛优先级 ====================
+    const LEAGUE_PRIORITY = {
+        'UEFA Champions League': 1, 'Champions League': 1,
+        'UEFA Europa League': 2, 'Europa League': 2,
+        'Premier League': 3, 'La Liga': 4, 'Serie A': 5,
+        'Bundesliga': 6, 'Ligue 1': 7, 'default': 30
+    };
 
-    // ==================== Global State ====================
+    // ==================== 状态管理 ====================
     const AppState = {
         matches: [],
         filteredMatches: [],
-        userMode: 'test',
-        authority: { sandbox: 10000.00, mainnet: 0.00 },
-        currentPage: 1,
-        pageSize: 24,
-        totalPages: 1,
-        selectedLeague: 'all',
+        featuredMatches: [],
         selectedStatus: 'upcoming',
+        selectedLeague: 'all',
         timeFilter: 'all',
-        isLoading: false
+        currentDisplayCount: 24,
+        batchSize: 24,
+        isLoading: false,
+        hasMore: true,
+        leagues: new Map()
     };
 
-    // ==================== League Priority ====================
-    const LEAGUE_PRIORITY = {
-        'Champions League': 1,
-        'Europa League': 2,
-        'Premier League': 3,
-        'La Liga': 4,
-        'Serie A': 5,
-        'Bundesliga': 6,
-        'Ligue 1': 7,
-        'International Friendly': 10,
-        'World Cup Qualifier': 11,
-        'default': 30
-    };
-
-    // ==================== League Icons ====================
-    function getLeagueIcon(league) {
-        const icons = {
-            'Premier League': '⚡',
-            'La Liga': '🇪🇸',
-            'Serie A': '🇮🇹',
-            'Bundesliga': '🇩🇪',
-            'Ligue 1': '🇫🇷',
-            'Champions League': '🏆',
-            'Europa League': '🏆',
-            'International Friendly': '🤝',
-            'World Cup Qualifier': '🌍'
-        };
-        return icons[league] || '⚽';
-    }
-
-    // ==================== DOM Elements ====================
+    // DOM 元素
     const DOM = {
-        contentContainer: document.querySelector('.content-container'),
-        tickerBar: document.getElementById('tickerBar'),
-        tickerMessages: document.getElementById('tickerMessages'),
-        tickerVolume: document.getElementById('tickerVolume')
+        get featuredGrid() { return document.getElementById('featuredGrid'); },
+        get allMatchesGrid() { return document.getElementById('allMatchesGrid'); },
+        get matchCount() { return document.getElementById('matchCount'); },
+        get leagueSelect() { return document.getElementById('leagueSelect'); },
+        get loadMoreBtn() { return document.getElementById('loadMoreBtn'); },
+        get loadMoreContainer() { return document.getElementById('loadMoreContainer'); },
+        get loadingIndicator() { return document.getElementById('loadingIndicator'); },
+        get themeToggle() { return document.getElementById('themeToggle'); },
+        get langToggle() { return document.getElementById('langToggle'); },
+        get tickerContent() { return document.getElementById('tickerContent'); }
     };
 
-    // ==================== Status Badge ====================
-    function getStatusBadge(match) {
-        const realStatus = match.calculated_status || match.status;
-        
-        if (realStatus === 'upcoming') {
-            return '<span class="status-badge upcoming" data-i18n="status.upcoming">🟢 Upcoming</span>';
-        } else if (realStatus === 'ongoing' || realStatus === 'live') {
-            return '<span class="status-badge live" data-i18n="status.live">🟡 Live</span>';
-        } else if (realStatus === 'finished') {
-            return '<span class="status-badge finished" data-i18n="status.finished">🔴 Finished</span>';
-        }
-        return '<span class="status-badge upcoming" data-i18n="status.upcoming">🟢 Upcoming</span>';
-    }
-
-    // ==================== Helper Functions ====================
+    // ==================== 辅助函数 ====================
     function formatMatchTime(utcString) {
         if (!utcString) return '-';
         try {
             const date = new Date(utcString);
-            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const month = monthNames[date.getUTCMonth()];
-            const day = date.getUTCDate();
-            const hours = date.getUTCHours().toString().padStart(2, '0');
-            const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-            return `${month} ${day}, ${hours}:${minutes}`;
+            return date.toLocaleString(currentLanguage === 'zh' ? 'zh-CN' : 'en-US', 
+                { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
         } catch { return '-'; }
     }
 
@@ -101,17 +96,10 @@
         const matchTime = new Date(utcString);
         const now = new Date();
         const diffHours = Math.floor((matchTime - now) / (1000 * 60 * 60));
-        
         if (diffHours < 0) return 'Started';
         if (diffHours === 0) return 'Now';
         if (diffHours < 24) return `${diffHours}h`;
-        const diffDays = Math.floor(diffHours / 24);
-        return `${diffDays}d`;
-    }
-
-    function isMatchAuthorizable(match) {
-        const realStatus = match.calculated_status || match.status;
-        return realStatus === 'upcoming';
+        return `${Math.floor(diffHours / 24)}d`;
     }
 
     function escapeHtml(str) {
@@ -120,570 +108,377 @@
     }
 
     function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
         const toast = document.createElement('div');
         toast.className = 'toast-notification';
-        toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i> ${escapeHtml(message)}`;
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: ${type === 'success' ? '#10b981' : '#f97316'};
-            color: white;
-            padding: 12px 24px;
-            border-radius: 40px;
-            font-size: 14px;
-            z-index: 10000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        `;
-        document.body.appendChild(toast);
+        const icon = type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
+        toast.innerHTML = `<i class="fas ${icon}"></i><span>${escapeHtml(message)}</span>`;
+        container.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
     }
 
-    // ==================== Time Filter ====================
-function filterByTime(match) {
-    if (AppState.timeFilter === 'all') return true;
-    
-    const matchTimeUTC = new Date(match.match_time);
-    const nowUTC = new Date();
-    
-    // 使用 UTC 时间计算今天和明天
-    const todayStartUTC = new Date(Date.UTC(nowUTC.getUTCFullYear(), nowUTC.getUTCMonth(), nowUTC.getUTCDate(), 0, 0, 0));
-    const todayEndUTC = new Date(todayStartUTC);
-    todayEndUTC.setUTCDate(todayEndUTC.getUTCDate() + 1);
-    
-    const tomorrowStartUTC = new Date(todayEndUTC);
-    const tomorrowEndUTC = new Date(tomorrowStartUTC);
-    tomorrowEndUTC.setUTCDate(tomorrowEndUTC.getUTCDate() + 1);
-    
-    if (AppState.timeFilter === 'today') {
-        return matchTimeUTC >= todayStartUTC && matchTimeUTC < todayEndUTC;
-    }
-    if (AppState.timeFilter === 'tomorrow') {
-        return matchTimeUTC >= tomorrowStartUTC && matchTimeUTC < tomorrowEndUTC;
-    }
-    return true;
-}
-
-    // ==================== Data Fetching ====================
-    async function fetchUserMode() {
-        try {
-            const res = await fetch('/api/v1/user/mode', { credentials: 'include' });
-            const data = await res.json();
-            if (data.success) {
-                AppState.userMode = data.data.is_test_mode ? 'test' : 'live';
-                if (window.ThemeManager) {
-                    window.ThemeManager.isTestMode = (AppState.userMode === 'test');
-                    window.ThemeManager.applyTheme();
-                }
-                updateModeUI();
-            }
-        } catch (err) { console.warn('Failed to fetch user mode'); }
-    }
-
-    async function fetchUserAuthority() {
-        try {
-            const res = await fetch('/api/v1/user/balance', { credentials: 'include' });
-            const data = await res.json();
-            if (data.success) {
-                AppState.authority.mainnet = data.data.balance || 0;
-                AppState.authority.sandbox = data.data.test_balance || 10000;
-            }
-        } catch (err) { console.warn('Failed to fetch balance'); }
-    }
-
-    async function loadMatches() {
-        if (AppState.isLoading) return;
-        AppState.isLoading = true;
-
-        try {
-            const now = new Date();
-            const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
-            const fourteenDaysLater = new Date(todayStart);
-            fourteenDaysLater.setUTCDate(todayStart.getUTCDate() + 14);
-
-            const dateFrom = todayStart.toISOString();
-            const dateTo = fourteenDaysLater.toISOString();
-            
-            let url = `/api/v1/matches?status=all&date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}&limit=200`;
-            
-            if (AppState.selectedLeague !== 'all') {
-                url += `&league=${encodeURIComponent(AppState.selectedLeague)}`;
-            }
-            
-            const response = await fetch(url, { credentials: 'include' });
-            const result = await response.json();
-            
-            if (result.success && result.data) {
-                AppState.matches = result.data;
-                applyFilters();
-                console.log(`✅ Loaded ${AppState.matches.length} matches`);
-            } else {
-                renderEmpty('No matches available');
-            }
-        } catch (error) {
-            console.error('Error loading matches:', error);
-            renderEmpty('Network error');
-        } finally {
-            AppState.isLoading = false;
+    /**
+     * 获取球队队徽 URL（直接使用数据库路径）
+     */
+    function getTeamLogoUrl(logoUrl) {
+        // 直接使用数据库中的路径，只添加时间戳防缓存
+        if (logoUrl && logoUrl !== '/uploads/teams/default.png' && logoUrl !== 'NULL') {
+            return logoUrl + '?t=' + Date.now();
         }
+        return '/uploads/teams/default.png';
     }
 
-    // ==================== Get Recommended Matches ====================
-    function getRecommendedMatches() {
-        // 获取所有未开始的比赛
+    // ==================== 筛选逻辑 ====================
+    function filterByTime(match) {
+        if (AppState.timeFilter === 'all') return true;
         
+        const matchTime = new Date(match.match_time);
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const tomorrowStart = new Date(todayStart);
+        tomorrowStart.setDate(tomorrowStart.getDate() + 1);
         
-        const upcomingMatches = AppState.matches
-            .filter(m => {
-                const realStatus = m.calculated_status || m.status;
-                return realStatus === 'upcoming';
-            })
-            .filter(m => filterByTime(m))
-            .sort((a, b) => {
-                const priorityA = LEAGUE_PRIORITY[a.league] || LEAGUE_PRIORITY.default;
-                const priorityB = LEAGUE_PRIORITY[b.league] || LEAGUE_PRIORITY.default;
-                if (priorityA !== priorityB) return priorityA - priorityB;
-                return new Date(a.match_time) - new Date(b.match_time);
-            });
-        
-        // 取前4场作为推荐
-        return upcomingMatches.slice(0, 4);
+        if (AppState.timeFilter === 'today') {
+            return matchTime >= todayStart && matchTime < tomorrowStart;
+        }
+        if (AppState.timeFilter === 'tomorrow') {
+            return matchTime >= tomorrowStart && matchTime < new Date(tomorrowStart.getTime() + 86400000);
+        }
+        return true;
     }
 
-    // ==================== Filtering ====================
+    // ==================== 統一排序函數 ====================
+    function sortMatches(matches) {
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const tomorrowStart = new Date(todayStart);
+        tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+        
+        return [...matches].sort((a, b) => {
+            const aTime = new Date(a.match_time);
+            const bTime = new Date(b.match_time);
+            const aIsToday = aTime >= todayStart && aTime < tomorrowStart;
+            const bIsToday = bTime >= todayStart && bTime < tomorrowStart;
+            
+            if (aIsToday !== bIsToday) {
+                return aIsToday ? -1 : 1;
+            }
+            
+            const priorityA = LEAGUE_PRIORITY[a.league] || LEAGUE_PRIORITY.default;
+            const priorityB = LEAGUE_PRIORITY[b.league] || LEAGUE_PRIORITY.default;
+            if (priorityA !== priorityB) return priorityA - priorityB;
+            
+            return aTime - bTime;
+        });
+    }
+
+    // ==================== 智能推薦比賽邏輯 ====================
+    function getFeaturedMatches(matches) {
+        if (!matches || matches.length === 0) return [];
+        
+        const now = new Date();
+        const upcomingMatches = matches.filter(match => new Date(match.match_time) > now);
+        const sortedMatches = sortMatches(upcomingMatches);
+        const featured = sortedMatches.slice(0, 4);
+        
+        console.log(`推薦統計: 總共 ${upcomingMatches.length} 場未開始比賽，推薦前 ${featured.length} 場`);
+        return featured;
+    }
+
     function applyFilters() {
-        let filtered = [...AppState.matches];
+        let filtered = AppState.matches.filter(m => {
+            const realStatus = m.calculated_status || m.status;
+            return realStatus === 'upcoming';
+        });
         
-        // 时间筛选
-        filtered = filtered.filter(match => filterByTime(match));
+        filtered = filtered.filter(m => filterByTime(m));
         
-        // 联赛筛选
         if (AppState.selectedLeague !== 'all') {
             filtered = filtered.filter(m => m.league === AppState.selectedLeague);
         }
         
-        // 状态筛选
-// 状态筛选（只显示 upcoming）
-filtered = filtered.filter(m => {
-    const realStatus = m.calculated_status || m.status;
-    return realStatus === 'upcoming';
-});
-        
-        // 排序
-        filtered.sort((a, b) => {
-            const priorityA = LEAGUE_PRIORITY[a.league] || LEAGUE_PRIORITY.default;
-            const priorityB = LEAGUE_PRIORITY[b.league] || LEAGUE_PRIORITY.default;
-            if (priorityA !== priorityB) return priorityA - priorityB;
-            return new Date(a.match_time) - new Date(b.match_time);
-        });
+        filtered = sortMatches(filtered);
         
         AppState.filteredMatches = filtered;
-        AppState.totalPages = Math.ceil(filtered.length / AppState.pageSize);
-        AppState.currentPage = 1;
+        AppState.hasMore = filtered.length > AppState.batchSize;
+        AppState.currentDisplayCount = AppState.batchSize;
+        AppState.featuredMatches = getFeaturedMatches(filtered);
         
+        if (DOM.matchCount) DOM.matchCount.textContent = filtered.length;
         render();
     }
 
-    // ==================== Render Match Card ====================
-    function getMatchCard(match) {
+    // ==================== 渲染卡片 ====================
+    function renderMatchCard(match) {
         const time = formatMatchTime(match.match_time);
         const relativeTime = getRelativeTime(match.match_time);
         const leagueName = match.league || 'Unknown';
         const confidence = LEAGUE_PRIORITY[match.league] <= 10 ? 92 : 75;
-        const statusBadge = getStatusBadge(match);
-        const canAuthorize = isMatchAuthorizable(match);
         
-        let scoreHtml = '';
-        const realStatus = match.calculated_status || match.status;
-        if (realStatus === 'finished' && (match.home_score !== null || match.away_score !== null)) {
-            scoreHtml = `<div class="match-score">${match.home_score || 0} : ${match.away_score || 0}</div>`;
-        }
-        
-        // Home team logo
-        const homeLogoHtml = match.home_logo && match.home_logo !== '/uploads/teams/default.png'
-            ? `<img class="match-logo" src="${match.home_logo}" alt="${escapeHtml(match.home_team)}" 
-                loading="lazy" 
-                onload="this.classList.add('loaded')" 
-                onerror="this.onerror=null; this.parentElement.innerHTML = '<div class=\'logo-fallback\'><i class=\'fas fa-futbol\'></i></div>'">`
-            : `<div class="logo-fallback"><i class="fas fa-futbol"></i></div>`;
-        
-        // Away team logo
-        const awayLogoHtml = match.away_logo && match.away_logo !== '/uploads/teams/default.png'
-            ? `<img class="match-logo" src="${match.away_logo}" alt="${escapeHtml(match.away_team)}" 
-                loading="lazy" 
-                onload="this.classList.add('loaded')" 
-                onerror="this.onerror=null; this.parentElement.innerHTML = '<div class=\'logo-fallback\'><i class=\'fas fa-futbol\'></i></div>'">`
-            : `<div class="logo-fallback"><i class="fas fa-futbol"></i></div>`;
-        
-        const buttonText = canAuthorize ? 'Authorize' : (realStatus === 'finished' ? 'Match Ended' : 'Not Available');
-        const buttonDisabled = !canAuthorize;
+        // 直接使用数据库队徽
+        const homeLogo = getTeamLogoUrl(match.home_logo);
+        const awayLogo = getTeamLogoUrl(match.away_logo);
         
         return `
             <div class="match-card" data-match-id="${match.id}">
-                ${scoreHtml ? scoreHtml : statusBadge}
+                <div class="status-badge status-upcoming">${t('status.upcoming')}</div>
                 <div class="match-logos-wrapper">
                     <div class="match-logo-item">
-                        ${homeLogoHtml}
+                        <img class="match-logo" src="${homeLogo}" alt="${escapeHtml(match.home_team)}" 
+                            loading="lazy"
+                            onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'logo-fallback\\'><i class=\\'fas fa-futbol\\'></i></div><div class=\\'match-team-name\\'>${escapeHtml(match.home_team)}</div>'">
                         <div class="match-team-name">${escapeHtml(match.home_team)}</div>
                     </div>
                     <div class="match-vs-badge">VS</div>
                     <div class="match-logo-item">
-                        ${awayLogoHtml}
+                        <img class="match-logo" src="${awayLogo}" alt="${escapeHtml(match.away_team)}"
+                            loading="lazy"
+                            onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'logo-fallback\\'><i class=\\'fas fa-futbol\\'></i></div><div class=\\'match-team-name\\'>${escapeHtml(match.away_team)}</div>'">
                         <div class="match-team-name">${escapeHtml(match.away_team)}</div>
                     </div>
                 </div>
                 <div class="match-info">
                     <div class="match-league-time">
-                        <span class="league-badge" data-i18n="league.label">${escapeHtml(leagueName)}</span>
-                        <span class="match-time-short">${time} (${relativeTime})</span>
+                        <span class="league-badge">${escapeHtml(leagueName)}</span>
+                        <span>${time} (${relativeTime})</span>
                     </div>
                     <div class="confidence-bar">
-                        <span class="confidence-label" data-i18n="confidence.label">AI Confidence</span>
+                        <div class="confidence-label">
+                            <span>${t('confidence.label')}</span>
+                            <span>${confidence}%</span>
+                        </div>
                         <div class="confidence-progress">
                             <div class="confidence-fill" style="width: ${confidence}%"></div>
                         </div>
-                        <span class="confidence-value">${confidence}%</span>
                     </div>
                 </div>
-                <button class="authorize-btn" onclick="window.location.href='/authorize-submit.html?matchId=${match.id}'" ${buttonDisabled ? 'disabled' : ''} data-i18n="button.authorize">
-                    ${buttonText} <i class="fas fa-arrow-right"></i>
+                <button class="authorize-btn" onclick="window.location.href='/shell.html?page=authorize&matchId=${match.id}'">
+                    ${t('button.authorize')} <i class="fas fa-arrow-right"></i>
                 </button>
             </div>
         `;
     }
 
-    // ==================== Render Filter Bar ====================
-    function renderFilterBar() {
-const statusButtons = [
-    { value: 'upcoming', label: 'Upcoming', icon: 'fa-calendar', i18n: 'filter.upcoming' }
-];
-        
-        const statusHtml = statusButtons.map(btn => `
-            <button class="status-chip ${AppState.selectedStatus === btn.value ? 'active' : ''}" data-status="${btn.value}" data-i18n="${btn.i18n}">
-                <i class="fas ${btn.icon}"></i>
-                <span>${btn.label}</span>
-            </button>
-        `).join('');
-        
-        const leagueOptions = () => {
-            const leagues = {};
-            AppState.matches.forEach(m => {
-                if (m.league) leagues[m.league] = (leagues[m.league] || 0) + 1;
-            });
-            const sortedLeagues = Object.keys(leagues).sort((a, b) => leagues[b] - leagues[a]);
-            
-            return `
-                <select class="league-select" id="leagueSelect" data-i18n="filter.league">
-                    <option value="all" data-i18n="filter.all_leagues">All Leagues</option>
-                    ${sortedLeagues.map(league => `
-                        <option value="${escapeHtml(league)}" ${AppState.selectedLeague === league ? 'selected' : ''}>
-                            ${getLeagueIcon(league)} ${escapeHtml(league)} (${leagues[league]})
-                        </option>
-                    `).join('')}
-                </select>
-            `;
-        };
-        
-        return `
-            <div class="filter-bar-simple">
-                <div class="status-group">
-                    ${statusHtml}
-                </div>
-                <div class="league-group">
-                    ${leagueOptions()}
-                </div>
-            </div>
-        `;
-    }
-
-    // ==================== Render Recommended Section ====================
-    function renderRecommendedSection() {
-        const recommended = getRecommendedMatches();
-        if (recommended.length === 0) return '';
-        
-        return `
-            <div class="recommended-section">
-                <div class="section-header">
-                    <div class="section-title" data-i18n="section.featured">
-                        <i class="fas fa-star"></i>
-                        <span>Featured Matches</span>
-                    </div>
-                    <div class="time-quick-filters">
-                        <button class="time-quick-btn ${AppState.timeFilter === 'today' ? 'active' : ''}" data-time-filter="today" data-i18n="filter.today">Today</button>
-                        <button class="time-quick-btn ${AppState.timeFilter === 'tomorrow' ? 'active' : ''}" data-time-filter="tomorrow" data-i18n="filter.tomorrow">Tomorrow</button>
-                    </div>
-                </div>
-                <div class="matches-grid">
-                    ${recommended.map(m => getMatchCard(m)).join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    // ==================== Render All ====================
     function render() {
-        if (!DOM.contentContainer) return;
+        if (!DOM.allMatchesGrid) return;
         
-        const start = (AppState.currentPage - 1) * AppState.pageSize;
-        const end = start + AppState.pageSize;
-        let pageMatches = AppState.filteredMatches.slice(start, end);
-        
-        // 获取推荐比赛的 ID，用于排除
-        const recommendedMatches = getRecommendedMatches();
-        const recommendedIds = recommendedMatches.map(m => m.id);
-        
-        
-        // 排除推荐比赛（始终排除）
-        if (recommendedIds.length > 0) {
-            pageMatches = pageMatches.filter(match => !recommendedIds.includes(match.id));
+        if (DOM.featuredGrid) {
+            if (AppState.featuredMatches.length > 0) {
+                DOM.featuredGrid.innerHTML = AppState.featuredMatches.map(m => renderMatchCard(m)).join('');
+            } else {
+                DOM.featuredGrid.innerHTML = `<div class="empty-state"><i class="fas fa-futbol"></i><p>${t('empty.no_matches')}</p></div>`;
+            }
         }
         
-        const hasMatches = AppState.filteredMatches.length > 0;
+        const displayMatches = AppState.filteredMatches.slice(0, AppState.currentDisplayCount);
+        const featuredIds = new Set(AppState.featuredMatches.map(m => m.id));
+        const otherMatches = displayMatches.filter(m => !featuredIds.has(m.id));
         
-        const fullHtml = `
-            ${renderFilterBar()}
-            
-            ${renderRecommendedSection()}
-            
-            ${hasMatches ? `
-            <div class="section-header">
-                <div class="section-title" data-i18n="section.all_matches">
-                    <i class="fas fa-list"></i>
-                    <span>All Matches</span>
-                    <span class="match-count">${AppState.filteredMatches.length}</span>
-                </div>
-                <div class="page-size-selector">
-                    <label data-i18n="pagination.show">Show</label>
-                    <select class="page-size-select" id="pageSizeSelect">
-                        <option value="12" ${AppState.pageSize === 12 ? 'selected' : ''}>12</option>
-                        <option value="24" ${AppState.pageSize === 24 ? 'selected' : ''}>24</option>
-                        <option value="36" ${AppState.pageSize === 36 ? 'selected' : ''}>36</option>
-                        <option value="48" ${AppState.pageSize === 48 ? 'selected' : ''}>48</option>
-                    </select>
-                    <label data-i18n="pagination.per_page">per page</label>
-                </div>
-            </div>
-            <div class="matches-grid">
-                ${pageMatches.map(m => getMatchCard(m)).join('')}
-            </div>
-            
-            ${renderPagination()}
-            ` : `
-            <div class="empty-state">
-                <i class="fas fa-futbol"></i>
-                <p data-i18n="empty.no_matches">No matches available</p>
-                <p class="empty-hint" data-i18n="empty.adjust_filters">Try adjusting your filters or check back later</p>
-                <button class="reset-filters-btn" id="resetFiltersBtn" data-i18n="button.reset_filters">Reset Filters</button>
-            </div>
-            `}
-        `;
+        if (otherMatches.length > 0) {
+            DOM.allMatchesGrid.innerHTML = otherMatches.map(m => renderMatchCard(m)).join('');
+        } else if (AppState.filteredMatches.length === 0) {
+            DOM.allMatchesGrid.innerHTML = `<div class="empty-state"><i class="fas fa-futbol"></i><p>${t('empty.no_matches')}</p><p style="font-size:12px;margin-top:8px;">${t('empty.adjust_filters')}</p></div>`;
+        } else {
+            DOM.allMatchesGrid.innerHTML = '';
+        }
         
-        DOM.contentContainer.innerHTML = fullHtml;
-        bindEvents();
+        updateLoadMoreButton();
     }
 
-    function renderPagination() {
-        if (AppState.totalPages <= 1) return '';
-        
-        let html = '<div class="pagination">';
-        html += `<button class="page-btn" data-page="${AppState.currentPage - 1}" ${AppState.currentPage === 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
-        
-        const startPage = Math.max(1, AppState.currentPage - 2);
-        const endPage = Math.min(AppState.totalPages, AppState.currentPage + 2);
-        
-        if (startPage > 1) {
-            html += `<button class="page-btn" data-page="1">1</button>`;
-            if (startPage > 2) html += `<button class="page-btn" disabled>...</button>`;
+    function updateLoadMoreButton() {
+        if (!DOM.loadMoreContainer) return;
+        const remaining = AppState.filteredMatches.length - AppState.currentDisplayCount;
+        if (remaining > 0) {
+            DOM.loadMoreContainer.style.display = 'flex';
+            if (DOM.loadMoreBtn) DOM.loadMoreBtn.textContent = `${t('button.load_more')} (${remaining})`;
+        } else {
+            DOM.loadMoreContainer.style.display = 'none';
         }
-        
-        for (let i = startPage; i <= endPage; i++) {
-            html += `<button class="page-btn ${i === AppState.currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
-        }
-        
-        if (endPage < AppState.totalPages) {
-            if (endPage < AppState.totalPages - 1) html += `<button class="page-btn" disabled>...</button>`;
-            html += `<button class="page-btn" data-page="${AppState.totalPages}">${AppState.totalPages}</button>`;
-        }
-        
-        html += `<button class="page-btn" data-page="${AppState.currentPage + 1}" ${AppState.currentPage === AppState.totalPages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
-        html += '</div>';
-        
-        return html;
     }
 
-    function renderEmpty(message) {
-        if (!DOM.contentContainer) return;
-        DOM.contentContainer.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-futbol"></i>
-                <p>${message}</p>
-                <button class="reset-filters-btn" onclick="location.reload()">Refresh</button>
-            </div>
-        `;
+    function loadMore() {
+        AppState.currentDisplayCount += AppState.batchSize;
+        render();
+        setTimeout(() => {
+            if (DOM.allMatchesGrid && DOM.allMatchesGrid.lastChild && DOM.allMatchesGrid.lastChild.scrollIntoView) {
+                DOM.allMatchesGrid.lastChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }, 100);
     }
 
-    // ==================== Event Binding ====================
-    function bindEvents() {
-// 状态筛选
-document.querySelectorAll('.status-chip').forEach(chip => {
-    chip.onclick = () => {
-        const status = chip.dataset.status;
-        AppState.selectedStatus = status;
-        
-        // 如果点击的是 "All" 状态，同时重置时间筛选
-        if (status === 'all') {
-            AppState.timeFilter = 'all';
-            // 同时重置时间按钮的样式
-            document.querySelectorAll('.time-quick-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-        }
-        
-        AppState.currentPage = 1;
-        applyFilters();
-    };
-});
-        
-        // 时间快捷筛选
-        document.querySelectorAll('.time-quick-btn').forEach(btn => {
-            btn.onclick = () => {
-                const timeFilter = btn.dataset.timeFilter;
-                AppState.timeFilter = timeFilter;
-                // 更新按钮样式
-                document.querySelectorAll('.time-quick-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                AppState.currentPage = 1;
-                applyFilters();
-            };
-        });
-        
-        // 联赛筛选
-        const leagueSelect = document.getElementById('leagueSelect');
-        if (leagueSelect) {
-            leagueSelect.onchange = (e) => {
-                AppState.selectedLeague = e.target.value;
-                AppState.currentPage = 1;
-                applyFilters();
-            };
-        }
-        
-        // 每页数量
-        const pageSizeSelect = document.getElementById('pageSizeSelect');
-        if (pageSizeSelect) {
-            pageSizeSelect.onchange = (e) => {
-                AppState.pageSize = parseInt(e.target.value);
-                AppState.currentPage = 1;
-                AppState.totalPages = Math.ceil(AppState.filteredMatches.length / AppState.pageSize);
-                render();
-            };
-        }
-        
-// 重置筛选
-const resetBtn = document.getElementById('resetFiltersBtn');
-if (resetBtn) {
-    resetBtn.onclick = () => {
-        AppState.selectedLeague = 'all';
-        AppState.selectedStatus = 'upcoming';
-        AppState.timeFilter = 'all';  // 确保这行存在
-        AppState.currentPage = 1;
-        loadMatches();
-    };
-}
-        
-        // 分页
-        document.querySelectorAll('.page-btn[data-page]').forEach(btn => {
-            btn.onclick = () => {
-                const page = parseInt(btn.dataset.page);
-                if (!isNaN(page) && page >= 1 && page <= AppState.totalPages) {
-                    AppState.currentPage = page;
-                    render();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            };
-        });
-    }
-
-    // ==================== Marquee Ticker ====================
-    async function loadTicker() {
-        if (!DOM.tickerMessages || !DOM.tickerBar) return;
+    async function loadMatches() {
+        if (AppState.isLoading) return;
+        AppState.isLoading = true;
+        if (DOM.loadingIndicator) DOM.loadingIndicator.style.display = 'block';
         
         try {
-            const res = await fetch('/api/v1/ticker/messages?limit=20', { credentials: 'include' });
-            const data = await res.json();
+            const res = await APIClient.get('/api/v1/matches');
+            const result = await res.json();
             
-            if (data.success && data.data && data.data.length > 0) {
-                const messages = data.data.map(msg => msg.message).join(' // ');
-                DOM.tickerMessages.innerHTML = messages + ' // ' + messages;
-                DOM.tickerBar.style.display = 'flex';
+            if (result.success && result.data) {
+                AppState.matches = result.data;
+                const leagues = new Map();
+                AppState.matches.forEach(m => {
+                    if (m.league) leagues.set(m.league, (leagues.get(m.league) || 0) + 1);
+                });
+                AppState.leagues = leagues;
+                updateLeagueSelect();
+                applyFilters();
+                console.log(`✅ Loaded ${AppState.matches.length} matches`);
             } else {
-                DOM.tickerMessages.innerHTML = '🎉 Welcome to FOOTRADA // ⚡ AI-powered football trading platform';
-                DOM.tickerBar.style.display = 'flex';
+                showToast('Failed to load matches', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading matches:', error);
+            if (DOM.allMatchesGrid) {
+                DOM.allMatchesGrid.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Failed to load matches</p></div>`;
+            }
+        } finally {
+            AppState.isLoading = false;
+            if (DOM.loadingIndicator) DOM.loadingIndicator.style.display = 'none';
+        }
+    }
+
+    function updateLeagueSelect() {
+        if (DOM.leagueSelect) {
+            let options = '<option value="all">🌍 All Leagues</option>';
+            for (let [league, count] of AppState.leagues) {
+                options += `<option value="${escapeHtml(league)}">${escapeHtml(league)} (${count})</option>`;
+            }
+            DOM.leagueSelect.innerHTML = options;
+            DOM.leagueSelect.value = AppState.selectedLeague;
+        }
+        
+        const leagueList = document.getElementById('leagueList');
+        if (leagueList) {
+            let items = '';
+            for (let [league, count] of AppState.leagues) {
+                const activeClass = AppState.selectedLeague === league ? 'active' : '';
+                items += `<div class="league-item ${activeClass}" data-league="${escapeHtml(league)}">
+                            <span>${escapeHtml(league)}</span>
+                            <span class="league-count">${count}</span>
+                          </div>`;
+            }
+            leagueList.innerHTML = items;
+            
+            document.querySelectorAll('.league-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const league = item.dataset.league;
+                    document.querySelectorAll('.league-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    AppState.selectedLeague = league;
+                    AppState.currentDisplayCount = AppState.batchSize;
+                    if (window.applyFilters) window.applyFilters();
+                });
+            });
+        }
+        
+        const mobileSelect = document.getElementById('mobileLeagueSelect');
+        if (mobileSelect) {
+            let options = '<option value="all">🌍 All Leagues</option>';
+            for (let [league, count] of AppState.leagues) {
+                options += `<option value="${escapeHtml(league)}">${escapeHtml(league)} (${count})</option>`;
+            }
+            mobileSelect.innerHTML = options;
+            mobileSelect.value = AppState.selectedLeague;
+        }
+    }
+
+    async function loadTicker() {
+        try {
+            const res = await APIClient.get('/api/v1/ticker/messages?limit=10');
+            const result = await res.json();
+            if (result.success && result.data && result.data.length > 0) {
+                const messages = result.data.map(m => m.message).join(' // ');
+                if (DOM.tickerContent) DOM.tickerContent.innerHTML = `⚡ ${messages} ⚡`;
             }
         } catch (err) {
             console.warn('Ticker error:', err);
-            DOM.tickerMessages.innerHTML = '🎉 Welcome to FOOTRADA // ⚡ AI-powered football trading platform';
-            DOM.tickerBar.style.display = 'flex';
         }
     }
 
-    async function loadTickerStats() {
-        if (!DOM.tickerVolume) return;
+    // ==================== 事件绑定 ====================
+    function bindEvents() {
+        document.querySelectorAll('[data-status]').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('[data-status]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                AppState.selectedStatus = btn.dataset.status;
+                AppState.currentDisplayCount = AppState.batchSize;
+                applyFilters();
+            };
+        });
         
-        try {
-            const res = await fetch('/api/v1/ticker/stats', { credentials: 'include' });
-            const data = await res.json();
-            if (data.success) {
-                const volume = data.data.today_volume || 0;
-                DOM.tickerVolume.textContent = volume.toLocaleString();
-            }
-        } catch (err) {}
-    }
-
-    // ==================== UI Updates ====================
-    function updateModeUI() {
-        const isTestMode = AppState.userMode === 'test';
-        if (isTestMode) {
-            document.body.classList.add('test-mode');
-            document.body.classList.remove('live-mode');
-        } else {
-            document.body.classList.add('live-mode');
-            document.body.classList.remove('test-mode');
-        }
-    }
-
-    // ==================== Refresh Button ====================
-    function initRefreshButton() {
-        const refreshBtn = document.getElementById('refreshBtn');
-        if (refreshBtn) {
-            refreshBtn.onclick = () => {
-                loadMatches();
-                loadTicker();
-                loadTickerStats();
-                showToast('Refreshed', 'success');
+        document.querySelectorAll('[data-time]').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('[data-time]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                AppState.timeFilter = btn.dataset.time;
+                AppState.currentDisplayCount = AppState.batchSize;
+                applyFilters();
+            };
+        });
+        
+        if (DOM.leagueSelect) {
+            DOM.leagueSelect.onchange = (e) => {
+                AppState.selectedLeague = e.target.value;
+                AppState.currentDisplayCount = AppState.batchSize;
+                applyFilters();
             };
         }
+        
+        if (DOM.loadMoreBtn) DOM.loadMoreBtn.onclick = () => loadMore();
+        if (DOM.themeToggle) DOM.themeToggle.onclick = () => ThemeManager.toggleTheme();
+        
+        if (DOM.langToggle) {
+            DOM.langToggle.onclick = () => {
+                currentLanguage = currentLanguage === 'zh' ? 'en' : 'zh';
+                localStorage.setItem('language', currentLanguage);
+                window.dispatchEvent(new CustomEvent('languagechange', { detail: { language: currentLanguage } }));
+                if (DOM.langToggle) DOM.langToggle.textContent = currentLanguage === 'zh' ? '中' : 'EN';
+                render();
+                updateLeagueSelect();
+            };
+        }
+        
+        window.addEventListener('languagechange', (e) => {
+            if (e.detail?.language) {
+                currentLanguage = e.detail.language;
+                render();
+                updateLeagueSelect();
+            }
+        });
+        
+        if (ThemeManager.addListener) {
+            ThemeManager.addListener(() => loadMatches());
+        }
     }
 
-    // ==================== Initialization ====================
+    // ==================== 初始化 ====================
     async function init() {
-        console.log('🎯 Match Market Controller initialized');
+        await ThemeManager.init();
+        const savedLang = localStorage.getItem('language');
+        if (savedLang === 'zh' || savedLang === 'en') currentLanguage = savedLang;
+        if (DOM.langToggle) DOM.langToggle.textContent = currentLanguage === 'zh' ? '中' : 'EN';
         
-        if (window.FOOTRADA_TIMEZONE) console.log('✅ Timezone tool loaded');
-        if (window.ThemeManager) await ThemeManager.init(true);
-        
-        await fetchUserAuthority();
-        await fetchUserMode();
-        
+        bindEvents();
         await loadMatches();
         loadTicker();
-        loadTickerStats();
-        initRefreshButton();
         
-        setInterval(() => {
-            loadTickerStats();
-        }, 60000);
+        console.log('Match Market Controller initialized');
     }
     
     document.addEventListener('DOMContentLoaded', init);
+    
+    // ==================== 暴露全局变量 ====================
+    window.AppState = AppState;
+    window.LEAGUE_PRIORITY = LEAGUE_PRIORITY;
+    window.refreshMatches = loadMatches;
+    window.loadMatches = loadMatches;
+    window.applyFilters = applyFilters;
+    window.updateLeagueSelect = updateLeagueSelect;
+    window.render = render;
+    window.getTeamLogoUrl = getTeamLogoUrl;
+    
 })();

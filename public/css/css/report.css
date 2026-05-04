@@ -1,0 +1,1059 @@
+/* ======================================================
+   FOOTRADAPRO - 報告詳情頁樣式
+   混搭風格：玻璃擬態 + 奢華質感 + 賽博朋克
+   比例協調・深度打磨版
+   ====================================================== */
+
+:root {
+    --brand-500: #FF6B00;
+    --brand-600: #E05A00;
+    --brand-700: #C44C00;
+    --brand-400: #FF8A3C;
+    --brand-300: #FFA55A;
+    --brand-rgb: 255, 107, 0;
+    --brand-50: rgba(255, 107, 0, 0.1);
+    --brand-100: rgba(255, 107, 0, 0.15);
+    
+    --success-500: #10B981;
+    --success-rgb: 16, 185, 129;
+    --success-50: rgba(16, 185, 129, 0.1);
+    --warning-500: #F59E0B;
+    --warning-rgb: 245, 158, 11;
+    --warning-50: rgba(245, 158, 11, 0.1);
+    --danger-500: #EF4444;
+    --danger-rgb: 239, 68, 68;
+    --danger-50: rgba(239, 68, 68, 0.1);
+    
+    --gold: #FFD700;
+    --gold-rgb: 255, 215, 0;
+    
+    --bg-primary: #0C0F14;
+    --bg-secondary: #151A24;
+    --surface-primary: rgba(30, 35, 47, 0.8);
+    --surface-secondary: rgba(41, 47, 61, 0.8);
+    --surface-tertiary: rgba(47, 54, 70, 0.8);
+    
+    --text-primary: #FFFFFF;
+    --text-secondary: #9AA8BC;
+    --text-tertiary: #6F7D95;
+    
+    --border-light: rgba(255, 255, 255, 0.06);
+    --border-medium: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.15);
+    --border-gold: rgba(255, 215, 0, 0.15);
+    
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
+    --shadow-glow: 0 0 20px rgba(255, 107, 0, 0.2);
+    
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --radius-2xl: 24px;
+    --radius-3xl: 28px;
+    --radius-full: 9999px;
+    
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+    
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+}
+
+[data-theme="light"] {
+    --bg-primary: #F5F7FA;
+    --bg-secondary: #FFFFFF;
+    --surface-primary: rgba(255, 255, 255, 0.9);
+    --surface-secondary: rgba(248, 250, 252, 0.9);
+    --surface-tertiary: rgba(241, 245, 249, 0.9);
+    
+    --text-primary: #0F172A;
+    --text-secondary: #334155;
+    --text-tertiary: #64748B;
+    
+    --border-light: rgba(0, 0, 0, 0.04);
+    --border-medium: rgba(0, 0, 0, 0.08);
+    --border-strong: rgba(0, 0, 0, 0.12);
+    --border-gold: rgba(255, 215, 0, 0.1);
+    
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+    --shadow-glow: 0 0 20px rgba(255, 107, 0, 0.15);
+}
+
+/* ===== 測試模式 ===== */
+.test-mode {
+    --brand-500: #2563EB;
+    --brand-600: #1D4ED8;
+    --brand-700: #1E3A8A;
+    --brand-400: #3B82F6;
+    --brand-300: #60A5FA;
+    --brand-rgb: 37, 99, 235;
+    --brand-50: rgba(37, 99, 235, 0.1);
+    --brand-100: rgba(37, 99, 235, 0.15);
+    --shadow-glow: 0 0 20px rgba(37, 99, 235, 0.2);
+}
+
+/* ===== 設計令牌 ===== */
+:root {
+    /* 玻璃擬態 */
+    --glass-bg: rgba(21, 26, 40, 0.7);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.05);
+    --glass-border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    
+    /* 發光效果 */
+    --neon-glow: 0 0 20px rgba(var(--brand-rgb), 0.3);
+    --neon-glow-strong: 0 0 30px rgba(var(--brand-rgb), 0.5);
+    --gold-glow: 0 0 15px rgba(255, 215, 0, 0.2);
+    
+    /* 過渡動畫 */
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding-bottom: 90px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
+}
+
+.report-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: var(--space-4) var(--space-4) var(--space-8);
+}
+
+/* ===== 導航欄 ===== */
+.nav-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-6);
+    padding: var(--space-2) 0;
+}
+
+.nav-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: var(--glass-border);
+    border-bottom: var(--glass-border-bottom);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-base);
+    font-size: 18px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.nav-btn::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(var(--brand-rgb), 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+}
+
+.nav-btn:hover::before {
+    opacity: 1;
+    animation: rotate 8s linear infinite;
+}
+
+.nav-btn:hover {
+    border-color: var(--brand-500);
+    color: var(--brand-500);
+    transform: translateX(-2px);
+    box-shadow: var(--neon-glow);
+}
+
+.nav-title {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: var(--text-primary);
+}
+
+/* 測試模式標記 */
+.test-mode-badge {
+    background: rgba(var(--brand-rgb), 0.15);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    color: var(--brand-500);
+    font-size: 12px;
+    font-weight: 600;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    border: 1px solid rgba(var(--brand-rgb), 0.3);
+    letter-spacing: 0.3px;
+    animation: pulse 2s infinite;
+}
+
+.test-mode-badge i {
+    font-size: 12px;
+}
+
+/* ===== 加載狀態 ===== */
+.loading-state {
+    text-align: center;
+    padding: var(--space-10) var(--space-4);
+    color: var(--text-tertiary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.loading-state i {
+    font-size: 48px;
+    color: var(--brand-500);
+    filter: drop-shadow(0 0 10px var(--brand-500));
+    animation: spin 1s linear infinite;
+}
+
+.loading-state p {
+    font-size: 16px;
+    color: var(--text-secondary);
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ===== 錯誤狀態 ===== */
+.error-state {
+    text-align: center;
+    padding: var(--space-10) var(--space-4);
+}
+
+.error-state i {
+    font-size: 56px;
+    color: var(--danger-500);
+    margin-bottom: var(--space-4);
+    filter: drop-shadow(0 0 15px rgba(var(--danger-rgb), 0.5));
+}
+
+.error-state p {
+    color: var(--text-secondary);
+    font-size: 16px;
+    margin-bottom: var(--space-6);
+}
+
+.btn-primary {
+    padding: var(--space-4) var(--space-8);
+    background: var(--brand-500);
+    border: none;
+    border-radius: var(--radius-full);
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-base);
+    box-shadow: var(--neon-glow);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+}
+
+.btn-primary:hover::before {
+    opacity: 1;
+    animation: rotate 8s linear infinite;
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--neon-glow-strong);
+}
+
+/* ===== 報告卡片 ===== */
+.report-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: var(--glass-border);
+    border-bottom: var(--glass-border-bottom);
+    border-radius: var(--radius-3xl);
+    padding: var(--space-6);
+    box-shadow: var(--glass-shadow);
+    position: relative;
+    overflow: hidden;
+    animation: slideUp 0.4s ease;
+}
+
+.report-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--brand-500), var(--brand-400));
+    box-shadow: var(--neon-glow);
+    z-index: 2;
+}
+
+.report-card::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(var(--brand-rgb), 0.03) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+    pointer-events: none;
+}
+
+.report-card:hover::after {
+    opacity: 1;
+    animation: rotate 20s linear infinite;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== 比賽頭部 ===== */
+.match-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-5);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--border-gold);
+    position: relative;
+    z-index: 2;
+}
+
+.match-teams {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
+    background: linear-gradient(135deg, var(--text-primary), #FFFFFF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.match-score {
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--brand-500);
+    font-family: var(--font-mono);
+    background: rgba(var(--brand-rgb), 0.1);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    padding: var(--space-1) var(--space-4);
+    border-radius: var(--radius-full);
+    letter-spacing: 1px;
+    border: 1px solid rgba(var(--brand-rgb), 0.2);
+    text-shadow: 0 0 10px var(--brand-500);
+}
+
+/* ===== 比賽元數據 ===== */
+.match-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+    color: var(--text-secondary);
+    font-size: 14px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 2;
+}
+
+.match-meta-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-full);
+    border: 1px solid rgba(var(--gold-rgb), 0.1);
+}
+
+.match-meta-item i {
+    color: var(--brand-500);
+    font-size: 12px;
+    filter: drop-shadow(0 0 5px var(--brand-500));
+}
+
+/* ===== 報告內容區域 ===== */
+.report-content {
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-6);
+    margin-bottom: var(--space-6);
+    border: var(--glass-border);
+    border-bottom: var(--glass-border-bottom);
+    position: relative;
+    overflow: hidden;
+    z-index: 2;
+}
+
+.report-content::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(var(--brand-rgb), 0.03) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+    pointer-events: none;
+}
+
+.report-content:hover::before {
+    opacity: 1;
+    animation: rotate 20s linear infinite;
+}
+
+/* 報告文本樣式 - 支援 Markdown 風格 */
+.report-text {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-break: break-word;
+    position: relative;
+    z-index: 2;
+}
+
+/* 標題樣式 */
+.report-text h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--brand-500);
+    margin: var(--space-6) 0 var(--space-4);
+    letter-spacing: -0.5px;
+    position: relative;
+    padding-left: var(--space-4);
+    text-shadow: 0 0 10px rgba(var(--brand-rgb), 0.3);
+}
+
+.report-text h1::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 4px;
+    background: linear-gradient(135deg, var(--brand-500), var(--brand-400));
+    border-radius: var(--radius-full);
+    box-shadow: var(--neon-glow);
+}
+
+.report-text h2 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: var(--space-5) 0 var(--space-3);
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.report-text h2 i {
+    color: var(--brand-500);
+    font-size: 20px;
+    filter: drop-shadow(0 0 5px var(--brand-500));
+}
+
+.report-text h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: var(--space-4) 0 var(--space-2);
+}
+
+/* 分隔線 */
+.report-text hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--brand-500), transparent);
+    margin: var(--space-6) 0;
+    opacity: 0.3;
+}
+
+/* 強調樣式 */
+.report-text strong {
+    color: var(--brand-500);
+    font-weight: 700;
+    text-shadow: 0 0 5px rgba(var(--brand-rgb), 0.3);
+}
+
+.report-text em {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* 收益數字特殊樣式 */
+.report-text .profit-positive {
+    color: var(--success-500);
+    font-weight: 700;
+    font-family: var(--font-mono);
+    background: rgba(var(--success-rgb), 0.1);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(var(--success-rgb), 0.2);
+    text-shadow: 0 0 5px rgba(var(--success-rgb), 0.3);
+}
+
+.report-text .profit-negative {
+    color: var(--danger-500);
+    font-weight: 700;
+    font-family: var(--font-mono);
+    background: rgba(var(--danger-rgb), 0.1);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(var(--danger-rgb), 0.2);
+    text-shadow: 0 0 5px rgba(var(--danger-rgb), 0.3);
+}
+
+/* 列表樣式 */
+.report-text ul,
+.report-text ol {
+    padding-left: var(--space-6);
+    margin: var(--space-3) 0;
+}
+
+.report-text li {
+    margin: var(--space-2) 0;
+    color: var(--text-secondary);
+}
+
+.report-text li::marker {
+    color: var(--brand-500);
+}
+
+/* 引用區塊 */
+.report-text blockquote {
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border-left: 4px solid var(--brand-500);
+    padding: var(--space-3) var(--space-5);
+    margin: var(--space-4) 0;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    color: var(--text-secondary);
+    font-style: italic;
+    border: 1px solid rgba(var(--brand-rgb), 0.1);
+}
+
+/* 數據卡片 */
+.report-text .data-card {
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: var(--radius-xl);
+    padding: var(--space-4);
+    margin: var(--space-4) 0;
+    border: var(--glass-border);
+    border-bottom: var(--glass-border-bottom);
+}
+
+.report-text .data-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+}
+
+.report-text .data-item {
+    text-align: center;
+    padding: var(--space-2);
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius-lg);
+}
+
+.report-text .data-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.report-text .data-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--brand-500);
+    font-family: var(--font-mono);
+    text-shadow: 0 0 8px var(--brand-500);
+}
+
+/* ===== 複製按鈕 ===== */
+.copy-btn {
+    width: 100%;
+    padding: var(--space-4);
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: var(--glass-border);
+    border-bottom: var(--glass-border-bottom);
+    border-radius: var(--radius-full);
+    color: var(--text-secondary);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--glass-shadow);
+}
+
+.copy-btn::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(var(--brand-rgb), 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+}
+
+.copy-btn:hover::before {
+    opacity: 1;
+    animation: rotate 8s linear infinite;
+}
+
+.copy-btn:hover {
+    border-color: var(--brand-500);
+    color: var(--brand-500);
+    transform: translateY(-2px);
+    box-shadow: var(--neon-glow);
+}
+
+.copy-btn.copied {
+    background: var(--success-500);
+    border-color: var(--success-500);
+    color: white;
+    box-shadow: 0 0 20px rgba(var(--success-rgb), 0.4);
+}
+
+.copy-btn.copied:hover {
+    background: var(--success-500);
+    border-color: var(--success-500);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 0 25px rgba(var(--success-rgb), 0.5);
+}
+
+/* ===== 報告頁腳 ===== */
+.report-footer {
+    margin-top: var(--space-4);
+    color: var(--text-tertiary);
+    font-size: 12px;
+    text-align: right;
+    font-family: var(--font-mono);
+    padding: var(--space-2) var(--space-4);
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius-full);
+    display: inline-block;
+    float: right;
+    border: 1px solid var(--border-gold);
+}
+
+/* ===== 底部導航 ===== */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: rgba(15, 20, 34, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding-bottom: 16px;
+    z-index: 100;
+    max-width: 600px;
+    margin: 0 auto;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+    color: var(--text-tertiary);
+    font-size: 11px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: var(--transition-base);
+    padding: var(--space-2) 0;
+}
+
+.nav-item i {
+    font-size: 20px;
+    transition: var(--transition-base);
+}
+
+.nav-item:hover {
+    color: var(--brand-500);
+    transform: translateY(-2px);
+}
+
+.nav-item:hover i {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 8px var(--brand-500));
+}
+
+.nav-item.active {
+    color: var(--brand-500);
+}
+
+.nav-item.active i {
+    color: var(--brand-500);
+    filter: drop-shadow(0 0 8px var(--brand-500));
+}
+
+/* ===== Toast 通知 ===== */
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: var(--space-3) var(--space-6);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: var(--glass-border);
+    border-bottom: var(--glass-border-bottom);
+    border-radius: var(--radius-full);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 9999;
+    animation: slideDown 0.3s ease;
+    box-shadow: var(--glass-shadow);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.toast-notification i {
+    color: var(--success-500);
+    font-size: 16px;
+    filter: drop-shadow(0 0 5px var(--success-500));
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -20px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* ===== 動畫定義 ===== */
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { 
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+@keyframes float {
+    0%, 100% { 
+        transform: translateY(0);
+    }
+    50% { 
+        transform: translateY(-4px);
+    }
+}
+
+/* ===== 響應式調整 ===== */
+@media (max-width: 480px) {
+    .report-container {
+        padding: var(--space-3) var(--space-3) var(--space-8);
+    }
+    
+    .nav-btn {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .nav-title {
+        font-size: 16px;
+    }
+    
+    .test-mode-badge {
+        padding: var(--space-1) var(--space-3);
+        font-size: 11px;
+    }
+    
+    .match-teams {
+        font-size: 20px;
+    }
+    
+    .match-score {
+        font-size: 26px;
+        padding: var(--space-1) var(--space-3);
+    }
+    
+    .match-meta {
+        gap: var(--space-2);
+    }
+    
+    .match-meta-item {
+        padding: var(--space-1) var(--space-3);
+        font-size: 12px;
+    }
+    
+    .report-card {
+        padding: var(--space-4);
+    }
+    
+    .report-content {
+        padding: var(--space-4);
+    }
+    
+    .report-text {
+        font-size: 14px;
+    }
+    
+    .report-text h1 {
+        font-size: 22px;
+    }
+    
+    .report-text h2 {
+        font-size: 20px;
+    }
+    
+    .report-text h3 {
+        font-size: 16px;
+    }
+    
+    .report-text .data-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .copy-btn {
+        padding: var(--space-3);
+        font-size: 15px;
+    }
+    
+    .bottom-nav {
+        height: 70px;
+    }
+    
+    .nav-item i {
+        font-size: 18px;
+    }
+    
+    .nav-item span {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 360px) {
+    .match-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-2);
+    }
+    
+    .match-score {
+        align-self: flex-start;
+    }
+    
+    .report-footer {
+        float: none;
+        display: block;
+        text-align: center;
+    }
+}
+
+/* ===== 列印樣式 ===== */
+@media print {
+    body {
+        background: white;
+        color: black;
+    }
+    
+    .bottom-nav,
+    .nav-btn,
+    .copy-btn,
+    .test-mode-badge {
+        display: none !important;
+    }
+    
+    .report-card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        background: white;
+    }
+    
+    .report-card::before {
+        background: #FF6B00;
+    }
+    
+    .report-text {
+        color: black;
+    }
+    
+    .report-text h1,
+    .report-text h2 i,
+    .report-text strong {
+        color: #FF6B00;
+    }
+    
+    .match-score {
+        background: #f0f0f0;
+        color: #FF6B00;
+    }
+}
+
+/* ===== 測試模式強化 ===== */
+.test-mode .nav-btn:hover {
+    border-color: var(--brand-500);
+    color: var(--brand-500);
+    box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
+}
+
+.test-mode .report-card::before {
+    background: linear-gradient(90deg, var(--brand-500), var(--brand-400));
+}
+
+.test-mode .match-score {
+    color: var(--brand-500);
+    text-shadow: 0 0 10px rgba(37, 99, 235, 0.3);
+}
+
+.test-mode .match-meta-item i {
+    color: var(--brand-500);
+}
+
+.test-mode .report-text h1 {
+    color: var(--brand-500);
+}
+
+.test-mode .report-text h1::before {
+    background: linear-gradient(135deg, var(--brand-500), var(--brand-400));
+}
+
+.test-mode .report-text h2 i {
+    color: var(--brand-500);
+}
+
+.test-mode .report-text strong {
+    color: var(--brand-500);
+}
+
+.test-mode .report-text .data-value {
+    color: var(--brand-500);
+}
+
+.test-mode .copy-btn:hover {
+    border-color: var(--brand-500);
+    color: var(--brand-500);
+}
+
+.test-mode .nav-item:hover {
+    color: var(--brand-500);
+}
+
+.test-mode .nav-item.active {
+    color: var(--brand-500);
+}
+
+.test-mode .nav-item.active i {
+    filter: drop-shadow(0 0 8px rgba(37, 99, 235, 0.5));
+}

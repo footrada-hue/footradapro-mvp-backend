@@ -1,8 +1,8 @@
 /**
  * 用户管理控制器
  * 负责用户列表展示、筛选、分页、状态切换、批量操作等功能
- * @version 2.1.0
- * @description 生产环境标准 - 使用相对路径 API（UTILS.request 已包含 /api/v1 前缀）
+ * @version 2.2.0
+ * @description 新增密码重置、授权记录查看功能
  */
 
 (function() {
@@ -21,36 +21,35 @@
     let currentPage = 1;
     const pageSize = 10;
     let selectedUsers = new Set();
+    let currentAuthMode = 'test'; // 'test' 或 'live'
+    let currentUserId = null;
 
     // ==================== DOM 元素 ====================
-    const tbody = document.getElementById('userTableBody');
-    const searchInput = document.getElementById('searchInput');
-    const modeFilter = document.getElementById('modeFilter');
-    const sortFilter = document.getElementById('sortFilter');
-    const onlineOnlyCheck = document.getElementById('onlineOnly');
-    const resetBtn = document.getElementById('resetFilters');
-    const paginationDiv = document.getElementById('pagination');
-    const modal = document.getElementById('userDetailModal');
-    const closeModalBtn = document.getElementById('closeModalBtn');
-    const modalBody = document.getElementById('modalBody');
-    const detailUsernameSpan = document.getElementById('detailUsername');
-    const selectAllCheckbox = document.getElementById('selectAll');
-    const bulkActions = document.getElementById('bulkActions');
-    const selectedCountSpan = document.getElementById('selectedCount');
-
-    // 统计卡片
-    const totalUsersSpan = document.getElementById('totalUsers');
-    const testUsersSpan = document.getElementById('testUsers');
-    const liveUsersSpan = document.getElementById('liveUsers');
-    const onlineUsersSpan = document.getElementById('onlineUsers');
+    const DOM = {
+        get tbody() { return document.getElementById('userTableBody'); },
+        get searchInput() { return document.getElementById('searchInput'); },
+        get modeFilter() { return document.getElementById('modeFilter'); },
+        get sortFilter() { return document.getElementById('sortFilter'); },
+        get onlineOnlyCheck() { return document.getElementById('onlineOnly'); },
+        get resetBtn() { return document.getElementById('resetFilters'); },
+        get paginationDiv() { return document.getElementById('pagination'); },
+        get modal() { return document.getElementById('userDetailModal'); },
+        get closeModalBtn() { return document.getElementById('closeModalBtn'); },
+        get modalBody() { return document.getElementById('modalBody'); },
+        get detailUsernameSpan() { return document.getElementById('detailUsername'); },
+        get selectAllCheckbox() { return document.getElementById('selectAll'); },
+        get bulkActions() { return document.getElementById('bulkActions'); },
+        get selectedCountSpan() { return document.getElementById('selectedCount'); },
+        get totalUsersSpan() { return document.getElementById('totalUsers'); },
+        get testUsersSpan() { return document.getElementById('testUsers'); },
+        get liveUsersSpan() { return document.getElementById('liveUsers'); },
+        get onlineUsersSpan() { return document.getElementById('onlineUsers'); },
+        get adminNameSpan() { return document.getElementById('adminName'); },
+        get logoutBtn() { return document.getElementById('logoutBtn'); }
+    };
 
     // ==================== 辅助函数 ====================
     
-    /**
-     * 解析 UTC 日期字符串
-     * @param {string} dateStr - 日期字符串
-     * @returns {Date|null}
-     */
     function parseUTCDate(dateStr) {
         if (!dateStr) return null;
         try {
@@ -60,14 +59,8 @@
         }
     }
 
-    /**
-     * 显示提示消息
-     * @param {string} message - 消息内容
-     * @param {string} type - 类型：success, error, info
-     */
     function showToast(message, type = 'info') {
         const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
         toast.textContent = message;
         toast.style.cssText = `
             position: fixed;
@@ -79,21 +72,12 @@
             border-radius: 8px;
             z-index: 10000;
             animation: fadeIn 0.3s ease;
+            font-size: 14px;
         `;
         document.body.appendChild(toast);
-        setTimeout(() => {
-            toast.style.animation = 'fadeOut 0.3s ease';
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
+        setTimeout(() => toast.remove(), 3000);
     }
 
-    /**
-     * 管理员 API 请求封装
-     * 使用相对路径，UTILS.request 会自动添加 /api/v1 前缀
-     * @param {string} endpoint - API 端点（如 /admin/users）
-     * @param {Object} options - fetch 选项
-     * @returns {Promise}
-     */
     async function adminRequest(endpoint, options = {}) {
         const defaultOptions = {
             headers: { 'Content-Type': 'application/json' },
@@ -105,17 +89,199 @@
             const result = await UTILS.request(endpoint, mergedOptions);
             return result;
         } catch (err) {
-            if (err.message === 'UNAUTHORIZED') {
-                // 未授权，跳转到登录页
+            console.error('API请求失败:', endpoint, err);
+            if (err.message === 'UNAUTHORIZED' || err.message === 'Request failed') {
                 window.location.href = '/admin/index.html';
             }
             throw err;
         }
     }
 
-    /**
-     * 更新统计卡片
-     */
+    // ==================== 密码重置功能 ====================
+    
+    async function resetUserPassword(userId, username) {
+        if (!confirm(`确定要重置用户「${username}」的登录密码吗？`)) return;
+        
+        try {
+            const result = await adminRequest(`/admin/users/${userId}/reset-password`, {
+                method: 'POST'
+            });
+            
+            if (result.success) {
+                showToast(`密码已重置，新密码：${result.data.new_password}`, 'success');
+                alert(`用户「${username}」的新密码是：\n\n${result.data.new_password}\n\n请妥善保管并告知用户。`);
+            } else {
+                throw new Error(result.error || '重置失败');
+            }
+        } catch (err) {
+            showToast('重置失败：' + err.message, 'error');
+        }
+    }
+    
+    async function resetUserPayPassword(userId, username) {
+        if (!confirm(`确定要重置用户「${username}」的支付密码吗？`)) return;
+        
+        try {
+            const result = await adminRequest(`/admin/users/${userId}/reset-paypassword`, {
+                method: 'POST'
+            });
+            
+            if (result.success) {
+                showToast(`支付密码已重置，新密码：${result.data.new_paypassword}`, 'success');
+                alert(`用户「${username}」的新支付密码是：\n\n${result.data.new_paypassword}\n\n请妥善保管并告知用户。`);
+            } else {
+                throw new Error(result.error || '重置失败');
+            }
+        } catch (err) {
+            showToast('重置失败：' + err.message, 'error');
+        }
+    }
+    
+    // ==================== 授权记录加载 ====================
+    
+    async function loadAuthorizations(userId, mode) {
+        try {
+            const result = await adminRequest(`/admin/users/${userId}/authorizations?mode=${mode}&limit=50`);
+            return result.success ? result.data : null;
+        } catch (err) {
+            console.error('加载授权记录失败:', err);
+            return null;
+        }
+    }
+    
+    function renderAuthorizationsTable(authorizations) {
+        if (!authorizations || authorizations.length === 0) {
+            return '<div class="empty-auths">暂无授权记录</div>';
+        }
+        
+        let html = '<table class="auth-table"><thead><tr>';
+        html += '<th>比赛名称</th>';
+        html += '<th>授权金额</th>';
+        html += '<th>收益</th>';
+        html += '<th>收益率</th>';
+        html += '<th>状态</th>';
+        html += '<th>时间</th>';
+        html += '</tr></thead><tbody>';
+        
+        for (const auth of authorizations) {
+            const profitClass = auth.is_profitable ? 'profit-positive' : 'profit-neutral';
+            const profitDisplay = auth.profit > 0 ? `+${auth.profit}` : auth.profit;
+            
+            html += `<tr>
+                <td>${escapeHtml(auth.match_name)}</td>
+                <td>${auth.amount} USDT</td>
+                <td class="${profitClass}">${profitDisplay} USDT</td>
+                <td>${auth.profit_rate > 0 ? '+' : ''}${auth.profit_rate}%</td>
+                <td><span class="status-badge ${auth.status}">${auth.status_text}</span></td>
+                <td>${UTILS.formatDateTime(auth.created_at)}</td>
+            </tr>`;
+        }
+        
+        html += '</tbody></table>';
+        return html;
+    }
+    
+    // ==================== 详情弹窗渲染 ====================
+    
+    function renderUserDetail(data) {
+        const user = data.user;
+        if (!DOM.detailUsernameSpan) return;
+        DOM.detailUsernameSpan.textContent = user.username || user.uid;
+        currentUserId = user.id;
+
+        const modeText = user.is_test_mode === 1 ? '测试模式' : '主网模式';
+        const modeClass = user.is_test_mode === 1 ? 'test' : 'live';
+        const liveBalance = UTILS.formatAmount(user.balance || 0);
+        const testBalance = UTILS.formatAmount(user.test_balance || 10000);
+        
+        const hasPassword = user.password === '********';
+        const hasPayPassword = user.has_paypassword || false;
+
+        let html = `
+            <div class="detail-section">
+                <div class="section-title">📋 基本信息</div>
+                <div class="info-grid">
+                    <div class="info-item"><span class="info-label">用户ID</span><span class="info-value">${user.id}</span></div>
+                    <div class="info-item"><span class="info-label">UID</span><span class="info-value">${escapeHtml(user.uid) || '-'}</span></div>
+                    <div class="info-item"><span class="info-label">用户名</span><span class="info-value">${escapeHtml(user.username) || '-'}</span></div>
+                    <div class="info-item"><span class="info-label">主网余额</span><span class="info-value">${liveBalance} USDT</span></div>
+                    <div class="info-item"><span class="info-label">测试余额</span><span class="info-value">${testBalance} tUSDT</span></div>
+                    <div class="info-item"><span class="info-label">当前模式</span><span class="info-value"><span class="mode-badge ${modeClass}">${modeText}</span></span></div>
+                    <div class="info-item"><span class="info-label">锁定状态</span><span class="info-value">${user.is_mode_locked === 1 ? '🔒 已锁定' : '🔓 可切换'}</span></div>
+                    <div class="info-item"><span class="info-label">注册时间</span><span class="info-value">${UTILS.formatDateTime(user.created_at)}</span></div>
+                    <div class="info-item"><span class="info-label">最后登录</span><span class="info-value">${user.last_login_at ? UTILS.formatDateTime(user.last_login_at) : '-'}</span></div>
+                    <div class="info-item"><span class="info-label">最后活动</span><span class="info-value">${user.last_active_at ? UTILS.formatRelativeTime(user.last_active_at) : '-'}</span></div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <div class="section-title">🔐 密码信息</div>
+                <div class="password-row">
+                    <div class="password-item">
+                        <span class="password-label">登录密码：</span>
+                        <span class="password-status ${hasPassword ? 'set' : 'not-set'}">${hasPassword ? '●●●●●● (已设置)' : '未设置'}</span>
+                        <button class="btn-reset" onclick="window.resetUserPassword(${user.id}, '${escapeHtml(user.username)}')">重置密码</button>
+                    </div>
+                    <div class="password-item">
+                        <span class="password-label">支付密码：</span>
+                        <span class="password-status ${hasPayPassword ? 'set' : 'not-set'}">${hasPayPassword ? '●●●●●● (已设置)' : '未设置'}</span>
+                        <button class="btn-reset" onclick="window.resetUserPayPassword(${user.id}, '${escapeHtml(user.username)}')">重置支付密码</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <div class="section-title">📊 授权比赛记录</div>
+                <div class="auth-tabs">
+                    <button class="auth-tab ${currentAuthMode === 'test' ? 'active' : ''}" data-mode="test">测试模式</button>
+                    <button class="auth-tab ${currentAuthMode === 'live' ? 'active' : ''}" data-mode="live">真实模式</button>
+                </div>
+                <div class="auth-content" id="authContent">
+                    <div class="loading-auth"><i class="fas fa-spinner fa-pulse"></i> 加载中...</div>
+                </div>
+            </div>
+        `;
+
+        if (DOM.modalBody) DOM.modalBody.innerHTML = html;
+        
+        // 绑定Tab切换事件
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+            tab.addEventListener('click', async (e) => {
+                const mode = tab.dataset.mode;
+                currentAuthMode = mode;
+                
+                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                const authContent = document.getElementById('authContent');
+                if (authContent) {
+                    authContent.innerHTML = '<div class="loading-auth"><i class="fas fa-spinner fa-pulse"></i> 加载中...</div>';
+                    const result = await loadAuthorizations(user.id, mode);
+                    if (result) {
+                        authContent.innerHTML = renderAuthorizationsTable(result.authorizations);
+                    } else {
+                        authContent.innerHTML = '<div class="error-auth">加载失败，请重试</div>';
+                    }
+                }
+            });
+        });
+        
+        // 加载默认授权记录
+        (async () => {
+            const authContent = document.getElementById('authContent');
+            if (authContent) {
+                const result = await loadAuthorizations(user.id, currentAuthMode);
+                if (result) {
+                    authContent.innerHTML = renderAuthorizationsTable(result.authorizations);
+                } else {
+                    authContent.innerHTML = '<div class="error-auth">加载失败，请重试</div>';
+                }
+            }
+        })();
+    }
+    
+    // ==================== 用户列表相关函数 ====================
+    
     function updateStats() {
         const now = new Date();
         const onlineCount = allUsers.filter(u => {
@@ -125,17 +291,12 @@
             return (now - lastActive) < 300000;
         }).length;
 
-        if (totalUsersSpan) totalUsersSpan.textContent = allUsers.length;
-        if (testUsersSpan) testUsersSpan.textContent = allUsers.filter(u => u.is_test_mode === 1).length;
-        if (liveUsersSpan) liveUsersSpan.textContent = allUsers.filter(u => u.is_test_mode === 0).length;
-        if (onlineUsersSpan) onlineUsersSpan.textContent = onlineCount;
+        if (DOM.totalUsersSpan) DOM.totalUsersSpan.textContent = allUsers.length;
+        if (DOM.testUsersSpan) DOM.testUsersSpan.textContent = allUsers.filter(u => u.is_test_mode === 1).length;
+        if (DOM.liveUsersSpan) DOM.liveUsersSpan.textContent = allUsers.filter(u => u.is_test_mode === 0).length;
+        if (DOM.onlineUsersSpan) DOM.onlineUsersSpan.textContent = onlineCount;
     }
 
-    /**
-     * 获取在线状态 HTML
-     * @param {string} lastActive - 最后活动时间
-     * @returns {string}
-     */
     function getOnlineStatus(lastActive) {
         if (!lastActive) return '<span style="color: #8e95a3;">⚪ 从未登录</span>';
         const last = parseUTCDate(lastActive);
@@ -149,38 +310,27 @@
         return `<span style="color: #8e95a3;">⚪ ${Math.floor(diffSeconds / 86400)}天前</span>`;
     }
 
-    /**
-     * 获取锁定状态 HTML
-     * @param {Object} user - 用户对象
-     * @returns {string}
-     */
     function getLockedStatus(user) {
         const isLocked = user.is_mode_locked === 1;
         if (isLocked) return '<span style="color: #ef4444;">🔒 已锁定</span>';
         return '<span style="color: #10b981;">🔓 可切换</span>';
     }
 
-    /**
-     * 应用筛选条件
-     */
     function applyFilters() {
-        const keyword = searchInput?.value.trim().toLowerCase() || '';
-        const mode = modeFilter?.value || '';
-        const onlineOnly = onlineOnlyCheck?.checked || false;
-        const sortBy = sortFilter?.value || 'id_desc';
+        const keyword = DOM.searchInput?.value.trim().toLowerCase() || '';
+        const mode = DOM.modeFilter?.value || '';
+        const onlineOnly = DOM.onlineOnlyCheck?.checked || false;
+        const sortBy = DOM.sortFilter?.value || 'id_desc';
 
         filteredUsers = allUsers.filter(user => {
-            // 关键词搜索
             if (keyword) {
                 const matchKeyword = (user.username?.toLowerCase().includes(keyword)) ||
                                     (user.uid?.toLowerCase().includes(keyword)) ||
                                     String(user.id).includes(keyword);
                 if (!matchKeyword) return false;
             }
-            // 模式筛选
             if (mode === 'test' && user.is_test_mode !== 1) return false;
             if (mode === 'live' && user.is_test_mode !== 0) return false;
-            // 在线筛选
             if (onlineOnly) {
                 if (!user.last_active_at) return false;
                 const lastActive = parseUTCDate(user.last_active_at);
@@ -191,7 +341,6 @@
             return true;
         });
 
-        // 排序
         filteredUsers.sort((a, b) => {
             switch(sortBy) {
                 case 'id_asc': return a.id - b.id;
@@ -213,11 +362,6 @@
         renderTable();
     }
 
-    /**
-     * HTML 转义（防止 XSS 攻击）
-     * @param {string} str - 需要转义的字符串
-     * @returns {string}
-     */
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, function(m) {
@@ -228,18 +372,15 @@
         });
     }
 
-    /**
-     * 渲染表格
-     */
     function renderTable() {
         const start = (currentPage - 1) * pageSize;
         const end = start + pageSize;
         const pageUsers = filteredUsers.slice(start, end);
 
-        if (!tbody) return;
+        if (!DOM.tbody) return;
 
         if (pageUsers.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="12" class="loading">暂无用户</td></tr>';
+            DOM.tbody.innerHTML = '<tr><td colspan="12" class="loading">暂无用户</td</tr>';
         } else {
             let html = '';
             for (const user of pageUsers) {
@@ -251,11 +392,10 @@
                 const statusBadge = user.status === 'active' 
                     ? '<span class="status-badge active">正常</span>'
                     : '<span class="status-badge disabled">已禁用</span>';
-                const rowClass = user.status === 'active' ? '' : 'disabled-user';
                 const isSelected = selectedUsers.has(user.id);
                 const lockedStatus = getLockedStatus(user);
 
-                html += `<tr class="${rowClass}">
+                html += `<tr>
                     <td><input type="checkbox" class="user-select" value="${user.id}" ${isSelected ? 'checked' : ''} onchange="window.toggleUserSelection(${user.id})"></td>
                     <td>${user.id}</td>
                     <td>${escapeHtml(user.username) || '-'}</td>
@@ -281,24 +421,21 @@
                             </button>
                         </div>
                     </td>
-                 </tr>`;
+                </tr>`;
             }
-            tbody.innerHTML = html;
+            DOM.tbody.innerHTML = html;
         }
 
         renderPagination();
         updateSelectionUI();
     }
 
-    /**
-     * 渲染分页
-     */
     function renderPagination() {
-        if (!paginationDiv) return;
+        if (!DOM.paginationDiv) return;
         
         const totalPages = Math.ceil(filteredUsers.length / pageSize);
         if (totalPages <= 1) {
-            paginationDiv.innerHTML = '';
+            DOM.paginationDiv.innerHTML = '';
             return;
         }
 
@@ -318,44 +455,39 @@
 
         html += `<button class="page-btn" onclick="window.changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
 
-        paginationDiv.innerHTML = html;
+        DOM.paginationDiv.innerHTML = html;
     }
 
-    /**
-     * 更新选择 UI
-     */
     function updateSelectionUI() {
         const checkboxes = document.querySelectorAll('.user-select');
         for (const cb of checkboxes) {
             cb.checked = selectedUsers.has(parseInt(cb.value));
         }
 
-        if (selectAllCheckbox) {
+        if (DOM.selectAllCheckbox) {
             const visibleUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
             const allVisibleSelected = visibleUsers.every(u => selectedUsers.has(u.id));
-            selectAllCheckbox.checked = allVisibleSelected;
-            selectAllCheckbox.indeterminate = !allVisibleSelected && visibleUsers.some(u => selectedUsers.has(u.id));
+            DOM.selectAllCheckbox.checked = allVisibleSelected;
+            DOM.selectAllCheckbox.indeterminate = !allVisibleSelected && visibleUsers.some(u => selectedUsers.has(u.id));
         }
 
-        if (bulkActions && selectedCountSpan) {
+        if (DOM.bulkActions && DOM.selectedCountSpan) {
             if (selectedUsers.size > 0) {
-                bulkActions.style.display = 'flex';
-                selectedCountSpan.textContent = selectedUsers.size;
+                DOM.bulkActions.style.display = 'flex';
+                DOM.selectedCountSpan.textContent = selectedUsers.size;
             } else {
-                bulkActions.style.display = 'none';
+                DOM.bulkActions.style.display = 'none';
             }
         }
     }
 
-    /**
-     * 加载用户列表
-     */
+    // ==================== API 调用 ====================
+    
     async function loadUsers() {
-        if (!tbody) return;
+        if (!DOM.tbody) return;
         
         try {
-            tbody.innerHTML = '<tr><td colspan="12" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr>';
-            // ✅ 使用正确的 API 路径（UTILS.request 会自动添加 /api/v1 前缀）
+            DOM.tbody.innerHTML = '<tr><td colspan="12" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr>';
             const result = await adminRequest('/admin/users');
             if (result.success && Array.isArray(result.data)) {
                 allUsers = result.data;
@@ -366,11 +498,11 @@
             }
         } catch (err) {
             console.error('加载用户列表失败:', err);
-            tbody.innerHTML = '<tr><td colspan="12" class="loading" style="color: #ef4444;">加载失败，请重试</td></tr>';
+            DOM.tbody.innerHTML = '<tr><td colspan="12" class="loading" style="color: #ef4444;">加载失败，请重试</td></tr>';
         }
     }
 
-    // ==================== 全局函数（供 HTML 调用） ====================
+    // ==================== 全局函数 ====================
     
     window.changePage = function(page) {
         if (page < 1 || page > Math.ceil(filteredUsers.length / pageSize)) return;
@@ -379,14 +511,13 @@
     };
 
     window.viewUserDetail = async function(userId) {
-        if (!modal || !modalBody || !detailUsernameSpan) return;
+        if (!DOM.modal || !DOM.modalBody || !DOM.detailUsernameSpan) return;
         
-        modal.classList.add('show');
-        modalBody.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-pulse"></i>加载详情中...</div>';
-        detailUsernameSpan.textContent = '';
+        DOM.modal.classList.add('show');
+        DOM.modalBody.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-pulse"></i>加载详情中...</div>';
+        DOM.detailUsernameSpan.textContent = '';
 
         try {
-            // ✅ 使用正确的 API 路径（UTILS.request 会自动添加 /api/v1 前缀）
             const result = await adminRequest(`/admin/users/${userId}`);
             if (result.success && result.data) {
                 renderUserDetail(result.data);
@@ -395,7 +526,7 @@
             }
         } catch (err) {
             console.error('加载详情失败:', err);
-            modalBody.innerHTML = `<div class="loading" style="color: #ef4444;">加载失败，请重试</div>`;
+            DOM.modalBody.innerHTML = `<div class="loading" style="color: #ef4444;">加载失败，请重试</div>`;
         }
     };
 
@@ -406,14 +537,12 @@
         const button = event?.target?.closest('button');
         const originalHtml = button?.innerHTML || '';
         if (button) {
-            button.classList.add('button-loading');
             button.disabled = true;
-            button.innerHTML = '';
+            button.innerHTML = '<i class="fas fa-spinner fa-pulse"></i>';
         }
         
         try {
-            // ✅ 使用正确的 API 路径（UTILS.request 会自动添加 /api/v1 前缀）
-            const result = await adminRequest(`/admin/users/${userId}/toggle`, { method: 'POST' });
+            const result = await adminRequest(`/admin/users/${userId}/toggle-status`, { method: 'POST' });
             if (result.success) {
                 showToast(`用户已${action}`, 'success');
                 loadUsers();
@@ -422,7 +551,6 @@
             }
         } catch (err) {
             if (button) {
-                button.classList.remove('button-loading');
                 button.disabled = false;
                 button.innerHTML = originalHtml;
             }
@@ -437,13 +565,11 @@
         
         const originalHtml = button?.innerHTML || '';
         if (button) {
-            button.classList.add('button-loading');
             button.disabled = true;
-            button.innerHTML = '';
+            button.innerHTML = '<i class="fas fa-spinner fa-pulse"></i>';
         }
         
         try {
-            // ✅ 使用正确的 API 路径（UTILS.request 会自动添加 /api/v1 前缀）
             const result = await adminRequest(`/admin/users/${userId}/toggle-mode`, {
                 method: 'POST',
                 body: JSON.stringify({ mode: targetMode })
@@ -456,7 +582,6 @@
             }
         } catch (err) {
             if (button) {
-                button.classList.remove('button-loading');
                 button.disabled = false;
                 button.innerHTML = originalHtml;
             }
@@ -474,7 +599,7 @@
     };
 
     window.toggleSelectAll = function() {
-        if (selectAllCheckbox?.checked) {
+        if (DOM.selectAllCheckbox?.checked) {
             const visibleUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
             for (const user of visibleUsers) {
                 selectedUsers.add(user.id);
@@ -499,7 +624,6 @@
 
         const userIds = Array.from(selectedUsers);
         try {
-            // ✅ 使用正确的 API 路径（UTILS.request 会自动添加 /api/v1 前缀）
             const result = await adminRequest('/admin/users/bulk/switch-to-live', {
                 method: 'POST',
                 body: JSON.stringify({ userIds })
@@ -516,66 +640,37 @@
             showToast('批量操作失败：' + (err.message || '未知错误'), 'error');
         }
     };
+    
+    // 暴露密码重置函数到全局
+    window.resetUserPassword = resetUserPassword;
+    window.resetUserPayPassword = resetUserPayPassword;
 
-    /**
-     * 渲染用户详情
-     * @param {Object} data - 用户详情数据
-     */
-    function renderUserDetail(data) {
-        const user = data.user;
-        if (!detailUsernameSpan) return;
-        detailUsernameSpan.textContent = user.username || user.uid;
-
-        const modeText = user.is_test_mode === 1 ? '测试模式' : '主网模式';
-        const modeClass = user.is_test_mode === 1 ? 'test' : 'live';
-        const liveBalance = UTILS.formatAmount(user.balance || 0);
-        const testBalance = UTILS.formatAmount(user.test_balance || 10000);
-
-        let html = `
-            <div class="info-grid">
-                <div class="info-item"><span class="info-label">用户ID</span><span class="info-value">${user.id}</span></div>
-                <div class="info-item"><span class="info-label">UID</span><span class="info-value">${escapeHtml(user.uid) || '-'}</span></div>
-                <div class="info-item"><span class="info-label">用户名</span><span class="info-value">${escapeHtml(user.username) || '-'}</span></div>
-                <div class="info-item"><span class="info-label">主网余额</span><span class="info-value">${liveBalance} USDT</span></div>
-                <div class="info-item"><span class="info-label">测试余额</span><span class="info-value">${testBalance} tUSDT</span></div>
-                <div class="info-item"><span class="info-label">当前模式</span><span class="info-value"><span class="mode-badge ${modeClass}">${modeText}</span></span></div>
-                <div class="info-item"><span class="info-label">锁定状态</span><span class="info-value">${user.is_mode_locked === 1 ? '🔒 已锁定' : '🔓 可切换'}</span></div>
-                <div class="info-item"><span class="info-label">注册时间</span><span class="info-value">${UTILS.formatDateTime(user.created_at)}</span></div>
-                <div class="info-item"><span class="info-label">最后登录</span><span class="info-value">${user.last_login_at ? UTILS.formatDateTime(user.last_login_at) : '-'}</span></div>
-                <div class="info-item"><span class="info-label">最后活动</span><span class="info-value">${user.last_active_at ? UTILS.formatRelativeTime(user.last_active_at) : '-'}</span></div>
-            </div>
-        `;
-
-        if (modalBody) modalBody.innerHTML = html;
-    }
-
-    /**
-     * 关闭详情模态框
-     */
     function closeModal() {
-        if (modal) modal.classList.remove('show');
+        if (DOM.modal) DOM.modal.classList.remove('show');
+        currentAuthMode = 'test';
+        currentUserId = null;
     }
 
     // ==================== 事件绑定 ====================
-    if (searchInput) searchInput.addEventListener('input', UTILS.debounce ? UTILS.debounce(applyFilters, 500) : applyFilters);
-    if (modeFilter) modeFilter.addEventListener('change', applyFilters);
-    if (sortFilter) sortFilter.addEventListener('change', applyFilters);
-    if (onlineOnlyCheck) onlineOnlyCheck.addEventListener('change', applyFilters);
+    if (DOM.searchInput) DOM.searchInput.addEventListener('input', UTILS.debounce ? UTILS.debounce(applyFilters, 500) : applyFilters);
+    if (DOM.modeFilter) DOM.modeFilter.addEventListener('change', applyFilters);
+    if (DOM.sortFilter) DOM.sortFilter.addEventListener('change', applyFilters);
+    if (DOM.onlineOnlyCheck) DOM.onlineOnlyCheck.addEventListener('change', applyFilters);
     
-    if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-            if (searchInput) searchInput.value = '';
-            if (modeFilter) modeFilter.value = '';
-            if (sortFilter) sortFilter.value = 'id_desc';
-            if (onlineOnlyCheck) onlineOnlyCheck.checked = false;
+    if (DOM.resetBtn) {
+        DOM.resetBtn.addEventListener('click', () => {
+            if (DOM.searchInput) DOM.searchInput.value = '';
+            if (DOM.modeFilter) DOM.modeFilter.value = '';
+            if (DOM.sortFilter) DOM.sortFilter.value = 'id_desc';
+            if (DOM.onlineOnlyCheck) DOM.onlineOnlyCheck.checked = false;
             applyFilters();
         });
     }
 
-    if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
-    if (modal) {
+    if (DOM.closeModalBtn) DOM.closeModalBtn.addEventListener('click', closeModal);
+    if (DOM.modal) {
         window.addEventListener('click', (e) => {
-            if (e.target === modal) closeModal();
+            if (e.target === DOM.modal) closeModal();
         });
     }
 
@@ -584,20 +679,16 @@
     
     if (batchSwitchBtn) batchSwitchBtn.addEventListener('click', window.batchSwitchToLive);
     if (clearSelectionBtn) clearSelectionBtn.addEventListener('click', window.clearSelection);
-    if (selectAllCheckbox) selectAllCheckbox.addEventListener('change', window.toggleSelectAll);
+    if (DOM.selectAllCheckbox) DOM.selectAllCheckbox.addEventListener('change', window.toggleSelectAll);
 
     // ==================== 初始化 ====================
     loadUsers();
 
-    // 显示管理员名称
-    const adminNameSpan = document.getElementById('adminName');
     const storedAdmin = localStorage.getItem('admin_name');
-    if (adminNameSpan && storedAdmin) adminNameSpan.textContent = storedAdmin;
+    if (DOM.adminNameSpan && storedAdmin) DOM.adminNameSpan.textContent = storedAdmin;
 
-    // 退出登录
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
+    if (DOM.logoutBtn) {
+        DOM.logoutBtn.addEventListener('click', () => {
             window.location.href = '/admin/index.html';
         });
     }
