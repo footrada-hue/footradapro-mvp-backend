@@ -1,7 +1,7 @@
 /**
  * FOOTRADAPRO - Auto Fetch Scores Service
  * @description 自动获取已结束比赛的比分（使用 DeepSeek API 联网搜索）
- * @version 3.0.0
+ * @version 3.1.0
  * @since 2026-04-02
  * @i18n 支持多语言，所有文案已标记
  */
@@ -26,7 +26,6 @@ async function fetchScoreFromDeepSeek(homeTeam, awayTeam, league) {
         return null;
     }
 
-    // i18n: 提示词 - 按球队名和联赛搜索比分（不依赖日期）
     const prompt = `请搜索 ${homeTeam} vs ${awayTeam} 的 ${league} 比赛最终比分。
 
 要求：
@@ -65,7 +64,6 @@ async function fetchScoreFromDeepSeek(homeTeam, awayTeam, league) {
         const data = await response.json();
         let content = data.choices?.[0]?.message?.content || '';
         
-        // 清理 markdown 标记
         content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         
         const result = JSON.parse(content);
@@ -84,25 +82,42 @@ async function fetchScoreFromDeepSeek(homeTeam, awayTeam, league) {
  * 更新已结束比赛的比分
  */
 async function updateScoresForFinishedMatches() {
-    // 确保数据库已初始化
-    const { initDatabase, getDb } = await import('../database/connection.js');
-    await initDatabase();
-    const db = getDb();
-    
-    const now = new Date().toISOString();
+    const isProduction = process.env.NODE_ENV === 'production';
     
     try {
-        const matches = db.prepare(`
-            SELECT id, match_id, home_team, away_team, match_time, league
-            FROM matches 
-            WHERE status = 'finished' 
-            AND (home_score IS NULL OR away_score IS NULL OR (home_score = 0 AND away_score = 0))
-            AND datetime(match_time, '+110 minutes') <= datetime(?)
-            ORDER BY match_time DESC
-            LIMIT 10
-        `).all(now);
+        const { query } = await import('../database/connection.js');
         
-        if (matches.length === 0) {
+        const now = new Date().toISOString();
+        
+        // 获取需要更新比分的比赛
+        let matches;
+        if (isProduction) {
+            // PostgreSQL 版本
+            matches = await query(`
+                SELECT id, match_id, home_team, away_team, match_time, league
+                FROM matches 
+                WHERE status = 'finished' 
+                AND (home_score IS NULL OR away_score IS NULL OR (home_score = 0 AND away_score = 0))
+                AND (match_time + INTERVAL '110 minutes') <= $1::timestamp
+                ORDER BY match_time DESC
+                LIMIT 10
+            `, [now]);
+        } else {
+            // SQLite 版本
+            const { getDb } = await import('../database/connection.js');
+            const db = getDb();
+            matches = db.prepare(`
+                SELECT id, match_id, home_team, away_team, match_time, league
+                FROM matches 
+                WHERE status = 'finished' 
+                AND (home_score IS NULL OR away_score IS NULL OR (home_score = 0 AND away_score = 0))
+                AND datetime(match_time, '+110 minutes') <= datetime(?)
+                ORDER BY match_time DESC
+                LIMIT 10
+            `).all(now);
+        }
+        
+        if (!matches || matches.length === 0) {
             return;
         }
         
@@ -114,11 +129,21 @@ async function updateScoresForFinishedMatches() {
             const score = await fetchScoreFromDeepSeek(match.home_team, match.away_team, match.league);
             
             if (score) {
-                db.prepare(`
-                    UPDATE matches 
-                    SET home_score = ?, away_score = ?
-                    WHERE id = ?
-                `).run(score.home, score.away, match.id);
+                if (isProduction) {
+                    await query(`
+                        UPDATE matches 
+                        SET home_score = $1, away_score = $2
+                        WHERE id = $3
+                    `, [score.home, score.away, match.id]);
+                } else {
+                    const { getDb } = await import('../database/connection.js');
+                    const db = getDb();
+                    db.prepare(`
+                        UPDATE matches 
+                        SET home_score = ?, away_score = ?
+                        WHERE id = ?
+                    `).run(score.home, score.away, match.id);
+                }
                 
                 logger.info(`✅ Score updated: ${match.home_team} ${score.home}:${score.away} ${match.away_team}`);
             } else {
@@ -133,10 +158,12 @@ async function updateScoresForFinishedMatches() {
     }
 }
 
-// 立即执行一次
-updateScoresForFinishedMatches().catch(err => {
-    logger.error('Initial score fetch failed:', err);
-});
+// 延迟执行，等待数据库初始化
+setTimeout(() => {
+    updateScoresForFinishedMatches().catch(err => {
+        logger.error('Initial score fetch failed:', err);
+    });
+}, 5000);
 
 // 每 10 分钟执行一次
 setInterval(() => {

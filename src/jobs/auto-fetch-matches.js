@@ -1,7 +1,7 @@
 /**
  * Auto Fetch Matches Cron Job
  * @description 每周从 DeepSeek API 获取比赛数据并录入（优化版）
- * @version 2.1.0
+ * @version 2.2.0
  * @since 2026-04-01
  * 
  * 优化说明：
@@ -15,8 +15,6 @@ import { autoFetchAndInsertMatches } from '../services/match-auto-fetch.service.
 import logger from '../utils/logger.js';
 
 // 每周一 UTC 00:30 执行（北京时间 08:30）
-// 格式: 分 时 日 月 周
-// 30 0 * * 1 = 每周一 00:30 UTC
 const CRON_SCHEDULE = '30 0 * * 1';
 
 let isRunning = false;
@@ -27,15 +25,14 @@ let isRunning = false;
  */
 function getNextExecutionTime() {
     const now = new Date();
-    const currentDay = now.getUTCDay(); // 0=周日, 1=周一, ...
+    const currentDay = now.getUTCDay();
     const currentHour = now.getUTCHours();
     const currentMinute = now.getUTCMinutes();
     
     let daysUntilMonday = (1 - currentDay + 7) % 7;
     if (daysUntilMonday === 0) {
-        // 如果今天是周一，检查是否已经过了 00:30
         if (currentHour > 0 || (currentHour === 0 && currentMinute >= 30)) {
-            daysUntilMonday = 7; // 下周一
+            daysUntilMonday = 7;
         }
     }
     
@@ -63,7 +60,6 @@ async function runJob() {
         const results = await autoFetchAndInsertMatches();
         const duration = Date.now() - startTime;
         
-        // 输出统计信息
         logger.info(`
 📊 比赛数据更新完成:
    - 总计获取: ${results.total} 场比赛
@@ -74,7 +70,6 @@ async function runJob() {
    - 耗时: ${duration}ms
         `);
         
-        // 发送通知（可选）
         if (results.newToPool > 0) {
             logger.info(`📢 新增 ${results.newToPool} 场比赛，可用于动态消息生成`);
         }
@@ -90,37 +85,32 @@ async function runJob() {
  * 启动定时任务
  */
 export function startAutoFetchJob() {
-    // 检查 API Key 是否配置
     if (!process.env.DEEPSEEK_API_KEY) {
         logger.warn('⚠️ DEEPSEEK_API_KEY 未配置，自动获取比赛任务不会启动');
         logger.warn('   请在 .env 文件中添加: DEEPSEEK_API_KEY=your_api_key');
         return;
     }
     
-    // 检查是否为周一，如果是则启动时立即执行一次（可选）
     const today = new Date();
-    const currentDay = today.getUTCDay(); // 0=周日, 1=周一
+    const currentDay = today.getUTCDay();
     const currentHour = today.getUTCHours();
     const currentMinute = today.getUTCMinutes();
     const isMonday = currentDay === 1;
     const isAfterDeadline = currentHour > 0 || (currentHour === 0 && currentMinute >= 30);
     
     if (isMonday && !isAfterDeadline) {
-        // 周一且未过 00:30，启动时立即执行
         setTimeout(() => {
             logger.info('🚀 检测到周一且未过执行时间，启动时执行一次比赛数据获取');
             runJob();
-        }, 5000); // 延迟5秒，等待数据库初始化完成
+        }, 5000);
     } else if (isMonday && isAfterDeadline) {
         logger.info('📅 已过周一执行时间，等待下周一执行');
     } else {
         logger.info('📅 非周一，跳过启动时执行，等待定时任务');
     }
     
-    // 定时执行
     cron.schedule(CRON_SCHEDULE, runJob);
     
-    // 计算下次执行时间
     const nextTime = getNextExecutionTime();
     logger.info(`⏰ 自动获取比赛任务已启动，执行时间: 每周一 00:30 (UTC)`);
     logger.info(`📅 下次执行: ${nextTime}`);
