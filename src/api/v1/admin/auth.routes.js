@@ -24,16 +24,16 @@ router.post('/login', async (req, res) => {
         let admin = null;
         
         if (isProduction) {
-            // PostgreSQL 版本
+            // PostgreSQL 版本（注意：没有 name 字段）
             const result = await query(
-                'SELECT id, username, password, role, name FROM admins WHERE username = $1',
+                'SELECT id, username, password, role FROM admins WHERE username = $1',
                 [username]
             );
             admin = result?.[0];
         } else {
             // SQLite 版本
             const db = getDb();
-            admin = db.prepare('SELECT id, username, password, role, name FROM admins WHERE username = ?').get(username);
+            admin = db.prepare('SELECT id, username, password, role FROM admins WHERE username = ?').get(username);
         }
         
         if (!admin) {
@@ -92,7 +92,7 @@ router.post('/login', async (req, res) => {
             data: {
                 id: admin.id,
                 username: admin.username,
-                name: admin.name || admin.username,
+                name: admin.username,
                 role: admin.role
             }
         });
@@ -119,7 +119,7 @@ router.get('/verify', async (req, res) => {
             
             if (isProduction) {
                 const result = await query(
-                    `SELECT id, username, name, role 
+                    `SELECT id, username, role 
                      FROM admins 
                      WHERE id = $1`,
                     [req.session.adminId]
@@ -128,14 +128,14 @@ router.get('/verify', async (req, res) => {
             } else {
                 const db = getDb();
                 admin = db.prepare(`
-                    SELECT id, username, name, role 
+                    SELECT id, username, role 
                     FROM admins 
                     WHERE id = ?
                 `).get(req.session.adminId);
             }
             
             if (admin) {
-                req.session.adminName = admin.name;
+                req.session.adminName = admin.username;
                 req.session.adminRole = admin.role;
                 
                 return res.json({
@@ -143,7 +143,7 @@ router.get('/verify', async (req, res) => {
                     data: {
                         id: admin.id,
                         username: admin.username,
-                        name: admin.name || admin.username,
+                        name: admin.username,
                         role: admin.role
                     }
                 });
@@ -173,7 +173,7 @@ router.get('/verify', async (req, res) => {
         
         if (isProduction) {
             const result = await query(
-                `SELECT id, username, name, role 
+                `SELECT id, username, role 
                  FROM admins 
                  WHERE id = $1`,
                 [adminId]
@@ -182,7 +182,7 @@ router.get('/verify', async (req, res) => {
         } else {
             const db = getDb();
             admin = db.prepare(`
-                SELECT id, username, name, role 
+                SELECT id, username, role 
                 FROM admins 
                 WHERE id = ?
             `).get(adminId);
@@ -207,7 +207,7 @@ router.get('/verify', async (req, res) => {
             data: {
                 id: admin.id,
                 username: admin.username,
-                name: admin.name || admin.username,
+                name: admin.username,
                 role: admin.role
             }
         });
