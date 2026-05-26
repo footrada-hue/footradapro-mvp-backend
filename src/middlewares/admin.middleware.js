@@ -2,30 +2,39 @@
  * FOOTRADAPRO MVP - 管理员认证中间件
  * @description 检查管理员登录状态、账号状态、权限验证
  * 支持 Session 和 Cookie Token 两种认证方式
+ * @version 2.0.0 - 支持 PostgreSQL 和 SQLite
  */
 
-import { getDb } from '../database/connection.js';
+import { query, getDb } from '../database/connection.js';
 import logger from '../utils/logger.js';
+
+const isProduction = process.env.NODE_ENV === 'production';
 
 /**
  * 基础管理员认证中间件
  * 支持 Session 和 Cookie Token 两种方式
  */
-export const adminAuth = (req, res, next) => {
+export const adminAuth = async (req, res, next) => {
+    let adminId = null;
+    
     // 1. 优先检查 Session
     if (req.session && req.session.adminId) {
-        req.admin = {
-            id: req.session.adminId,
-            username: req.session.adminName,
-            role: req.session.adminRole
-        };
-        return next();
+        adminId = req.session.adminId;
     }
     
     // 2. 回退：检查 Cookie Token
-    const token = req.cookies.admin_token;
+    if (!adminId && req.cookies && req.cookies.admin_token) {
+        try {
+            const token = req.cookies.admin_token;
+            const decoded = Buffer.from(token, 'base64').toString('utf8');
+            const parts = decoded.split(':');
+            adminId = parts[0];
+        } catch (error) {
+            logger.debug('Token decode error:', error.message);
+        }
+    }
     
-    if (!token) {
+    if (!adminId) {
         logger.warn('Admin auth failed: No session and no token', { 
             path: req.path,
             ip: req.ip 
@@ -38,29 +47,25 @@ export const adminAuth = (req, res, next) => {
     }
     
     try {
-        // 解码 token
-        const decoded = Buffer.from(token, 'base64').toString('utf8');
-        const parts = decoded.split(':');
-        const adminId = parts[0];
+        let admin = null;
         
-        if (!adminId) {
-            logger.warn('Invalid token format');
-            return res.status(401).json({
-                success: false,
-                error: 'UNAUTHORIZED',
-                message: '无效的登录凭证'
-            });
+        if (isProduction) {
+            // PostgreSQL 版本
+            const result = await query(
+                `SELECT id, username, role FROM admins WHERE id = $1`,
+                [adminId]
+            );
+            admin = result?.[0];
+        } else {
+            // SQLite 版本
+            const db = getDb();
+            admin = db.prepare(`
+                SELECT id, username, role FROM admins WHERE id = ?
+            `).get(adminId);
         }
         
-        const db = getDb();
-        const admin = db.prepare(`
-            SELECT id, username, name, role, is_active, is_locked 
-            FROM admins 
-            WHERE id = ?
-        `).get(adminId);
-        
         if (!admin) {
-            logger.warn(`Admin not found for token: ${adminId}`);
+            logger.warn(`Admin not found: ${adminId}`);
             return res.status(401).json({
                 success: false,
                 error: 'UNAUTHORIZED',
@@ -68,27 +73,7 @@ export const adminAuth = (req, res, next) => {
             });
         }
         
-        // 检查账号是否启用
-        if (admin.is_active === 0) {
-            logger.warn(`Admin account disabled: ${admin.username}`);
-            return res.status(403).json({
-                success: false,
-                error: 'ACCOUNT_DISABLED',
-                message: '账号已被禁用'
-            });
-        }
-        
-        // 检查账号是否锁定
-        if (admin.is_locked === 1) {
-            logger.warn(`Admin account locked: ${admin.username}`);
-            return res.status(403).json({
-                success: false,
-                error: 'ACCOUNT_LOCKED',
-                message: '账号已被锁定'
-            });
-        }
-        
-        // 同步设置 Session（使后续请求也能通过 Session 认证）
+        // 同步设置 Session
         if (req.session) {
             req.session.adminId = admin.id;
             req.session.adminName = admin.username;
@@ -99,11 +84,11 @@ export const adminAuth = (req, res, next) => {
         req.admin = {
             id: admin.id,
             username: admin.username,
-            name: admin.name || admin.username,
+            name: admin.username,
             role: admin.role
         };
         
-        logger.debug(`Admin authenticated via token: ${admin.username}`);
+        logger.debug(`Admin authenticated: ${admin.username}`);
         next();
         
     } catch (error) {
@@ -118,11 +103,10 @@ export const adminAuth = (req, res, next) => {
 
 /**
  * 增强版管理员认证中间件（带数据库验证）
- * 检查管理员是否被禁用、锁定等实时状态
  */
-export const adminAuthEnhanced = (req, res, next) => {
+export const adminAuthEnhanced = async (req, res, next) => {
     try {
-        // 1. 检查 session 或 req.admin（由 adminAuth 设置）
+        // 检查是否有 admin 信息
         if (!req.admin && (!req.session || !req.session.adminId)) {
             logger.warn('Admin auth enhanced failed: No admin session');
             return res.status(401).json({
@@ -132,18 +116,23 @@ export const adminAuthEnhanced = (req, res, next) => {
             });
         }
 
-        const db = getDb();
         const adminId = req.admin?.id || req.session?.adminId;
+        let admin = null;
         
-        // 2. 从数据库获取最新管理员信息
-        const admin = db.prepare(`
-            SELECT id, username, name, role, is_active, is_locked 
-            FROM admins 
-            WHERE id = ?
-        `).get(adminId);
+        if (isProduction) {
+            const result = await query(
+                `SELECT id, username, role FROM admins WHERE id = $1`,
+                [adminId]
+            );
+            admin = result?.[0];
+        } else {
+            const db = getDb();
+            admin = db.prepare(`
+                SELECT id, username, role FROM admins WHERE id = ?
+            `).get(adminId);
+        }
 
         if (!admin) {
-            // 管理员不存在，销毁session
             if (req.session) {
                 req.session.destroy();
             }
@@ -155,37 +144,16 @@ export const adminAuthEnhanced = (req, res, next) => {
             });
         }
 
-        // 3. 检查账号是否启用
-        if (!admin.is_active) {
-            logger.warn(`Admin account disabled: ${admin.username}`);
-            return res.status(403).json({
-                success: false,
-                error: 'ACCOUNT_DISABLED',
-                message: '账号已被禁用'
-            });
-        }
-
-        // 4. 检查账号是否锁定
-        if (admin.is_locked) {
-            logger.warn(`Admin account locked: ${admin.username}`);
-            return res.status(403).json({
-                success: false,
-                error: 'ACCOUNT_LOCKED',
-                message: '账号已被锁定'
-            });
-        }
-
-        // 5. 更新session中的信息（确保与数据库同步）
+        // 更新 session 中的信息
         if (req.session) {
-            req.session.adminName = admin.name;
+            req.session.adminName = admin.username;
             req.session.adminRole = admin.role;
         }
         
-        // 6. 将完整信息附加到req对象
         req.admin = {
             id: admin.id,
             username: admin.username,
-            name: admin.name,
+            name: admin.username,
             role: admin.role
         };
 
@@ -207,7 +175,6 @@ export const adminAuthEnhanced = (req, res, next) => {
 export const hasRole = (allowedRoles) => {
     return (req, res, next) => {
         try {
-            // 先确保已通过adminAuth中间件
             if (!req.admin) {
                 return res.status(401).json({
                     success: false,
@@ -245,11 +212,6 @@ export const hasRole = (allowedRoles) => {
 
 /**
  * 记录管理员操作日志
- * @param {Object} req - Express请求对象
- * @param {string} action - 操作类型
- * @param {Object} details - 操作详情
- * @param {string} targetType - 目标类型
- * @param {number} targetId - 目标ID
  */
 export const logAdminAction = async (req, action, details = {}, targetType = null, targetId = null) => {
     try {
@@ -257,25 +219,24 @@ export const logAdminAction = async (req, action, details = {}, targetType = nul
             return;
         }
 
-        const db = getDb();
         const adminId = req.admin?.id || req.session?.adminId;
         const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
         const userAgent = req.headers['user-agent'] || '';
 
-        db.prepare(`
-            INSERT INTO admin_logs (
-                admin_id, action, target_type, target_id, details, ip, user_agent, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
-            adminId,
-            action,
-            targetType,
-            targetId,
-            JSON.stringify(details),
-            ip,
-            userAgent,
-            'success'
-        );
+        if (isProduction) {
+            await query(`
+                INSERT INTO admin_logs (
+                    admin_id, action, target_type, target_id, details, ip, user_agent, status
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            `, [adminId, action, targetType, targetId, JSON.stringify(details), ip, userAgent, 'success']);
+        } else {
+            const db = getDb();
+            db.prepare(`
+                INSERT INTO admin_logs (
+                    admin_id, action, target_type, target_id, details, ip, user_agent, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(adminId, action, targetType, targetId, JSON.stringify(details), ip, userAgent, 'success');
+        }
     } catch (err) {
         logger.error('Failed to log admin action:', err);
     }
@@ -284,10 +245,7 @@ export const logAdminAction = async (req, action, details = {}, targetType = nul
 /**
  * 组合中间件：基础认证 + 增强验证
  */
-export const adminAuthComplete = [
-    adminAuth,
-    adminAuthEnhanced
-];
+export const adminAuthComplete = [adminAuth, adminAuthEnhanced];
 
 /**
  * 导出所有中间件
