@@ -236,7 +236,8 @@ const corsOptions = {
         const allowedOrigins = [
             'https://www.footradapro.com',
             'https://footradapro.com',
-            'https://api.footradapro.com',
+            
+            'https://footradapro-api.onrender.com',
             'http://localhost:3000',
             'http://localhost:5500'
         ];
