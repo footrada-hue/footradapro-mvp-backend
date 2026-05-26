@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Authorize Trade · FootRadaPro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ========== 8px 网格系统（优化比例） ========== */
+    :root {
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 28px;
+      --space-8: 32px;
+      --space-9: 40px;
+      --space-10: 48px;
+      --space-11: 56px;
+      
+      --font-xs: 0.75rem;      /* 12px */
+      --font-sm: 0.875rem;     /* 14px */
+      --font-base: 1rem;       /* 16px */
+      --font-md: 1.125rem;     /* 18px */
+      --font-lg: 1.25rem;      /* 20px */
+      --font-xl: 1.5rem;       /* 24px */
+      --font-2xl: 1.75rem;     /* 28px */
+      --font-3xl: 2rem;        /* 32px */
+      
+      --radius-sm: 16px;
+      --radius-md: 20px;
+      --radius-lg: 24px;
+      --radius-xl: 28px;
+      --radius-2xl: 32px;
+      --radius-full: 9999px;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-bounce: cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      --duration-fast: 0.15s;
+      --duration-base: 0.24s;
+    }
+
+    /* ========== 玻璃质感主题 ========== */
+    :root {
+      --bg-gradient-start: rgba(248, 250, 252, 0.95);
+      --bg-gradient-end: rgba(241, 245, 249, 0.98);
+      --glass-bg: rgba(255, 255, 255, 0.52);
+      --glass-border: rgba(59, 130, 246, 0.12);
+      --glass-shadow: 0 2px 8px rgba(0,0,0,0.02), 0 8px 24px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.9);
+      --glass-shadow-hover: 0 8px 24px rgba(0,0,0,0.06), 0 16px 32px -12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.95);
+      --accent: #2563eb;
+      --accent-glow: rgba(37,99,235,0.2);
+      --accent-gradient: linear-gradient(135deg, #2563eb, #4f46e5);
+      --sandbox-gradient: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      --live-gradient: linear-gradient(135deg, #f97316, #ea580c);
+      --success: #10b981;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --border-light: rgba(148,163,184,0.12);
+      --card-bg: rgba(255,255,255,0.65);
+      --ticker-bg: rgba(37,99,235,0.9);
+      --badge-soft: rgba(37,99,235,0.08);
+    }
+
+    body.dark {
+      --bg-gradient-start: rgba(10,16,30,0.96);
+      --bg-gradient-end: rgba(2,6,18,0.98);
+      --glass-bg: rgba(20,28,44,0.55);
+      --glass-border: rgba(59,130,246,0.2);
+      --glass-shadow: 0 2px 8px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04);
+      --glass-shadow-hover: 0 8px 24px rgba(0,0,0,0.35), 0 16px 32px -12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59,130,246,0.3);
+      --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      --sandbox-gradient: linear-gradient(135deg, #a855f7, #7c3aed);
+      --live-gradient: linear-gradient(135deg, #fb923c, #ea580c);
+      --success: #34d399;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --card-bg: rgba(20,28,44,0.6);
+    }
+
+    body {
+      background: radial-gradient(ellipse at 30% 40%, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+      transition: background var(--duration-base) var(--ease-out);
+    }
+
+    body::before {
+      content: ''; position: fixed; top:0; left:0; width:100%; height:100%;
+      background-image: repeating-linear-gradient(90deg, rgba(59,130,246,0.015) 0px, rgba(59,130,246,0.015) 1px, transparent 1px, transparent 40px),
+                        repeating-linear-gradient(0deg, rgba(59,130,246,0.015) 0px, rgba(59,130,246,0.015) 1px, transparent 1px, transparent 40px);
+      background-size: 40px 40px;
+      pointer-events: none; z-index:0;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--border-light); border-radius: var(--radius-full); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: var(--radius-full); }
+
+    .app-wrapper { position: relative; z-index:1; min-height:100vh; display: flex; flex-direction: column; }
+
+    /* ========== 跑马灯 ========== */
+    .ticker {
+      background: var(--ticker-bg); backdrop-filter: blur(12px); color: white; padding: 10px 0; font-size: var(--font-sm); font-weight: 500;
+      white-space: nowrap; overflow: hidden; border-bottom: 1px solid var(--glass-border);
+    }
+    .ticker-content { display: inline-block; animation: ticker 32s linear infinite; padding-left: 100%; letter-spacing: 0.3px; }
+    @keyframes ticker { to { transform: translateX(-100%); } }
+
+    /* ========== 头部导航 ========== */
+    .header {
+      background: var(--glass-bg); backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border);
+      padding: var(--space-4) var(--space-6); position: sticky; top:0; z-index:50; box-shadow: var(--glass-shadow);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: var(--space-3); }
+    .logo-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+    .logo-text { font-size: var(--font-lg); font-weight: 700; background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .header-actions { display: flex; gap: var(--space-5); align-items: center; }
+    .header-actions i { font-size: 20px; color: var(--text-secondary); cursor: pointer; transition: all var(--duration-fast) var(--ease-out); }
+    .user-badge { width: 38px; height: 38px; border-radius: 50%; background: var(--badge-soft); backdrop-filter: blur(8px); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 600; border: 1px solid var(--glass-border); }
+
+    /* ========== 主内容区 ========== */
+    .container { display: flex; flex:1; padding: var(--space-6); gap: var(--space-6); max-width: 900px; margin: 0 auto; width: 100%; }
+    .content { flex:1; }
+
+    /* 模式指示器 */
+    .mode-indicator {
+      display: inline-flex; align-items: center; gap: var(--space-2); background: var(--badge-soft); backdrop-filter: blur(8px);
+      padding: 6px 16px; border-radius: var(--radius-full); width: fit-content; margin-bottom: var(--space-5);
+      font-size: var(--font-sm);
+    }
+    .mode-indicator .sandbox-mode-text { color: #8b5cf6; font-weight: 600; }
+    .mode-indicator .live-mode-text { color: #f97316; font-weight: 600; }
+    .demo-badge { background: rgba(249,115,22,0.15); color: #f97316; padding: 4px 12px; border-radius: var(--radius-full); font-size: var(--font-xs); margin-left: var(--space-3); }
+
+    /* ========== 卡片设计 ========== */
+    .card {
+      background: var(--card-bg); backdrop-filter: blur(24px); border-radius: var(--radius-2xl);
+      border: 1px solid var(--glass-border); padding: var(--space-7);
+      transition: all var(--duration-base) var(--ease-out); box-shadow: var(--glass-shadow);
+      margin-bottom: var(--space-6);
+    }
+    .card:last-child { margin-bottom: 0; }
+    .card:hover { transform: translateY(-3px); box-shadow: var(--glass-shadow-hover); border-color: var(--accent); }
+    .card-title { font-size: var(--font-base); font-weight: 600; margin-bottom: var(--space-5); display: flex; align-items: center; gap: var(--space-2); color: var(--text-secondary); letter-spacing: -0.2px; }
+    .card-title i { color: var(--accent); font-size: var(--font-lg); }
+
+    /* ========== 比赛信息区域 ========== */
+    .match-teams { text-align: center; margin-bottom: var(--space-6); }
+    .match-teams h2 { font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-2); letter-spacing: -0.5px; }
+    .match-meta { display: flex; justify-content: center; gap: var(--space-5); color: var(--text-muted); font-size: var(--font-sm); flex-wrap: wrap; }
+
+    /* 球队Logo区域 */
+    .team-logos { display: flex; justify-content: center; align-items: center; gap: var(--space-7); margin: var(--space-7) 0; }
+    .team-logo { text-align: center; flex: 1; max-width: 120px; }
+    .team-logo-circle { 
+      width: 100px; height: 100px; background: var(--badge-soft); border-radius: 50%; 
+      display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-3); 
+      border: 2px solid var(--glass-border); transition: all var(--duration-fast);
+    }
+    .team-logo-circle i { font-size: 44px; color: var(--accent); }
+    .team-logo span { font-size: var(--font-sm); font-weight: 600; }
+    .vs-badge { 
+      font-size: var(--font-base); font-weight: 700; color: var(--accent); background: var(--badge-soft); 
+      padding: 8px 20px; border-radius: var(--radius-full); letter-spacing: 1px;
+    }
+
+    /* ========== 余额卡片 ========== */
+    .balance-card { background: linear-gradient(135deg, rgba(37,99,235,0.06), rgba(79,70,229,0.03)); }
+    .balance-amount { font-size: var(--font-3xl); font-weight: 700; font-family: monospace; background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: -0.5px; }
+    .balance-label { font-size: var(--font-xs); color: var(--text-muted); margin-bottom: var(--space-2); }
+
+    /* ========== 金额选择区域 ========== */
+    .amount-presets { display: flex; gap: var(--space-3); margin: var(--space-6) 0; flex-wrap: wrap; }
+    .preset-btn { 
+      flex: 1; background: var(--badge-soft); border: 1px solid transparent; padding: 12px 16px; border-radius: var(--radius-full);
+      color: var(--text-secondary); font-weight: 600; cursor: pointer; transition: all var(--duration-fast);
+      font-size: var(--font-sm);
+    }
+    .preset-btn:hover { background: var(--accent-gradient); color: white; border-color: transparent; transform: translateY(-1px); }
+    .amount-input { 
+      display: flex; align-items: center; gap: var(--space-3); background: var(--badge-soft); border-radius: var(--radius-full);
+      padding: 6px var(--space-5); border: 1px solid var(--glass-border); transition: all var(--duration-fast);
+    }
+    .amount-input:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .amount-input input { flex:1; background: none; border: none; color: var(--text-primary); font-size: var(--font-lg); outline: none; font-weight: 600; padding: var(--space-3) 0; }
+    .amount-input span { font-weight: 600; color: var(--accent); font-size: var(--font-sm); }
+
+    /* ========== 倒计时 ========== */
+    .countdown-container { 
+      background: rgba(0,0,0,0.15); border-radius: var(--radius-lg); padding: var(--space-5); text-align: center; 
+      margin: var(--space-6) 0 0; backdrop-filter: blur(4px);
+    }
+    .countdown-label { font-size: var(--font-xs); color: var(--text-muted); margin-bottom: var(--space-2); letter-spacing: 0.5px; text-transform: uppercase; }
+    .countdown-display { font-size: var(--font-xl); font-weight: 700; font-family: monospace; color: var(--accent); letter-spacing: 2px; }
+
+    /* ========== 授权按钮 ========== */
+    .authorize-btn { 
+      width: 100%; padding: 16px; border-radius: var(--radius-full); background: var(--accent-gradient); 
+      color: white; font-weight: 700; font-size: var(--font-base); border: none; cursor: pointer; 
+      transition: all var(--duration-fast) var(--ease-bounce); margin-top: var(--space-7);
+      display: flex; align-items: center; justify-content: center; gap: var(--space-2);
+    }
+    .authorize-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .authorize-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px var(--accent-glow); }
+    .authorize-btn:active:not(:disabled) { transform: translateY(0); }
+
+    /* ========== 模态框 ========== */
+    .modal-overlay { 
+      position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.75); backdrop-filter: blur(12px);
+      display: flex; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal-content { 
+      background: var(--card-bg); backdrop-filter: blur(28px); border-radius: var(--radius-2xl); 
+      border: 1px solid var(--glass-border); padding: var(--space-8); max-width: 400px; width: 90%; text-align: center;
+    }
+    .modal-content i { font-size: 56px; color: var(--success); margin-bottom: var(--space-5); }
+    .modal-content h3 { font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-3); }
+    .modal-buttons { display: flex; gap: var(--space-4); margin-top: var(--space-7); }
+    .modal-buttons button { flex:1; padding: 12px 16px; border-radius: var(--radius-full); font-weight: 600; cursor: pointer; transition: all var(--duration-fast); }
+
+    /* ========== 底部导航 ========== */
+    .bottom-nav { 
+      display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); 
+      backdrop-filter: blur(24px); border-top: 1px solid var(--glass-border); padding: var(--space-3) var(--space-5); z-index:60;
+    }
+    .bottom-nav-items { display: flex; justify-content: space-around; max-width: 500px; margin:0 auto; }
+    .nav-item { 
+      display: flex; flex-direction: column; align-items: center; gap: var(--space-1); font-size: var(--font-xs); 
+      color: var(--text-muted); cursor: pointer; transition: all var(--duration-fast); padding: var(--space-2) 0;
+    }
+    .nav-item.active { color: var(--accent); }
+    .nav-item i { font-size: 22px; }
+    .nav-item:active { transform: scale(0.95); }
+
+    /* ========== 悬浮按钮 ========== */
+    .fab { 
+      position: fixed; bottom: 28px; right: 28px; width: 52px; height: 52px; border-radius: 50%; 
+      background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; 
+      box-shadow: 0 4px 16px var(--accent-glow); z-index:55; cursor: pointer; transition: all var(--duration-fast);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .fab:hover { transform: scale(1.05); }
+    .fab:active { transform: scale(0.95); }
+
+    /* ========== 响应式设计（移动端深度优化） ========== */
+    @media (max-width: 768px) {
+      .container { padding: var(--space-4); }
+      .card { padding: var(--space-5); border-radius: var(--radius-xl); }
+      .card-title { font-size: var(--font-sm); margin-bottom: var(--space-4); }
+      
+      .match-teams h2 { font-size: var(--font-lg); }
+      .match-meta { gap: var(--space-3); font-size: var(--font-xs); flex-direction: column; align-items: center; }
+      
+      .team-logos { gap: var(--space-4); margin: var(--space-5) 0; }
+      .team-logo-circle { width: 70px; height: 70px; }
+      .team-logo-circle i { font-size: 32px; }
+      .team-logo span { font-size: var(--font-xs); }
+      .vs-badge { font-size: var(--font-xs); padding: 6px 14px; }
+      
+      .balance-amount { font-size: var(--font-2xl); }
+      
+      .amount-presets { gap: var(--space-2); }
+      .preset-btn { padding: 10px 12px; font-size: var(--font-xs); }
+      .amount-input { padding: 4px var(--space-4); }
+      .amount-input input { font-size: var(--font-base); }
+      
+      .countdown-container { padding: var(--space-4); }
+      .countdown-display { font-size: var(--font-lg); }
+      
+      .authorize-btn { padding: 14px; font-size: var(--font-sm); margin-top: var(--space-6); }
+      
+      .modal-content { padding: var(--space-6); width: 85%; }
+      .modal-content i { font-size: 48px; }
+      .modal-content h3 { font-size: var(--font-lg); }
+      .modal-buttons { gap: var(--space-3); }
+      .modal-buttons button { padding: 10px; font-size: var(--font-sm); }
+      
+      .bottom-nav { display: block; }
+      body { padding-bottom: 70px; }
+      .fab { bottom: 80px; right: 20px; width: 48px; height: 48px; }
+      .fab i { font-size: 20px; }
+      
+      .mode-indicator { padding: 4px 14px; font-size: var(--font-xs); margin-bottom: var(--space-4); }
+      .demo-badge { font-size: 10px; }
+    }
+
+    @media (max-width: 480px) {
+      .container { padding: var(--space-3); }
+      .card { padding: var(--space-4); border-radius: var(--radius-lg); }
+      
+      .team-logo-circle { width: 55px; height: 55px; }
+      .team-logo-circle i { font-size: 26px; }
+      .vs-badge { padding: 4px 10px; }
+      
+      .amount-presets { gap: var(--space-2); }
+      .preset-btn { padding: 8px 8px; }
+      
+      .balance-amount { font-size: var(--font-xl); }
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <div class="ticker"><div class="ticker-content">⚡ FOOTRADA · AI-Powered Football Trading &nbsp;|&nbsp; 🔒 Trust Anchor Enabled &nbsp;|&nbsp; 🏆 World Cup 2026</div></div>
+
+  <div class="header">
+    <div class="logo"><div class="logo-icon">⚽</div><div class="logo-text">FootRadaPro</div></div>
+    <div class="header-actions"><i class="fa-regular fa-moon" id="themeToggle"></i><div class="user-badge">EN</div></div>
+  </div>
+
+  <div class="container">
+    <main class="content">
+      <div class="mode-indicator">
+        <i class="fa-solid fa-info-circle"></i>
+        <span>Current Mode: </span>
+        <span id="currentModeText" class="sandbox-mode-text">Sandbox</span>
+        <span class="demo-badge" id="demoBadge" style="display: none;">Demo Preview</span>
+      </div>
+
+      <!-- 比赛信息卡片 -->
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-trophy"></i> Match Details</div>
+        <div class="match-teams">
+          <h2 id="matchTeams">Liverpool vs Manchester City</h2>
+          <div class="match-meta">
+            <span id="matchLeague"><i class="fa-solid fa-trophy"></i> Premier League</span>
+            <span id="matchTime"><i class="fa-regular fa-clock"></i> Today, 20:45</span>
+          </div>
+        </div>
+        <div class="team-logos">
+          <div class="team-logo">
+            <div class="team-logo-circle" id="homeLogoContainer"><i class="fa-solid fa-futbol"></i></div>
+            <span id="homeTeamAbbr">LIV</span>
+          </div>
+          <div class="vs-badge">VS</div>
+          <div class="team-logo">
+            <div class="team-logo-circle" id="awayLogoContainer"><i class="fa-solid fa-futbol"></i></div>
+            <span id="awayTeamAbbr">MCI</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 余额卡片 -->
+      <div class="card balance-card">
+        <div class="card-title"><i class="fa-solid fa-wallet"></i> Your Balance</div>
+        <div class="balance-amount" id="userBalance">10,000.00</div>
+        <div class="balance-label" id="balanceCurrency">USDT</div>
+      </div>
+
+      <!-- 授权表单卡片 -->
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-file-signature"></i> Authorization Amount</div>
+        <div class="amount-presets">
+          <button class="preset-btn" data-amount="100">100</button>
+          <button class="preset-btn" data-amount="200">200</button>
+          <button class="preset-btn" data-amount="300">300</button>
+          <button class="preset-btn" data-amount="500">500</button>
+          <button class="preset-btn" data-amount="max">Max</button>
+        </div>
+        <div class="amount-input">
+          <input type="number" id="amount" value="100" step="10" min="100" max="500">
+          <span id="currencyUnit">USDT</span>
+        </div>
+
+        <div class="countdown-container">
+          <div class="countdown-label"><i class="fa-regular fa-clock"></i> Match starts in</div>
+          <div class="countdown-display" id="countdownDisplay">--:--:--</div>
+        </div>
+
+        <button class="authorize-btn" id="authorizeBtn">
+          <i class="fa-solid fa-bolt"></i> Confirm Authorization
+        </button>
+        <p style="text-align: center; font-size: var(--font-xs); color: var(--text-muted); margin-top: var(--space-5);">
+          <i class="fa-solid fa-shield"></i> AI will execute the strategy automatically
+        </p>
+      </div>
+    </main>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="bottom-nav-items">
+      <div class="nav-item" data-nav="home"><i class="fa-solid fa-home"></i><span>Home</span></div>
+      <div class="nav-item" data-nav="market"><i class="fa-solid fa-chart-line"></i><span>Market</span></div>
+      <div class="nav-item" data-nav="records"><i class="fa-solid fa-list"></i><span>Records</span></div>
+      <div class="nav-item active" data-nav="support"><i class="fa-solid fa-headset"></i><span>Support</span></div>
+      <div class="nav-item" data-nav="profile"><i class="fa-solid fa-user"></i><span>Profile</span></div>
+    </div>
+  </div>
+
+  <div class="fab" onclick="alert('Support: contact via Telegram')"><i class="fa-solid fa-comment-dots"></i></div>
+
+  <!-- 成功模态框 -->
+  <div id="successModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <i class="fa-solid fa-circle-check"></i>
+      <h3>Authorization Successful!</h3>
+      <p id="successTeams">Authorization submitted</p>
+      <div id="successAmount" style="margin: 16px 0;"></div>
+      <div class="modal-buttons">
+        <button id="viewDetailsBtn" style="background: var(--accent-gradient); color: white; border: none;">View Details</button>
+        <button id="continueBtn" style="background: transparent; border: 1px solid var(--accent); color: var(--accent);">Continue</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const matchId = urlParams.get('matchId');
+  const isDemo = !matchId;
+
+  if (isDemo) {
+    const demoBadge = document.getElementById('demoBadge');
+    if (demoBadge) demoBadge.style.display = 'inline-block';
+  }
+
+  const mockMatch = {
+    id: 1001,
+    home_team: 'Liverpool',
+    away_team: 'Manchester City',
+    league: 'Premier League',
+    match_time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+    execution_rate: 30
+  };
+
+  let state = {
+    match: isDemo ? mockMatch : null,
+    userBalance: 10000,
+    testBalance: 10000,
+    amount: 100,
+    minAmount: 100,
+    maxAmount: 500,
+    isTestMode: false,
+    countdownTimer: null
+  };
+
+  const DOM = {
+    matchTeams: document.getElementById('matchTeams'),
+    matchLeague: document.getElementById('matchLeague'),
+    matchTime: document.getElementById('matchTime'),
+    userBalance: document.getElementById('userBalance'),
+    balanceCurrency: document.getElementById('balanceCurrency'),
+    currencyUnit: document.getElementById('currencyUnit'),
+    amountInput: document.getElementById('amount'),
+    authorizeBtn: document.getElementById('authorizeBtn'),
+    successModal: document.getElementById('successModal'),
+    successTeams: document.getElementById('successTeams'),
+    successAmount: document.getElementById('successAmount'),
+    viewDetailsBtn: document.getElementById('viewDetailsBtn'),
+    continueBtn: document.getElementById('continueBtn'),
+    countdownDisplay: document.getElementById('countdownDisplay')
+  };
+
+  function getAppMode() { return localStorage.getItem('appMode') || 'sandbox'; }
+  function getThemeMode() { return localStorage.getItem('theme') || 'light'; }
+
+  function updateThemeUI() {
+    const theme = getThemeMode();
+    if (theme === 'dark') document.body.classList.add('dark');
+    else document.body.classList.remove('dark');
+    const icon = document.getElementById('themeToggle');
+    if (icon) {
+      if (theme === 'dark') { icon.classList.remove('fa-moon'); icon.classList.add('fa-sun'); }
+      else { icon.classList.remove('fa-sun'); icon.classList.add('fa-moon'); }
+    }
+  }
+
+  function updateModeUI() {
+    const isSandbox = getAppMode() === 'sandbox';
+    state.isTestMode = isSandbox;
+    const balance = isSandbox ? state.testBalance : state.userBalance;
+    if (DOM.userBalance) DOM.userBalance.textContent = balance.toFixed(2);
+    const currency = isSandbox ? 'tUSDT' : 'USDT';
+    if (DOM.balanceCurrency) DOM.balanceCurrency.textContent = currency;
+    if (DOM.currencyUnit) DOM.currencyUnit.textContent = currency;
+    const modeText = document.getElementById('currentModeText');
+    if (modeText) {
+      modeText.textContent = isSandbox ? 'Sandbox' : 'Live';
+      modeText.className = isSandbox ? 'sandbox-mode-text' : 'live-mode-text';
+    }
+    const amountInput = DOM.amountInput;
+    if (amountInput) {
+      const max = Math.min(state.maxAmount, balance);
+      amountInput.max = max;
+      if (state.amount > max) {
+        state.amount = max;
+        amountInput.value = max;
+      }
+    }
+  }
+
+  function renderMatchDetails() {
+    const match = state.match;
+    if (!match) return;
+    if (DOM.matchTeams) DOM.matchTeams.textContent = `${match.home_team} vs ${match.away_team}`;
+    if (DOM.matchLeague) DOM.matchLeague.textContent = match.league;
+    if (DOM.matchTime) {
+      const date = new Date(match.match_time);
+      DOM.matchTime.textContent = date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+    document.getElementById('homeTeamAbbr').textContent = match.home_team.substring(0, 3).toUpperCase();
+    document.getElementById('awayTeamAbbr').textContent = match.away_team.substring(0, 3).toUpperCase();
+  }
+
+  function startCountdown() {
+    if (!state.match) return;
+    const matchTime = new Date(state.match.match_time);
+    function update() {
+      const now = new Date();
+      const diff = matchTime - now;
+      if (diff <= 0) {
+        if (DOM.countdownDisplay) DOM.countdownDisplay.textContent = 'Match Started';
+        if (DOM.authorizeBtn) DOM.authorizeBtn.disabled = true;
+        if (state.countdownTimer) clearInterval(state.countdownTimer);
+        return;
+      }
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      if (DOM.countdownDisplay) {
+        DOM.countdownDisplay.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+    }
+    update();
+    state.countdownTimer = setInterval(update, 1000);
+  }
+
+  function submitAuthorization() {
+    const isSandbox = getAppMode() === 'sandbox';
+    const amount = state.amount;
+    const currency = isSandbox ? 'tUSDT' : 'USDT';
+    if (DOM.successModal) {
+      DOM.successModal.style.display = 'flex';
+      if (DOM.successTeams) DOM.successTeams.textContent = `${state.match.home_team} vs ${state.match.away_team}`;
+      if (DOM.successAmount) {
+        DOM.successAmount.innerHTML = `<div style="margin-bottom: 8px;">Authorized Amount:</div><div style="font-weight: 700; font-size: var(--font-xl);">${amount} ${currency}</div>`;
+      }
+    }
+  }
+
+  function bindEvents() {
+    if (DOM.amountInput) {
+      DOM.amountInput.addEventListener('input', (e) => {
+        let val = parseInt(e.target.value) || state.minAmount;
+        const max = state.isTestMode ? state.testBalance : state.userBalance;
+        if (val < state.minAmount) val = state.minAmount;
+        if (val > max) val = max;
+        state.amount = val;
+        e.target.value = val;
+      });
+    }
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const amount = btn.dataset.amount;
+        if (amount === 'max') {
+          const max = state.isTestMode ? state.testBalance : state.userBalance;
+          state.amount = Math.min(max, state.maxAmount);
+        } else {
+          state.amount = parseInt(amount);
+        }
+        if (DOM.amountInput) DOM.amountInput.value = state.amount;
+      });
+    });
+    if (DOM.authorizeBtn) DOM.authorizeBtn.addEventListener('click', submitAuthorization);
+    if (DOM.viewDetailsBtn) DOM.viewDetailsBtn.addEventListener('click', () => window.location.href = '/transaction-detail.html');
+    if (DOM.continueBtn) DOM.continueBtn.addEventListener('click', () => window.location.href = '/match-market.html');
+  }
+
+  document.getElementById('themeToggle')?.addEventListener('click', () => {
+    const newTheme = getThemeMode() === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', newTheme);
+    window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
+    updateThemeUI();
+  });
+
+  window.addEventListener('appModeChanged', () => { updateModeUI(); });
+  window.addEventListener('themeChanged', () => updateThemeUI());
+
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const nav = item.dataset.nav;
+      if (nav === 'home') window.location.href = '/index.html';
+      if (nav === 'market') window.location.href = '/match-market.html';
+      if (nav === 'records') window.location.href = '/transaction-list.html';
+      if (nav === 'support') window.location.href = '/support.html';
+      if (nav === 'profile') window.location.href = '/profile.html';
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+
+  (function init() {
+    state.match = mockMatch;
+    renderMatchDetails();
+    startCountdown();
+    updateThemeUI();
+    updateModeUI();
+    bindEvents();
+  })();
+</script>
+</body>
+</html>

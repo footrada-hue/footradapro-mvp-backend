@@ -1,0 +1,1239 @@
+<!-- 
+  index-content.html - 首页内容（完整版）
+  功能：总资产展示、可用余额、结算中金额、图表、AI Spotlight、Recent Authorizations
+  适配：桌面端 + 移动端完美适配
+-->
+
+<div class="container">
+  <main class="content">
+    <div class="mode-note" id="modeNote"><i class="fa-regular fa-circle-info"></i> Sandbox uses virtual funds — no real asset risk.</div>
+
+    <div class="grid">
+      <!-- Account Balance 卡片 - 优化版 -->
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-chart-pie"></i> Total Assets</div>
+        <div class="amount" id="totalAssets">--</div>
+        <div class="assets-breakdown">
+          <div class="row">
+            <span><i class="fa-solid fa-circle-info" style="color: var(--accent);"></i> Available Balance</span>
+            <span id="availableBalance">--</span>
+          </div>
+          <div class="row">
+            <span><i class="fa-solid fa-clock" style="color: var(--warning);"></i> In Settlement</span>
+            <span id="lockedDisplay">0.00 tUSDT</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 图表卡片 -->
+      <div class="card">
+        <div class="card-title">
+          <i class="fas fa-chart-line"></i> 
+          <span>Authorization & Profit Trends</span>
+          <div style="margin-left: auto; display: flex; gap: 6px;">
+            <button class="chart-time-btn" data-period="1d" style="background: rgba(37, 99, 235, 0.1); border: none; padding: 4px 10px; border-radius: 30px; font-size: 10px; font-weight: 500; cursor: pointer; color: var(--text-secondary);">1D</button>
+            <button class="chart-time-btn" data-period="1w" style="background: rgba(37, 99, 235, 0.1); border: none; padding: 4px 10px; border-radius: 30px; font-size: 10px; font-weight: 500; cursor: pointer; color: var(--text-secondary);">1W</button>
+            <button class="chart-time-btn active" data-period="1m" style="background: linear-gradient(135deg, #2563eb, #4f46e5); border: none; padding: 4px 10px; border-radius: 30px; font-size: 10px; font-weight: 500; cursor: pointer; color: white;">1M</button>
+            <button class="chart-time-btn" data-period="1y" style="background: rgba(37, 99, 235, 0.1); border: none; padding: 4px 10px; border-radius: 30px; font-size: 10px; font-weight: 500; cursor: pointer; color: var(--text-secondary);">1Y</button>
+          </div>
+        </div>
+        <canvas id="authProfitChart" width="400" height="200" style="max-height: 200px; width: 100%;"></canvas>
+        <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 0.75rem; font-size: 10px;">
+          <div style="display: flex; align-items: center; gap: 4px;"><div style="width: 10px; height: 10px; background: #3b82f6; border-radius: 2px;"></div><span style="color: var(--text-muted);">Authorized Amount</span></div>
+          <div style="display: flex; align-items: center; gap: 4px;"><div style="width: 10px; height: 10px; background: #10b981; border-radius: 2px;"></div><span style="color: var(--text-muted);">Profit / Loss</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Spotlight -->
+    <div>
+      <div class="section-head">
+        <h3 class="section-title">AI Spotlight</h3>
+        <a href="#" class="section-more" onclick="window.router?.navigate('markets'); return false;">All matches <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+      <div class="events-grid" id="spotlightGrid">
+        <div class="loading-skeleton"><i class="fas fa-spinner fa-pulse"></i> Loading matches...</div>
+      </div>
+    </div>
+
+    <!-- Recent Authorizations - 动态加载 -->
+    <div>
+      <div class="section-head">
+        <h3 class="section-title">Recent Authorizations</h3>
+        <a href="/authorizations.html" class="section-more">View all <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+      <div class="desktop-table" style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr><th>Timestamp</th><th>Match</th><th>Amount</th><th>Status</th><th>Mode</th><th></th></tr>
+          </thead>
+          <tbody id="recentAuthTableBody">
+            <td><td colspan="6" style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-pulse"></i> Loading...<\/td><\/tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mobile-history-list" id="recentAuthMobileList">
+        <div class="mobile-history-card" style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-pulse"></i> Loading...</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 右侧侧边栏 -->
+  <aside class="sidebar">
+    <div class="perf-header">
+      <div class="perf-title">
+        <i class="fas fa-chart-line"></i>
+        <h2>Platform Performance</h2>
+      </div>
+      <div class="perf-sub">
+        <i class="fas fa-sync-alt"></i> Real-time metrics
+      </div>
+    </div>
+
+    <div class="kpi-grid-sidebar">
+      <div class="kpi-card-sidebar">
+        <div class="kpi-icon"><i class="fas fa-chart-simple"></i></div>
+        <div class="kpi-number">1.2M</div>
+        <div class="kpi-label-sidebar">Total Auth</div>
+        <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> 12.3%</div>
+      </div>
+      <div class="kpi-card-sidebar">
+        <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
+        <div class="kpi-number">83.2%</div>
+        <div class="kpi-label-sidebar">Success Rate</div>
+        <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> 2.1%</div>
+      </div>
+      <div class="kpi-card-sidebar">
+        <div class="kpi-icon"><i class="fas fa-coins"></i></div>
+        <div class="kpi-number">52.4M</div>
+        <div class="kpi-label-sidebar">Volume (USDT)</div>
+        <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> 8.7%</div>
+      </div>
+      <div class="kpi-card-sidebar">
+        <div class="kpi-icon"><i class="fas fa-users"></i></div>
+        <div class="kpi-number">48.3K</div>
+        <div class="kpi-label-sidebar">Active Users</div>
+        <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> 5.7%</div>
+      </div>
+    </div>
+
+    <div class="ai-metrics">
+      <div class="metric-row">
+        <span class="metric-label"><i class="fas fa-microchip"></i> AI Accuracy</span>
+        <span class="metric-value">83.2%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 83.2%"></div></div>
+      <div class="metric-row">
+        <span class="metric-label"><i class="fas fa-bolt"></i> High Confidence</span>
+        <span class="metric-value">91.4%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 91.4%"></div></div>
+    </div>
+
+    <div class="best-league-card">
+      <i class="fas fa-trophy" style="color: var(--warning); font-size: 20px;"></i>
+      <div class="league-name">UEFA Champions League</div>
+      <div class="league-accuracy">86.3%</div>
+      <div style="font-size: 10px; color: var(--text-muted);">Best performing league</div>
+    </div>
+
+    <button class="full-report-btn" id="viewFullReportBtn">
+      <i class="fas fa-file-alt"></i> View Full Report
+      <i class="fas fa-arrow-right"></i>
+    </button>
+
+    <div class="onchain-verify">
+      <div class="verify-header"><i class="fa-brands fa-ethereum"></i> USDT On-Chain Verification</div>
+      <div class="contract-address" id="contractAddress">0xdAC17F958D2ee523a2206206994597C13D831ec7</div>
+      <div class="verify-link">
+        <span class="badge-eth"><i class="fa-regular fa-circle-check"></i> Verified on Ethereum</span>
+        <a href="#" id="etherscanLink">Etherscan →</a>
+      </div>
+    </div>
+
+    <div class="verify-footer"><i class="fa-regular fa-shield"></i> Smart contract audited · Non-custodial architecture</div>
+  </aside>
+</div>
+
+<style>
+  .container {
+    display: flex;
+    flex: 1;
+    padding: var(--space-6);
+    gap: var(--space-6);
+    max-width: 1600px;
+    margin: 0 auto;
+    width: 100%;
+  }
+.mode-note i.fa-circle-info {
+  display: none;
+}
+  .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .sidebar {
+    width: 340px;
+    flex-shrink: 0;
+    background: var(--card-bg);
+    backdrop-filter: blur(24px);
+    border-radius: 36px;
+    border: 1px solid var(--glass-border);
+    padding: var(--space-5);
+    height: fit-content;
+    position: sticky;
+    top: 88px;
+    box-shadow: var(--glass-shadow);
+    transition: all var(--duration-base) var(--ease-out);
+  }
+
+  .mode-note {
+    margin-top: var(--space-3);
+    margin-bottom: var(--space-3);
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+    padding-left: var(--space-2);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-6);
+  }
+
+  .card {
+    background: var(--card-bg);
+    backdrop-filter: blur(28px);
+    border-radius: 36px;
+    border: 1px solid var(--glass-border);
+    padding: var(--space-6);
+    transition: all var(--duration-base) var(--ease-out);
+    box-shadow: var(--glass-shadow);
+  }
+
+  .amount {
+    font-size: var(--font-4xl);
+    font-weight: 800;
+    font-family: monospace;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin: var(--space-3) 0 var(--space-4) 0;
+    padding-bottom: var(--space-3);
+    border-bottom: 2px solid var(--border-light);
+  }
+
+  .assets-breakdown {
+    margin-top: var(--space-2);
+  }
+
+  .amount-flash {
+    text-shadow: 0 0 12px var(--accent-glow);
+    transition: text-shadow 0.1s ease;
+  }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: var(--font-sm);
+  }
+
+  .row i {
+    width: 20px;
+    margin-right: var(--space-2);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 6px 14px;
+    border-radius: 60px;
+    font-size: var(--font-xs);
+    font-weight: 500;
+    backdrop-filter: blur(8px);
+  }
+
+  .badge.sandbox-mode { background: rgba(139, 92, 246, 0.12); color: #8b5cf6; }
+  .badge.live-mode { background: rgba(249, 115, 22, 0.12); color: #f97316; }
+  .positive { color: var(--success); font-weight: 600; }
+
+  .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: var(--space-5);
+  }
+
+  .section-title {
+    font-size: var(--font-xl);
+    font-weight: 700;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .section-more {
+    font-size: var(--font-sm);
+    color: var(--accent);
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .events-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-5);
+  }
+
+  .match-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(28px);
+    border-radius: 32px;
+    border: 1px solid var(--glass-border);
+    padding: var(--space-5);
+    transition: all var(--duration-base) var(--ease-out);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 30px;
+    font-size: var(--font-xs);
+    font-weight: 600;
+    margin-bottom: var(--space-3);
+    width: fit-content;
+  }
+
+  .status-upcoming {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--success);
+  }
+
+  .match-logos-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+  }
+
+  .match-logo-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 1;
+    text-align: center;
+  }
+
+  .match-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--badge-soft);
+    object-fit: cover;
+    border: 1px solid var(--glass-border);
+  }
+
+  .match-team-name {
+    font-size: var(--font-sm);
+    font-weight: 600;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .match-vs-badge {
+    font-weight: 700;
+    background: var(--badge-soft);
+    padding: 4px 12px;
+    border-radius: 40px;
+    font-size: var(--font-xs);
+    flex-shrink: 0;
+  }
+
+  .match-info {
+    margin: var(--space-3) 0;
+  }
+
+  .match-league-time {
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: var(--space-3);
+    display: flex;
+    justify-content: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  .league-badge {
+    background: var(--badge-soft);
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  .confidence-bar {
+    background: var(--badge-soft);
+    border-radius: 12px;
+    padding: 8px 12px;
+  }
+
+  .confidence-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    margin-bottom: 6px;
+    color: var(--text-muted);
+  }
+
+  .confidence-progress {
+    background: var(--border-light);
+    border-radius: 10px;
+    height: 4px;
+    overflow: hidden;
+  }
+
+  .confidence-fill {
+    background: var(--accent-gradient);
+    height: 100%;
+    border-radius: 10px;
+  }
+
+  .authorize-btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: 60px;
+    background: var(--accent-gradient);
+    color: white;
+    font-weight: 600;
+    border: none;
+    margin-top: auto;
+    cursor: pointer;
+    transition: opacity var(--duration-fast);
+  }
+
+  .desktop-table { display: block; overflow-x: auto; }
+  .mobile-history-list { display: none; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left;
+    padding: var(--space-4) var(--space-3);
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-light);
+  }
+  td { padding: var(--space-3); font-size: var(--font-sm); border-bottom: 1px solid var(--border-light); }
+  .link { color: var(--accent); font-weight: 500; text-decoration: none; }
+
+  .mobile-history-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(24px);
+    border-radius: 28px;
+    border: 1px solid var(--glass-border);
+    padding: var(--space-4);
+    margin-bottom: var(--space-3);
+  }
+
+  .history-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .history-row:last-child { border-bottom: none; }
+  .history-label { font-size: var(--font-xs); color: var(--text-muted); }
+  .history-value { font-weight: 500; }
+  .history-profit { color: var(--success); font-weight: 600; }
+
+  .perf-header {
+    margin-bottom: var(--space-5);
+    text-align: left;
+  }
+  .perf-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: var(--space-2);
+  }
+  .perf-title i {
+    font-size: 24px;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .perf-title h2 {
+    font-size: 18px;
+    font-weight: 700;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .perf-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .kpi-grid-sidebar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: var(--space-5);
+  }
+  .kpi-card-sidebar {
+    background: var(--badge-soft);
+    border-radius: 20px;
+    padding: 14px 12px;
+    transition: all var(--duration-fast) var(--ease-out);
+    border: 1px solid transparent;
+  }
+  .kpi-number { font-size: 22px; font-weight: 700; color: var(--text-primary); line-height: 1.2; margin-bottom: 4px; }
+  .kpi-label-sidebar { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .kpi-trend { font-size: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; }
+  .trend-up { color: var(--success); }
+
+  .ai-metrics {
+    background: var(--badge-soft);
+    border-radius: 20px;
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+  .metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .metric-label {
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+  }
+  .metric-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .progress-bar {
+    background: var(--border-light);
+    border-radius: 20px;
+    height: 6px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent-gradient);
+    border-radius: 20px;
+  }
+
+  .best-league-card {
+    background: var(--badge-soft);
+    border-radius: 20px;
+    padding: var(--space-4);
+    margin-bottom: var(--space-5);
+    text-align: center;
+  }
+  .best-league-card .league-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 8px 0 4px;
+  }
+  .best-league-card .league-accuracy {
+    font-size: 24px;
+    font-weight: 800;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .full-report-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 60px;
+    background: var(--accent-gradient);
+    border: none;
+    color: white;
+    font-weight: 600;
+    font-size: var(--font-sm);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-bounce);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: var(--space-5);
+  }
+
+  .onchain-verify {
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 20px;
+    background: var(--badge-soft);
+    border: 1px solid var(--border-light);
+  }
+  .verify-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .contract-address {
+    background: rgba(0,0,0,0.12);
+    padding: 10px 12px;
+    border-radius: 14px;
+    font-family: monospace;
+    font-size: 11px;
+    word-break: break-all;
+    color: var(--text-secondary);
+    margin: 12px 0;
+    text-align: center;
+    cursor: pointer;
+  }
+  .verify-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+  .badge-eth {
+    background: rgba(114, 137, 218, 0.15);
+    padding: 4px 10px;
+    border-radius: 30px;
+    font-size: 11px;
+  }
+  .verify-footer {
+    padding: 12px 0 0;
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border-light);
+  }
+
+  .loading-skeleton {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+  }
+
+  /* ========== 移动端适配 ========== */
+  @media (max-width: 1199px) {
+    .events-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 899px) {
+    .container { flex-direction: column; padding: var(--space-4); gap: var(--space-4); }
+    .sidebar { width: 100%; position: relative; top: 0; margin-top: var(--space-4); }
+    .grid { grid-template-columns: 1fr; gap: var(--space-4); }
+    .events-grid { gap: var(--space-4); }
+    .match-card { padding: var(--space-4); }
+    .match-logo { width: 48px; height: 48px; }
+    .desktop-table { display: none; }
+    .mobile-history-list { display: block; }
+  }
+
+  @media (max-width: 599px) {
+    .events-grid { grid-template-columns: 1fr; }
+    .amount { font-size: var(--font-3xl); }
+    .match-team-name { font-size: var(--font-xs); white-space: normal; }
+    .match-logo { width: 44px; height: 44px; }
+    .section-title { font-size: var(--font-lg); }
+    .mobile-history-card { padding: var(--space-3); }
+    .history-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .history-label { font-size: 10px; }
+    .history-value { font-size: 12px; }
+  }
+</style>
+
+<script>
+// ========== 首页完整版 ==========
+(function() {
+  'use strict';
+  
+  // 防止重复初始化
+  let isInitialized = false;
+  let authProfitChart = null;
+  let currentChartPeriod = '1m';
+  
+  // ========== DOM 元素缓存 ==========
+  const dom = {
+    totalAssets: document.getElementById('totalAssets'),
+    available: document.getElementById('availableBalance'),
+    lockedDisplay: document.getElementById('lockedDisplay'),
+    modeNote: document.getElementById('modeNote'),
+    spotlightGrid: document.getElementById('spotlightGrid'),
+    chartCanvas: document.getElementById('authProfitChart'),
+    recentAuthTable: document.getElementById('recentAuthTableBody'),
+    recentAuthMobile: document.getElementById('recentAuthMobileList'),
+    chartBtns: null
+  };
+  
+  // ========== 工具函数 ==========
+  const escapeHtml = (str) => {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+  };
+  
+  const formatMatchTime = (utcString) => {
+    if (!utcString) return '-';
+    try {
+      const date = new Date(utcString);
+      return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch { return '-'; }
+  };
+  
+  const getRelativeTime = (utcString) => {
+    const matchTime = new Date(utcString);
+    const now = new Date();
+    const diffHours = Math.floor((matchTime - now) / (1000 * 60 * 60));
+    if (diffHours < 0) return 'Started';
+    if (diffHours === 0) return 'Now';
+    if (diffHours < 24) return `${diffHours}h`;
+    return `${Math.floor(diffHours / 24)}d`;
+  };
+  
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+  
+  const getStatusText = (auth) => {
+    if (auth.status === 'pending') return 'Pending';
+    if (auth.profit > 0) return `+${auth.profit.toFixed(2)}`;
+    if (auth.profit < 0) return `${auth.profit.toFixed(2)}`;
+    return 'Completed';
+  };
+  
+  const animateNumber = (element, start, end, duration = 500) => {
+    if (!element) return;
+    const startTime = performance.now();
+    function update(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const current = start + (end - start) * easeOut;
+      element.innerText = current.toFixed(2);
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      } else {
+        element.innerText = end.toFixed(2);
+        element.classList.add('amount-flash');
+        setTimeout(() => element.classList.remove('amount-flash'), 300);
+      }
+    }
+    requestAnimationFrame(update);
+  };
+  
+  // ========== API 调用 ==========
+  const fetchUserBalance = async () => {
+    try {
+      const timestamp = Date.now();
+      const response = await fetch(`/api/v1/user/balance?_=${timestamp}`, { 
+        credentials: 'include',
+        cache: 'no-cache'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('💰 余额API返回:', result);
+      
+      if (result.success) {
+        const currentBalance = result.data.balance ?? 0;
+        console.log(`💰 当前余额: ${currentBalance} ${result.data.is_test_mode ? 'tUSDT' : 'USDT'}`);
+        return currentBalance;
+      }
+    } catch (error) {
+      console.error('获取余额失败:', error);
+    }
+    return 0;
+  };
+  
+  // ========== 获取锁定资金（授权未结算） ==========
+  const fetchLockedFunds = async () => {
+    try {
+      const isSandbox = ThemeManager ? ThemeManager.isTestMode : true;
+      const mode = isSandbox ? 'test' : 'live';
+      const response = await fetch(`/api/v1/user/stats/locked?mode=${mode}`, {
+        credentials: 'include',
+        cache: 'no-cache'
+      });
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        return result.data.total || 0;
+      }
+      return 0;
+    } catch (error) {
+      console.error('获取锁定资金失败:', error);
+      return 0;
+    }
+  };
+
+  const fetchChartData = async (days) => {
+    try {
+      const isSandbox = ThemeManager ? ThemeManager.isTestMode : true;
+      const mode = isSandbox ? 'test' : 'live';
+      const response = await fetch(`/api/v1/user/stats/chart?days=${days}&mode=${mode}`, { credentials: 'include' });
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        return {
+          labels: result.data.labels,
+          authorized: result.data.authorized,
+          profit: result.data.profit
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('获取图表数据失败:', error);
+      return null;
+    }
+  };
+  
+  // ========== 获取最近授权记录 ==========
+  const fetchRecentAuthorizations = async () => {
+    try {
+      const response = await fetch('/api/v1/user/authorize/list?limit=3', { 
+        credentials: 'include' 
+      });
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        return result.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('获取最近授权记录失败:', error);
+      return [];
+    }
+  };
+  
+  // ========== 渲染最近授权记录 ==========
+  const renderRecentAuthorizations = (authorizations) => {
+    const isSandbox = ThemeManager ? ThemeManager.isTestMode : true;
+    const modeClass = isSandbox ? 'sandbox-mode' : 'live-mode';
+    const modeText = isSandbox ? 'Sandbox' : 'Live';
+    
+    if (dom.recentAuthTable) {
+      if (!authorizations || authorizations.length === 0) {
+        dom.recentAuthTable.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No authorization records<\/td><\/tr>';
+      } else {
+        dom.recentAuthTable.innerHTML = authorizations.map(auth => `
+          <tr>
+            <td class="link">${formatDate(auth.created_at)}<\/td>
+            <td>${escapeHtml(auth.home_team || '')} vs ${escapeHtml(auth.away_team || '')}<\/td>
+            <td>${auth.amount || 0} tUSDT<\/td>
+            <td class="${auth.profit > 0 ? 'positive' : ''}">${getStatusText(auth)}<\/td>
+            <td><span class="badge ${modeClass}" style="margin:0;">${modeText}<\/span><\/td>
+            <td><a href="#" class="link" onclick="window.location.href='/transaction-detail.html?id=${auth.auth_id}'">${auth.status === 'pending' ? 'Verify' : 'Details'}<\/a><\/td>
+           <\/tr>
+        `).join('');
+      }
+    }
+    
+    if (dom.recentAuthMobile) {
+      if (!authorizations || authorizations.length === 0) {
+        dom.recentAuthMobile.innerHTML = '<div class="mobile-history-card" style="text-align:center;padding:40px;">No authorization records</div>';
+      } else {
+        dom.recentAuthMobile.innerHTML = authorizations.map(auth => `
+          <div class="mobile-history-card">
+            <div class="history-row"><span class="history-label">Timestamp</span><span class="history-value">${formatDate(auth.created_at)}</span></div>
+            <div class="history-row"><span class="history-label">Match</span><span class="history-value">${escapeHtml(auth.home_team || '')} vs ${escapeHtml(auth.away_team || '')}</span></div>
+            <div class="history-row"><span class="history-label">Amount</span><span class="history-value">${auth.amount || 0} tUSDT</span></div>
+            <div class="history-row"><span class="history-label">Status</span><span class="history-value ${auth.profit > 0 ? 'history-profit' : ''}">${getStatusText(auth)}</span></div>
+            <div class="history-row"><span class="history-label">Mode</span><span class="badge ${modeClass}" style="margin:0;">${modeText}</span></div>
+            <div class="history-row"><a href="#" class="link" onclick="window.location.href='/transaction-detail.html?id=${auth.auth_id}'">${auth.status === 'pending' ? 'Verify →' : 'Details →'}</a></div>
+          </div>
+        `).join('');
+      }
+    }
+  };
+  
+  // ========== UI 更新 ==========
+  const updateBalanceUI = async (skipAnimation = false) => {
+    if (!ThemeManager) return;
+    
+    const isSandbox = ThemeManager.isTestMode;
+    const currency = isSandbox ? 'tUSDT' : 'USDT';
+    
+    const availableBalance = await fetchUserBalance();
+    const lockedAmount = await fetchLockedFunds();
+    const totalAssets = availableBalance + lockedAmount;
+    
+    if (dom.totalAssets) {
+      const currentTotal = parseFloat(dom.totalAssets.innerText) || 0;
+      if (skipAnimation || dom.totalAssets.innerText === '--') {
+        dom.totalAssets.innerText = totalAssets.toFixed(2);
+      } else {
+        animateNumber(dom.totalAssets, currentTotal, totalAssets);
+      }
+    }
+    
+    if (dom.available) {
+      const currentAvail = parseFloat(dom.available.innerText) || 0;
+      if (skipAnimation || dom.available.innerText === '--') {
+        dom.available.innerText = `${availableBalance.toFixed(2)} ${currency}`;
+      } else {
+        animateNumber(dom.available, currentAvail, availableBalance);
+        setTimeout(() => {
+          if (!dom.available.innerText.includes(currency)) {
+            dom.available.innerText = `${availableBalance.toFixed(2)} ${currency}`;
+          }
+        }, 50);
+      }
+    }
+    
+    if (dom.lockedDisplay) {
+      const currentLocked = parseFloat(dom.lockedDisplay.innerText) || 0;
+      if (skipAnimation || dom.lockedDisplay.innerText === '0.00 tUSDT' || dom.lockedDisplay.innerText === '0.00 USDT') {
+        dom.lockedDisplay.innerText = `${lockedAmount.toFixed(2)} ${currency}`;
+      } else {
+        animateNumber(dom.lockedDisplay, currentLocked, lockedAmount);
+        setTimeout(() => {
+          if (!dom.lockedDisplay.innerText.includes(currency)) {
+            dom.lockedDisplay.innerText = `${lockedAmount.toFixed(2)} ${currency}`;
+          }
+        }, 50);
+      }
+    }
+    
+    if (dom.modeNote) {
+      dom.modeNote.innerHTML = isSandbox 
+        ? '<i class="fa-regular fa-circle-info"></i> Sandbox uses virtual funds (tUSDT) — no real asset risk.' 
+        : '<i class="fa-regular fa-circle-info"></i> Live mode uses real funds (USDT). Please ensure sufficient balance.';
+    }
+  };
+  
+  // ========== 图表 ==========
+  const initChart = (labels, authData, profitData) => {
+    if (!dom.chartCanvas) return;
+    if (authProfitChart) authProfitChart.destroy();
+    
+    const isSandbox = ThemeManager ? ThemeManager.isTestMode : true;
+    const currency = isSandbox ? 'tUSDT' : 'USDT';
+    
+    authProfitChart = new Chart(dom.chartCanvas, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: `Authorized Amount (${currency})`, data: authData, backgroundColor: '#3b82f6', borderRadius: 4, barPercentage: 0.6, categoryPercentage: 0.7 },
+          { label: `Profit / Loss (${currency})`, data: profitData, backgroundColor: profitData.map(v => v >= 0 ? '#10b981' : '#ef4444'), borderRadius: 4, barPercentage: 0.6, categoryPercentage: 0.7 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { tooltip: { callbacks: { label: function(context) {
+          let val = context.raw;
+          if (context.dataset.label.includes('Profit')) return context.dataset.label + ': ' + (val >= 0 ? '+' : '') + val.toFixed(2) + ' ' + currency;
+          return context.dataset.label + ': ' + val.toFixed(2) + ' ' + currency;
+        } } }, legend: { display: false } },
+        scales: { y: { title: { display: true, text: currency, color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(148, 163, 184, 0.15)' }, ticks: { font: { size: 9 } } }, x: { grid: { display: false }, ticks: { font: { size: 9 } } } }
+      }
+    });
+  };
+  
+  const getFallbackData = (period) => {
+    const fallback = {
+      '1d': { labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'], authorized: [0, 12, 45, 78, 120, 95, 30], profit: [0, 2, 8, 15, 28, 18, 5] },
+      '1w': { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], authorized: [120, 85, 200, 150, 280, 95, 60], profit: [15, 8, 42, 22, 58, 12, -5] },
+      '1m': { labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'], authorized: [850, 1200, 980, 1450], profit: [120, 210, 175, 320] },
+      '1y': { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], authorized: [3200, 4100, 5200, 4800, 6100, 7800, 8500, 9200, 10100, 11800, 12500, 14200], profit: [450, 620, 830, 710, 1050, 1420, 1680, 1950, 2280, 2650, 2980, 3450] }
+    };
+    return fallback[period] || fallback['1m'];
+  };
+  
+  const updateChart = async (period) => {
+    if (!dom.chartCanvas) return;
+    currentChartPeriod = period;
+    
+    let days = 30;
+    switch(period) {
+      case '1d': days = 1; break;
+      case '1w': days = 7; break;
+      case '1m': days = 30; break;
+      case '1y': days = 365; break;
+      default: days = 30;
+    }
+    
+    const data = await fetchChartData(days);
+    if (data) {
+      initChart(data.labels, data.authorized, data.profit);
+    } else {
+      const fallbackData = getFallbackData(period);
+      initChart(fallbackData.labels, fallbackData.authorized, fallbackData.profit);
+    }
+  };
+  
+  // ========== AI Spotlight ==========
+  const renderSpotlightMatches = (matches) => {
+    if (!dom.spotlightGrid) return;
+    
+    if (!matches || matches.length === 0) {
+      dom.spotlightGrid.innerHTML = '<div class="empty-state" style="text-align:center;padding:40px;"><i class="fas fa-futbol"></i><p>No upcoming matches</p></div>';
+      return;
+    }
+    
+    function getTeamLogoUrl(logoUrl) {
+        if (logoUrl && logoUrl !== '/uploads/teams/default.png' && logoUrl !== 'NULL') {
+            return logoUrl + '?t=' + Date.now();
+        }
+        return '/uploads/teams/default.png';
+    }
+    
+    dom.spotlightGrid.innerHTML = matches.map(match => {
+      const time = formatMatchTime(match.match_time);
+      const relativeTime = getRelativeTime(match.match_time);
+      const leagueName = match.league || 'Unknown';
+      const confidence = match.confidence || 85;
+      const homeLogo = getTeamLogoUrl(match.home_logo);
+      const awayLogo = getTeamLogoUrl(match.away_logo);
+      
+      return `
+        <div class="match-card" data-match-id="${match.id}">
+          <div class="status-badge status-upcoming">Upcoming</div>
+          <div class="match-logos-wrapper">
+            <div class="match-logo-item">
+              <img class="match-logo" src="${homeLogo}" alt="${escapeHtml(match.home_team)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'logo-fallback\\'><i class=\\'fas fa-futbol\\'></i></div><div class=\\'match-team-name\\'>${escapeHtml(match.home_team)}</div>'">
+              <div class="match-team-name">${escapeHtml(match.home_team)}</div>
+            </div>
+            <div class="match-vs-badge">VS</div>
+            <div class="match-logo-item">
+              <img class="match-logo" src="${awayLogo}" alt="${escapeHtml(match.away_team)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'logo-fallback\\'><i class=\\'fas fa-futbol\\'></i></div><div class=\\'match-team-name\\'>${escapeHtml(match.away_team)}</div>'">
+              <div class="match-team-name">${escapeHtml(match.away_team)}</div>
+            </div>
+          </div>
+          <div class="match-info">
+            <div class="match-league-time">
+              <span class="league-badge">${escapeHtml(leagueName)}</span>
+              <span>${time} (${relativeTime})</span>
+            </div>
+            <div class="confidence-bar">
+              <div class="confidence-label">
+                <span>AI Confidence</span>
+                <span>${confidence}%</span>
+              </div>
+              <div class="confidence-progress">
+                <div class="confidence-fill" style="width: ${confidence}%"></div>
+              </div>
+            </div>
+          </div>
+          <button class="authorize-btn" onclick="window.location.href='/shell.html?page=authorize&matchId=${match.id}'">
+            Authorize <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
+      `;
+    }).join('');
+  };
+  
+  const waitForMatchesData = () => {
+    return new Promise((resolve) => {
+      if (window.AppState && window.AppState.filteredMatches && window.AppState.filteredMatches.length > 0) {
+        resolve(window.AppState.filteredMatches.slice(0, 4));
+        return;
+      }
+      if (window.AppState && window.AppState.matches && window.AppState.matches.length > 0) {
+        const upcoming = window.AppState.matches.filter(m => m.calculated_status === 'upcoming' || m.status === 'upcoming');
+        resolve(upcoming.slice(0, 4));
+        return;
+      }
+      
+      let checkCount = 0;
+      const maxChecks = 50;
+      const checkInterval = setInterval(() => {
+        checkCount++;
+        if (window.AppState && window.AppState.filteredMatches && window.AppState.filteredMatches.length > 0) {
+          clearInterval(checkInterval);
+          resolve(window.AppState.filteredMatches.slice(0, 4));
+        } else if (window.AppState && window.AppState.matches && window.AppState.matches.length > 0) {
+          clearInterval(checkInterval);
+          const upcoming = window.AppState.matches.filter(m => m.calculated_status === 'upcoming' || m.status === 'upcoming');
+          resolve(upcoming.slice(0, 4));
+        } else if (checkCount >= maxChecks) {
+          clearInterval(checkInterval);
+          resolve([]);
+        }
+      }, 100);
+    });
+  };
+  
+  const loadSpotlight = async () => {
+    const matches = await waitForMatchesData();
+    renderSpotlightMatches(matches);
+  };
+  
+  // ========== 刷新所有数据 ==========
+  const refreshAllData = async () => {
+    console.log('🔄 刷新首页数据...');
+    await updateBalanceUI(false);
+    await updateChart(currentChartPeriod);
+    const recentAuths = await fetchRecentAuthorizations();
+    renderRecentAuthorizations(recentAuths);
+  };
+  
+  // ========== 事件绑定 ==========
+  const bindEvents = () => {
+    dom.chartBtns = document.querySelectorAll('.chart-time-btn');
+    dom.chartBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        dom.chartBtns.forEach(b => {
+          b.classList.remove('active');
+          b.style.background = 'rgba(37, 99, 235, 0.1)';
+          b.style.color = 'var(--text-secondary)';
+        });
+        btn.classList.add('active');
+        btn.style.background = 'linear-gradient(135deg, #2563eb, #4f46e5)';
+        btn.style.color = 'white';
+        updateChart(btn.dataset.period);
+      });
+    });
+    
+    const reportBtn = document.getElementById('viewFullReportBtn');
+    if (reportBtn) {
+      reportBtn.addEventListener('click', () => { window.location.href = '/platform-reports.html'; });
+    }
+    
+    const etherscanLink = document.getElementById('etherscanLink');
+    if (etherscanLink) {
+      etherscanLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.open('https://etherscan.io/address/0xdAC17F958D2ee523a2206206994597C13D831ec7', '_blank');
+      });
+    }
+    
+    const contractAddr = document.getElementById('contractAddress');
+    if (contractAddr) {
+      contractAddr.addEventListener('click', () => {
+        const address = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+        navigator.clipboard.writeText(address).then(() => {
+          const toast = document.createElement('div');
+          toast.style.cssText = 'position:fixed;bottom:80px;right:20px;background:var(--card-bg);padding:10px 20px;border-radius:40px;font-size:12px;z-index:9999;backdrop-filter:blur(16px);border:1px solid var(--glass-border)';
+          toast.innerHTML = '<i class="fas fa-check-circle" style="color:var(--success)"></i> Address copied!';
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 2000);
+        });
+      });
+    }
+  };
+  
+  // ========== 主题和模式监听 ==========
+  const initThemeAndMode = () => {
+    if (!window.ThemeManager) return;
+    
+    const currentTheme = ThemeManager.getTheme();
+    document.body.classList.toggle('dark', currentTheme === 'dark');
+    
+    ThemeManager.addThemeListener((state) => {
+      document.body.classList.toggle('dark', state.isDarkMode);
+    });
+    
+    ThemeManager.addListener(async (state) => {
+      console.log('🔄 模式已切换:', state.isTestMode ? 'Sandbox' : 'Live');
+      await refreshAllData();
+    });
+  };
+  
+  // ========== 导航高亮 ==========
+  const highlightCurrentNav = () => {
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('.desktop-nav .nav-link');
+    const mobileNavLinks = document.querySelectorAll('.nav-item-mobile');
+    
+    const navMap = {
+      '/shell.html': 'home',
+      '/': 'home',
+      '/index.html': 'home',
+      '/match-market.html': 'markets',
+      '/records.html': 'records',
+      '/support.html': 'support',
+      '/profile.html': 'profile'
+    };
+    
+    let activeNav = navMap[currentPath] || 'home';
+    
+    navLinks.forEach(link => {
+      const linkNav = link.dataset.nav;
+      if (linkNav === activeNav) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    });
+    
+    mobileNavLinks.forEach(link => {
+      const linkNav = link.dataset.nav;
+      if (linkNav === activeNav) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    });
+  };
+  
+  // ========== 初始化 ==========
+  const init = async () => {
+    if (isInitialized) return;
+    isInitialized = true;
+    
+    if (dom.recentAuthTable) {
+      dom.recentAuthTable.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-pulse"></i> Loading...<\/td><\/tr>';
+    }
+    
+    await Promise.all([
+      loadSpotlight(),
+      fetchRecentAuthorizations().then(auths => renderRecentAuthorizations(auths))
+    ]);
+    
+    await updateBalanceUI(false);
+    await updateChart('1m');
+    
+    bindEvents();
+    initThemeAndMode();
+    highlightCurrentNav();
+    
+    console.log('✅ 首页初始化完成');
+  };
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+
+window.viewDetail = (authId) => {
+  window.location.href = `/transaction-detail.html?id=${authId}`;
+};
+</script>

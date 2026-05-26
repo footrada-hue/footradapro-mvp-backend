@@ -1,0 +1,738 @@
+<!-- 
+  match-market-content.html - 比赛超市内容
+  只包含主内容区和侧边栏，不包含跑马灯、头部导航、底部导航
+-->
+
+<div class="container">
+  <!-- 主内容区（左侧） -->
+  <main class="content">
+    <!-- 移动端筛选条（仅移动端显示） -->
+    <div class="mobile-filter-bar">
+      <button class="mobile-filter-chip active" data-time="all">All</button>
+      <button class="mobile-filter-chip" data-time="today">Today</button>
+      <button class="mobile-filter-chip" data-time="tomorrow">Tomorrow</button>
+      <select class="mobile-league-select" id="mobileLeagueSelect">
+        <option value="all">🌍 All Leagues</option>
+      </select>
+    </div>
+
+    <!-- Featured Matches -->
+    <div>
+      <div class="section-head">
+        <h3 class="section-title"><i class="fas fa-star"></i> Featured Matches</h3>
+      </div>
+      <div class="featured-grid" id="featuredGrid"></div>
+    </div>
+
+    <!-- All Matches -->
+    <div>
+      <div class="section-head">
+        <h3 class="section-title"><i class="fas fa-list"></i> All Matches <span class="match-count" id="matchCount">0</span></h3>
+      </div>
+      <div class="matches-grid" id="allMatchesGrid"></div>
+
+      <!-- 加载更多 -->
+      <div class="load-more-container" id="loadMoreContainer">
+        <button class="load-more-btn" id="loadMoreBtn">Load More</button>
+      </div>
+      <div class="loading-indicator" id="loadingIndicator">
+        <i class="fas fa-spinner"></i> Loading...
+      </div>
+    </div>
+  </main>
+
+  <!-- 侧边栏（右侧）- 筛选区域 -->
+  <aside class="sidebar">
+    <!-- 时间筛选 -->
+    <div class="filter-section">
+      <div class="filter-title"><i class="fa-regular fa-calendar"></i> TIME FILTER</div>
+      <div class="filter-option active" data-time="all">
+        <span class="filter-radio"></span>
+        <span>All Matches</span>
+      </div>
+      <div class="filter-option" data-time="today">
+        <span class="filter-radio"></span>
+        <span>Today</span>
+      </div>
+      <div class="filter-option" data-time="tomorrow">
+        <span class="filter-radio"></span>
+        <span>Tomorrow</span>
+      </div>
+    </div>
+
+    <!-- 联赛筛选 -->
+    <div class="filter-section">
+      <div class="filter-title"><i class="fa-solid fa-trophy"></i> LEAGUE FILTER</div>
+      <div class="league-list" id="leagueList"></div>
+    </div>
+  </aside>
+</div>
+
+<style>
+  /* ========== 比赛超市页面需要的样式 ========== */
+  .container {
+    display: flex;
+    flex: 1;
+    padding: var(--space-6);
+    gap: var(--space-6);
+    max-width: 1600px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    min-width: 0;
+  }
+
+  .sidebar {
+    width: 300px;
+    flex-shrink: 0;
+    background: var(--card-bg);
+    backdrop-filter: blur(24px);
+    border-radius: 36px;
+    border: 1px solid var(--glass-border);
+    padding: var(--space-5);
+    height: fit-content;
+    position: sticky;
+    top: 88px;
+    box-shadow: var(--glass-shadow);
+    transition: all var(--duration-base) var(--ease-out);
+  }
+
+  .sidebar:hover {
+    border-color: var(--accent);
+    box-shadow: var(--glass-shadow-hover);
+  }
+
+  .filter-section {
+    margin-bottom: var(--space-5);
+  }
+
+  .filter-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .filter-title {
+    font-size: var(--font-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: var(--space-4);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .filter-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
+    cursor: pointer;
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+    transition: all var(--duration-fast);
+    border-radius: var(--space-2);
+  }
+
+  .filter-option:hover {
+    color: var(--accent);
+    background: var(--badge-soft);
+    padding-left: var(--space-2);
+  }
+
+  .filter-option.active {
+    color: var(--accent);
+    font-weight: 600;
+    background: var(--badge-soft);
+    padding-left: var(--space-2);
+  }
+
+  .filter-radio {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--border-light);
+    background: transparent;
+    display: inline-block;
+  }
+
+  .filter-option.active .filter-radio {
+    border-color: var(--accent);
+    background: var(--accent);
+    box-shadow: inset 0 0 0 3px var(--card-bg);
+  }
+
+  .league-list {
+    max-height: 280px;
+    overflow-y: auto;
+  }
+
+  .league-list::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .league-list::-webkit-scrollbar-track {
+    background: var(--border-light);
+    border-radius: 4px;
+  }
+
+  .league-list::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 4px;
+  }
+
+  .league-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) var(--space-2);
+    cursor: pointer;
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+    transition: all var(--duration-fast);
+    border-radius: var(--space-2);
+  }
+
+  .league-item:hover {
+    color: var(--accent);
+    background: var(--badge-soft);
+  }
+
+  .league-item.active {
+    color: var(--accent);
+    font-weight: 600;
+    background: var(--badge-soft);
+  }
+
+  .league-count {
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+    background: var(--border-light);
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: var(--space-5);
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .section-title {
+    font-size: var(--font-xl);
+    font-weight: 700;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .match-count {
+    background: var(--badge-soft);
+    padding: 2px 10px;
+    border-radius: 40px;
+    font-size: var(--font-sm);
+    margin-left: var(--space-2);
+  }
+
+  .featured-grid, .matches-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-5);
+    margin-bottom: var(--space-6);
+  }
+
+  .match-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(28px);
+    border-radius: 32px;
+    border: 1px solid var(--glass-border);
+    padding: var(--space-5);
+    transition: all var(--duration-base) var(--ease-out);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .match-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent);
+  }
+
+  .match-card {
+    animation: cardFadeIn 0.3s ease-out;
+    animation-fill-mode: backwards;
+  }
+
+  @keyframes cardFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .match-card:nth-child(1) { animation-delay: 0.05s; }
+  .match-card:nth-child(2) { animation-delay: 0.1s; }
+  .match-card:nth-child(3) { animation-delay: 0.15s; }
+  .match-card:nth-child(4) { animation-delay: 0.2s; }
+  .match-card:nth-child(5) { animation-delay: 0.25s; }
+  .match-card:nth-child(6) { animation-delay: 0.3s; }
+
+  .match-logos-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+  }
+
+  .match-logo-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 1;
+    text-align: center;
+  }
+
+  .match-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--badge-soft);
+  }
+
+  .logo-fallback {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--badge-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+
+  .match-team-name {
+    font-size: var(--font-sm);
+    font-weight: 600;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .match-vs-badge {
+    font-weight: 700;
+    background: var(--badge-soft);
+    padding: 4px 12px;
+    border-radius: 40px;
+    font-size: var(--font-xs);
+    flex-shrink: 0;
+  }
+
+  .match-info {
+    margin-bottom: var(--space-4);
+  }
+
+  .match-league-time {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-3);
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+  }
+
+  .league-badge {
+    background: var(--badge-soft);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  .confidence-bar {
+    margin-top: var(--space-2);
+  }
+
+  .confidence-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .confidence-progress {
+    background: var(--border-light);
+    border-radius: 20px;
+    height: 6px;
+    overflow: hidden;
+  }
+
+  .confidence-fill {
+    height: 100%;
+    background: var(--accent-gradient);
+    border-radius: 20px;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 30px;
+    font-size: var(--font-xs);
+    font-weight: 500;
+    margin-bottom: var(--space-3);
+  }
+
+  .status-upcoming {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+  }
+
+  .authorize-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 60px;
+    background: var(--accent-gradient);
+    color: white;
+    font-weight: 600;
+    border: none;
+    margin-top: auto;
+    cursor: pointer;
+    transition: opacity var(--duration-fast);
+  }
+
+  .load-more-container {
+    display: flex;
+    justify-content: center;
+    margin: var(--space-6) 0;
+  }
+
+  .load-more-btn {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    padding: 12px 32px;
+    border-radius: 60px;
+    color: var(--accent);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .load-more-btn:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  .loading-indicator {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-muted);
+    display: none;
+  }
+
+  .loading-indicator i {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* 移动端筛选条 */
+  .mobile-filter-bar {
+    display: none;
+    background: var(--card-bg);
+    backdrop-filter: blur(24px);
+    border-radius: 60px;
+    border: 1px solid var(--glass-border);
+    padding: 8px 16px;
+    margin-bottom: var(--space-4);
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .mobile-filter-chip {
+    padding: 6px 16px;
+    border-radius: 40px;
+    font-size: var(--font-xs);
+    font-weight: 500;
+    background: var(--badge-soft);
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--duration-fast);
+  }
+
+  .mobile-filter-chip.active {
+    background: var(--accent-gradient);
+    color: white;
+  }
+
+  .mobile-league-select {
+    background: var(--badge-soft);
+    border: 1px solid var(--border-light);
+    border-radius: 40px;
+    padding: 6px 16px;
+    color: var(--text-primary);
+    font-size: var(--font-xs);
+    cursor: pointer;
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .mobile-league-select option {
+    background: var(--card-bg);
+    color: var(--text-primary);
+  }
+
+  /* 响应式 */
+  @media (max-width: 1200px) {
+    .featured-grid, .matches-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .container {
+      padding: var(--space-4);
+    }
+  }
+
+  @media (max-width: 899px) {
+    .container { 
+      flex-direction: column; 
+      padding: var(--space-4);
+      gap: var(--space-4);
+    }
+    .sidebar { 
+      display: none;
+    }
+    .mobile-filter-bar {
+      display: flex;
+    }
+    .featured-grid, .matches-grid { 
+      grid-template-columns: 1fr; 
+    }
+    .match-card { 
+      padding: var(--space-4); 
+    }
+    .match-logo, .logo-fallback { 
+      width: 48px; 
+      height: 48px; 
+      font-size: 20px; 
+    }
+    .match-team-name { 
+      max-width: 80px; 
+      font-size: var(--font-xs); 
+    }
+  }
+
+  @media (max-width: 480px) {
+    .match-team-name { 
+      max-width: 60px; 
+      font-size: 10px; 
+    }
+    .match-logo, .logo-fallback { 
+      width: 40px; 
+      height: 40px; 
+      font-size: 18px; 
+    }
+    .mobile-filter-bar {
+      gap: var(--space-2);
+    }
+    .mobile-filter-chip {
+      padding: 4px 12px;
+      font-size: 10px;
+    }
+    .mobile-league-select {
+      padding: 4px 12px;
+      font-size: 10px;
+    }
+  }
+</style>
+
+<script>
+// ========== 导航栏自动高亮 ==========
+function highlightCurrentNav() {
+  const currentPath = window.location.pathname;
+  const navLinks = document.querySelectorAll('.desktop-nav .nav-link');
+  const mobileNavLinks = document.querySelectorAll('.nav-item-mobile');
+  
+  const navMap = {
+    '/index.html': 'home',
+    '/': 'home',
+    '/match-market.html': 'markets',
+    '/records.html': 'records',
+    '/support.html': 'support',
+    '/profile.html': 'profile'
+  };
+  
+  let activeNav = navMap[currentPath] || 'home';
+  
+  navLinks.forEach(link => {
+    const linkNav = link.dataset.nav;
+    if (linkNav === activeNav) {
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
+  
+  mobileNavLinks.forEach(link => {
+    const linkNav = link.dataset.nav;
+    if (linkNav === activeNav) {
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
+}
+
+highlightCurrentNav();
+
+// ========== 侧边栏筛选交互（桌面端） ==========
+function initSidebarFilters() {
+  // 时间筛选点击
+  document.querySelectorAll('.sidebar .filter-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.sidebar .filter-option').forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+      const timeFilter = opt.dataset.time;
+      if (window.AppState) {
+        window.AppState.timeFilter = timeFilter;
+        if (window.applyFilters) window.applyFilters();
+      }
+    });
+  });
+}
+
+// ========== 移动端筛选交互 ==========
+function initMobileFilters() {
+  // 时间筛选点击
+  document.querySelectorAll('.mobile-filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.mobile-filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      const timeFilter = chip.dataset.time;
+      if (window.AppState) {
+        window.AppState.timeFilter = timeFilter;
+        if (window.applyFilters) window.applyFilters();
+      }
+      // 同步桌面端侧边栏高亮
+      document.querySelectorAll('.sidebar .filter-option').forEach(opt => {
+        if (opt.dataset.time === timeFilter) {
+          opt.classList.add('active');
+        } else {
+          opt.classList.remove('active');
+        }
+      });
+    });
+  });
+
+  // 联赛选择器
+  const mobileSelect = document.getElementById('mobileLeagueSelect');
+  if (mobileSelect && window.updateLeagueSelect) {
+    // 监听联赛选择变化
+    mobileSelect.addEventListener('change', () => {
+      const selectedLeague = mobileSelect.value;
+      if (window.AppState) {
+        window.AppState.selectedLeague = selectedLeague;
+        if (window.applyFilters) window.applyFilters();
+      }
+      // 同步桌面端联赛高亮
+      document.querySelectorAll('.league-item').forEach(item => {
+        const leagueName = item.dataset.league;
+        if (leagueName === selectedLeague) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+    });
+  }
+}
+
+function watchLeagueList() {
+  const observer = new MutationObserver(() => {
+    // 更新移动端下拉框
+    const mobileSelect = document.getElementById('mobileLeagueSelect');
+    if (mobileSelect && window.AppState && window.AppState.leagues && window.AppState.leagues.size > 0) {
+      const currentValue = mobileSelect.value;
+      let options = '<option value="all">🌍 All Leagues</option>';
+      for (let [league, count] of window.AppState.leagues) {
+        options += `<option value="${league}">${league} (${count})</option>`;
+      }
+      mobileSelect.innerHTML = options;
+      mobileSelect.value = currentValue;
+    }
+  });
+  
+  const leagueList = document.getElementById('leagueList');
+  if (leagueList) {
+    observer.observe(leagueList, { childList: true, subtree: true });
+  }
+}
+
+// 页面初始化 - 立即执行，不等待
+(function() {
+  // 强制更新联赛列表的函数
+  function forceUpdateLeagueList() {
+    if (window.updateLeagueSelect) {
+      console.log('🔄 强制更新联赛列表');
+      window.updateLeagueSelect();
+    } else {
+      console.log('⚠️ updateLeagueSelect 不存在');
+    }
+  }
+  
+  // 如果已经有数据，立即渲染
+  if (window.AppState && window.AppState.matches && window.AppState.matches.length > 0) {
+    console.log('✅ 使用已有数据，立即渲染');
+    // 先更新联赛列表
+    forceUpdateLeagueList();
+    // 再渲染比赛
+    if (window.applyFilters) window.applyFilters();
+    initSidebarFilters();
+    initMobileFilters();
+    watchLeagueList();
+    return;
+  }
+  
+  // 没有数据，等待加载
+  console.log('⏳ 等待数据加载...');
+  let checkCount = 0;
+  const checkInterval = setInterval(() => {
+    checkCount++;
+    if (window.AppState && window.AppState.matches && window.AppState.matches.length > 0) {
+      clearInterval(checkInterval);
+      console.log('✅ 数据就绪，渲染');
+      forceUpdateLeagueList();
+      if (window.applyFilters) window.applyFilters();
+      initSidebarFilters();
+      initMobileFilters();
+      watchLeagueList();
+    } else if (checkCount >= 60) {
+      clearInterval(checkInterval);
+      console.log('⚠️ 超时，尝试加载数据');
+      if (window.loadMatches) window.loadMatches();
+    }
+  }, 50);
+})();
+</script>

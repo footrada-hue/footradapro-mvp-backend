@@ -1,0 +1,837 @@
+/* ======================================================
+   FOOTRADAPRO - 桌面端专属样式 (≥1024px)
+   全宽无限拓展，完美比例，丰富元素
+   ====================================================== */
+
+/* ----- 顶部栏 ----- */
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10, 12, 16, 0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    height: 72px;
+}
+
+.header-container {
+    width: 100%;
+    padding: 0 32px;
+    height: 100%;
+}
+
+.header-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    gap: 24px;
+}
+
+.logo {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: var(--brand-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    flex-shrink: 0;
+}
+
+.logo span {
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.ticker-bar {
+    flex: 1;
+    background: #12151B;
+    border-radius: 9999px;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+}
+
+.ticker-icon {
+    color: var(--brand-primary);
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.ticker-wrapper {
+    flex: 1;
+    overflow: hidden;
+}
+
+.ticker-messages {
+    white-space: nowrap;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #94A3B8;
+    animation: tickerScroll 25s linear infinite;
+}
+
+@keyframes tickerScroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+.ticker-stats {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: #94A3B8;
+    font-weight: 600;
+}
+
+.ticker-stats span {
+    color: var(--brand-primary);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.mode-switch {
+    display: flex;
+    background: #1A1D26;
+    border-radius: 9999px;
+    padding: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mode-btn {
+    background: transparent;
+    border: none;
+    color: #64748B;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mode-btn.active {
+    background: var(--brand-gradient);
+    color: white;
+    box-shadow: 0 2px 8px var(--brand-glow);
+}
+
+.icon-btn {
+    width: 38px;
+    height: 38px;
+    background: #1A1D26;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 9999px;
+    color: #94A3B8;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-btn:hover {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+    transform: translateY(-2px);
+}
+
+/* ----- 主内容 ----- */
+.main-content {
+    padding: 32px 0 100px;
+}
+
+.content-container {
+    width: 100%;
+    padding: 0 32px;
+}
+
+/* 三列网格 - 完美比例 */
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+    margin-bottom: 48px;
+}
+
+/* 资产卡片 - 丰富元素 */
+.asset-card {
+    background: linear-gradient(145deg, #1A1D26 0%, #12151B 100%);
+    border-radius: 28px;
+    padding: 28px;
+    border: 1px solid rgba(247, 147, 26, 0.2);
+    position: relative;
+    overflow: hidden;
+    transition: 0.3s;
+}
+
+.asset-card:hover {
+    border-color: rgba(247, 147, 26, 0.4);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.asset-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, var(--brand-glow), transparent 70%);
+    pointer-events: none;
+    animation: glowPulse 4s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.1); }
+}
+
+.asset-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 1;
+}
+
+.asset-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #64748B;
+}
+
+.asset-label i {
+    color: var(--brand-primary);
+}
+
+.network-badge {
+    font-size: 11px;
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 9999px;
+    color: var(--brand-primary);
+    font-weight: 600;
+    border: 1px solid rgba(247, 147, 26, 0.2);
+}
+
+.asset-main {
+    position: relative;
+    z-index: 1;
+}
+
+.asset-amount {
+    font-size: 48px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: -2px;
+    color: white;
+    line-height: 1;
+    margin-bottom: 12px;
+}
+
+.asset-currency {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--brand-primary);
+    margin-left: 4px;
+}
+
+.asset-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 6px 14px;
+    border-radius: 9999px;
+}
+
+.asset-trend .trend-up { color: #10B981; }
+.asset-trend .trend-down { color: #EF4444; }
+
+/* 迷你走势图 */
+.asset-chart {
+    margin-top: 24px;
+    height: 48px;
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.chart-bar {
+    flex: 1;
+    background: var(--brand-primary);
+    opacity: 0.5;
+    border-radius: 3px;
+    transition: 0.3s;
+    min-height: 4px;
+}
+
+.asset-card:hover .chart-bar {
+    opacity: 0.8;
+    transform: scaleY(1.05);
+}
+
+/* 指标卡片组 */
+.metrics-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.metrics-card {
+    background: linear-gradient(145deg, #1A1D26 0%, #12151B 100%);
+    border-radius: 24px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: 0.3s;
+}
+
+.metrics-card:hover {
+    border-color: var(--border-brand);
+    transform: translateY(-2px);
+}
+
+.metrics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.metrics-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #64748B;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.metrics-value {
+    font-size: 32px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--brand-primary);
+    margin-bottom: 12px;
+}
+
+.progress-bar {
+    height: 6px;
+    background: #1A1D26;
+    border-radius: 9999px;
+    overflow: hidden;
+    margin: 12px 0 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--brand-gradient);
+    border-radius: 9999px;
+    width: 0%;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.metrics-footer {
+    font-size: 11px;
+    color: #64748B;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+}
+
+/* 授权卡片 */
+.action-card {
+    background: linear-gradient(145deg, #1A1D26 0%, #12151B 100%);
+    border-radius: 28px;
+    padding: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: 0.3s;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.action-card:hover {
+    border-color: var(--border-brand);
+    transform: translateY(-2px);
+}
+
+.action-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-title i {
+    color: var(--brand-primary);
+}
+
+.action-desc {
+    font-size: 13px;
+    color: #64748B;
+    margin-bottom: 24px;
+}
+
+.amount-presets {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.amount-preset {
+    background: #1A1D26;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #94A3B8;
+    cursor: pointer;
+    transition: 0.2s;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.amount-preset:hover {
+    border-color: var(--brand-primary);
+    transform: translateY(-2px);
+}
+
+.amount-preset.active {
+    background: var(--brand-gradient);
+    border-color: transparent;
+    color: white;
+    box-shadow: 0 4px 12px var(--brand-glow);
+}
+
+.amount-input-wrapper {
+    background: #0A0C10;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.amount-input {
+    background: transparent;
+    border: none;
+    font-size: 28px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: white;
+    width: 70%;
+    outline: none;
+}
+
+.amount-currency {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748B;
+}
+
+.funds-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.split-item {
+    background: #1A1D26;
+    border-radius: 14px;
+    padding: 14px;
+    text-align: center;
+}
+
+.split-value {
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--brand-primary);
+    margin-bottom: 4px;
+}
+
+.split-label {
+    font-size: 11px;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.authorize-btn {
+    width: 100%;
+    background: var(--brand-gradient);
+    border: none;
+    border-radius: 16px;
+    padding: 16px;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    margin-top: auto;
+}
+
+.authorize-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s ease;
+}
+
+.authorize-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px var(--brand-glow);
+}
+
+.authorize-btn:hover::before {
+    left: 100%;
+}
+
+.authorize-tip {
+    font-size: 12px;
+    color: #64748B;
+    text-align: center;
+    margin-top: 16px;
+}
+
+/* 比赛列表 - 完美比例，确保按钮可见 */
+.matches-section {
+    width: 100%;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 28px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.section-title {
+    font-size: 22px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title i {
+    color: var(--brand-primary);
+}
+
+.view-all-link {
+    font-size: 14px;
+    color: var(--brand-primary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: 0.2s;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    background: rgba(247, 147, 26, 0.05);
+}
+
+.view-all-link:hover {
+    gap: 10px;
+    background: rgba(247, 147, 26, 0.1);
+}
+
+.match-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+}
+
+@media (min-width: 1600px) {
+    .match-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+@media (min-width: 1920px) {
+    .match-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+
+.match-card {
+    background: linear-gradient(145deg, #1A1D26 0%, #12151B 100%);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: 0.3s;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 380px;
+}
+
+.match-card:hover {
+    border-color: var(--brand-primary);
+    transform: translateY(-4px);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3);
+}
+
+.match-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.match-league {
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(247, 147, 26, 0.1);
+    padding: 5px 12px;
+    border-radius: 9999px;
+    color: var(--brand-primary);
+    max-width: 70%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.match-heat {
+    font-size: 10px;
+    color: #F59E0B;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(245, 158, 11, 0.1);
+    padding: 4px 8px;
+    border-radius: 9999px;
+}
+
+.match-teams {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 16px;
+    gap: 8px;
+    flex: 1;
+}
+
+.match-team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 40%;
+    text-align: center;
+}
+
+.team-crest {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: 0.2s;
+}
+
+.match-card:hover .team-crest {
+    transform: scale(1.05);
+}
+
+.team-crest img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.team-crest i {
+    font-size: 28px;
+    color: var(--brand-primary);
+}
+
+.team-name {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: white;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    max-width: 100px;
+}
+
+.match-vs {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--brand-primary);
+    background: rgba(0, 0, 0, 0.3);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.match-info {
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.match-time {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #94A3B8;
+    margin-bottom: 8px;
+}
+
+.match-time i {
+    font-size: 11px;
+    color: var(--brand-primary);
+}
+
+.match-confidence {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+}
+
+.confidence-label {
+    color: #64748B;
+}
+
+.confidence-value {
+    color: var(--brand-primary);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.confidence-bar {
+    width: 60px;
+    height: 3px;
+    background: #1A1D26;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.confidence-fill {
+    height: 100%;
+    background: var(--brand-gradient);
+    border-radius: 2px;
+    width: 0%;
+}
+
+.match-btn {
+    width: calc(100% - 24px);
+    margin: 14px 12px;
+    padding: 12px;
+    background: transparent;
+    color: var(--brand-primary);
+    font-weight: 600;
+    font-size: 13px;
+    border: 1px solid rgba(247, 147, 26, 0.3);
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.match-btn:hover {
+    background: rgba(247, 147, 26, 0.1);
+    transform: translateY(-2px);
+}
+
+/* 底部导航 */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(10, 12, 16, 0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 12px 0;
+    z-index: 100;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 20px;
+    color: #64748B;
+    text-decoration: none;
+    transition: 0.2s;
+    border-radius: 12px;
+}
+
+.nav-item i { font-size: 20px; }
+.nav-item span { font-size: 12px; font-weight: 500; }
+.nav-item.active {
+    color: var(--brand-primary);
+    background: rgba(247, 147, 26, 0.08);
+}

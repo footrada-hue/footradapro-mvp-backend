@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>My Profile · FootRadaPro</title>
+  <meta name="description" content="User profile, assets, and security settings">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-7: 32px; --space-8: 40px;
+      --font-xs: 0.75rem; --font-sm: 0.875rem; --font-base: 1rem; --font-lg: 1.125rem; --font-xl: 1.25rem; --font-2xl: 1.5rem; --font-3xl: 1.875rem;
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1); --duration-fast: 0.15s; --duration-base: 0.24s;
+    }
+
+    :root {
+      --bg-gradient-start: rgba(248, 250, 252, 0.92);
+      --bg-gradient-end: rgba(241, 245, 249, 0.96);
+      --glass-bg: rgba(255, 255, 255, 0.48);
+      --glass-border: rgba(59, 130, 246, 0.18);
+      --glass-shadow: 0 4px 16px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.01), inset 0 1px 0 rgba(255,255,255,0.9);
+      --glass-shadow-hover: 0 20px 35px -12px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+      --accent: #2563eb;
+      --accent-glow: rgba(37,99,235,0.25);
+      --accent-gradient: linear-gradient(135deg, #2563eb, #4f46e5);
+      --sandbox-gradient: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      --live-gradient: linear-gradient(135deg, #f97316, #ea580c);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --border-light: rgba(148,163,184,0.18);
+      --card-bg: rgba(255,255,255,0.62);
+      --ticker-bg: rgba(37,99,235,0.92);
+      --badge-soft: rgba(37,99,235,0.1);
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    body.dark {
+      --bg-gradient-start: rgba(10,16,30,0.94);
+      --bg-gradient-end: rgba(2,6,18,0.98);
+      --glass-bg: rgba(20,28,44,0.52);
+      --glass-border: rgba(59,130,246,0.28);
+      --glass-shadow: 0 4px 16px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04);
+      --glass-shadow-hover: 0 20px 35px -12px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59,130,246,0.35);
+      --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      --sandbox-gradient: linear-gradient(135deg, #a855f7, #7c3aed);
+      --live-gradient: linear-gradient(135deg, #fb923c, #ea580c);
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #f87171;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --border-light: rgba(255,255,255,0.08);
+      --card-bg: rgba(20,28,44,0.58);
+      --ticker-bg: rgba(30,58,138,0.92);
+      --badge-soft: rgba(59,130,246,0.18);
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.15);
+    }
+
+    body {
+      background: radial-gradient(ellipse at 30% 40%, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: ''; position: fixed; top:0; left:0; width:100%; height:100%;
+      background-image: repeating-linear-gradient(90deg, rgba(59,130,246,0.02) 0px, rgba(59,130,246,0.02) 1px, transparent 1px, transparent 40px),
+                        repeating-linear-gradient(0deg, rgba(59,130,246,0.02) 0px, rgba(59,130,246,0.02) 1px, transparent 1px, transparent 40px);
+      background-size: 40px 40px;
+      pointer-events: none; z-index:0;
+    }
+
+    .app-wrapper { position: relative; z-index:1; min-height:100vh; display: flex; flex-direction: column; }
+
+    .ticker {
+      background: var(--ticker-bg); backdrop-filter: blur(16px); color: white; padding: 10px 0; font-size: var(--font-sm); font-weight: 500;
+      white-space: nowrap; overflow: hidden; border-bottom: 1px solid var(--glass-border);
+    }
+    .ticker-content { display: inline-block; animation: ticker 32s linear infinite; padding-left: 100%; }
+    @keyframes ticker { to { transform: translateX(-100%); } }
+
+    .header {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: var(--space-4) var(--space-6);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--glass-shadow);
+    }
+
+    .header-container {
+      max-width: 1600px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+    }
+
+    .logo { display: flex; align-items: center; gap: var(--space-3); cursor: pointer; }
+    .logo-icon { font-size: 28px; }
+    .logo-text {
+      font-size: var(--font-xl);
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .desktop-nav {
+      display: flex;
+      gap: var(--space-2);
+      background: var(--badge-soft);
+      padding: 4px;
+      border-radius: 60px;
+      backdrop-filter: blur(8px);
+    }
+
+    .nav-link {
+      padding: 8px 20px;
+      border-radius: 60px;
+      font-size: var(--font-sm);
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all var(--duration-fast) var(--ease-out);
+    }
+
+    .nav-link:hover { color: var(--accent); background: rgba(255,255,255,0.1); }
+    .nav-link.active { background: var(--accent-gradient); color: white; box-shadow: 0 2px 8px var(--accent-glow); }
+
+    .header-actions { display: flex; gap: var(--space-4); align-items: center; }
+    .header-actions i { font-size: 20px; color: var(--text-secondary); cursor: pointer; transition: all var(--duration-fast) var(--ease-out); }
+    .user-badge {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--badge-soft);
+      backdrop-filter: blur(8px);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      border: 1px solid var(--glass-border);
+      cursor: pointer;
+    }
+
+    .container {
+      flex: 1;
+      padding: var(--space-6);
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .mode-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: var(--badge-soft);
+      padding: 6px 16px;
+      border-radius: 60px;
+      margin-bottom: var(--space-5);
+      font-size: var(--font-sm);
+    }
+    .sandbox-text { color: #8b5cf6; font-weight: 600; }
+    .live-text { color: #f97316; font-weight: 600; }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(28px);
+      border-radius: 32px;
+      border: 1px solid var(--glass-border);
+      padding: var(--space-6);
+      transition: all var(--duration-base) var(--ease-out);
+      box-shadow: var(--glass-shadow);
+      margin-bottom: var(--space-6);
+    }
+    .card:hover { transform: translateY(-5px); box-shadow: var(--glass-shadow-hover); border-color: var(--accent); }
+    .card-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: var(--space-5); padding-bottom: var(--space-3);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .card-title { font-size: var(--font-base); font-weight: 600; display: flex; align-items: center; gap: var(--space-2); color: var(--text-secondary); }
+    .card-title i { color: var(--accent); font-size: var(--font-lg); }
+
+    .user-section { display: flex; align-items: center; gap: var(--space-5); flex-wrap: wrap; }
+    .avatar {
+      width: 80px; height: 80px; background: var(--accent-gradient); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-size: 36px; color: white;
+    }
+    .user-info h2 { font-size: var(--font-2xl); font-weight: 700; margin-bottom: var(--space-1); }
+    .user-info p { color: var(--text-muted); font-size: var(--font-sm); }
+    .test-badge {
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white;
+      padding: 6px 14px; border-radius: 40px; font-size: var(--font-xs); font-weight: 600;
+      display: inline-flex; align-items: center; gap: var(--space-2);
+    }
+
+    .assets-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); margin-bottom: var(--space-5); }
+    .asset-item { text-align: center; padding: var(--space-4); background: rgba(255,255,255,0.05); border-radius: 24px; transition: all var(--duration-fast); }
+    .asset-item:hover { background: var(--badge-soft); transform: translateY(-2px); }
+    .asset-label { font-size: var(--font-xs); color: var(--text-muted); margin-bottom: var(--space-2); }
+    .asset-value { font-size: var(--font-2xl); font-weight: 700; font-family: monospace; background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+    .action-buttons { display: flex; gap: var(--space-4); }
+    .action-btn {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: var(--space-2);
+      padding: 14px; border-radius: 60px; font-weight: 600; cursor: pointer; font-size: var(--font-sm);
+    }
+    .action-btn.deposit { background: var(--accent-gradient); color: white; }
+    .action-btn.withdraw { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+
+    .menu-list { display: flex; flex-direction: column; gap: var(--space-2); }
+    .menu-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-4) var(--space-5); background: rgba(255,255,255,0.03);
+      border-radius: 24px; cursor: pointer; transition: all var(--duration-base);
+      border: 1px solid transparent;
+    }
+    .menu-item:hover { border-color: var(--accent); background: var(--badge-soft); transform: translateX(4px); }
+    .menu-left { display: flex; align-items: center; gap: var(--space-3); }
+    .menu-icon {
+      width: 44px; height: 44px; background: rgba(255,255,255,0.1); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--accent);
+    }
+    .menu-info h4 { font-size: var(--font-base); font-weight: 600; margin-bottom: var(--space-1); }
+    .menu-info p { font-size: var(--font-xs); color: var(--text-muted); }
+    .menu-right { color: var(--text-muted); }
+
+    .status-badge { padding: 4px 10px; border-radius: 30px; font-size: var(--font-xs); font-weight: 500; }
+    .status-badge.set { background: rgba(16,185,129,0.15); color: var(--success); }
+    .status-badge.not-set { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .status-badge.na { background: rgba(107,114,128,0.15); color: var(--text-muted); }
+
+    .logout-btn {
+      width: 100%; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+      color: #ef4444; padding: 14px; border-radius: 60px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: var(--space-2);
+      margin-top: var(--space-4);
+    }
+    .logout-btn:hover { background: rgba(239,68,68,0.2); transform: translateY(-2px); }
+
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--card-bg);
+  backdrop-filter: blur(32px);
+  border-top: 1px solid var(--glass-border);
+  padding: var(--space-3) var(--space-5);  /* 改為與 index.html 一致 */
+  z-index: 60;
+}
+    .bottom-nav-items { display: flex; justify-content: space-around; align-items: center; max-width: 500px; margin:0 auto; }
+.nav-item-mobile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: all var(--duration-fast) var(--ease-out);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: var(--space-2);
+}
+    .nav-item-mobile.active { color: var(--accent); }
+    .nav-item-mobile i { font-size: 20px; }
+
+    #toastContainer { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    .toast-notification {
+      background: var(--card-bg); backdrop-filter: blur(16px); border-radius: 16px;
+      padding: 12px 20px; display: flex; align-items: center; gap: 12px;
+      border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow);
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    @media (max-width: 899px) {
+      .desktop-nav { display: none; }
+      .bottom-nav { display: block; }
+      body { padding-bottom: 70px; }
+      .container { padding: var(--space-4); }
+      .assets-grid { gap: var(--space-2); }
+      .asset-value { font-size: var(--font-xl); }
+      .action-buttons { flex-direction: column; gap: var(--space-3); }
+      .user-section { flex-direction: column; align-items: center; text-align: center; }
+      .header { padding: var(--space-3) var(--space-4); }
+      .logo-text { font-size: var(--font-lg); }
+      .card { padding: var(--space-4); border-radius: 24px; }
+    }
+
+    @media (max-width: 480px) {
+      .assets-grid { grid-template-columns: 1fr; gap: var(--space-2); }
+      .asset-item { display: flex; justify-content: space-between; align-items: center; text-align: left; }
+      .asset-label { margin-bottom: 0; }
+      .avatar { width: 64px; height: 64px; font-size: 28px; }
+      .user-info h2 { font-size: var(--font-xl); }
+      .menu-item { padding: var(--space-3); }
+      .menu-icon { width: 36px; height: 36px; font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+<div id="appRoot">
+<div class="app-wrapper">
+  <div class="ticker">
+    <div class="ticker-content" id="tickerContent">⚡ AI-POWERED FOOTBALL LIQUIDITY ⚡ VERIFIABLE ON-CHAIN ⚡ 20% PERFORMANCE FEE ONLY ON PROFITS ⚡</div>
+  </div>
+
+  <header class="header">
+    <div class="header-container">
+      <div class="logo" onclick="location.href='/index.html'">
+        <div class="logo-icon">⚽</div>
+        <div class="logo-text">FootRadaPro</div>
+      </div>
+
+      <nav class="desktop-nav">
+        <a href="/index.html" class="nav-link" data-nav="home">Home</a>
+        <a href="/match-market.html" class="nav-link" data-nav="markets">Markets</a>
+        <a href="/transaction-list.html" class="nav-link" data-nav="records">Records</a>
+        <a href="/support.html" class="nav-link" data-nav="support">Support</a>
+        <a href="/profile.html" class="nav-link" data-nav="profile">Profile</a>
+      </nav>
+
+      <div class="header-actions">
+        <i class="fa-regular fa-moon" id="themeToggle"></i>
+        <i class="fa-regular fa-bell"></i>
+        <div class="user-badge" id="langToggle">EN</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="mode-indicator">
+      <i class="fa-solid fa-info-circle"></i>
+      <span>Current Mode: </span>
+      <span id="currentModeText" class="sandbox-text">Sandbox</span>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-user"></i> Account Information</div>
+      </div>
+      <div class="user-section">
+        <div class="avatar">👤</div>
+        <div class="user-info">
+          <h2 id="username">—</h2>
+          <p id="uid"><i class="fas fa-id-card"></i> UID: —</p>
+        </div>
+        <div id="testModeHint" class="test-badge" style="display: none;">
+          <i class="fa-solid fa-flask"></i> Test Mode
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-coins"></i> Assets</div>
+      </div>
+      <div class="assets-grid">
+        <div class="asset-item">
+          <div class="asset-label">Total Assets</div>
+          <div class="asset-value" id="totalAssets">0.00</div>
+        </div>
+        <div class="asset-item">
+          <div class="asset-label">Available</div>
+          <div class="asset-value" id="availableBalance">0.00</div>
+        </div>
+        <div class="asset-item">
+          <div class="asset-label">Locked</div>
+          <div class="asset-value" id="lockedFunds">0.00</div>
+        </div>
+      </div>
+      <div class="action-buttons">
+        <button class="action-btn deposit" id="depositBtn"><i class="fa-solid fa-circle-dollar-to-slot"></i> Deposit</button>
+        <button class="action-btn withdraw" id="withdrawBtn"><i class="fa-solid fa-arrow-up-from-bracket"></i> Withdraw</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-grid-2"></i> Quick Access</div>
+      </div>
+      <div class="menu-list">
+        <div class="menu-item" id="fundFlowCard">
+          <div class="menu-left"><div class="menu-icon"><i class="fa-solid fa-chart-line"></i></div><div class="menu-info"><h4>Fund Flow</h4><p>View transaction history</p></div></div>
+          <div class="menu-right"><i class="fas fa-chevron-right"></i></div>
+        </div>
+        <div class="menu-item" id="authCard">
+          <div class="menu-left"><div class="menu-icon"><i class="fa-solid fa-file-signature"></i></div><div class="menu-info"><h4>My Authorizations</h4><p>Track your trades</p></div></div>
+          <div class="menu-right"><i class="fas fa-chevron-right"></i></div>
+        </div>
+        <div class="menu-item" id="securityCard">
+          <div class="menu-left"><div class="menu-icon"><i class="fa-solid fa-shield-alt"></i></div><div class="menu-info"><h4>Security</h4><p>Payment password settings</p></div></div>
+          <div class="menu-right"><span class="status-badge not-set" id="payPasswordStatus">Checking...</span></div>
+        </div>
+        <div class="menu-item" id="supportCard">
+          <div class="menu-left"><div class="menu-icon"><i class="fa-solid fa-headset"></i></div><div class="menu-info"><h4>Support</h4><p>Get help 24/7</p></div></div>
+          <div class="menu-right"><i class="fas fa-chevron-right"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="logout-btn" id="logoutBtn"><i class="fa-solid fa-sign-out-alt"></i> Logout</button>
+  </main>
+
+  <div class="bottom-nav">
+    <div class="bottom-nav-items">
+      <a href="/index.html" class="nav-item-mobile" data-nav="home"><i class="fa-solid fa-home"></i><span>Home</span></a>
+      <a href="/match-market.html" class="nav-item-mobile" data-nav="markets"><i class="fa-solid fa-chart-line"></i><span>Markets</span></a>
+      <a href="/transaction-list.html" class="nav-item-mobile" data-nav="records"><i class="fa-solid fa-list"></i><span>Records</span></a>
+      <a href="/support.html" class="nav-item-mobile" data-nav="support"><i class="fa-solid fa-headset"></i><span>Support</span></a>
+      <a href="/profile.html" class="nav-item-mobile active" data-nav="profile"><i class="fa-solid fa-user"></i><span>Profile</span></a>
+    </div>
+  </div>
+
+  <div id="toastContainer"></div>
+</div>
+</div>
+
+<script src="/js/core/api-client.js"></script>
+<script src="/js/core/theme.js"></script>
+<script src="/js/core/sync.js"></script>
+<script src="/js/user/profile_controller.js"></script>
+<script>
+  // 导航栏动态高亮 - 与 index.html 完全一致
+  function highlightCurrentNav() {
+    const currentPath = window.location.pathname;
+    const navMap = {
+      '/index.html': 'home',
+      '/': 'home',
+      '/match-market.html': 'markets',
+      '/transaction-list.html': 'records',
+      '/support.html': 'support',
+      '/profile.html': 'profile'
+    };
+    
+    const activeNav = navMap[currentPath] || 'home';
+    
+    // 桌面端导航高亮
+    document.querySelectorAll('.desktop-nav .nav-link').forEach(link => {
+      const linkNav = link.dataset.nav;
+      if (linkNav === activeNav) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    });
+    
+    // 移动端导航高亮
+    document.querySelectorAll('.nav-item-mobile').forEach(link => {
+      const linkNav = link.dataset.nav;
+      if (linkNav === activeNav) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    });
+  }
+  
+  // 主题切换（确保与首页一致）
+  function setTheme(theme) {
+    if (theme === 'dark') document.body.classList.add('dark');
+    else document.body.classList.remove('dark');
+    localStorage.setItem('theme', theme);
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+      const icon = themeToggle;
+      if (theme === 'dark') {
+        icon.classList.remove('fa-moon');
+        icon.classList.add('fa-sun');
+      } else {
+        icon.classList.remove('fa-sun');
+        icon.classList.add('fa-moon');
+      }
+    }
+  }
+  
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  setTheme(savedTheme);
+  
+  const themeToggleBtn = document.getElementById('themeToggle');
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      const newTheme = document.body.classList.contains('dark') ? 'light' : 'dark';
+      setTheme(newTheme);
+    });
+  }
+  
+  // 初始化导航高亮
+  highlightCurrentNav();
+</script>
+</body>
+</html>

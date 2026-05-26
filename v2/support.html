@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Support · FootRadaPro</title>
+  <meta name="description" content="Get help and support from our expert team">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 32px;
+      --space-8: 40px;
+      --space-9: 48px;
+      --space-10: 64px;
+      
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-base: 1rem;
+      --font-md: 1.125rem;
+      --font-lg: 1.25rem;
+      --font-xl: 1.5rem;
+      --font-2xl: 2rem;
+      --font-3xl: 2.5rem;
+      
+      --radius-sm: 12px;
+      --radius-md: 16px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --radius-2xl: 32px;
+      --radius-full: 9999px;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-fast: 0.15s;
+      --duration-base: 0.24s;
+    }
+
+    :root {
+      --bg-gradient-start: rgba(248, 250, 252, 0.98);
+      --bg-gradient-end: rgba(255, 255, 255, 0.99);
+      --glass-bg: rgba(255, 255, 255, 0.7);
+      --glass-border: rgba(0, 0, 0, 0.06);
+      --glass-shadow: 0 1px 2px rgba(0,0,0,0.02), 0 8px 24px rgba(0,0,0,0.03);
+      --glass-shadow-hover: 0 2px 4px rgba(0,0,0,0.02), 0 16px 32px -12px rgba(0,0,0,0.08);
+      --accent: #0066FF;
+      --accent-glow: rgba(0,102,255,0.1);
+      --accent-gradient: linear-gradient(135deg, #0066FF, #0052CC);
+      --success: #00A86B;
+      --warning: #F5A623;
+      --danger: #FF3B30;
+      --text-primary: #1A1A2E;
+      --text-secondary: #4A4A6A;
+      --text-muted: #8A8AAE;
+      --border-light: rgba(0,0,0,0.06);
+      --card-bg: rgba(255,255,255,0.85);
+      --ticker-bg: #0066FF;
+      --badge-soft: rgba(0,102,255,0.06);
+    }
+
+    body.dark {
+      --bg-gradient-start: rgba(10, 16, 30, 0.98);
+      --bg-gradient-end: rgba(2, 6, 18, 0.99);
+      --glass-bg: rgba(20, 28, 44, 0.7);
+      --glass-border: rgba(255,255,255,0.06);
+      --glass-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.25);
+      --glass-shadow-hover: 0 2px 4px rgba(0,0,0,0.2), 0 16px 32px -12px rgba(0,0,0,0.4);
+      --accent: #3B82F6;
+      --accent-glow: rgba(59,130,246,0.15);
+      --accent-gradient: linear-gradient(135deg, #3B82F6, #8B5CF6);
+      --success: #34D399;
+      --warning: #FBBF24;
+      --danger: #F87171;
+      --text-primary: #F1F5F9;
+      --text-secondary: #CBD5E1;
+      --text-muted: #94A3B8;
+      --card-bg: rgba(20,28,44,0.7);
+      --badge-soft: rgba(59,130,246,0.12);
+    }
+
+    body {
+      background: radial-gradient(ellipse at 30% 40%, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: ''; position: fixed; top:0; left:0; width:100%; height:100%;
+      background-image: radial-gradient(circle at 20% 30%, rgba(0,102,255,0.02) 0%, transparent 50%);
+      pointer-events: none; z-index:0;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--border-light); border-radius: var(--radius-full); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: var(--radius-full); }
+
+    .app-wrapper { position: relative; z-index:1; min-height:100vh; display: flex; flex-direction: column; }
+
+    .ticker {
+      background: var(--ticker-bg); backdrop-filter: blur(12px); color: white; padding: 8px 0; font-size: var(--font-sm); font-weight: 500;
+      white-space: nowrap; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .ticker-content { display: inline-block; animation: ticker 32s linear infinite; padding-left: 100%; letter-spacing: 0.3px; }
+    @keyframes ticker { to { transform: translateX(-100%); } }
+
+    .header {
+      background: var(--glass-bg); backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border);
+      padding: var(--space-4) var(--space-6); position: sticky; top:0; z-index:50; box-shadow: var(--glass-shadow);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: var(--space-3); }
+    .logo-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+    .logo-text { font-size: var(--font-md); font-weight: 700; background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .header-actions { display: flex; gap: var(--space-5); align-items: center; }
+    .header-actions i { font-size: 20px; color: var(--text-secondary); cursor: pointer; transition: all var(--duration-fast) var(--ease-out); }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: var(--space-8) var(--space-6); }
+    .content { width: 100%; }
+
+    /* Hero 区域 */
+    .hero {
+      text-align: center; margin-bottom: var(--space-10);
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: var(--space-2); background: var(--badge-soft);
+      padding: 6px 14px; border-radius: var(--radius-full); font-size: var(--font-sm); color: var(--accent); margin-bottom: var(--space-5);
+    }
+    .hero h1 {
+      font-size: var(--font-3xl); font-weight: 700; margin-bottom: var(--space-4);
+      background: linear-gradient(135deg, var(--text-primary), var(--accent));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .hero p {
+      font-size: var(--font-lg); color: var(--text-secondary); max-width: 600px; margin: 0 auto;
+    }
+
+    /* 搜索框 */
+    .search-container {
+      max-width: 560px; margin: var(--space-8) auto 0;
+    }
+    .search-box {
+      background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-2xl); padding: var(--space-3) var(--space-5);
+      display: flex; align-items: center; gap: var(--space-3);
+      transition: all var(--duration-fast);
+    }
+    .search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .search-box i { font-size: 20px; color: var(--text-muted); }
+    .search-box input {
+      flex: 1; background: none; border: none; color: var(--text-primary); font-size: var(--font-base);
+      outline: none; font-family: inherit;
+    }
+    .search-box input::placeholder { color: var(--text-muted); }
+
+    /* 分类导航 */
+    .category-nav {
+      display: flex; justify-content: center; gap: var(--space-2); margin-bottom: var(--space-8);
+      flex-wrap: wrap;
+    }
+    .category-btn {
+      background: transparent; border: none; padding: 8px 20px; border-radius: var(--radius-full);
+      font-size: var(--font-sm); font-weight: 500; color: var(--text-secondary); cursor: pointer;
+      transition: all var(--duration-fast);
+    }
+    .category-btn:hover { background: var(--badge-soft); color: var(--accent); }
+    .category-btn.active { background: var(--accent); color: white; }
+
+    /* FAQ 网格 */
+    .faq-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-5);
+      margin-bottom: var(--space-8);
+    }
+    .faq-card {
+      background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl); padding: var(--space-6); cursor: pointer;
+      transition: all var(--duration-base);
+    }
+    .faq-card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: var(--glass-shadow-hover); }
+    .faq-card-header { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+    .faq-card-icon {
+      width: 48px; height: 48px; background: var(--badge-soft); border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .faq-card-icon i { font-size: 24px; color: var(--accent); }
+    .faq-card h3 { font-size: var(--font-lg); font-weight: 600; }
+    .faq-card p { color: var(--text-muted); font-size: var(--font-sm); line-height: 1.5; }
+
+    /* 热门问题区域 */
+    .popular-section {
+      background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-2xl); padding: var(--space-7);
+      margin-bottom: var(--space-8);
+    }
+    .section-header {
+      display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-6);
+      flex-wrap: wrap; gap: var(--space-3);
+    }
+    .section-header h2 { font-size: var(--font-xl); font-weight: 600; }
+    .section-header a { color: var(--accent); font-size: var(--font-sm); text-decoration: none; }
+    .popular-list { display: flex; flex-direction: column; gap: var(--space-4); }
+    .popular-item {
+      display: flex; align-items: center; justify-content: space-between; padding: var(--space-3);
+      border-bottom: 1px solid var(--border-light); cursor: pointer; transition: all var(--duration-fast);
+    }
+    .popular-item:hover { background: var(--badge-soft); border-radius: var(--radius-lg); transform: translateX(4px); }
+    .popular-item-left { display: flex; align-items: center; gap: var(--space-3); }
+    .popular-item-left i { color: var(--accent); font-size: 18px; }
+    .popular-question { font-weight: 500; }
+
+    /* 联系区域 */
+    .contact-section {
+      background: linear-gradient(135deg, var(--badge-soft), transparent);
+      border-radius: var(--radius-2xl); padding: var(--space-8); text-align: center;
+    }
+    .contact-section h2 { font-size: var(--font-xl); font-weight: 600; margin-bottom: var(--space-3); }
+    .contact-section p { color: var(--text-secondary); margin-bottom: var(--space-6); }
+    .contact-buttons {
+      display: flex; justify-content: center; gap: var(--space-4); flex-wrap: wrap;
+    }
+    .contact-btn {
+      display: inline-flex; align-items: center; gap: var(--space-2); padding: 12px 28px;
+      border-radius: var(--radius-full); font-weight: 600; cursor: pointer; transition: all var(--duration-fast);
+      text-decoration: none;
+    }
+    .contact-btn-primary {
+      background: var(--accent-gradient); color: white; border: none;
+    }
+    .contact-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px var(--accent-glow); }
+    .contact-btn-secondary {
+      background: transparent; border: 1px solid var(--glass-border); color: var(--text-primary);
+    }
+    .contact-btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* 弹窗 */
+    .modal-overlay {
+      position: fixed; top:0; left:0; right:0; bottom:0;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(12px);
+      display: none; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--card-bg); backdrop-filter: blur(28px); border-radius: var(--radius-2xl);
+      border: 1px solid var(--glass-border); width: 90%; max-width: 560px;
+      max-height: 85vh; overflow: hidden; animation: modalIn 0.25s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--border-light);
+    }
+    .modal-header h3 { font-size: var(--font-lg); font-weight: 600; }
+    .modal-close {
+      background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-muted);
+      transition: all var(--duration-fast);
+    }
+    .modal-close:hover { color: var(--accent); }
+    .modal-body { padding: var(--space-6); overflow-y: auto; max-height: 60vh; }
+
+    /* 底部导航 */
+    .bottom-nav { display: none; position: fixed; bottom:0; left:0; right:0; background: var(--card-bg); backdrop-filter: blur(24px); border-top: 1px solid var(--glass-border); padding: var(--space-3) var(--space-5); z-index:60; }
+    .bottom-nav-items { display: flex; justify-content: space-around; max-width: 500px; margin:0 auto; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); font-size: var(--font-xs); color: var(--text-muted); cursor: pointer; padding: var(--space-2) 0; transition: all var(--duration-fast); }
+    .nav-item.active { color: var(--accent); }
+    .nav-item i { font-size: 22px; }
+
+    .fab { position: fixed; bottom: 28px; right: 28px; width: 52px; height: 52px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px var(--accent-glow); z-index:55; cursor: pointer; transition: all var(--duration-fast); border: 1px solid rgba(255,255,255,0.2); }
+
+    @media (max-width: 768px) {
+      .container { padding: var(--space-5) var(--space-4); }
+      .hero h1 { font-size: var(--font-2xl); }
+      .faq-grid { grid-template-columns: 1fr; gap: var(--space-4); }
+      .popular-item { flex-wrap: wrap; gap: var(--space-2); }
+      .contact-section { padding: var(--space-6); }
+      .bottom-nav { display: block; }
+      body { padding-bottom: 70px; }
+      .fab { bottom: 80px; right: 20px; width: 48px; height: 48px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <div class="ticker">
+    <div class="ticker-content">
+      <i class="fa-regular fa-circle-check"></i> 24/7 SUPPORT AVAILABLE &nbsp;|&nbsp;
+      <i class="fa-regular fa-clock"></i> AVERAGE RESPONSE TIME: UNDER 2 HOURS &nbsp;|&nbsp;
+      <i class="fa-regular fa-message"></i> LIVE CHAT COMING SOON
+    </div>
+  </div>
+
+  <div class="header">
+    <div class="logo"><div class="logo-icon">⚽</div><div class="logo-text">FootRadaPro</div></div>
+    <div class="header-actions"><i class="fa-regular fa-moon" id="themeToggle"></i><i class="fa-regular fa-bell"></i></div>
+  </div>
+
+  <div class="container">
+    <main class="content">
+      <!-- Hero 区域 -->
+      <div class="hero">
+        <div class="hero-badge">
+          <i class="fas fa-headset"></i>
+          <span>Support Center</span>
+        </div>
+        <h1>How can we help you?</h1>
+        <p>Get answers to your questions about getting started, authorization, funds, and more</p>
+        
+        <!-- 搜索框 -->
+        <div class="search-container">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search for answers...">
+          </div>
+        </div>
+      </div>
+
+      <!-- 分类导航 -->
+      <div class="category-nav">
+        <button class="category-btn active" data-category="all">All</button>
+        <button class="category-btn" data-category="guide">Getting Started</button>
+        <button class="category-btn" data-category="auth">Authorization</button>
+        <button class="category-btn" data-category="funds">Funds & Settlement</button>
+      </div>
+
+      <!-- FAQ 卡片网格 -->
+      <div class="faq-grid" id="faqGrid"></div>
+
+      <!-- 热门问题 -->
+      <div class="popular-section">
+        <div class="section-header">
+          <h2>Popular questions</h2>
+          <a href="#" id="viewAllLink">View all →</a>
+        </div>
+        <div class="popular-list" id="popularList"></div>
+      </div>
+
+      <!-- 联系区域 -->
+      <div class="contact-section">
+        <h2>Still need help?</h2>
+        <p>Our support team is available 24/7 to assist you</p>
+        <div class="contact-buttons">
+          <button class="contact-btn contact-btn-primary" id="contactEmailBtn">
+            <i class="fas fa-envelope"></i> Email Support
+          </button>
+          <button class="contact-btn contact-btn-secondary" id="contactTelegramBtn">
+            <i class="fab fa-telegram"></i> Telegram
+          </button>
+          <button class="contact-btn contact-btn-secondary" id="contactTwitterBtn">
+            <i class="fab fa-twitter"></i> Twitter
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="bottom-nav-items">
+      <div class="nav-item" data-nav="home"><i class="fa-solid fa-home"></i><span>Home</span></div>
+      <div class="nav-item" data-nav="market"><i class="fa-solid fa-chart-line"></i><span>Market</span></div>
+      <div class="nav-item" data-nav="records"><i class="fa-solid fa-list"></i><span>Records</span></div>
+      <div class="nav-item active" data-nav="support"><i class="fa-solid fa-headset"></i><span>Support</span></div>
+      <div class="nav-item" data-nav="profile"><i class="fa-solid fa-user"></i><span>Profile</span></div>
+    </div>
+  </div>
+
+  <div class="fab" onclick="alert('Support: contact via Telegram')"><i class="fa-solid fa-comment-dots"></i></div>
+
+  <!-- 弹窗 -->
+  <div id="faqModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">Title</h3>
+        <button class="modal-close" id="closeModal">&times;</button>
+      </div>
+      <div class="modal-body" id="modalContent"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // FAQ 数据
+  const faqData = {
+    guide: [
+      { q: 'How do I get started with FootRadaPro?', a: 'Getting started is simple. Register an account, and you\'ll receive 10,000 USDT in test funds. Navigate to the Match Market, select a match, and click Authorize to start your first trade. The entire process takes less than 2 minutes.' },
+      { q: 'What is the 10,000 USDT test fund?', a: 'Every new user receives 10,000 USDT in test funds to experience the platform risk-free. Use it to place authorizations and see how the AI strategy performs before depositing real funds.' },
+      { q: 'Do I need to deposit money to start?', a: 'No deposit is required. You can fully experience the platform using the 10,000 USDT test funds. When you\'re ready to trade with real funds, the minimum deposit is 100 USDT.' }
+    ],
+    auth: [
+      { q: 'What is One-Click Authorization?', a: 'One-Click Authorization is our core feature. With a single click, you lock in your strategy and authorize the AI to execute trades on your behalf. Once authorized, the rules are sealed and cannot be modified.' },
+      { q: 'Can I cancel an authorization?', a: 'No. Once an authorization is submitted, it is permanently locked and cannot be canceled, modified, or interfered with. This ensures the integrity of the system.' },
+      { q: 'How accurate is the AI?', a: 'Our AI model maintains an average win rate of 82%+ across all major leagues. For high-confidence predictions, accuracy reaches 91%.' }
+    ],
+    funds: [
+      { q: 'When do I get settlement after a match?', a: 'Settlement is automatically completed within 5 minutes after the official match result is confirmed.' },
+      { q: 'What are the withdrawal fees?', a: 'Withdrawal fee is fixed at 1 USDT. Processing time is within 2 hours, with most withdrawals completed in 5-20 minutes.' },
+      { q: 'Is my money safe?', a: 'Yes. User funds are held in segregated cold wallets. All transactions are recorded on an immutable ledger with quarterly third-party security audits.' }
+    ]
+  };
+
+  const allFaqs = [
+    ...faqData.guide.map(item => ({ ...item, category: 'guide', categoryName: 'Getting Started' })),
+    ...faqData.auth.map(item => ({ ...item, category: 'auth', categoryName: 'Authorization' })),
+    ...faqData.funds.map(item => ({ ...item, category: 'funds', categoryName: 'Funds & Settlement' }))
+  ];
+
+  let currentCategory = 'all';
+  let searchTerm = '';
+
+  function getFilteredFaqs() {
+    let filtered = allFaqs;
+    if (currentCategory !== 'all') {
+      filtered = filtered.filter(f => f.category === currentCategory);
+    }
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(f => f.q.toLowerCase().includes(term) || f.a.toLowerCase().includes(term));
+    }
+    return filtered;
+  }
+
+  function renderFaqGrid() {
+    const filtered = getFilteredFaqs();
+    const grid = document.getElementById('faqGrid');
+    if (filtered.length === 0) {
+      grid.innerHTML = '<div style="grid-column: span 2; text-align: center; padding: 60px;"><i class="fas fa-search" style="font-size: 48px; color: var(--text-muted); margin-bottom: 16px;"></i><p>No results found. Try a different search term.</p></div>';
+      return;
+    }
+    grid.innerHTML = filtered.slice(0, 6).map(faq => `
+      <div class="faq-card" onclick="openFaqModal('${escapeHtml(faq.q)}', '${escapeHtml(faq.a)}')">
+        <div class="faq-card-header">
+          <div class="faq-card-icon"><i class="fas ${faq.category === 'guide' ? 'fa-rocket' : (faq.category === 'auth' ? 'fa-shield-alt' : 'fa-wallet')}"></i></div>
+          <h3>${escapeHtml(faq.q)}</h3>
+        </div>
+        <p>${escapeHtml(faq.a.substring(0, 100))}...</p>
+      </div>
+    `).join('');
+  }
+
+  function renderPopularList() {
+    const popular = allFaqs.slice(0, 5);
+    document.getElementById('popularList').innerHTML = popular.map(faq => `
+      <div class="popular-item" onclick="openFaqModal('${escapeHtml(faq.q)}', '${escapeHtml(faq.a)}')">
+        <div class="popular-item-left">
+          <i class="fas fa-question-circle"></i>
+          <span class="popular-question">${escapeHtml(faq.q)}</span>
+        </div>
+        <i class="fas fa-chevron-right" style="color: var(--text-muted); font-size: 14px;"></i>
+      </div>
+    `).join('');
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+  }
+
+  window.openFaqModal = function(question, answer) {
+    const modal = document.getElementById('faqModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalContent = document.getElementById('modalContent');
+    modalTitle.textContent = question;
+    modalContent.innerHTML = `<div style="line-height: 1.7; color: var(--text-secondary);">${answer}</div>`;
+    modal.classList.add('active');
+  };
+
+  function closeModal() {
+    document.getElementById('faqModal').classList.remove('active');
+  }
+
+  // 分类切换
+  document.querySelectorAll('.category-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCategory = btn.dataset.category;
+      renderFaqGrid();
+    });
+  });
+
+  // 搜索
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    searchTerm = e.target.value;
+    renderFaqGrid();
+  });
+
+  // 联系按钮
+  document.getElementById('contactEmailBtn')?.addEventListener('click', () => window.location.href = 'mailto:support@footradapro.com');
+  document.getElementById('contactTelegramBtn')?.addEventListener('click', () => window.open('https://t.me/footradapro', '_blank'));
+  document.getElementById('contactTwitterBtn')?.addEventListener('click', () => window.open('https://twitter.com/footradapro', '_blank'));
+  document.getElementById('viewAllLink')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.querySelector('.category-btn[data-category="all"]').click();
+    window.scrollTo({ top: 400, behavior: 'smooth' });
+  });
+  document.getElementById('closeModal')?.addEventListener('click', closeModal);
+  document.getElementById('faqModal')?.addEventListener('click', (e) => { if (e.target === document.getElementById('faqModal')) closeModal(); });
+
+  // 全局状态
+  function getAppMode() { return localStorage.getItem('appMode') || 'sandbox'; }
+  function getThemeMode() { return localStorage.getItem('theme') || 'light'; }
+
+  function updateThemeUI() {
+    const theme = getThemeMode();
+    if (theme === 'dark') document.body.classList.add('dark');
+    else document.body.classList.remove('dark');
+    const icon = document.getElementById('themeToggle');
+    if (icon) {
+      if (theme === 'dark') { icon.classList.remove('fa-moon'); icon.classList.add('fa-sun'); }
+      else { icon.classList.remove('fa-sun'); icon.classList.add('fa-moon'); }
+    }
+  }
+
+  document.getElementById('themeToggle')?.addEventListener('click', () => {
+    const newTheme = getThemeMode() === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', newTheme);
+    window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
+    updateThemeUI();
+  });
+
+  window.addEventListener('themeChanged', () => updateThemeUI());
+
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const nav = item.dataset.nav;
+      if (nav === 'home') window.location.href = '/index.html';
+      if (nav === 'market') window.location.href = '/match-market.html';
+      if (nav === 'records') window.location.href = '/transaction-list.html';
+      if (nav === 'support') window.location.href = '/support.html';
+      if (nav === 'profile') window.location.href = '/profile.html';
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+
+  updateThemeUI();
+  renderFaqGrid();
+  renderPopularList();
+</script>
+</body>
+</html> 

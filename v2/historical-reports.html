@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Historical Reports · FootRadaPro</title>
+  <meta name="description" content="View your trading history and performance reports">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 32px;
+      --space-8: 40px;
+      
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-base: 1rem;
+      --font-md: 1.125rem;
+      --font-lg: 1.25rem;
+      --font-xl: 1.5rem;
+      --font-2xl: 2rem;
+      
+      --radius-sm: 10px;
+      --radius-md: 14px;
+      --radius-lg: 18px;
+      --radius-xl: 22px;
+      --radius-2xl: 26px;
+      --radius-full: 9999px;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-fast: 0.15s;
+      --duration-base: 0.24s;
+    }
+
+    :root {
+      --bg-primary: #F8FAFC;
+      --bg-secondary: #FFFFFF;
+      --bg-tertiary: #F1F5F9;
+      --border-light: #E2E8F0;
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #94A3B8;
+      --accent: #0066FF;
+      --accent-light: rgba(0,102,255,0.08);
+      --accent-gradient: linear-gradient(135deg, #0066FF, #0052CC);
+      --success: #00A86B;
+      --success-light: rgba(0,168,107,0.1);
+      --danger: #FF3B30;
+      --danger-light: rgba(255,59,48,0.1);
+      --warning: #F5A623;
+      --card-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.05);
+      --card-shadow-hover: 0 2px 4px rgba(0,0,0,0.03), 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    body.dark {
+      --bg-primary: #0F172A;
+      --bg-secondary: #1E293B;
+      --bg-tertiary: #334155;
+      --border-light: #334155;
+      --text-primary: #F1F5F9;
+      --text-secondary: #CBD5E1;
+      --text-muted: #94A3B8;
+      --accent: #3B82F6;
+      --accent-light: rgba(59,130,246,0.12);
+      --accent-gradient: linear-gradient(135deg, #3B82F6, #8B5CF6);
+      --success-light: rgba(52,211,153,0.12);
+      --danger-light: rgba(248,113,113,0.12);
+      --card-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.3);
+      --card-shadow-hover: 0 2px 4px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+    }
+
+    .app-wrapper { position: relative; z-index:1; min-height:100vh; display: flex; flex-direction: column; }
+
+    /* 头部导航 */
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-light);
+      padding: var(--space-4) var(--space-6);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: var(--space-3); }
+    .logo-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+    .logo-text { font-size: var(--font-md); font-weight: 700; background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .header-actions { display: flex; gap: var(--space-5); align-items: center; }
+    .header-actions i { font-size: 20px; color: var(--text-secondary); cursor: pointer; transition: all var(--duration-fast); }
+
+    /* 主内容区 */
+    .container { max-width: 900px; margin: 0 auto; padding: var(--space-6); }
+    .content { width: 100%; }
+
+    /* 页面标题 */
+    .page-header {
+      margin-bottom: var(--space-7);
+    }
+    .page-header h1 {
+      font-size: var(--font-2xl);
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: var(--space-2);
+    }
+    .page-header p {
+      color: var(--text-muted);
+      font-size: var(--font-sm);
+    }
+
+    /* 统计卡片网格 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-4);
+      margin-bottom: var(--space-7);
+    }
+    .stat-card {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-light);
+      padding: var(--space-5);
+      box-shadow: var(--card-shadow);
+      transition: all var(--duration-base);
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--card-shadow-hover);
+    }
+    .stat-label {
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+      margin-bottom: var(--space-2);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stat-value {
+      font-size: var(--font-xl);
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .stat-value.small { font-size: var(--font-md); }
+
+    /* 筛选标签 */
+    .filter-tabs {
+      display: flex;
+      gap: var(--space-2);
+      margin-bottom: var(--space-6);
+      flex-wrap: wrap;
+    }
+    .filter-tab {
+      background: transparent;
+      border: none;
+      padding: 8px 20px;
+      border-radius: var(--radius-full);
+      font-size: var(--font-sm);
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--duration-fast);
+    }
+    .filter-tab:hover {
+      background: var(--bg-tertiary);
+    }
+    .filter-tab.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* 报告卡片 */
+    .reports-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .report-card {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-light);
+      padding: var(--space-5);
+      transition: all var(--duration-base);
+      cursor: pointer;
+    }
+    .report-card:hover {
+      transform: translateX(4px);
+      border-color: var(--accent);
+      box-shadow: var(--card-shadow-hover);
+    }
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-3);
+    }
+    .report-date {
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+    }
+    .report-badge {
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: var(--font-xs);
+      font-weight: 600;
+    }
+    .report-badge.win {
+      background: var(--success-light);
+      color: var(--success);
+    }
+    .report-badge.loss {
+      background: var(--danger-light);
+      color: var(--danger);
+    }
+    .report-teams {
+      font-size: var(--font-md);
+      font-weight: 600;
+      margin-bottom: var(--space-2);
+    }
+    .report-details {
+      display: flex;
+      gap: var(--space-4);
+      margin-bottom: var(--space-3);
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+    }
+    .report-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--border-light);
+    }
+    .report-return {
+      font-size: var(--font-sm);
+      font-weight: 600;
+    }
+    .report-return.positive {
+      color: var(--success);
+    }
+    .report-return.negative {
+      color: var(--danger);
+    }
+    .report-verifiable {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+    }
+
+    /* 加载状态 */
+    .loading-state {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border-light);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-light);
+    }
+    .empty-state i {
+      font-size: 48px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    /* 底部导航 */
+    .bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg-secondary);
+      backdrop-filter: blur(24px);
+      border-top: 1px solid var(--border-light);
+      padding: var(--space-3) var(--space-5);
+      z-index: 60;
+    }
+    .bottom-nav-items {
+      display: flex;
+      justify-content: space-around;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: var(--space-2) 0;
+      transition: all var(--duration-fast);
+    }
+    .nav-item.active {
+      color: var(--accent);
+    }
+    .nav-item i {
+      font-size: 22px;
+    }
+
+    /* 主题悬浮按钮 */
+    .theme-fab {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--card-shadow);
+      transition: all var(--duration-fast);
+      z-index: 55;
+    }
+    .theme-fab:hover {
+      transform: scale(1.05);
+    }
+    .theme-fab i {
+      font-size: 20px;
+      color: var(--text-secondary);
+    }
+
+    @media (max-width: 768px) {
+      .container { padding: var(--space-4); }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
+      .stat-value { font-size: var(--font-lg); }
+      .report-teams { font-size: var(--font-sm); }
+      .report-details { flex-wrap: wrap; gap: var(--space-2); }
+      .bottom-nav { display: block; }
+      body { padding-bottom: 70px; }
+      .theme-fab { bottom: 80px; right: 20px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <!-- 头部导航 -->
+  <div class="header">
+    <div class="logo"><div class="logo-icon">⚽</div><div class="logo-text">FootRadaPro</div></div>
+    <div class="header-actions"><i class="fa-regular fa-moon" id="themeBtn"></i></div>
+  </div>
+
+  <div class="container">
+    <main class="content">
+      <!-- 页面标题 -->
+      <div class="page-header">
+        <h1>Historical Reports</h1>
+        <p>View your trading history and performance analysis</p>
+      </div>
+
+      <!-- 统计卡片 -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Trades</div>
+          <div class="stat-value" id="totalTrades">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Win Rate</div>
+          <div class="stat-value" id="winRate">0%</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Profit</div>
+          <div class="stat-value" id="totalProfit">0 USDT</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">VIP Level</div>
+          <div class="stat-value small" id="vipLevel">VIP 0</div>
+        </div>
+      </div>
+
+      <!-- 筛选标签 -->
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all">All</button>
+        <button class="filter-tab" data-filter="win">Wins</button>
+        <button class="filter-tab" data-filter="loss">Losses</button>
+      </div>
+
+      <!-- 报告列表 -->
+      <div id="reportsList" class="reports-list">
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading historical reports...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 底部导航 -->
+  <div class="bottom-nav">
+    <div class="bottom-nav-items">
+      <div class="nav-item" data-nav="home"><i class="fa-solid fa-home"></i><span>Home</span></div>
+      <div class="nav-item" data-nav="market"><i class="fa-solid fa-chart-line"></i><span>Market</span></div>
+      <div class="nav-item active" data-nav="records"><i class="fa-solid fa-list"></i><span>Records</span></div>
+      <div class="nav-item" data-nav="support"><i class="fa-solid fa-headset"></i><span>Support</span></div>
+      <div class="nav-item" data-nav="profile"><i class="fa-solid fa-user"></i><span>Profile</span></div>
+    </div>
+  </div>
+
+  <!-- 主题悬浮按钮 -->
+  <div class="theme-fab" id="themeFab">
+    <i class="fa-regular fa-moon"></i>
+  </div>
+</div>
+
+<script>
+  // 全局状态
+  const AppState = {
+    theme: localStorage.getItem('theme') || 'light',
+    currentFilter: 'all',
+    reports: [],
+    stats: {
+      totalTrades: 0,
+      winRate: 0,
+      totalProfit: 0,
+      vipLevel: 0
+    }
+  };
+
+  const elements = {
+    themeBtn: document.getElementById('themeBtn'),
+    themeFab: document.getElementById('themeFab'),
+    totalTrades: document.getElementById('totalTrades'),
+    winRate: document.getElementById('winRate'),
+    totalProfit: document.getElementById('totalProfit'),
+    vipLevel: document.getElementById('vipLevel'),
+    filterTabs: document.querySelectorAll('.filter-tab'),
+    reportsList: document.getElementById('reportsList')
+  };
+
+  // 模拟数据（演示用）
+  const mockReports = [
+    { match_id: 1001, match_time: new Date(Date.now() - 7 * 24 * 3600000).toISOString(), home_team: 'Liverpool', away_team: 'Manchester City', league: 'Premier League', amount: 200, profit: 45.20, result: 'win', odds: '2.1', user_prediction: 'home', actual_result: 'home' },
+    { match_id: 1002, match_time: new Date(Date.now() - 14 * 24 * 3600000).toISOString(), home_team: 'Real Madrid', away_team: 'Barcelona', league: 'La Liga', amount: 300, profit: 0, result: 'loss', odds: '1.8', user_prediction: 'away', actual_result: 'home' },
+    { match_id: 1003, match_time: new Date(Date.now() - 21 * 24 * 3600000).toISOString(), home_team: 'Bayern Munich', away_team: 'Borussia Dortmund', league: 'Bundesliga', amount: 150, profit: 22.50, result: 'win', odds: '1.9', user_prediction: 'home', actual_result: 'home' },
+    { match_id: 1004, match_time: new Date(Date.now() - 28 * 24 * 3600000).toISOString(), home_team: 'Paris SG', away_team: 'Marseille', league: 'Ligue 1', amount: 500, profit: -30.00, result: 'loss', odds: '2.2', user_prediction: 'home', actual_result: 'away' }
+  ];
+
+  const mockStats = {
+    totalTrades: 4,
+    winRate: 50,
+    totalProfit: 37.70,
+    vipLevel: 1
+  };
+
+  function formatAmount(amount) {
+    const num = Number(amount);
+    if (isNaN(num)) return '0.00';
+    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch { return '-'; }
+  }
+
+  function applyTheme() {
+    const isDark = AppState.theme === 'dark';
+    if (isDark) document.body.classList.add('dark');
+    else document.body.classList.remove('dark');
+    const icon = document.querySelector('#themeBtn i, #themeFab i');
+    if (icon) {
+      icon.className = isDark ? 'fa-regular fa-sun' : 'fa-regular fa-moon';
+    }
+  }
+
+  function toggleTheme() {
+    AppState.theme = AppState.theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', AppState.theme);
+    applyTheme();
+  }
+
+  function renderStats() {
+    if (elements.totalTrades) elements.totalTrades.textContent = AppState.stats.totalTrades;
+    if (elements.winRate) elements.winRate.textContent = (AppState.stats.winRate || 0).toFixed(1) + '%';
+    if (elements.totalProfit) {
+      elements.totalProfit.textContent = formatAmount(AppState.stats.totalProfit) + ' USDT';
+      elements.totalProfit.style.color = AppState.stats.totalProfit >= 0 ? '#00A86B' : '#FF3B30';
+    }
+    if (elements.vipLevel) elements.vipLevel.textContent = 'VIP ' + (AppState.stats.vipLevel || 0);
+  }
+
+  function setActiveFilter(filter) {
+    AppState.currentFilter = filter;
+    elements.filterTabs.forEach(tab => {
+      if (tab.dataset.filter === filter) tab.classList.add('active');
+      else tab.classList.remove('active');
+    });
+  }
+
+  function renderReports() {
+    if (!elements.reportsList) return;
+    
+    let filtered = [...AppState.reports];
+    if (AppState.currentFilter === 'win') filtered = filtered.filter(r => r.result === 'win');
+    if (AppState.currentFilter === 'loss') filtered = filtered.filter(r => r.result === 'loss');
+    
+    if (filtered.length === 0) {
+      elements.reportsList.innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-history"></i>
+          <p style="margin-bottom: 16px;">No historical reports</p>
+          <button class="filter-tab active" onclick="location.href='/match-market.html'" style="background: var(--accent); color: white;">Go to Markets</button>
+        </div>
+      `;
+      return;
+    }
+    
+    elements.reportsList.innerHTML = filtered.map(report => {
+      const badgeClass = report.result === 'win' ? 'win' : 'loss';
+      const badgeText = report.result === 'win' ? 'Win' : 'Loss';
+      const returnClass = report.result === 'win' ? 'positive' : 'negative';
+      const returnValue = report.result === 'win' ? `+${formatAmount(report.profit)} USDT` : `-${formatAmount(Math.abs(report.profit))} USDT`;
+      const isCorrect = report.user_prediction === report.actual_result;
+      
+      return `
+        <div class="report-card" onclick="window.location.href='/report-detail.html?match_id=${report.match_id}'">
+          <div class="report-header">
+            <span class="report-date">${formatDate(report.match_time)}</span>
+            <span class="report-badge ${badgeClass}">${badgeText}</span>
+          </div>
+          <div class="report-teams">${report.home_team} vs ${report.away_team}</div>
+          <div class="report-details">
+            <span>${report.league || 'Unknown League'}</span>
+            <span>Odds: ${report.odds || '-'}</span>
+            <span>Amount: ${formatAmount(report.amount)} USDT</span>
+          </div>
+          <div class="report-footer">
+            <span class="report-return ${returnClass}">${returnValue}</span>
+            <div class="report-verifiable">
+              <i class="fas ${isCorrect ? 'fa-check-circle' : 'fa-times-circle'}" style="color: ${isCorrect ? '#00A86B' : '#FF3B30'};"></i>
+              <span>${isCorrect ? 'Correct' : 'Incorrect'}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function loadStats() {
+    try {
+      AppState.stats = mockStats;
+      renderStats();
+    } catch (err) { console.error('Failed to load stats:', err); }
+  }
+
+  async function loadReports() {
+    try {
+      AppState.reports = mockReports;
+      renderReports();
+    } catch (err) {
+      console.error('Failed to load reports:', err);
+      if (elements.reportsList) {
+        elements.reportsList.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Failed to load, please try again</p>
+            <button class="filter-tab active" onclick="location.reload()" style="background: var(--accent); color: white; margin-top: 16px;">Refresh</button>
+          </div>
+        `;
+      }
+    }
+  }
+
+  function bindEvents() {
+    if (elements.themeBtn) elements.themeBtn.addEventListener('click', toggleTheme);
+    if (elements.themeFab) elements.themeFab.addEventListener('click', toggleTheme);
+    
+    elements.filterTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        setActiveFilter(tab.dataset.filter);
+        renderReports();
+      });
+    });
+    
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const nav = item.dataset.nav;
+        if (nav === 'home') window.location.href = '/index.html';
+        if (nav === 'market') window.location.href = '/match-market.html';
+        if (nav === 'records') window.location.href = '/historical-reports.html';
+        if (nav === 'support') window.location.href = '/support.html';
+        if (nav === 'profile') window.location.href = '/profile.html';
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        item.classList.add('active');
+      });
+    });
+  }
+
+  async function init() {
+    bindEvents();
+    applyTheme();
+    await loadStats();
+    await loadReports();
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

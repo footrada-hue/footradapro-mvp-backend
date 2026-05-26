@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Create Account · FootRadaPro</title>
+  <meta name="description" content="Sign up for a FootRadaPro account and start trading with AI">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 32px;
+      --space-8: 40px;
+      
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-base: 1rem;
+      --font-md: 1.125rem;
+      --font-lg: 1.25rem;
+      --font-xl: 1.5rem;
+      --font-2xl: 2rem;
+      
+      --radius-sm: 12px;
+      --radius-md: 16px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --radius-2xl: 28px;
+      --radius-full: 9999px;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-fast: 0.15s;
+      --duration-base: 0.24s;
+    }
+
+    :root {
+      --bg-gradient-start: rgba(248, 250, 252, 0.95);
+      --bg-gradient-end: rgba(255, 255, 255, 0.98);
+      --glass-bg: rgba(255, 255, 255, 0.7);
+      --glass-border: rgba(0, 0, 0, 0.06);
+      --glass-shadow: 0 1px 2px rgba(0,0,0,0.02), 0 8px 24px rgba(0,0,0,0.03);
+      --glass-shadow-hover: 0 2px 4px rgba(0,0,0,0.02), 0 16px 32px -12px rgba(0,0,0,0.08);
+      --accent: #0066FF;
+      --accent-glow: rgba(0,102,255,0.1);
+      --accent-gradient: linear-gradient(135deg, #0066FF, #0052CC);
+      --success: #00A86B;
+      --warning: #F5A623;
+      --danger: #FF3B30;
+      --text-primary: #1A1A2E;
+      --text-secondary: #4A4A6A;
+      --text-muted: #8A8AAE;
+      --border-light: rgba(0,0,0,0.06);
+      --card-bg: rgba(255,255,255,0.85);
+      --ticker-bg: #0066FF;
+      --badge-soft: rgba(0,102,255,0.06);
+      --input-bg: #F7F9FC;
+    }
+
+    body.dark {
+      --bg-gradient-start: rgba(10, 16, 30, 0.98);
+      --bg-gradient-end: rgba(2, 6, 18, 0.99);
+      --glass-bg: rgba(20, 28, 44, 0.7);
+      --glass-border: rgba(255,255,255,0.06);
+      --glass-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.25);
+      --glass-shadow-hover: 0 2px 4px rgba(0,0,0,0.2), 0 16px 32px -12px rgba(0,0,0,0.4);
+      --accent: #3B82F6;
+      --accent-glow: rgba(59,130,246,0.15);
+      --accent-gradient: linear-gradient(135deg, #3B82F6, #8B5CF6);
+      --success: #34D399;
+      --warning: #FBBF24;
+      --danger: #F87171;
+      --text-primary: #F1F5F9;
+      --text-secondary: #CBD5E1;
+      --text-muted: #94A3B8;
+      --card-bg: rgba(20,28,44,0.7);
+      --badge-soft: rgba(59,130,246,0.12);
+      --input-bg: #1E293B;
+    }
+
+    body {
+      background: radial-gradient(ellipse at 30% 40%, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    body::before {
+      content: ''; position: fixed; top:0; left:0; width:100%; height:100%;
+      background-image: radial-gradient(circle at 20% 30%, rgba(0,102,255,0.02) 0%, transparent 50%);
+      pointer-events: none; z-index:0;
+    }
+
+    .register-container {
+      position: relative; z-index:1; width: 100%; max-width: 480px; margin: var(--space-6);
+    }
+
+    .logo-area {
+      text-align: center; margin-bottom: var(--space-7);
+    }
+    .logo-icon {
+      width: 64px; height: 64px; background: var(--accent-gradient); border-radius: var(--radius-xl);
+      display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-4);
+    }
+    .logo-icon i { font-size: 32px; color: white; }
+    .logo-area h1 {
+      font-size: var(--font-2xl); font-weight: 700; background: var(--accent-gradient);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+
+    .register-card {
+      background: var(--card-bg); backdrop-filter: blur(24px); border-radius: var(--radius-2xl);
+      border: 1px solid var(--glass-border); padding: var(--space-7);
+      box-shadow: var(--glass-shadow);
+    }
+
+    .header { text-align: center; margin-bottom: var(--space-6); }
+    .header h2 { font-size: var(--font-xl); font-weight: 600; margin-bottom: var(--space-2); }
+    .header p { color: var(--text-muted); font-size: var(--font-sm); }
+
+    .form-group { margin-bottom: var(--space-5); }
+    .input-label {
+      display: block; font-size: var(--font-sm); font-weight: 500; margin-bottom: var(--space-2);
+      color: var(--text-secondary);
+    }
+    .input-wrapper {
+      position: relative; display: flex; align-items: center;
+    }
+    .input-wrapper input {
+      width: 100%; padding: 14px 18px; background: var(--input-bg);
+      border: 1px solid var(--glass-border); border-radius: var(--radius-xl);
+      color: var(--text-primary); font-size: var(--font-base);
+      transition: all var(--duration-fast); font-family: inherit;
+    }
+    .input-wrapper input:focus {
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .captcha-row {
+      display: flex; gap: var(--space-3); align-items: center;
+      position: relative;
+    }
+    .captcha-row .input-wrapper { flex: 1; }
+    .captcha-box {
+      width: 120px; height: 52px; background: linear-gradient(135deg, #1e293b, #0f172a);
+      border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: 1px solid var(--glass-border); transition: all var(--duration-fast);
+    }
+    .captcha-box:hover { border-color: var(--accent); transform: scale(1.02); }
+    .captcha-code {
+      font-family: 'Courier New', monospace; font-size: 22px; font-weight: 700;
+      letter-spacing: 4px; color: #e2e8f0; text-shadow: 0 0 5px rgba(0,102,255,0.5);
+      user-select: none;
+    }
+    .refresh-icon {
+      margin-left: var(--space-2); color: var(--text-muted); cursor: pointer;
+      transition: all var(--duration-fast); font-size: 18px;
+      display: inline-block;
+    }
+    .refresh-icon:hover { color: var(--accent); transform: rotate(15deg); }
+
+    /* 步骤2 - 验证码输入 */
+    .step {
+      display: none;
+    }
+    .step.active {
+      display: block;
+    }
+    .code-inputs {
+      display: flex; gap: var(--space-3); justify-content: center; margin-bottom: var(--space-6);
+    }
+    .code-digit {
+      width: 52px; height: 60px; text-align: center; font-size: var(--font-xl);
+      font-weight: 600; font-family: monospace; background: var(--input-bg);
+      border: 1px solid var(--glass-border); border-radius: var(--radius-xl);
+      color: var(--text-primary); transition: all var(--duration-fast);
+    }
+    .code-digit:focus {
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .btn-primary {
+      width: 100%; padding: 14px; border-radius: var(--radius-full); background: var(--accent-gradient);
+      color: white; font-weight: 700; font-size: var(--font-base); border: none; cursor: pointer;
+      transition: all var(--duration-fast); display: flex; align-items: center; justify-content: center; gap: var(--space-2);
+    }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px var(--accent-glow); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .secondary-link {
+      text-align: center; margin-top: var(--space-5); font-size: var(--font-sm);
+    }
+    .secondary-link a { color: var(--accent); text-decoration: none; cursor: pointer; }
+    .secondary-link a:hover { text-decoration: underline; }
+
+    .resend-link {
+      text-align: center; margin-top: var(--space-5);
+    }
+    .resend-link a { color: var(--accent); text-decoration: none; font-size: var(--font-sm); cursor: pointer; }
+
+    .password-rules {
+      margin-top: var(--space-3); padding: var(--space-3) var(--space-4);
+      background: var(--badge-soft); border-radius: var(--radius-xl);
+    }
+    .rule-item {
+      display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) 0;
+      font-size: var(--font-xs); color: var(--text-secondary);
+    }
+    .rule-item i { width: 16px; font-size: 12px; }
+    .rule-item.valid i { color: var(--success); }
+    .rule-item.invalid i { color: var(--text-muted); }
+
+    .terms-box {
+      display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-6);
+      padding: var(--space-3); background: var(--badge-soft); border-radius: var(--radius-xl);
+    }
+    .terms-box input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent); }
+    .terms-box label { font-size: var(--font-sm); color: var(--text-secondary); cursor: pointer; }
+    .terms-box a { color: var(--accent); text-decoration: none; }
+
+    .toast-container {
+      position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 12px;
+    }
+    .toast {
+      padding: 12px 20px; border-radius: var(--radius-xl); font-size: var(--font-sm);
+      font-weight: 500; animation: slideIn 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .toast-success { background: var(--success); color: white; }
+    .toast-error { background: var(--danger); color: white; }
+    .toast-info { background: var(--accent); color: white; }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+
+    .modal-overlay {
+      position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 2000;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+      background: var(--card-bg); backdrop-filter: blur(28px); border-radius: var(--radius-2xl);
+      border: 1px solid var(--glass-border); padding: var(--space-7); max-width: 400px; width: 90%;
+      text-align: center; animation: modalIn 0.25s ease;
+    }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+    .modal-content h2 { font-size: var(--font-xl); font-weight: 700; margin-bottom: var(--space-3); }
+    .trust-item { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--badge-soft); border-radius: var(--radius-xl); margin-bottom: var(--space-3); }
+    .trust-item i { font-size: 24px; color: var(--accent); }
+
+    .spinner {
+      width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .theme-toggle {
+      position: fixed; top: 20px; right: 20px; width: 40px; height: 40px;
+      background: var(--card-bg); backdrop-filter: blur(12px); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      border: 1px solid var(--glass-border); z-index: 100;
+    }
+    .theme-toggle i { font-size: 18px; color: var(--text-secondary); }
+
+    @media (max-width: 560px) {
+      .register-container { margin: var(--space-4); }
+      .register-card { padding: var(--space-5); }
+      .code-digit { width: 44px; height: 52px; font-size: var(--font-lg); }
+      .captcha-box { width: 100px; height: 48px; }
+      .captcha-code { font-size: 18px; letter-spacing: 2px; }
+    }
+  </style>
+</head>
+<body>
+<div class="theme-toggle" id="themeToggle">
+  <i class="fa-regular fa-moon"></i>
+</div>
+
+<div class="register-container">
+  <div class="logo-area">
+    <div class="logo-icon"><i class="fas fa-futbol"></i></div>
+    <h1>FootRadaPro</h1>
+  </div>
+
+  <div class="register-card">
+    <!-- 步骤1：邮箱 + 图形验证码 -->
+    <div id="step1" class="step active">
+      <div class="header">
+        <h2>Create account</h2>
+        <p>Start your journey with FootRada</p>
+      </div>
+
+      <div class="form-group">
+        <label class="input-label">Email address</label>
+        <div class="input-wrapper">
+          <input type="email" id="email" placeholder="your@email.com" autocomplete="email">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="input-label">Verification code</label>
+        <div class="captcha-row">
+          <div class="input-wrapper">
+            <input type="text" id="captchaInput" placeholder="Enter code" autocomplete="off">
+          </div>
+          <div class="captcha-box" id="captchaBox">
+            <span class="captcha-code" id="captchaCode">A3F9</span>
+          </div>
+          <span class="refresh-icon" id="refreshCaptcha"><i class="fas fa-sync-alt"></i></span>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="sendCodeBtn" disabled>
+        <i class="fas fa-arrow-right"></i>
+        <span>Send verification code</span>
+      </button>
+
+      <div class="secondary-link">
+        Already have an account? <a href="/login.html">Sign in</a>
+      </div>
+    </div>
+
+    <!-- 步骤2：邮箱验证码输入 -->
+    <div id="step2" class="step">
+      <div class="header">
+        <h2>Verify your email</h2>
+        <p>Enter the code sent to <strong id="displayEmail"></strong></p>
+      </div>
+
+      <div class="code-inputs">
+        <input type="text" maxlength="1" class="code-digit" id="code1">
+        <input type="text" maxlength="1" class="code-digit" id="code2">
+        <input type="text" maxlength="1" class="code-digit" id="code3">
+        <input type="text" maxlength="1" class="code-digit" id="code4">
+        <input type="text" maxlength="1" class="code-digit" id="code5">
+        <input type="text" maxlength="1" class="code-digit" id="code6">
+      </div>
+
+      <button class="btn-primary" id="verifyCodeBtn" disabled>
+        <i class="fas fa-check"></i>
+        <span>Verify code</span>
+      </button>
+
+      <div class="resend-link">
+        <a href="#" id="resendCode">Resend code</a>
+      </div>
+      <div class="secondary-link">
+        <a href="#" id="backToEmail">Use different email</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 密码模态框 -->
+  <div id="passwordModal" class="modal-overlay">
+    <div class="modal-content">
+      <h2>Create account</h2>
+      <p style="color: var(--text-muted); margin-bottom: var(--space-5);">Set your password</p>
+
+      <div class="form-group">
+        <label class="input-label">New password</label>
+        <div class="input-wrapper">
+          <input type="password" id="newPassword" placeholder="Enter password">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="input-label">Confirm password</label>
+        <div class="input-wrapper">
+          <input type="password" id="confirmNewPassword" placeholder="Confirm password">
+        </div>
+      </div>
+
+      <div class="password-rules" id="passwordRules">
+        <div class="rule-item invalid" id="ruleLength"><i class="fas fa-circle"></i><span>At least 8 characters</span></div>
+        <div class="rule-item invalid" id="ruleUppercase"><i class="fas fa-circle"></i><span>At least 1 uppercase letter</span></div>
+        <div class="rule-item invalid" id="ruleLowercase"><i class="fas fa-circle"></i><span>At least 1 lowercase letter</span></div>
+        <div class="rule-item invalid" id="ruleNumber"><i class="fas fa-circle"></i><span>At least 1 number</span></div>
+        <div class="rule-item invalid" id="ruleMatch"><i class="fas fa-circle"></i><span>Passwords match</span></div>
+      </div>
+
+      <div class="terms-box">
+        <input type="checkbox" id="termsCheckbox">
+        <label>I agree to the <a href="/terms.html">Terms of Service</a> and <a href="/privacy.html">Privacy Policy</a></label>
+      </div>
+
+      <button class="btn-primary" id="completeRegistrationBtn" disabled>
+        <i class="fas fa-user-plus"></i>
+        <span>Create account</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 成功模态框 -->
+  <div id="trustModal" class="modal-overlay">
+    <div class="modal-content">
+      <h2>Welcome!</h2>
+      <p>Your account is ready</p>
+      <div class="trust-item"><i class="fas fa-flask"></i><span>Sandbox mode</span></div>
+      <div class="trust-item"><i class="fas fa-coins"></i><span>10,000 tUSDT</span></div>
+      <div class="trust-item"><i class="fas fa-chart-line"></i><span>Test funds</span></div>
+      <button class="btn-primary" id="goToHomeBtn" style="margin-top: var(--space-5);">Start exploring →</button>
+      <p class="auto-redirect" style="margin-top: var(--space-4); font-size: var(--font-xs); color: var(--text-muted);">Redirecting in <span id="countdown">5</span> seconds</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 全局变量
+  let AppState = {
+    email: '',
+    tempToken: null,
+    requestInProgress: false,
+    countdownInterval: null,
+    currentLang: 'en'
+  };
+
+  let currentCaptchaId = null;
+  let csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
+
+  // DOM 元素
+  const elements = {
+    step1: document.getElementById('step1'),
+    step2: document.getElementById('step2'),
+    emailInput: document.getElementById('email'),
+    sendCodeBtn: document.getElementById('sendCodeBtn'),
+    displayEmail: document.getElementById('displayEmail'),
+    codeInputs: document.querySelectorAll('.code-digit'),
+    verifyCodeBtn: document.getElementById('verifyCodeBtn'),
+    resendLink: document.getElementById('resendCode'),
+    backToEmail: document.getElementById('backToEmail'),
+    passwordModal: document.getElementById('passwordModal'),
+    newPassword: document.getElementById('newPassword'),
+    confirmNewPassword: document.getElementById('confirmNewPassword'),
+    completeRegistrationBtn: document.getElementById('completeRegistrationBtn'),
+    termsCheckbox: document.getElementById('termsCheckbox'),
+    trustModal: document.getElementById('trustModal'),
+    goToHomeBtn: document.getElementById('goToHomeBtn'),
+    captchaInput: document.getElementById('captchaInput'),
+    captchaImage: document.getElementById('captchaCode'),
+    captchaBox: document.getElementById('captchaBox'),
+    refreshCaptchaBtn: document.getElementById('refreshCaptcha')
+  };
+
+  function showToast(message, type) {
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'toast-container';
+      document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  function setLoading(btn, isLoading, loadingText) {
+    if (!btn) return;
+    if (isLoading) {
+      btn.disabled = true;
+      btn.dataset.originalText = btn.innerHTML;
+      btn.innerHTML = `<span class="spinner"></span> ${loadingText}`;
+      AppState.requestInProgress = true;
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = btn.dataset.originalText || btn.innerHTML;
+      AppState.requestInProgress = false;
+    }
+  }
+
+  function openModal(modal) {
+    if (modal) modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal(modal) {
+    if (modal) modal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function validateEmail(email) {
+    return /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/.test(email);
+  }
+
+  function validatePassword(password) {
+    return {
+      valid: password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password),
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password)
+    };
+  }
+
+  function updatePasswordValidation() {
+    const password = elements.newPassword?.value || '';
+    const confirm = elements.confirmNewPassword?.value || '';
+    const validation = validatePassword(password);
+    
+    const updateRule = (id, isValid) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const icon = el.querySelector('i');
+      if (isValid) {
+        el.classList.add('valid');
+        el.classList.remove('invalid');
+        icon.className = 'fas fa-check-circle';
+      } else {
+        el.classList.add('invalid');
+        el.classList.remove('valid');
+        icon.className = 'fas fa-circle';
+      }
+    };
+    
+    updateRule('ruleLength', validation.length);
+    updateRule('ruleUppercase', validation.uppercase);
+    updateRule('ruleLowercase', validation.lowercase);
+    updateRule('ruleNumber', validation.number);
+    updateRule('ruleMatch', password === confirm && password.length > 0);
+    
+    const termsChecked = elements.termsCheckbox?.checked || false;
+    const allValid = validation.valid && password === confirm && password.length > 0 && termsChecked;
+    if (elements.completeRegistrationBtn) elements.completeRegistrationBtn.disabled = !allValid;
+  }
+
+  function checkFormValidity() {
+    const emailValid = validateEmail(elements.emailInput?.value || '');
+    const captchaValid = elements.captchaInput?.value?.trim().length > 0;
+    if (elements.sendCodeBtn) elements.sendCodeBtn.disabled = !(emailValid && captchaValid);
+  }
+
+  function showStep(step) {
+    if (step === 1) {
+      elements.step1.classList.add('active');
+      elements.step2.classList.remove('active');
+    } else {
+      elements.step1.classList.remove('active');
+      elements.step2.classList.add('active');
+    }
+  }
+
+  function maskEmail(email) {
+    const parts = email.split('@');
+    const local = parts[0];
+    const domain = parts[1];
+    if (local.length <= 2) return email;
+    return local.charAt(0) + '***' + local.charAt(local.length - 1) + '@' + domain;
+  }
+
+  function updateVerifyButtonState() {
+    let allFilled = true;
+    elements.codeInputs.forEach(input => {
+      if (input.value.length !== 1) allFilled = false;
+    });
+    if (elements.verifyCodeBtn) elements.verifyCodeBtn.disabled = !allFilled;
+  }
+
+  function resetCodeInputs() {
+    elements.codeInputs.forEach(input => input.value = '');
+    if (elements.codeInputs[0]) elements.codeInputs[0].focus();
+    updateVerifyButtonState();
+  }
+
+  function startResendCountdown(seconds) {
+    if (AppState.countdownInterval) clearInterval(AppState.countdownInterval);
+    const link = elements.resendLink;
+    if (!link) return;
+    
+    link.style.pointerEvents = 'none';
+    link.textContent = `Resend (${seconds}s)`;
+    
+    AppState.countdownInterval = setInterval(() => {
+      seconds--;
+      if (seconds <= 0) {
+        clearInterval(AppState.countdownInterval);
+        link.style.pointerEvents = 'auto';
+        link.textContent = 'Resend code';
+      } else {
+        link.textContent = `Resend (${seconds}s)`;
+      }
+    }, 1000);
+  }
+
+  function startRedirectCountdown(seconds) {
+    const countdownSpan = document.getElementById('countdown');
+    if (!countdownSpan) return;
+    countdownSpan.textContent = seconds;
+    if (window.redirectCountdown) clearInterval(window.redirectCountdown);
+    window.redirectCountdown = setInterval(() => {
+      seconds--;
+      if (seconds <= 0) {
+        clearInterval(window.redirectCountdown);
+        window.location.href = '/shell.html?page=home';
+      } else {
+        countdownSpan.textContent = seconds;
+      }
+    }, 1000);
+  }
+
+  // 从后端获取图形验证码
+  async function refreshCaptchaFromServer() {
+    try {
+      const response = await fetch('/api/v1/captcha/generate', {
+        headers: { 'X-CSRF-Token': csrfToken, 'Cache-Control': 'no-cache' },
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success && data.data && data.data.image) {
+        // 后端返回的是 base64 图片
+        elements.captchaImage.textContent = '';
+        const img = document.createElement('img');
+        img.src = data.data.image;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        elements.captchaBox.innerHTML = '';
+        elements.captchaBox.appendChild(img);
+        currentCaptchaId = data.data.captchaId || data.data.id;
+        console.log('Captcha loaded, ID:', currentCaptchaId);
+      }
+    } catch (err) {
+      console.error('Failed to load captcha:', err);
+      // 降级：使用本地生成
+      elements.captchaImage.textContent = Math.random().toString(36).substring(2, 6).toUpperCase();
+    }
+  }
+
+  // 发送邮箱验证码
+  async function sendCode() {
+    if (AppState.requestInProgress) return;
+    
+    const email = elements.emailInput.value.trim();
+    if (!validateEmail(email)) {
+      showToast('Please enter a valid email address', 'error');
+      return;
+    }
+    
+    const captchaCode = elements.captchaInput?.value.trim();
+    if (!captchaCode) {
+      showToast('Please enter the verification code', 'error');
+      return;
+    }
+    
+    if (!currentCaptchaId) {
+      showToast('Captcha expired, please refresh', 'error');
+      refreshCaptchaFromServer();
+      return;
+    }
+    
+    setLoading(elements.sendCodeBtn, true, 'Sending...');
+    
+    try {
+      // 验证图形验证码
+      const verifyRes = await fetch('/api/v1/captcha/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        credentials: 'include',
+        body: JSON.stringify({ captchaId: currentCaptchaId, userInput: captchaCode })
+      });
+      const verifyData = await verifyRes.json();
+      
+      if (!verifyRes.ok || !verifyData.success) {
+        showToast('Invalid captcha code', 'error');
+        refreshCaptchaFromServer();
+        if (elements.captchaInput) elements.captchaInput.value = '';
+        setLoading(elements.sendCodeBtn, false);
+        return;
+      }
+      
+      // 发送邮箱验证码
+      const response = await fetch('/api/v1/auth/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        credentials: 'include',
+        body: JSON.stringify({ email: email })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        AppState.email = email;
+        if (elements.displayEmail) elements.displayEmail.textContent = maskEmail(email);
+        showStep(2);
+        startResendCountdown(60);
+        resetCodeInputs();
+        if (elements.captchaInput) elements.captchaInput.value = '';
+        showToast('Verification code sent to your email', 'success');
+        setTimeout(() => elements.codeInputs[0]?.focus(), 300);
+      } else {
+        let errorMsg = 'Failed to send code';
+        if (data.error === 'EMAIL_ALREADY_REGISTERED') errorMsg = 'Email already registered';
+        showToast(errorMsg, 'error');
+        refreshCaptchaFromServer();
+        if (elements.captchaInput) elements.captchaInput.value = '';
+      }
+    } catch (error) {
+      console.error('Send code error:', error);
+      showToast('Network error, please try again', 'error');
+    } finally {
+      setLoading(elements.sendCodeBtn, false);
+    }
+  }
+
+  // 验证邮箱验证码
+  async function verifyCode() {
+    if (AppState.requestInProgress) return;
+    
+    let code = '';
+    elements.codeInputs.forEach(input => code += input.value);
+    if (code.length !== 6 || !/^\d+$/.test(code)) {
+      showToast('Please enter a valid 6-digit code', 'error');
+      return;
+    }
+    
+    if (!AppState.email) {
+      showToast('Session expired, please start over', 'error');
+      showStep(1);
+      return;
+    }
+    
+    setLoading(elements.verifyCodeBtn, true, 'Verifying...');
+    
+    try {
+      const response = await fetch('/api/v1/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        credentials: 'include',
+        body: JSON.stringify({ email: AppState.email, code: code })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        AppState.tempToken = data.data?.token;
+        openModal(elements.passwordModal);
+        setTimeout(() => elements.newPassword?.focus(), 300);
+      } else {
+        let errorMsg = 'Invalid verification code';
+        if (data.error === 'INVALID_OR_EXPIRED_CODE') errorMsg = 'Code expired, please request a new one';
+        showToast(errorMsg, 'error');
+        resetCodeInputs();
+        if (data.error === 'INVALID_OR_EXPIRED_CODE') startResendCountdown(60);
+      }
+    } catch (error) {
+      console.error('Verify code error:', error);
+      showToast('Network error, please try again', 'error');
+    } finally {
+      setLoading(elements.verifyCodeBtn, false);
+    }
+  }
+
+  // 重发验证码
+  async function resendCode(e) {
+    e.preventDefault();
+    if (AppState.requestInProgress || !AppState.email) {
+      showToast('Please start over', 'error');
+      showStep(1);
+      return;
+    }
+    
+    setLoading(elements.resendLink, true, 'Sending...');
+    
+    try {
+      const response = await fetch('/api/v1/auth/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        credentials: 'include',
+        body: JSON.stringify({ email: AppState.email })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        showToast('New code sent', 'success');
+        startResendCountdown(60);
+        resetCodeInputs();
+      } else {
+        showToast('Failed to resend code', 'error');
+      }
+    } catch (error) {
+      showToast('Network error', 'error');
+    } finally {
+      setLoading(elements.resendLink, false);
+    }
+  }
+
+  // 完成注册
+  async function completeRegistration() {
+    if (AppState.requestInProgress) return;
+    
+    const password = elements.newPassword?.value || '';
+    const confirm = elements.confirmNewPassword?.value || '';
+    const termsChecked = elements.termsCheckbox?.checked || false;
+    const validation = validatePassword(password);
+    
+    if (!validation.valid) {
+      showToast('Password does not meet requirements', 'error');
+      return;
+    }
+    if (password !== confirm) {
+      showToast('Passwords do not match', 'error');
+      return;
+    }
+    if (!termsChecked) {
+      showToast('You must agree to the Terms of Service', 'error');
+      return;
+    }
+    if (!AppState.email || !AppState.tempToken) {
+      showToast('Session expired, please start over', 'error');
+      closeModal(elements.passwordModal);
+      showStep(1);
+      return;
+    }
+    
+    setLoading(elements.completeRegistrationBtn, true, 'Creating account...');
+    
+    try {
+      const response = await fetch('/api/v1/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        credentials: 'include',
+        body: JSON.stringify({
+          username: AppState.email,
+          password: password,
+          token: AppState.tempToken
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        closeModal(elements.passwordModal);
+        openModal(elements.trustModal);
+        startRedirectCountdown(5);
+      } else {
+        let errorMsg = 'Registration failed';
+        if (data.error === 'INVALID_TOKEN') errorMsg = 'Verification expired, please start over';
+        showToast(errorMsg, 'error');
+        if (data.error === 'INVALID_TOKEN') {
+          closeModal(elements.passwordModal);
+          showStep(1);
+        }
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      showToast('Network error, please try again', 'error');
+    } finally {
+      setLoading(elements.completeRegistrationBtn, false);
+    }
+  }
+
+  // 设置验证码输入框事件
+  function setupCodeInputs() {
+    elements.codeInputs.forEach((input, idx) => {
+      input.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        if (e.target.value.length === 1 && idx < 5) {
+          elements.codeInputs[idx + 1].focus();
+        }
+        updateVerifyButtonState();
+        let allFilled = true;
+        elements.codeInputs.forEach(inp => { if (inp.value.length !== 1) allFilled = false; });
+        if (allFilled && elements.verifyCodeBtn && !elements.verifyCodeBtn.disabled) {
+          setTimeout(() => verifyCode(), 200);
+        }
+      });
+      
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const paste = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+        paste.split('').forEach((char, i) => {
+          if (elements.codeInputs[i]) elements.codeInputs[i].value = char;
+        });
+        if (elements.codeInputs[paste.length - 1]) elements.codeInputs[paste.length - 1].focus();
+        updateVerifyButtonState();
+        if (paste.length === 6) setTimeout(() => verifyCode(), 200);
+      });
+      
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !input.value && idx > 0) {
+          elements.codeInputs[idx - 1].focus();
+        }
+        if (e.key === 'ArrowLeft' && idx > 0) elements.codeInputs[idx - 1].focus();
+        if (e.key === 'ArrowRight' && idx < 5) elements.codeInputs[idx + 1].focus();
+      });
+    });
+  }
+
+  // 绑定事件
+  function bindEvents() {
+    if (elements.emailInput) elements.emailInput.addEventListener('input', checkFormValidity);
+    if (elements.captchaInput) elements.captchaInput.addEventListener('input', checkFormValidity);
+    if (elements.sendCodeBtn) elements.sendCodeBtn.addEventListener('click', sendCode);
+    if (elements.verifyCodeBtn) elements.verifyCodeBtn.addEventListener('click', verifyCode);
+    if (elements.resendLink) elements.resendLink.addEventListener('click', resendCode);
+    if (elements.backToEmail) elements.backToEmail.addEventListener('click', (e) => {
+      e.preventDefault();
+      showStep(1);
+      AppState.email = '';
+      AppState.tempToken = null;
+      if (elements.emailInput) {
+        elements.emailInput.value = '';
+        elements.emailInput.focus();
+      }
+      if (elements.captchaInput) elements.captchaInput.value = '';
+      refreshCaptchaFromServer();
+      checkFormValidity();
+    });
+    if (elements.completeRegistrationBtn) elements.completeRegistrationBtn.addEventListener('click', completeRegistration);
+    if (elements.goToHomeBtn) elements.goToHomeBtn.addEventListener('click', () => window.location.href = '/shell.html?page=home');
+    if (elements.captchaBox) elements.captchaBox.addEventListener('click', refreshCaptchaFromServer);
+    if (elements.refreshCaptchaBtn) elements.refreshCaptchaBtn.addEventListener('click', refreshCaptchaFromServer);
+    if (elements.newPassword) elements.newPassword.addEventListener('input', updatePasswordValidation);
+    if (elements.confirmNewPassword) elements.confirmNewPassword.addEventListener('input', updatePasswordValidation);
+    if (elements.termsCheckbox) elements.termsCheckbox.addEventListener('change', updatePasswordValidation);
+    
+    if (elements.passwordModal) {
+      elements.passwordModal.addEventListener('click', (e) => {
+        if (e.target === elements.passwordModal && confirm('Are you sure? Your progress will be lost.')) {
+          closeModal(elements.passwordModal);
+          showStep(1);
+        }
+      });
+    }
+  }
+
+  // 主题切换
+  function getThemeMode() { return localStorage.getItem('theme') || 'light'; }
+  function setThemeMode(theme) { localStorage.setItem('theme', theme); updateThemeUI(); }
+  function updateThemeUI() {
+    const theme = getThemeMode();
+    const icon = document.querySelector('#themeToggle i');
+    if (theme === 'dark') {
+      document.body.classList.add('dark');
+      icon?.classList.remove('fa-moon');
+      icon?.classList.add('fa-sun');
+    } else {
+      document.body.classList.remove('dark');
+      icon?.classList.remove('fa-sun');
+      icon?.classList.add('fa-moon');
+    }
+  }
+  document.getElementById('themeToggle')?.addEventListener('click', () => {
+    const newTheme = getThemeMode() === 'dark' ? 'light' : 'dark';
+    setThemeMode(newTheme);
+  });
+
+  // 初始化
+  async function init() {
+    setupCodeInputs();
+    bindEvents();
+    updateThemeUI();
+    checkFormValidity();
+    await refreshCaptchaFromServer();
+    showStep(1);
+    console.log('Register page initialized - real backend integration');
+  }
+  
+  init();
+</script>
+</body>
+</html>

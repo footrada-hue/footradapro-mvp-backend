@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>AI Analysis Report · FootRadaPro</title>
+  <meta name="description" content="AI-generated match analysis report with detailed insights">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ========== 8px 网格系统 ========== */
+    :root {
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 28px;
+      --space-8: 32px;
+      --space-9: 40px;
+      
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-base: 1rem;
+      --font-md: 1.125rem;
+      --font-lg: 1.25rem;
+      --font-xl: 1.5rem;
+      --font-2xl: 1.75rem;
+      
+      --radius-sm: 12px;
+      --radius-md: 16px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --radius-2xl: 28px;
+      --radius-full: 9999px;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-fast: 0.15s;
+      --duration-base: 0.24s;
+    }
+
+    /* ========== 玻璃质感主题 ========== */
+    :root {
+      --bg-gradient-start: rgba(248, 250, 252, 0.95);
+      --bg-gradient-end: rgba(241, 245, 249, 0.98);
+      --glass-bg: rgba(255, 255, 255, 0.52);
+      --glass-border: rgba(59, 130, 246, 0.12);
+      --glass-shadow: 0 2px 8px rgba(0,0,0,0.02), 0 8px 24px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.9);
+      --glass-shadow-hover: 0 8px 24px rgba(0,0,0,0.06), 0 16px 32px -12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.95);
+      --accent: #2563eb;
+      --accent-glow: rgba(37,99,235,0.2);
+      --accent-gradient: linear-gradient(135deg, #2563eb, #4f46e5);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --border-light: rgba(148,163,184,0.12);
+      --card-bg: rgba(255,255,255,0.65);
+      --ticker-bg: rgba(37,99,235,0.9);
+      --badge-soft: rgba(37,99,235,0.08);
+    }
+
+    body.dark {
+      --bg-gradient-start: rgba(10,16,30,0.96);
+      --bg-gradient-end: rgba(2,6,18,0.98);
+      --glass-bg: rgba(20,28,44,0.55);
+      --glass-border: rgba(59,130,246,0.2);
+      --glass-shadow: 0 2px 8px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04);
+      --glass-shadow-hover: 0 8px 24px rgba(0,0,0,0.35), 0 16px 32px -12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59,130,246,0.3);
+      --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #f87171;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --card-bg: rgba(20,28,44,0.6);
+    }
+
+    body {
+      background: radial-gradient(ellipse at 30% 40%, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: ''; position: fixed; top:0; left:0; width:100%; height:100%;
+      background-image: repeating-linear-gradient(90deg, rgba(59,130,246,0.015) 0px, rgba(59,130,246,0.015) 1px, transparent 1px, transparent 40px),
+                        repeating-linear-gradient(0deg, rgba(59,130,246,0.015) 0px, rgba(59,130,246,0.015) 1px, transparent 1px, transparent 40px);
+      background-size: 40px 40px;
+      pointer-events: none; z-index:0;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--border-light); border-radius: var(--radius-full); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: var(--radius-full); }
+
+    .app-wrapper { position: relative; z-index:1; min-height:100vh; display: flex; flex-direction: column; }
+
+    /* 跑马灯 */
+    .ticker {
+      background: var(--ticker-bg); backdrop-filter: blur(12px); color: white; padding: 10px 0; font-size: var(--font-sm); font-weight: 500;
+      white-space: nowrap; overflow: hidden; border-bottom: 1px solid var(--glass-border);
+    }
+    .ticker-content { display: inline-block; animation: ticker 32s linear infinite; padding-left: 100%; letter-spacing: 0.3px; }
+    @keyframes ticker { to { transform: translateX(-100%); } }
+
+    /* 头部导航 */
+    .header {
+      background: var(--glass-bg); backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border);
+      padding: var(--space-4) var(--space-6); position: sticky; top:0; z-index:50; box-shadow: var(--glass-shadow);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: var(--space-3); }
+    .logo-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+    .logo-text { font-size: var(--font-md); font-weight: 700; background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .header-actions { display: flex; gap: var(--space-5); align-items: center; }
+    .header-actions i { font-size: 20px; color: var(--text-secondary); cursor: pointer; transition: all var(--duration-fast) var(--ease-out); }
+    .user-badge { width: 38px; height: 38px; border-radius: 50%; background: var(--badge-soft); backdrop-filter: blur(8px); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 600; border: 1px solid var(--glass-border); }
+
+    /* 主内容区 */
+    .container { display: flex; flex:1; padding: var(--space-6); gap: var(--space-6); max-width: 900px; margin: 0 auto; width: 100%; }
+    .content { flex:1; }
+
+    /* 模式指示器 */
+    .mode-indicator {
+      display: inline-flex; align-items: center; gap: var(--space-2); background: var(--badge-soft); backdrop-filter: blur(8px);
+      padding: 6px 16px; border-radius: var(--radius-full); width: fit-content; margin-bottom: var(--space-5);
+      font-size: var(--font-sm);
+    }
+    .mode-indicator .sandbox-mode-text { color: #8b5cf6; font-weight: 600; }
+    .mode-indicator .live-mode-text { color: #f97316; font-weight: 600; }
+    .test-badge-mode { background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white; padding: 4px 12px; border-radius: var(--radius-full); font-size: var(--font-xs); margin-left: var(--space-3); }
+
+    /* 卡片 */
+    .card {
+      background: var(--card-bg); backdrop-filter: blur(24px); border-radius: var(--radius-xl);
+      border: 1px solid var(--glass-border); padding: var(--space-6);
+      margin-bottom: var(--space-6);
+      transition: all var(--duration-base);
+    }
+    .card:last-child { margin-bottom: 0; }
+    .card-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-5);
+      padding-bottom: var(--space-3); border-bottom: 1px solid var(--border-light);
+    }
+    .card-title { display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-base); font-weight: 600; color: var(--text-secondary); }
+    .card-title i { color: var(--accent); font-size: var(--font-lg); }
+
+    /* 比赛信息卡片 - 双队徽布局 */
+    .match-header {
+      text-align: center; margin-bottom: var(--space-6);
+    }
+    .teams-container {
+      display: flex; align-items: center; justify-content: center; gap: var(--space-4);
+      margin-bottom: var(--space-4);
+    }
+    .team-block {
+      display: flex; align-items: center; gap: var(--space-3);
+    }
+    .home-team-block { flex-direction: row; }
+    .away-team-block { flex-direction: row; }
+    .team-badge {
+      width: 64px; height: 64px; background: var(--badge-soft); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .team-badge i { font-size: 32px; color: var(--accent); }
+    .team-badge img { width: 100%; height: 100%; object-fit: cover; }
+    .team-name { font-weight: 700; font-size: var(--font-lg); }
+    .vs-divider {
+      color: var(--accent); font-size: var(--font-sm); font-weight: 700;
+      background: var(--badge-soft); padding: 6px 16px; border-radius: var(--radius-full);
+    }
+    .match-score {
+      font-size: var(--font-2xl); font-weight: 800; font-family: monospace;
+      margin: var(--space-4) 0 var(--space-2);
+    }
+    .match-result {
+      display: inline-block; padding: 4px 16px; border-radius: var(--radius-full);
+      font-size: var(--font-sm); font-weight: 700; margin-bottom: var(--space-3);
+    }
+    .match-result.win { background: rgba(16,185,129,0.15); color: #10b981; }
+    .match-result.loss { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .match-result.draw { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .match-meta {
+      display: flex; justify-content: center; gap: var(--space-5); flex-wrap: wrap;
+      color: var(--text-muted); font-size: var(--font-sm);
+    }
+
+    /* 报告内容 */
+    .report-text {
+      line-height: 1.8; font-size: var(--font-sm); color: var(--text-secondary);
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .action-buttons {
+      display: flex; gap: var(--space-4); margin-top: var(--space-6);
+    }
+    .action-btn {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: var(--space-2);
+      padding: 12px; border-radius: var(--radius-full); font-weight: 600; cursor: pointer;
+      transition: all var(--duration-fast);
+    }
+    .action-btn.copy { background: var(--badge-soft); border: 1px solid var(--glass-border); color: var(--text-secondary); }
+    .action-btn.download { background: var(--accent-gradient); color: white; }
+    .action-btn.copy:hover { background: var(--accent); color: white; }
+    .action-btn.download:hover { transform: translateY(-2px); box-shadow: 0 4px 12px var(--accent-glow); }
+
+    /* 加载状态 */
+    .loading-state { text-align: center; padding: 60px; }
+    .loading-spinner { width: 48px; height: 48px; border: 3px solid var(--border-light); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-state { text-align: center; padding: 60px; background: var(--card-bg); backdrop-filter: blur(20px); border-radius: var(--radius-2xl); }
+    .error-state i { font-size: 64px; color: var(--danger); margin-bottom: 16px; }
+
+    /* 底部导航 */
+    .bottom-nav { display: none; position: fixed; bottom:0; left:0; right:0; background: var(--card-bg); backdrop-filter: blur(24px); border-top: 1px solid var(--glass-border); padding: var(--space-3) var(--space-5); z-index:60; }
+    .bottom-nav-items { display: flex; justify-content: space-around; max-width: 500px; margin:0 auto; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); font-size: var(--font-xs); color: var(--text-muted); cursor: pointer; padding: var(--space-2) 0; transition: all var(--duration-fast); }
+    .nav-item.active { color: var(--accent); }
+    .nav-item i { font-size: 22px; }
+
+    /* 悬浮按钮 */
+    .fab { position: fixed; bottom: 28px; right: 28px; width: 52px; height: 52px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px var(--accent-glow); z-index:55; cursor: pointer; transition: all var(--duration-fast); border: 1px solid rgba(255,255,255,0.2); }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      background: var(--success); color: white; padding: 12px 24px;
+      border-radius: var(--radius-full); font-size: var(--font-sm);
+      z-index: 1000; animation: fadeInUp 0.3s ease;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translate(-50%, 20px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .container { padding: var(--space-4); }
+      .card { padding: var(--space-5); }
+      
+      .team-badge { width: 48px; height: 48px; }
+      .team-badge i { font-size: 24px; }
+      .team-name { font-size: var(--font-base); }
+      .vs-divider { padding: 4px 12px; font-size: var(--font-xs); }
+      .match-score { font-size: var(--font-xl); }
+      
+      .bottom-nav { display: block; }
+      body { padding-bottom: 70px; }
+      .fab { bottom: 80px; right: 20px; width: 48px; height: 48px; }
+    }
+
+    @media (max-width: 480px) {
+      .container { padding: var(--space-3); }
+      .card { padding: var(--space-4); }
+      
+      .teams-container { gap: var(--space-2); }
+      .team-badge { width: 40px; height: 40px; }
+      .team-badge i { font-size: 20px; }
+      .team-name { font-size: var(--font-sm); }
+      .vs-divider { padding: 2px 8px; font-size: 10px; }
+      .match-score { font-size: var(--font-lg); }
+      .match-meta { gap: var(--space-3); font-size: var(--font-xs); }
+      .action-buttons { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <div class="ticker"><div class="ticker-content">⚡ FOOTRADA · AI-Powered Football Trading &nbsp;|&nbsp; 🔒 Trust Anchor Enabled &nbsp;|&nbsp; 🏆 World Cup 2026</div></div>
+
+  <div class="header">
+    <div class="logo"><div class="logo-icon">⚽</div><div class="logo-text">FootRadaPro</div></div>
+    <div class="header-actions"><i class="fa-regular fa-moon" id="themeToggle"></i><div class="user-badge">EN</div></div>
+  </div>
+
+  <div class="container">
+    <main class="content">
+      <div class="mode-indicator">
+        <i class="fa-solid fa-info-circle"></i>
+        <span>Current Mode: </span>
+        <span id="currentModeText" class="sandbox-mode-text">Sandbox</span>
+        <span id="testModeBadge" class="test-badge-mode" style="display: none;">🧪 Test Mode</span>
+      </div>
+
+      <!-- 加载状态 -->
+      <div id="loadingState" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading AI analysis report...</p>
+      </div>
+
+      <!-- 错误状态 -->
+      <div id="errorState" class="error-state" style="display: none;">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <p id="errorMessage">Failed to load report</p>
+        <button class="action-btn download" style="margin-top: 20px; width: auto; padding: 10px 24px;" onclick="location.reload()">Retry</button>
+      </div>
+
+      <!-- 报告内容 -->
+      <div id="reportContent" style="display: none;">
+        <!-- 比赛信息卡片 -->
+        <div class="card">
+          <div class="match-header">
+            <div class="teams-container">
+              <div class="team-block home-team-block">
+                <div class="team-badge" id="homeCrest">
+                  <i class="fas fa-futbol"></i>
+                  <img id="homeImg" style="display: none;">
+                </div>
+                <span class="team-name" id="homeName">Home Team</span>
+              </div>
+              <span class="vs-divider">VS</span>
+              <div class="team-block away-team-block">
+                <span class="team-name" id="awayName">Away Team</span>
+                <div class="team-badge" id="awayCrest">
+                  <i class="fas fa-futbol"></i>
+                  <img id="awayImg" style="display: none;">
+                </div>
+              </div>
+            </div>
+            <div class="match-score" id="matchScore">0 : 0</div>
+            <div><span class="match-result win" id="matchResult" style="display: none;">WIN</span></div>
+            <div class="match-meta">
+              <span id="matchLeague"><i class="fas fa-trophy"></i> Premier League</span>
+              <span id="matchTime"><i class="far fa-calendar"></i> Jan 15, 2025</span>
+              <span id="matchStatus"><i class="fas fa-flag-checkered"></i> Completed</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI 分析报告卡片 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-file-alt"></i> AI Analysis Report</div>
+          </div>
+          <div class="report-text" id="reportText">
+            Loading report content...
+          </div>
+          <div class="action-buttons">
+            <button class="action-btn copy" id="copyBtn"><i class="fa-regular fa-copy"></i> Copy</button>
+            <button class="action-btn download" id="downloadBtn"><i class="fa-solid fa-download"></i> Download</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="bottom-nav-items">
+      <div class="nav-item" data-nav="home"><i class="fa-solid fa-home"></i><span>Home</span></div>
+      <div class="nav-item" data-nav="market"><i class="fa-solid fa-chart-line"></i><span>Market</span></div>
+      <div class="nav-item" data-nav="records"><i class="fa-solid fa-list"></i><span>Records</span></div>
+      <div class="nav-item active" data-nav="support"><i class="fa-solid fa-headset"></i><span>Support</span></div>
+      <div class="nav-item" data-nav="profile"><i class="fa-solid fa-user"></i><span>Profile</span></div>
+    </div>
+  </div>
+
+  <div class="fab" onclick="alert('Support: contact via Telegram')"><i class="fa-solid fa-comment-dots"></i></div>
+</div>
+
+<script>
+  // 获取 URL 参数
+  const urlParams = new URLSearchParams(window.location.search);
+  const matchId = urlParams.get('match_id');
+  const authId = urlParams.get('auth_id');
+
+  // DOM 元素
+  const loadingState = document.getElementById('loadingState');
+  const errorState = document.getElementById('errorState');
+  const errorMessage = document.getElementById('errorMessage');
+  const reportContent = document.getElementById('reportContent');
+
+  const homeImg = document.getElementById('homeImg');
+  const awayImg = document.getElementById('awayImg');
+  const homeName = document.getElementById('homeName');
+  const awayName = document.getElementById('awayName');
+  const homeCrest = document.getElementById('homeCrest');
+  const awayCrest = document.getElementById('awayCrest');
+
+  const matchScore = document.getElementById('matchScore');
+  const matchResult = document.getElementById('matchResult');
+  const matchLeague = document.getElementById('matchLeague');
+  const matchTime = document.getElementById('matchTime');
+  const matchStatus = document.getElementById('matchStatus');
+
+  const reportText = document.getElementById('reportText');
+  const copyBtn = document.getElementById('copyBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+
+  // 全局状态
+  function getAppMode() { return localStorage.getItem('appMode') || 'sandbox'; }
+  function getThemeMode() { return localStorage.getItem('theme') || 'light'; }
+
+  function updateThemeUI() {
+    const theme = getThemeMode();
+    if (theme === 'dark') document.body.classList.add('dark');
+    else document.body.classList.remove('dark');
+    const icon = document.getElementById('themeToggle');
+    if (icon) {
+      if (theme === 'dark') { icon.classList.remove('fa-moon'); icon.classList.add('fa-sun'); }
+      else { icon.classList.remove('fa-sun'); icon.classList.add('fa-moon'); }
+    }
+  }
+
+  function updateModeUI() {
+    const isSandbox = getAppMode() === 'sandbox';
+    const modeText = document.getElementById('currentModeText');
+    if (modeText) {
+      modeText.textContent = isSandbox ? 'Sandbox' : 'Live';
+      modeText.className = isSandbox ? 'sandbox-mode-text' : 'live-mode-text';
+    }
+    const testBadge = document.getElementById('testModeBadge');
+    if (testBadge) testBadge.style.display = isSandbox ? 'inline-flex' : 'none';
+  }
+
+  function formatDateTime(dateStr) {
+    if (!dateStr) return '-';
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleString('en-US', {
+        year: 'numeric', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    } catch { return '-'; }
+  }
+
+  function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = '<i class="fas fa-check-circle"></i> ' + message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
+  }
+
+  // 模拟报告数据（演示用）
+  const mockReportData = {
+    home_team: 'Liverpool',
+    away_team: 'Manchester City',
+    home_score: 2,
+    away_score: 1,
+    league: 'Premier League',
+    match_time: new Date(Date.now() - 7 * 24 * 3600000).toISOString(),
+    status: 'completed',
+    report_text: 'AI Analysis Report - Match: Liverpool vs Manchester City\n\n' +
+      'Key Insights:\n' +
+      '• Liverpool dominated possession with 58% control throughout the match.\n' +
+      '• Manchester City had 12 shots on target but only converted 1 goal.\n' +
+      '• Liverpool\'s defensive line held strong against City\'attack waves.\n' +
+      '• AI strategy performed well with 85% accuracy in predicting match flow.\n\n' +
+      'Performance Metrics:\n' +
+      '• Authorization Amount: 200 USDT\n' +
+      '• AI Allocation: 30% (60 USDT deployed)\n' +
+      '• Strategy Return: +13.50 USDT (22.5%)\n' +
+      '• Net Profit: +10.80 USDT after 20% strategy fee.\n\n' +
+      'Conclusion: AI strategy successfully identified high-probability trading opportunities. Recommended to maintain current allocation strategy.'
+  };
+
+  function renderReport(data) {
+    homeName.textContent = data.home_team || 'Home';
+    awayName.textContent = data.away_team || 'Away';
+    
+    // 队徽处理
+    if (data.home_logo) {
+      homeImg.src = data.home_logo;
+      homeImg.style.display = 'block';
+      const defaultIcon = homeCrest?.querySelector('i');
+      if (defaultIcon) defaultIcon.style.display = 'none';
+    } else {
+      homeImg.style.display = 'none';
+      const defaultIcon = homeCrest?.querySelector('i');
+      if (defaultIcon) defaultIcon.style.display = 'flex';
+    }
+    
+    if (data.away_logo) {
+      awayImg.src = data.away_logo;
+      awayImg.style.display = 'block';
+      const defaultIcon = awayCrest?.querySelector('i');
+      if (defaultIcon) defaultIcon.style.display = 'none';
+    } else {
+      awayImg.style.display = 'none';
+      const defaultIcon = awayCrest?.querySelector('i');
+      if (defaultIcon) defaultIcon.style.display = 'flex';
+    }
+    
+    // 比分
+    matchScore.textContent = `${data.home_score || 0} : ${data.away_score || 0}`;
+    
+    // 结果徽章
+    if (data.home_score > data.away_score) {
+      matchResult.textContent = 'WIN';
+      matchResult.className = 'match-result win';
+      matchResult.style.display = 'inline-block';
+    } else if (data.home_score < data.away_score) {
+      matchResult.textContent = 'LOSS';
+      matchResult.className = 'match-result loss';
+      matchResult.style.display = 'inline-block';
+    } else {
+      matchResult.style.display = 'none';
+    }
+    
+    matchLeague.textContent = data.league || 'Unknown League';
+    matchTime.textContent = formatDateTime(data.match_time);
+    matchStatus.textContent = data.status === 'completed' ? 'Completed' : (data.status || 'Unknown');
+    
+    reportText.textContent = data.report_text || 'No report content available.';
+  }
+
+  function showError(msg) {
+    errorMessage.textContent = msg;
+    loadingState.style.display = 'none';
+    errorState.style.display = 'block';
+  }
+
+  function copyReport() {
+    const text = reportText?.textContent;
+    if (!text || text === 'Loading report content...') {
+      showToast('No content to copy');
+      return;
+    }
+    navigator.clipboard.writeText(text).then(() => showToast('Report copied')).catch(() => showToast('Copy failed'));
+  }
+
+  function downloadReport() {
+    const text = reportText?.textContent;
+    if (!text || text === 'Loading report content...') {
+      showToast('No content to download');
+      return;
+    }
+    const blob = new Blob([text], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `footrada_report_${matchId || 'demo'}.txt`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    showToast('Report downloaded');
+  }
+
+  // 主题切换
+  document.getElementById('themeToggle')?.addEventListener('click', () => {
+    const newTheme = getThemeMode() === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', newTheme);
+    window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
+    updateThemeUI();
+  });
+
+  window.addEventListener('appModeChanged', () => updateModeUI());
+  window.addEventListener('themeChanged', () => updateThemeUI());
+
+  // 底部导航
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const nav = item.dataset.nav;
+      if (nav === 'home') window.location.href = '/index.html';
+      if (nav === 'market') window.location.href = '/match-market.html';
+      if (nav === 'records') window.location.href = '/transaction-list.html';
+      if (nav === 'support') window.location.href = '/support.html';
+      if (nav === 'profile') window.location.href = '/profile.html';
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+
+  // 绑定事件
+  if (copyBtn) copyBtn.addEventListener('click', copyReport);
+  if (downloadBtn) downloadBtn.addEventListener('click', downloadReport);
+
+  // 初始化
+  updateThemeUI();
+  updateModeUI();
+
+// 加载报告（真实 API 调用）
+if (matchId) {
+  loadReport();
+} else {
+  // 演示模式：显示模拟数据（仅当没有 matchId 时）
+  setTimeout(() => {
+    loadingState.style.display = 'none';
+    reportContent.style.display = 'block';
+    renderReport(mockReportData);
+  }, 500);
+}
+</script>
+</body>
+</html>

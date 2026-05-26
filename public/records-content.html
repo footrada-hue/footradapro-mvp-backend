@@ -1,0 +1,657 @@
+<!-- 
+  records-content.html - 授权记录列表
+  SPA 架构：只包含主内容区，样式与首页统一
+  功能：显示用户的授权记录，支持按状态筛选
+-->
+
+<div class="records-container">
+  <!-- 模式指示器 -->
+  <div class="mode-indicator">
+    <i class="fa-solid fa-info-circle"></i>
+    <span>Current Mode: </span>
+    <span id="currentModeText" class="sandbox-mode-text">Sandbox</span>
+  </div>
+
+  <!-- 筛选标签 -->
+  <div class="filter-tabs">
+    <button class="filter-tab active" data-status="all">All</button>
+    <button class="filter-tab" data-status="pending">Active</button>
+    <button class="filter-tab" data-status="settled">History</button>
+  </div>
+
+  <!-- 统计卡片 -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card"><div class="stat-number" id="pendingCount">0</div><div class="stat-label">Active</div></div>
+    <div class="stat-card"><div class="stat-number" id="winCount">0</div><div class="stat-label">Won</div></div>
+    <div class="stat-card"><div class="stat-number" id="lossCount">0</div><div class="stat-label">Loss</div></div>
+  </div>
+
+  <!-- 加载状态 -->
+  <div id="loadingState" class="loading-state">
+    <div class="loading-spinner"></div>
+    <p>Loading authorizations...</p>
+  </div>
+
+  <!-- 空状态 -->
+  <div id="emptyState" class="empty-state" style="display: none;">
+    <i class="fa-solid fa-futbol"></i>
+    <p>No authorizations found</p>
+  </div>
+
+  <!-- 列表容器 -->
+  <div id="listContainer"></div>
+
+  <!-- 加载更多 -->
+  <div id="loadMore" class="load-more" style="display: none;">
+    <button class="load-more-btn" id="loadMoreBtn">Load More</button>
+  </div>
+</div>
+
+<style>
+/* ========== 授权记录样式 - 全部使用 CSS 变量 ========== */
+.records-container {
+  flex: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space-6);
+  width: 100%;
+}
+
+/* 模式指示器 */
+.mode-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--badge-soft);
+  backdrop-filter: blur(8px);
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  width: fit-content;
+  margin-bottom: var(--space-5);
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.mode-indicator .sandbox-mode-text { color: #8b5cf6; font-weight: 600; }
+.mode-indicator .live-mode-text { color: #f97316; font-weight: 600; }
+
+/* 筛选标签 */
+.filter-tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.filter-tab {
+  background: var(--badge-soft);
+  border: none;
+  padding: 10px 24px;
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  font-size: var(--font-sm);
+}
+
+.filter-tab.active {
+  background: var(--accent-gradient);
+  color: white;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+/* 统计卡片 */
+.stats-row {
+  display: flex;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.stat-card {
+  flex: 1;
+  background: var(--card-bg);
+  backdrop-filter: blur(24px);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  padding: var(--space-4) var(--space-3);
+  text-align: center;
+  transition: all var(--duration-fast);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+
+.stat-number {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+}
+
+/* 授权卡片 */
+.auth-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(24px);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--glass-border);
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+  cursor: pointer;
+  transition: all var(--duration-base);
+}
+
+.auth-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  box-shadow: var(--glass-shadow-hover);
+}
+
+/* 卡片头部 */
+.auth-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.auth-league {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.auth-status {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+}
+
+.auth-status.active { background: rgba(249,115,22,0.15); color: #f97316; }
+.auth-status.won { background: rgba(16,185,129,0.15); color: #10b981; }
+.auth-status.loss { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+/* 球队区域 */
+.auth-teams {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.team-with-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+}
+
+.team-logo-circle {
+  width: 56px;
+  height: 56px;
+  background: var(--badge-soft);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--glass-border);
+}
+
+.team-logo-circle i {
+  font-size: 28px;
+  color: var(--accent);
+}
+
+.team-name {
+  font-weight: 600;
+  font-size: var(--font-sm);
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.team-abbr {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.vs-badge {
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--badge-soft);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-xs);
+}
+
+/* 卡片底部 */
+.auth-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-light);
+}
+
+.auth-amount {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.auth-profit {
+  font-size: var(--font-sm);
+  font-weight: 600;
+}
+
+.auth-profit.positive { color: var(--success); }
+.auth-profit.negative { color: var(--danger); }
+.auth-profit.pending { color: var(--warning); }
+
+.auth-time {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-3);
+}
+
+/* 加载状态 */
+.loading-state {
+  text-align: center;
+  padding: 60px;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--border-light);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 60px;
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-2xl);
+}
+
+.empty-state i {
+  font-size: 64px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.empty-state p {
+  color: var(--text-muted);
+}
+
+/* 加载更多 */
+.load-more {
+  text-align: center;
+  margin-top: var(--space-4);
+}
+
+.load-more-btn {
+  background: var(--badge-soft);
+  border: 1px solid var(--glass-border);
+  padding: 12px 24px;
+  border-radius: var(--radius-full);
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.load-more-btn:hover {
+  background: var(--accent-gradient);
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .records-container {
+    padding: var(--space-4);
+  }
+  
+  .mode-indicator {
+    padding: 4px 14px;
+    font-size: var(--font-xs);
+    margin-bottom: var(--space-4);
+  }
+  
+  .filter-tab {
+    padding: 8px 18px;
+    font-size: var(--font-xs);
+  }
+  
+  .stats-row {
+    gap: var(--space-3);
+  }
+  
+  .stat-card {
+    padding: var(--space-3) var(--space-2);
+  }
+  
+  .stat-number {
+    font-size: var(--font-md);
+  }
+  
+  .auth-card {
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+  }
+  
+  .team-logo-circle {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .team-logo-circle i {
+    font-size: 24px;
+  }
+  
+  .team-name {
+    font-size: var(--font-xs);
+  }
+}
+
+@media (max-width: 480px) {
+  .records-container {
+    padding: var(--space-3);
+  }
+  
+  .stats-row {
+    gap: var(--space-2);
+  }
+  
+  .stat-card {
+    padding: var(--space-2);
+  }
+  
+  .stat-number {
+    font-size: var(--font-base);
+  }
+  
+  .team-logo-circle {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .team-logo-circle i {
+    font-size: 20px;
+  }
+  
+  .team-name {
+    font-size: 10px;
+  }
+  
+  .vs-badge {
+    padding: 2px 8px;
+    font-size: 10px;
+  }
+  
+  .auth-amount,
+  .auth-profit {
+    font-size: var(--font-xs);
+  }
+}
+</style>
+
+<script>
+// ========== 授权记录完整版 ==========
+(function() {
+  'use strict';
+
+  // 模拟数据（实际使用时替换为 API 调用）
+  const mockAuthorizations = [
+    { id: 1, auth_id: 'A1001', home_team: 'Liverpool', away_team: 'Manchester City', league: 'Premier League', amount: 200, profit: 0, status: 'pending', created_at: new Date(Date.now() - 2 * 3600000).toISOString() },
+    { id: 2, auth_id: 'A1002', home_team: 'Real Madrid', away_team: 'Barcelona', league: 'La Liga', amount: 300, profit: 45.20, status: 'settled', created_at: new Date(Date.now() - 24 * 3600000).toISOString() },
+    { id: 3, auth_id: 'A1003', home_team: 'Bayern Munich', away_team: 'Borussia Dortmund', league: 'Bundesliga', amount: 150, profit: 22.50, status: 'settled', created_at: new Date(Date.now() - 48 * 3600000).toISOString() },
+    { id: 4, auth_id: 'A1004', home_team: 'Paris SG', away_team: 'Olympique Marseille', league: 'Ligue 1', amount: 500, profit: -30.00, status: 'settled', created_at: new Date(Date.now() - 72 * 3600000).toISOString() }
+  ];
+
+  let currentStatus = 'all';
+  let items = [...mockAuthorizations];
+
+  // DOM 元素
+  const listContainer = document.getElementById('listContainer');
+  const loadingState = document.getElementById('loadingState');
+  const emptyState = document.getElementById('emptyState');
+  const loadMore = document.getElementById('loadMore');
+  const pendingCountEl = document.getElementById('pendingCount');
+  const winCountEl = document.getElementById('winCount');
+  const lossCountEl = document.getElementById('lossCount');
+  const currentModeText = document.getElementById('currentModeText');
+  const filterTabs = document.querySelectorAll('.filter-tab');
+
+  // 工具函数
+  const escapeHtml = (str) => {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+  };
+
+  // 获取货币符号
+  const getCurrencySymbol = () => {
+    if (window.ThemeManager && !window.ThemeManager.isTestMode) {
+      return 'USDT';
+    }
+    return 'tUSDT';
+  };
+
+// 获取队徽图片（支持真实图片URL）
+const getTeamLogoHtml = (teamName, logoUrl) => {
+    // 如果有真实的队徽 URL 且不是默认图片
+    if (logoUrl && logoUrl !== '/uploads/teams/default.png' && logoUrl !== '') {
+        return `<img src="${logoUrl}" alt="${escapeHtml(teamName)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'fas fa-futbol\'></i>'">`;
+    }
+    // 降级显示 Font Awesome 图标
+    return `<i class="fas fa-futbol"></i>`;
+};
+
+  // 格式化日期
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+  };
+
+  // 渲染单个授权卡片
+  const renderAuthCard = (item) => {
+    const dateStr = formatDate(item.created_at);
+    const isPending = item.status === 'pending';
+    const isWin = item.profit > 0;
+    const profitClass = isPending ? 'pending' : (isWin ? 'positive' : 'negative');
+    const profitText = isPending ? 'Pending' : (isWin ? `+${item.profit.toFixed(2)}` : `${item.profit.toFixed(2)}`);
+    const statusClass = isPending ? 'active' : (isWin ? 'won' : 'loss');
+    const statusText = isPending ? 'Active' : (isWin ? 'Won' : 'Loss');
+    const currency = getCurrencySymbol();
+
+    return `
+     
+<div class="auth-card" onclick="window.location.href='/shell.html?page=transaction-detail&authId=${item.auth_id}'">
+        <div class="auth-header">
+          <div class="auth-league"><i class="fas fa-trophy"></i> ${escapeHtml(item.league)}</div>
+          <div class="auth-status ${statusClass}">${statusText}</div>
+        </div>
+        <div class="auth-teams">
+          <div class="team-with-logo">
+            <div class="team-logo-circle">${getTeamLogoHtml(item.home_team, item.home_logo)}</div>
+            <div class="team-name">${escapeHtml(item.home_team)}</div>
+            <div class="team-abbr">${escapeHtml(item.home_team.substring(0, 3).toUpperCase())}</div>
+          </div>
+          <div class="vs-badge">VS</div>
+          <div class="team-with-logo">
+            <div class="team-logo-circle">${getTeamLogoHtml(item.away_team, item.away_logo)}</div>
+            <div class="team-name">${escapeHtml(item.away_team)}</div>
+            <div class="team-abbr">${escapeHtml(item.away_team.substring(0, 3).toUpperCase())}</div>
+          </div>
+        </div>
+        <div class="auth-footer">
+          <div class="auth-amount"><i class="fas fa-coins"></i> ${item.amount} ${currency}</div>
+          <div class="auth-profit ${profitClass}">${profitText}</div>
+        </div>
+        <div class="auth-time"><i class="far fa-clock"></i> ${dateStr}</div>
+      </div>
+    `;
+  };
+
+  // 渲染列表
+  const renderList = () => {
+    let filtered = items;
+if (currentStatus === 'pending') {
+    filtered = items.filter(i => i.status === 'pending');
+} else if (currentStatus === 'settled') {
+    filtered = items.filter(i => i.status === 'won' || i.status === 'lost');
+}
+
+    // 更新统计
+    const pendingCount = items.filter(i => i.status === 'pending').length;
+const winCount = items.filter(i => (i.status === 'won' || i.status === 'settled') && i.profit > 0).length;
+const lossCount = items.filter(i => (i.status === 'lost' || i.status === 'settled') && i.profit < 0).length;
+
+    if (pendingCountEl) pendingCountEl.textContent = pendingCount;
+    if (winCountEl) winCountEl.textContent = winCount;
+    if (lossCountEl) lossCountEl.textContent = lossCount;
+
+    // 更新列表
+    if (loadingState) loadingState.style.display = 'none';
+    
+    if (filtered.length === 0) {
+      if (listContainer) listContainer.innerHTML = '';
+      if (emptyState) emptyState.style.display = 'block';
+      if (loadMore) loadMore.style.display = 'none';
+    } else {
+      if (emptyState) emptyState.style.display = 'none';
+      if (listContainer) {
+        listContainer.innerHTML = filtered.map(item => renderAuthCard(item)).join('');
+      }
+      if (loadMore) loadMore.style.display = 'none';
+    }
+  };
+
+  // 切换筛选标签
+  const switchTab = (status) => {
+    currentStatus = status;
+    filterTabs.forEach(tab => {
+      if (tab.dataset.status === status) {
+        tab.classList.add('active');
+      } else {
+        tab.classList.remove('active');
+      }
+    });
+    renderList();
+  };
+
+  // 更新模式 UI
+  const updateModeUI = () => {
+    if (!currentModeText) return;
+    const isSandbox = window.ThemeManager ? window.ThemeManager.isTestMode : true;
+    currentModeText.textContent = isSandbox ? 'Sandbox' : 'Live';
+    currentModeText.className = isSandbox ? 'sandbox-mode-text' : 'live-mode-text';
+    
+    // 刷新列表以更新货币符号
+    renderList();
+  };
+
+  // 获取真实数据（实际使用时替换）
+const fetchAuthorizations = async () => {
+    try {
+        // 获取当前模式（测试/真实）
+        const isSandbox = window.ThemeManager ? window.ThemeManager.isTestMode : true;
+        
+        // 调用 API（后端会根据用户当前的 is_test_mode 自动过滤）
+        const response = await fetch('/api/v1/user/authorize/list?limit=100', {
+            credentials: 'include',
+            cache: 'no-cache'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            // 直接使用返回的数据
+            items = result.data.map(auth => ({
+                id: auth.id,
+                auth_id: auth.auth_id,
+                home_team: auth.home_team || 'Unknown',
+                away_team: auth.away_team || 'Unknown',
+                    home_logo: auth.home_logo || null,   // 新增
+    away_logo: auth.away_logo || null,   // 新增
+                league: auth.league || 'Football',
+                amount: auth.amount,
+                profit: auth.profit,
+                status: auth.status,  // 'pending', 'won', 'lost', 'settled'
+                created_at: auth.created_at
+            }));
+            return true;
+        }
+        
+        return false;
+    } catch (error) {
+        console.error('获取授权记录失败:', error);
+        return false;
+    }
+};
+  // 刷新所有数据
+  const refreshData = async () => {
+    if (loadingState) loadingState.style.display = 'block';
+    await fetchAuthorizations();
+    renderList();
+  };
+
+  // 绑定事件
+  const bindEvents = () => {
+    filterTabs.forEach(tab => {
+      tab.addEventListener('click', () => switchTab(tab.dataset.status));
+    });
+  };
+
+  // 监听模式切换
+  const initModeListener = () => {
+    if (window.ThemeManager) {
+      ThemeManager.addListener(async (state) => {
+        console.log('🔄 Records: Mode changed to', state.isTestMode ? 'Sandbox' : 'Live');
+        updateModeUI();
+        await refreshData();
+      });
+    }
+  };
+
+  // 初始化
+  const init = async () => {
+    console.log('📋 Records page initialized');
+    bindEvents();
+    initModeListener();
+    updateModeUI();
+    await refreshData();
+  };
+
+  // 执行初始化
+  init();
+})();
+</script>

@@ -1,0 +1,176 @@
+/* =========================================================
+   FOOTRADAPRO - 統一底部導航欄 (基於首頁樣式)
+   版本: 1.0.0
+   ========================================================= */
+
+/* 導航容器 */
+.bottom-nav {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: rgba(15, 20, 34, 0.8) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-top: 2px solid rgba(255, 107, 0, 0.4) !important;
+    height: 74px !important;
+    padding: 12px 0 !important;
+    z-index: 1000 !important;
+    display: flex !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+}
+
+/* 導航項 */
+.nav-item {
+    color: #9CA3AF !important;
+    text-decoration: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 4px !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    padding: 4px 0 !important;
+    transition: all 0.2s ease !important;
+    position: relative !important;
+    flex: 1 !important;
+    text-align: center !important;
+}
+
+/* 圖標 */
+.nav-item i {
+    font-size: 20px !important;
+    transition: all 0.2s ease !important;
+}
+
+/* 激活狀態 */
+.nav-item.active {
+    color: #FF6B00 !important;
+    transform: translateY(-2px) !important;
+}
+
+.nav-item.active i {
+    transform: translateY(-2px) !important;
+    filter: drop-shadow(0 0 8px #FF6B00) !important;
+}
+
+.nav-item.active::after {
+    content: '' !important;
+    position: absolute !important;
+    bottom: -2px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 20px !important;
+    height: 2px !important;
+    border-radius: 2px !important;
+    background: #FF6B00 !important;
+    box-shadow: 0 0 8px #FF6B00 !important;
+    animation: navGlowPulse 2s infinite !important;
+}
+
+/* 懸停效果 */
+.nav-item:hover:not(.active) {
+    color: #B0B7C6 !important;
+}
+
+.nav-item:hover:not(.active) i {
+    transform: translateY(-1px) !important;
+}
+
+/* 測試模式 */
+body.test-mode .bottom-nav {
+    border-top-color: rgba(37, 99, 235, 0.4) !important;
+}
+
+body.test-mode .nav-item.active {
+    color: #2563EB !important;
+}
+
+body.test-mode .nav-item.active i {
+    filter: drop-shadow(0 0 8px #2563EB) !important;
+}
+
+body.test-mode .nav-item.active::after {
+    background: #2563EB !important;
+    box-shadow: 0 0 8px #2563EB !important;
+}
+
+/* 亮色主題 */
+body[data-theme="light"] .bottom-nav {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-top-color: rgba(255, 107, 0, 0.3) !important;
+}
+
+body[data-theme="light"] .nav-item {
+    color: #64748B !important;
+}
+
+body[data-theme="light"] .nav-item.active {
+    color: #FF6B00 !important;
+}
+
+/* 動畫 */
+@keyframes navGlowPulse {
+    0%, 100% {
+        opacity: 0.6;
+        width: 20px;
+    }
+    50% {
+        opacity: 1;
+        width: 28px;
+    }
+}
+
+/* 響應式 - 小屏幕 */
+@media (max-width: 480px) {
+    .bottom-nav {
+        height: 66px !important;
+        padding: 8px 0 !important;
+    }
+    
+    .nav-item i {
+        font-size: 18px !important;
+    }
+    
+    .nav-item span {
+        font-size: 10px !important;
+    }
+    
+    .nav-item.active::after {
+        width: 16px !important;
+        height: 2px !important;
+    }
+}
+
+/* 響應式 - 超小屏幕 */
+@media (max-width: 360px) {
+    .bottom-nav {
+        height: 60px !important;
+        padding: 6px 0 !important;
+    }
+    
+    .nav-item i {
+        font-size: 16px !important;
+    }
+    
+    .nav-item span {
+        font-size: 9px !important;
+    }
+}
+
+/* 安全區域適配 (iPhone 等全面屏) */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .bottom-nav {
+        padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+        height: calc(74px + env(safe-area-inset-bottom)) !important;
+    }
+    
+    @media (max-width: 480px) {
+        .bottom-nav {
+            padding-bottom: calc(8px + env(safe-area-inset-bottom)) !important;
+            height: calc(66px + env(safe-area-inset-bottom)) !important;
+        }
+    }
+}

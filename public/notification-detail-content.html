@@ -1,0 +1,176 @@
+<div class="notification-detail-container">
+  <div class="detail-card">
+    <div class="detail-header">
+      <a href="/shell.html?page=notifications" class="back-link">
+        <i class="fas fa-arrow-left"></i> 返回列表
+      </a>
+      <span class="detail-type" id="detailType"></span>
+    </div>
+    <h1 class="detail-title" id="detailTitle">加载中...</h1>
+    <div class="detail-time" id="detailTime"></div>
+    <div class="detail-content" id="detailContent"></div>
+    <div class="detail-footer">
+      <button class="delete-btn" id="deleteBtn">
+        <i class="fas fa-trash"></i> 删除通知
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .notification-detail-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 32px 20px;
+  }
+  .detail-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border-radius: 28px;
+    border: 1px solid var(--glass-border);
+    padding: 32px;
+  }
+  .detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .back-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .back-link:hover {
+    text-decoration: underline;
+  }
+  .detail-type {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .detail-type.info { background: rgba(59,130,246,0.2); color: #60A5FA; }
+  .detail-type.success { background: rgba(16,185,129,0.2); color: #10B981; }
+  .detail-type.warning { background: rgba(245,158,11,0.2); color: #F59E0B; }
+  .detail-type.danger { background: rgba(239,68,68,0.2); color: #EF4444; }
+  .detail-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+  }
+  .detail-time {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .detail-content {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin-bottom: 32px;
+    white-space: pre-wrap;
+  }
+  .detail-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-light);
+  }
+  .delete-btn {
+    background: rgba(239,68,68,0.15);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 40px;
+    padding: 8px 20px;
+    color: #EF4444;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .delete-btn:hover {
+    background: rgba(239,68,68,0.3);
+  }
+  .loading-state {
+    text-align: center;
+    padding: 48px;
+    color: var(--text-muted);
+  }
+  @media (max-width: 768px) {
+    .notification-detail-container { padding: 16px; }
+    .detail-card { padding: 20px; }
+    .detail-title { font-size: 1.2rem; }
+  }
+</style>
+
+<script>
+(function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const notificationId = urlParams.get('id');
+  
+  if (!notificationId) {
+    document.getElementById('detailTitle').textContent = '通知不存在';
+    return;
+  }
+  
+  async function loadNotification() {
+    try {
+      const response = await fetch(`/api/v1/user/notifications/${notificationId}`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        const n = data.data;
+        document.getElementById('detailTitle').textContent = n.title || '通知';
+        document.getElementById('detailContent').textContent = n.content || '';
+        document.getElementById('detailTime').textContent = new Date(n.created_at).toLocaleString();
+        
+        const typeMap = {
+          'info': { class: 'info', text: '信息' },
+          'success': { class: 'success', text: '成功' },
+          'warning': { class: 'warning', text: '警告' },
+          'danger': { class: 'danger', text: '紧急' }
+        };
+        const typeInfo = typeMap[n.type] || typeMap.info;
+        document.getElementById('detailType').textContent = typeInfo.text;
+        document.getElementById('detailType').className = `detail-type ${typeInfo.class}`;
+      } else {
+        document.getElementById('detailTitle').textContent = '通知不存在或已被删除';
+      }
+    } catch (err) {
+      console.error('加载通知失败:', err);
+      document.getElementById('detailTitle').textContent = '加载失败';
+    }
+  }
+  
+  document.getElementById('deleteBtn')?.addEventListener('click', async () => {
+    if (!confirm('确定删除这条通知吗？')) return;
+    try {
+      const response = await fetch(`/api/v1/user/notifications/${notificationId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert('删除成功');
+        window.location.href = '/shell.html?page=notifications';
+      } else {
+        alert('删除失败');
+      }
+    } catch (err) {
+      console.error('删除失败:', err);
+      alert('删除失败');
+    }
+  });
+  
+  loadNotification();
+})();
+</script>

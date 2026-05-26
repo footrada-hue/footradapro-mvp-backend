@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Settings · FootRadaPro</title>
+  <meta name="description" content="Manage your account settings and preferences">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 32px;
+      --space-8: 40px;
+      --space-9: 48px;
+      
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-base: 1rem;
+      --font-md: 1.125rem;
+      --font-lg: 1.25rem;
+      --font-xl: 1.5rem;
+      --font-2xl: 2rem;
+      
+      --radius-sm: 10px;
+      --radius-md: 14px;
+      --radius-lg: 18px;
+      --radius-xl: 22px;
+      --radius-2xl: 26px;
+      --radius-full: 9999px;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-fast: 0.15s;
+      --duration-base: 0.24s;
+    }
+
+    /* 浅色主题 */
+    :root {
+      --bg-primary: #F8FAFC;
+      --bg-secondary: #FFFFFF;
+      --bg-tertiary: #F1F5F9;
+      --border-light: #E2E8F0;
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #94A3B8;
+      --accent: #0066FF;
+      --accent-light: rgba(0,102,255,0.08);
+      --accent-gradient: linear-gradient(135deg, #0066FF, #0052CC);
+      --success: #00A86B;
+      --success-light: rgba(0,168,107,0.1);
+      --warning: #F5A623;
+      --danger: #FF3B30;
+      --card-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.05);
+      --card-shadow-hover: 0 2px 4px rgba(0,0,0,0.03), 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    /* 深色主题 */
+    body.dark {
+      --bg-primary: #0F172A;
+      --bg-secondary: #1E293B;
+      --bg-tertiary: #334155;
+      --border-light: #334155;
+      --text-primary: #F1F5F9;
+      --text-secondary: #CBD5E1;
+      --text-muted: #94A3B8;
+      --accent: #3B82F6;
+      --accent-light: rgba(59,130,246,0.12);
+      --accent-gradient: linear-gradient(135deg, #3B82F6, #8B5CF6);
+      --success-light: rgba(52,211,153,0.12);
+      --card-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.3);
+      --card-shadow-hover: 0 2px 4px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* 主容器 */
+    .settings-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: var(--space-6);
+    }
+
+    /* 头部 */
+    .settings-header {
+      margin-bottom: var(--space-8);
+    }
+    .settings-header h1 {
+      font-size: var(--font-2xl);
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: var(--space-2);
+    }
+    .settings-header p {
+      color: var(--text-muted);
+      font-size: var(--font-sm);
+    }
+
+    /* 模式指示器 */
+    .mode-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: var(--bg-tertiary);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: var(--font-xs);
+      font-weight: 500;
+      margin-bottom: var(--space-5);
+    }
+    .mode-badge i { font-size: 12px; }
+    .mode-badge.sandbox { background: rgba(139,92,246,0.15); color: #8B5CF6; }
+    .mode-badge.live { background: rgba(249,115,22,0.15); color: #F97316; }
+
+    /* 设置分组 */
+    .settings-section {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-2xl);
+      border: 1px solid var(--border-light);
+      margin-bottom: var(--space-6);
+      overflow: hidden;
+      box-shadow: var(--card-shadow);
+      transition: box-shadow var(--duration-base);
+    }
+    .settings-section:hover {
+      box-shadow: var(--card-shadow-hover);
+    }
+
+    .section-header {
+      padding: var(--space-5) var(--space-6);
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .section-header i {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent-light);
+      border-radius: var(--radius-md);
+      color: var(--accent);
+      font-size: 16px;
+    }
+    .section-header h2 {
+      font-size: var(--font-md);
+      font-weight: 600;
+    }
+    .section-header p {
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* 设置项 */
+    .settings-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-4) var(--space-6);
+      border-bottom: 1px solid var(--border-light);
+      transition: background var(--duration-fast);
+    }
+    .settings-item:last-child {
+      border-bottom: none;
+    }
+    .settings-item:hover {
+      background: var(--bg-tertiary);
+    }
+    .item-info {
+      flex: 1;
+    }
+    .item-title {
+      font-size: var(--font-sm);
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+    .item-desc {
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+    }
+    .item-action {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    /* Toggle 开关 */
+    .toggle {
+      position: relative;
+      width: 48px;
+      height: 26px;
+      display: inline-block;
+    }
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--border-light);
+      transition: var(--duration-fast);
+      border-radius: var(--radius-full);
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: var(--duration-fast);
+      border-radius: 50%;
+    }
+    input:checked + .toggle-slider {
+      background: var(--accent);
+    }
+    input:checked + .toggle-slider:before {
+      transform: translateX(22px);
+    }
+
+    /* 语言选择器 */
+    .lang-selector {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: var(--bg-tertiary);
+      padding: 8px 16px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all var(--duration-fast);
+      font-size: var(--font-sm);
+    }
+    .lang-selector:hover {
+      background: var(--accent);
+      color: white;
+    }
+    .lang-selector i { font-size: 14px; }
+
+    /* 状态徽章 */
+    .badge {
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: var(--font-xs);
+      font-weight: 600;
+    }
+    .badge.success {
+      background: var(--success-light);
+      color: var(--success);
+    }
+    .badge.warning {
+      background: rgba(245,166,35,0.15);
+      color: var(--warning);
+    }
+    .badge.neutral {
+      background: var(--bg-tertiary);
+      color: var(--text-muted);
+    }
+
+    /* 链接按钮 */
+    .link-btn {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: var(--font-sm);
+      font-weight: 500;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: var(--radius-full);
+      transition: background var(--duration-fast);
+    }
+    .link-btn:hover {
+      background: var(--accent-light);
+    }
+
+    /* 退出按钮 */
+    .logout-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius-xl);
+      background: transparent;
+      border: 1px solid var(--border-light);
+      color: var(--danger);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--duration-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      margin-top: var(--space-4);
+    }
+    .logout-btn:hover {
+      background: rgba(255,59,48,0.1);
+      border-color: var(--danger);
+    }
+
+    /* 底部导航 */
+    .bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg-secondary);
+      backdrop-filter: blur(24px);
+      border-top: 1px solid var(--border-light);
+      padding: var(--space-3) var(--space-5);
+      z-index: 60;
+    }
+    .bottom-nav-items {
+      display: flex;
+      justify-content: space-around;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: var(--space-2) 0;
+      transition: all var(--duration-fast);
+    }
+    .nav-item.active {
+      color: var(--accent);
+    }
+    .nav-item i {
+      font-size: 22px;
+    }
+
+    /* 主题切换按钮 */
+    .theme-fab {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--card-shadow);
+      transition: all var(--duration-fast);
+      z-index: 55;
+    }
+    .theme-fab:hover {
+      transform: scale(1.05);
+    }
+    .theme-fab i {
+      font-size: 20px;
+      color: var(--text-secondary);
+    }
+
+    /* 模态框 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+    .modal-content {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-2xl);
+      width: 90%;
+      max-width: 320px;
+      padding: var(--space-6);
+      border: 1px solid var(--border-light);
+      animation: modalIn 0.2s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .modal-content h3 {
+      font-size: var(--font-lg);
+      font-weight: 600;
+      margin-bottom: var(--space-4);
+    }
+    .lang-option {
+      width: 100%;
+      padding: 12px 16px;
+      background: transparent;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      color: var(--text-primary);
+      font-size: var(--font-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all var(--duration-fast);
+      margin-bottom: var(--space-2);
+    }
+    .lang-option:hover {
+      background: var(--accent-light);
+      border-color: var(--accent);
+    }
+
+    @media (max-width: 768px) {
+      .settings-container { padding: var(--space-4); }
+      .settings-header h1 { font-size: var(--font-xl); }
+      .section-header { padding: var(--space-4) var(--space-5); }
+      .settings-item { padding: var(--space-3) var(--space-5); }
+      .bottom-nav { display: block; }
+      body { padding-bottom: 70px; }
+      .theme-fab { bottom: 80px; right: 20px; }
+    }
+  </style>
+</head>
+<body>
+<div class="settings-container">
+  <!-- 头部 -->
+  <div class="settings-header">
+    <div class="mode-badge sandbox" id="modeBadge">
+      <i class="fas fa-flask"></i>
+      <span>Sandbox Mode</span>
+    </div>
+    <h1>Settings</h1>
+    <p>Manage your account preferences and security</p>
+  </div>
+
+  <!-- 外观设置 -->
+  <div class="settings-section">
+    <div class="section-header">
+      <i class="fas fa-palette"></i>
+      <div>
+        <h2>Appearance</h2>
+        <p>Customize how FootRadaPro looks</p>
+      </div>
+    </div>
+    <div class="settings-item">
+      <div class="item-info">
+        <div class="item-title">Dark Mode</div>
+        <div class="item-desc">Switch between light and dark theme</div>
+      </div>
+      <div class="item-action">
+        <label class="toggle">
+          <input type="checkbox" id="themeToggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- 偏好设置 -->
+  <div class="settings-section">
+    <div class="section-header">
+      <i class="fas fa-sliders-h"></i>
+      <div>
+        <h2>Preferences</h2>
+        <p>Control your experience</p>
+      </div>
+    </div>
+    <div class="settings-item">
+      <div class="item-info">
+        <div class="item-title">Privacy Mode</div>
+        <div class="item-desc">Hide sensitive information on screen</div>
+      </div>
+      <div class="item-action">
+        <label class="toggle">
+          <input type="checkbox" id="privacyToggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="settings-item">
+      <div class="item-info">
+        <div class="item-title">Push Notifications</div>
+        <div class="item-desc">Receive alerts about trades and updates</div>
+      </div>
+      <div class="item-action">
+        <label class="toggle">
+          <input type="checkbox" id="notificationToggle" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="settings-item">
+      <div class="item-info">
+        <div class="item-title">Language</div>
+        <div class="item-desc">Select your preferred language</div>
+      </div>
+      <div class="item-action">
+        <div class="lang-selector" id="currentLang">
+          <i class="fas fa-globe"></i>
+          <span>English</span>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 安全设置 -->
+  <div class="settings-section">
+    <div class="section-header">
+      <i class="fas fa-shield-alt"></i>
+      <div>
+        <h2>Security</h2>
+        <p>Protect your account</p>
+      </div>
+    </div>
+    <div class="settings-item">
+      <div class="item-info">
+        <div class="item-title">Change Password</div>
+        <div class="item-desc">Update your login password</div>
+      </div>
+      <div class="item-action">
+        <button class="link-btn" onclick="location.href='/change-password.html'">Update →</button>
+      </div>
+    </div>
+    <div class="settings-item">
+      <div class="item-info">
+        <div class="item-title">Payment Password</div>
+        <div class="item-desc" id="payPasswordDesc">Required for withdrawals</div>
+      </div>
+      <div class="item-action">
+        <span class="badge warning" id="payPasswordStatus">Not Set</span>
+        <button class="link-btn" onclick="location.href='/set-paypassword.html'">Set →</button>
+      </div>
+    </div>
+    <div class="settings-item">
+      <div class="item-info">
+        <div class="item-title">Two-Factor Authentication</div>
+        <div class="item-desc">Add an extra layer of security</div>
+      </div>
+      <div class="item-action">
+        <span class="badge neutral">Coming Soon</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 账户操作 -->
+  <div class="settings-section">
+    <div class="section-header">
+      <i class="fas fa-user-circle"></i>
+      <div>
+        <h2>Account</h2>
+        <p>Manage your account</p>
+      </div>
+    </div>
+    <div class="settings-item">
+      <div class="item-info">
+        <div class="item-title">Logout</div>
+        <div class="item-desc">Sign out of your account</div>
+      </div>
+      <div class="item-action">
+        <button class="logout-btn" id="logoutBtn">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 底部导航 -->
+<div class="bottom-nav">
+  <div class="bottom-nav-items">
+    <div class="nav-item" data-nav="home"><i class="fa-solid fa-home"></i><span>Home</span></div>
+    <div class="nav-item" data-nav="market"><i class="fa-solid fa-chart-line"></i><span>Market</span></div>
+    <div class="nav-item" data-nav="records"><i class="fa-solid fa-list"></i><span>Records</span></div>
+    <div class="nav-item" data-nav="support"><i class="fa-solid fa-headset"></i><span>Support</span></div>
+    <div class="nav-item" data-nav="profile"><i class="fa-solid fa-user"></i><span>Profile</span></div>
+  </div>
+</div>
+
+<!-- 主题悬浮按钮 -->
+<div class="theme-fab" id="themeFab">
+  <i class="fa-regular fa-moon"></i>
+</div>
+
+<script>
+  // DOM 元素
+  const elements = {
+    themeToggle: document.getElementById('themeToggle'),
+    themeFab: document.getElementById('themeFab'),
+    privacyToggle: document.getElementById('privacyToggle'),
+    notificationToggle: document.getElementById('notificationToggle'),
+    currentLang: document.getElementById('currentLang'),
+    logoutBtn: document.getElementById('logoutBtn'),
+    modeBadge: document.getElementById('modeBadge'),
+    payPasswordStatus: document.getElementById('payPasswordStatus'),
+    payPasswordDesc: document.getElementById('payPasswordDesc')
+  };
+
+  // 全局状态
+  function getAppMode() { return localStorage.getItem('appMode') || 'sandbox'; }
+  function getThemeMode() { return localStorage.getItem('theme') || 'light'; }
+  function setThemeMode(theme) { localStorage.setItem('theme', theme); updateThemeUI(); }
+
+  function updateThemeUI() {
+    const theme = getThemeMode();
+    const isDark = theme === 'dark';
+    if (isDark) {
+      document.body.classList.add('dark');
+      if (elements.themeToggle) elements.themeToggle.checked = false;
+      if (elements.themeFab) {
+        elements.themeFab.innerHTML = '<i class="fa-regular fa-sun"></i>';
+      }
+    } else {
+      document.body.classList.remove('dark');
+      if (elements.themeToggle) elements.themeToggle.checked = true;
+      if (elements.themeFab) {
+        elements.themeFab.innerHTML = '<i class="fa-regular fa-moon"></i>';
+      }
+    }
+  }
+
+  function updateModeUI() {
+    const isSandbox = getAppMode() === 'sandbox';
+    if (elements.modeBadge) {
+      elements.modeBadge.className = `mode-badge ${isSandbox ? 'sandbox' : 'live'}`;
+      elements.modeBadge.innerHTML = isSandbox 
+        ? '<i class="fas fa-flask"></i><span>Sandbox Mode</span>'
+        : '<i class="fas fa-bolt"></i><span>Live Mode</span>';
+    }
+    if (elements.payPasswordStatus && elements.payPasswordDesc) {
+      if (isSandbox) {
+        elements.payPasswordStatus.textContent = 'N/A';
+        elements.payPasswordStatus.className = 'badge neutral';
+        elements.payPasswordDesc.textContent = 'Not required in test mode';
+      } else {
+        const hasPayPassword = localStorage.getItem('has_paypassword') === 'true';
+        elements.payPasswordStatus.textContent = hasPayPassword ? 'Set' : 'Not Set';
+        elements.payPasswordStatus.className = hasPayPassword ? 'badge success' : 'badge warning';
+        elements.payPasswordDesc.textContent = hasPayPassword ? 'Used for withdrawals' : 'Required for withdrawals';
+      }
+    }
+  }
+
+  // 初始化主题切换
+  function initThemeToggle() {
+    updateThemeUI();
+    const toggleTheme = () => {
+      const newTheme = getThemeMode() === 'dark' ? 'light' : 'dark';
+      setThemeMode(newTheme);
+    };
+    if (elements.themeToggle) elements.themeToggle.addEventListener('change', toggleTheme);
+    if (elements.themeFab) elements.themeFab.addEventListener('click', toggleTheme);
+  }
+
+  // 隐私模式
+  function initPrivacyToggle() {
+    if (!elements.privacyToggle) return;
+    const isPrivacyMode = localStorage.getItem('privacy_mode') === 'true';
+    elements.privacyToggle.checked = isPrivacyMode;
+    elements.privacyToggle.addEventListener('change', () => {
+      localStorage.setItem('privacy_mode', elements.privacyToggle.checked);
+    });
+  }
+
+  // 通知开关
+  function initNotificationToggle() {
+    if (!elements.notificationToggle) return;
+    const notificationsEnabled = localStorage.getItem('notifications_enabled') !== 'false';
+    elements.notificationToggle.checked = notificationsEnabled;
+    elements.notificationToggle.addEventListener('change', () => {
+      localStorage.setItem('notifications_enabled', elements.notificationToggle.checked);
+    });
+  }
+
+  // 语言选择器
+  function initLanguageSelector() {
+    if (!elements.currentLang) return;
+    const savedLang = localStorage.getItem('preferred_lang') || 'en';
+    const langMap = { 'en': 'English', 'zh': '中文', 'es': 'Español', 'ja': '日本語' };
+    elements.currentLang.querySelector('span').textContent = langMap[savedLang] || 'English';
+    elements.currentLang.addEventListener('click', showLanguageModal);
+  }
+
+  function showLanguageModal() {
+    const languages = [
+      { code: 'en', name: 'English', flag: '🇬🇧' },
+      { code: 'zh', name: '中文', flag: '🇨🇳' },
+      { code: 'es', name: 'Español', flag: '🇪🇸' },
+      { code: 'ja', name: '日本語', flag: '🇯🇵' }
+    ];
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-content">
+        <h3>Select Language</h3>
+        ${languages.map(lang => `
+          <button class="lang-option" data-lang="${lang.code}">
+            <span style="font-size: 20px;">${lang.flag}</span>
+            <span>${lang.name}</span>
+          </button>
+        `).join('')}
+        <button class="lang-option" style="justify-content: center; margin-top: 8px;" id="closeModalBtn">Cancel</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.querySelectorAll('.lang-option').forEach(btn => {
+      if (btn.id === 'closeModalBtn') {
+        btn.addEventListener('click', () => modal.remove());
+      } else {
+        btn.addEventListener('click', () => {
+          const langCode = btn.dataset.lang;
+          const langMap = { 'en': 'English', 'zh': '中文', 'es': 'Español', 'ja': '日本語' };
+          localStorage.setItem('preferred_lang', langCode);
+          if (elements.currentLang) elements.currentLang.querySelector('span').textContent = langMap[langCode] || 'English';
+          modal.remove();
+          window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: langCode } }));
+        });
+      }
+    });
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  }
+
+  // 退出登录
+  function initLogout() {
+    if (!elements.logoutBtn) return;
+    elements.logoutBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to logout?')) {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user');
+        fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' }).finally(() => {
+          window.location.href = '/login.html';
+        });
+      }
+    });
+  }
+
+  // 底部导航
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const nav = item.dataset.nav;
+      if (nav === 'home') window.location.href = '/index.html';
+      if (nav === 'market') window.location.href = '/match-market.html';
+      if (nav === 'records') window.location.href = '/transaction-list.html';
+      if (nav === 'support') window.location.href = '/support.html';
+      if (nav === 'profile') window.location.href = '/profile.html';
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+
+  // 监听全局状态
+  window.addEventListener('appModeChanged', () => updateModeUI());
+  window.addEventListener('themeChanged', () => updateThemeUI());
+
+  // 初始化
+  initThemeToggle();
+  initPrivacyToggle();
+  initNotificationToggle();
+  initLanguageSelector();
+  initLogout();
+  updateModeUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,621 @@
+<!-- 
+  notifications-content.html - 用户通知中心内容片段
+  用于 SPA 架构，通过 shell.html 的 #app-content 区域加载
+  功能：显示系统自动通知（清算结果、系统消息等）
+-->
+
+<div class="notifications-container">
+  <!-- 头部 -->
+  <div class="notifications-header">
+    <div class="header-title">
+      <i class="fas fa-bell"></i>
+      <h1>Notifications</h1>
+      <span class="unread-badge" id="unreadBadge">0</span>
+    </div>
+    <button class="mark-all-read-btn" id="markAllReadBtn">
+      <i class="fas fa-check-double"></i> Mark all as read
+    </button>
+  </div>
+
+  <!-- 筛选标签 -->
+  <div class="filter-tabs">
+    <button class="filter-tab active" data-filter="all">All</button>
+    <button class="filter-tab" data-filter="unread">Unread</button>
+    <button class="filter-tab" data-filter="settlement_win">🎉 Wins</button>
+    <button class="filter-tab" data-filter="settlement_loss">📉 Losses</button>
+  </div>
+
+  <!-- 加载状态 -->
+  <div id="loadingState" class="loading-state">
+    <div class="loading-spinner"></div>
+    <p>Loading notifications...</p>
+  </div>
+
+  <!-- 空状态 -->
+  <div id="emptyState" class="empty-state" style="display: none;">
+    <i class="fas fa-bell-slash"></i>
+    <p>No notifications yet</p>
+    <span>When you receive notifications, they'll appear here</span>
+  </div>
+
+  <!-- 通知列表 -->
+  <div id="notificationsList" class="notifications-list"></div>
+
+  <!-- 加载更多 -->
+  <div id="loadMore" class="load-more" style="display: none;">
+    <button class="load-more-btn" id="loadMoreBtn">Load More</button>
+  </div>
+</div>
+
+<style>
+  .notifications-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--space-6);
+    width: 100%;
+  }
+
+  .notifications-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-6);
+    flex-wrap: wrap;
+    gap: var(--space-4);
+  }
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .header-title i {
+    font-size: 28px;
+    color: var(--accent);
+  }
+  .header-title h1 {
+    font-size: var(--font-2xl);
+    font-weight: 700;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .unread-badge {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    padding: 2px 10px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .mark-all-read-btn {
+    background: transparent;
+    border: 1px solid var(--border-light);
+    padding: 8px 16px;
+    border-radius: 40px;
+    color: var(--text-secondary);
+    font-size: var(--font-sm);
+    cursor: pointer;
+    transition: all var(--duration-fast);
+  }
+  .mark-all-read-btn:hover {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .filter-tabs {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: var(--space-3);
+  }
+  .filter-tab {
+    background: transparent;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 40px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--duration-fast);
+    font-size: var(--font-sm);
+  }
+  .filter-tab.active {
+    background: var(--accent-gradient);
+    color: white;
+  }
+  .filter-tab:hover:not(.active) {
+    background: var(--badge-soft);
+    color: var(--text-primary);
+  }
+
+  .loading-state {
+    text-align: center;
+    padding: 60px;
+  }
+  .loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--border-light);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px;
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border-radius: var(--radius-2xl);
+  }
+  .empty-state i {
+    font-size: 64px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+  .empty-state p {
+    font-size: var(--font-lg);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .empty-state span {
+    font-size: var(--font-sm);
+    color: var(--text-muted);
+  }
+
+  .notifications-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--glass-border);
+    padding: var(--space-5);
+    cursor: pointer;
+    transition: all var(--duration-base);
+    position: relative;
+  }
+  .notification-item:hover {
+    transform: translateX(4px);
+    border-color: var(--accent);
+  }
+  .notification-item.unread {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.02));
+    border-left: 3px solid var(--accent);
+  }
+
+  .notification-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .notification-icon.win {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+  }
+  .notification-icon.loss {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+  }
+  .notification-icon.system {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+  }
+  .notification-icon i {
+    font-size: 24px;
+  }
+
+  .notification-content {
+    flex: 1;
+  }
+  .notification-title {
+    font-size: var(--font-base);
+    font-weight: 600;
+    margin-bottom: var(--space-1);
+    color: var(--text-primary);
+  }
+  .notification-message {
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-bottom: var(--space-2);
+  }
+  .notification-time {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+  }
+  .notification-time i {
+    font-size: 12px;
+  }
+
+  .unread-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+  }
+
+  .load-more {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--space-6);
+  }
+  .load-more-btn {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    padding: 12px 32px;
+    border-radius: var(--radius-full);
+    color: var(--accent);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--duration-fast);
+  }
+  .load-more-btn:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  @media (max-width: 768px) {
+    .notifications-container { padding: var(--space-4); }
+    .notification-item { padding: var(--space-4); }
+    .notification-icon { width: 40px; height: 40px; }
+    .notification-icon i { font-size: 20px; }
+    .notification-title { font-size: var(--font-sm); }
+    .notification-message { font-size: var(--font-xs); }
+    .filter-tab { padding: 6px 14px; font-size: var(--font-xs); }
+    .header-title h1 { font-size: var(--font-xl); }
+  }
+
+  @media (max-width: 480px) {
+    .notifications-container { padding: var(--space-3); }
+    .notification-item { flex-wrap: wrap; }
+    .notification-icon { width: 36px; height: 36px; }
+    .notification-icon i { font-size: 18px; }
+  }
+</style>
+
+<script>
+(function() {
+  'use strict';
+
+  let currentFilter = 'all';
+  let currentPage = 1;
+  let hasMore = true;
+  let isLoading = false;
+  let allNotifications = [];
+
+  // DOM 元素
+  const container = document.getElementById('notificationsList');
+  const loadingState = document.getElementById('loadingState');
+  const emptyState = document.getElementById('emptyState');
+  const loadMoreDiv = document.getElementById('loadMore');
+  const unreadBadge = document.getElementById('unreadBadge');
+  const markAllReadBtn = document.getElementById('markAllReadBtn');
+
+  // 格式化时间
+  function formatTime(dateStr) {
+    if (!dateStr) return '-';
+    try {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins} min ago`;
+      if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+      if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } catch { return '-'; }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+  }
+
+  // 获取通知类型样式
+  function getNotificationStyle(type) {
+    if (type === 'settlement_win') return { icon: 'fa-trophy', colorClass: 'win' };
+    if (type === 'settlement_loss') return { icon: 'fa-chart-line', colorClass: 'loss' };
+    return { icon: 'fa-bell', colorClass: 'system' };
+  }
+
+  // 渲染通知列表
+  function renderNotifications() {
+    if (!container) return;
+
+    if (allNotifications.length === 0) {
+      container.innerHTML = '';
+      emptyState.style.display = 'block';
+      loadMoreDiv.style.display = 'none';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+    
+    let filtered = [...allNotifications];
+    if (currentFilter === 'unread') {
+      filtered = filtered.filter(n => n.is_read === 0);
+    } else if (currentFilter === 'settlement_win') {
+      filtered = filtered.filter(n => n.type === 'settlement_win');
+    } else if (currentFilter === 'settlement_loss') {
+      filtered = filtered.filter(n => n.type === 'settlement_loss');
+    }
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<div class="empty-state" style="margin-top: 20px;"><i class="fas fa-filter"></i><p>No notifications match this filter</p></div>';
+      loadMoreDiv.style.display = 'none';
+      return;
+    }
+
+    let html = '';
+    filtered.forEach(notification => {
+      const style = getNotificationStyle(notification.type);
+      const timeStr = formatTime(notification.created_at);
+      const isUnread = notification.is_read === 0;
+      
+      html += `
+        <div class="notification-item ${isUnread ? 'unread' : ''}" data-id="${notification.id}" data-read="${notification.is_read}">
+          ${isUnread ? '<div class="unread-dot"></div>' : ''}
+          <div class="notification-icon ${style.colorClass}">
+            <i class="fas ${style.icon}"></i>
+          </div>
+          <div class="notification-content" onclick="viewNotificationDetail(${notification.id})">
+            <div class="notification-title">${escapeHtml(notification.title)}</div>
+            <div class="notification-message">${escapeHtml(notification.content)}</div>
+            <div class="notification-time">
+              <i class="far fa-clock"></i>
+              <span>${timeStr}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    
+    container.innerHTML = html;
+    loadMoreDiv.style.display = hasMore ? 'flex' : 'none';
+  }
+
+  // 加载通知
+  async function loadNotifications(reset = true) {
+    if (isLoading) return;
+    if (reset) {
+      currentPage = 1;
+      allNotifications = [];
+      hasMore = true;
+      if (loadingState) loadingState.style.display = 'flex';
+      if (container) container.style.display = 'none';
+      if (emptyState) emptyState.style.display = 'none';
+    }
+
+    isLoading = true;
+
+    try {
+      const url = `/api/v1/user/notifications/history?page=${currentPage}&limit=20`;
+      const response = await fetch(url, { credentials: 'include' });
+      const data = await response.json();
+
+      if (data.success) {
+        const newNotifications = data.data || [];
+        
+        if (reset) {
+          allNotifications = newNotifications;
+        } else {
+          allNotifications = [...allNotifications, ...newNotifications];
+        }
+
+        hasMore = newNotifications.length === 20;
+        renderNotifications();
+
+        
+// 更新未读数量（从本地计算，因为 API 可能不返回 unread_count）
+if (unreadBadge) {
+  const unreadCount = allNotifications.filter(n => n.is_read === 0).length;
+  unreadBadge.textContent = unreadCount;
+  unreadBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+}
+
+        if (loadingState) loadingState.style.display = 'none';
+        if (container) container.style.display = 'block';
+      } else {
+        throw new Error('加载失败');
+      }
+    } catch (error) {
+      console.error('加载通知失败:', error);
+      if (emptyState) {
+        emptyState.style.display = 'block';
+        emptyState.innerHTML = '<i class="fas fa-exclamation-circle"></i><p>Failed to load notifications</p><span>Please refresh the page</span>';
+      }
+    } finally {
+      isLoading = false;
+      if (loadingState) loadingState.style.display = 'none';
+    }
+  }
+
+  // 加载更多
+  function loadMore() {
+    if (hasMore && !isLoading) {
+      currentPage++;
+      loadNotifications(false);
+    }
+  }
+
+  // 标记单条为已读
+  async function markAsRead(notificationId) {
+    try {
+      const response = await fetch(`/api/v1/user/notifications/read/${notificationId}`, {
+        method: 'PUT',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        // 更新本地状态
+        const notification = allNotifications.find(n => n.id === notificationId);
+        if (notification) notification.is_read = 1;
+        renderNotifications();
+        
+        // 更新未读数量
+        const unreadCount = allNotifications.filter(n => n.is_read === 0).length;
+        if (unreadBadge) {
+          unreadBadge.textContent = unreadCount;
+          unreadBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+        }
+      }
+    } catch (error) {
+      console.error('标记已读失败:', error);
+    }
+  }
+
+  // 查看详情
+  window.viewNotificationDetail = async function(notificationId) {
+    await markAsRead(notificationId);
+    const notification = allNotifications.find(n => n.id === notificationId);
+    if (notification && notification.data) {
+      try {
+        const data = JSON.parse(notification.data);
+        if (data.match_id) {
+          window.location.href = `/shell.html?page=notification-detail&id=${notificationId}`;
+        }
+      } catch (e) {}
+    }
+  };
+
+  // 全部标记已读
+  async function markAllAsRead() {
+    try {
+      const response = await fetch('/api/v1/user/notifications/read-all', {
+        method: 'PUT',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        allNotifications.forEach(n => n.is_read = 1);
+        renderNotifications();
+        if (unreadBadge) {
+          unreadBadge.textContent = '0';
+          unreadBadge.style.display = 'none';
+        }
+        showToast('All notifications marked as read', 'success');
+      }
+    } catch (error) {
+      console.error('全部标记已读失败:', error);
+      showToast('Failed to mark all as read', 'error');
+    }
+  }
+
+  // Toast 提示
+  function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: ${type === 'success' ? '#10b981' : '#ef4444'};
+      color: white;
+      padding: 10px 20px;
+      border-radius: 40px;
+      z-index: 9999;
+      font-size: 14px;
+      animation: fadeInUp 0.3s ease;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
+  }
+
+  // 切换筛选
+  function switchFilter(filter) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.filter === filter);
+    });
+    renderNotifications();
+  }
+
+  // 绑定事件
+  function bindEvents() {
+    if (markAllReadBtn) {
+      markAllReadBtn.addEventListener('click', markAllAsRead);
+    }
+    
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        switchFilter(tab.dataset.filter);
+      });
+    });
+    
+    if (loadMoreDiv) {
+      const loadMoreBtn = document.getElementById('loadMoreBtn');
+      if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', loadMore);
+      }
+    }
+    
+    // 滚动加载
+    window.addEventListener('scroll', () => {
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
+        loadMore();
+      }
+    });
+  }
+
+  // 监听 WebSocket 实时通知
+  function initWebSocketListener() {
+    if (window.socket) {
+      window.socket.on('new-notification', (notification) => {
+        console.log('收到新通知:', notification);
+        // 刷新列表
+        loadNotifications(true);
+        showToast(notification.title, 'info');
+      });
+    } else {
+      // 如果 socket 还没初始化，等待一下
+      setTimeout(initWebSocketListener, 1000);
+    }
+  }
+
+  // 初始化
+  async function init() {
+    await loadNotifications(true);
+    bindEvents();
+    initWebSocketListener();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>

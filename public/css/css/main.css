@@ -1,0 +1,22 @@
+@import url('./tokens/design-tokens.css');
+@import url('./base/reset.css');
+@import url('./base/typography.css');
+@import url('./components/button.css');
+@import url('./components/card.css');
+@import url('./components/navigation.css');
+@import url('./components/form.css');
+@import url('./layout/grid.css');
+
+body {
+  background: var(--bg-body);
+}
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 10px;
+}

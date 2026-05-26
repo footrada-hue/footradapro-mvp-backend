@@ -1,0 +1,854 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>管理员管理 · FOOTRADAPRO 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- JS 引用 - 保留原有 -->
+    <script src="/js/core/config.js"></script>
+    <script src="/js/core/timezone.js"></script>
+    <script src="/js/admin/admin_auth_guard.js"></script>
+    
+    <style>
+        /* ============================================
+           世界級後台管理系統 - 管理員管理頁面
+           深色主題 | 玻璃態效果 | 響應式佈局
+        ============================================ */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --primary-light: #60A5FA;
+            --secondary: #8B5CF6;
+            --accent: #F59E0B;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F97316;
+            --dark-bg: #0A0F1C;
+            --card-bg: rgba(18, 28, 44, 0.75);
+            --border-glow: rgba(59, 130, 246, 0.25);
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at 20% 30%, #0B1120, #050814);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1E293B;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ========= 側邊欄 ========= */
+        .admin-sidebar {
+            width: 280px;
+            background: rgba(10, 18, 32, 0.85);
+            backdrop-filter: blur(16px);
+            border-right: 1px solid var(--border-glow);
+            box-shadow: 8px 0 32px rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 20;
+        }
+
+        .admin-sidebar::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .admin-sidebar-logo {
+            padding: 28px 24px;
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFFFFF, var(--primary-light), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            border-bottom: 1px solid var(--border-glow);
+            margin-bottom: 20px;
+        }
+        .admin-sidebar-logo span {
+            color: var(--primary);
+            background: none;
+        }
+
+        .admin-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 0 16px 20px 16px;
+        }
+        .admin-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .admin-nav-item i {
+            width: 24px;
+            font-size: 1.2rem;
+        }
+        .admin-nav-item:hover {
+            background: rgba(59, 130, 246, 0.15);
+            color: white;
+            transform: translateX(4px);
+        }
+        .admin-nav-item.active {
+            background: linear-gradient(95deg, rgba(59,130,246,0.2), rgba(139,92,246,0.1));
+            color: white;
+            border-left: 3px solid var(--primary);
+        }
+        
+        .unread-badge {
+            margin-left: auto;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: var(--warning);
+            color: white;
+        }
+
+        /* ========= 主內容區域 ========= */
+        .admin-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .admin-header {
+            background: rgba(10, 18, 32, 0.7);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-glow);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 15;
+        }
+        .admin-header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(120deg, #F1F5F9, var(--primary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .admin-header h1 i {
+            color: var(--primary);
+            margin-right: 12px;
+        }
+        .admin-user {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(255,255,255,0.04);
+            padding: 6px 18px;
+            border-radius: 60px;
+        }
+        #adminName {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .icon-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .admin-content {
+            padding: 28px 32px;
+            max-width: 1600px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* ========= 操作欄 ========= */
+        .action-bar {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            border: 1px solid var(--border-glow);
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .action-bar h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .action-bar h2 i {
+            color: var(--primary);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            border-radius: 12px;
+            padding: 10px 20px;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 8px 16px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+        }
+        .btn-secondary:hover {
+            background: rgba(59, 130, 246, 0.15);
+            color: white;
+            border-color: var(--primary);
+        }
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 8px 16px;
+            color: #EF4444;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+        }
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* ========= 表格 ========= */
+        .table-container {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 24px;
+            border: 1px solid var(--border-glow);
+            overflow-x: auto;
+        }
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .admin-table th {
+            text-align: left;
+            padding: 16px 16px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-glow);
+            background: rgba(0,0,0,0.2);
+        }
+        .admin-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.4);
+            color: var(--text-primary);
+        }
+        .admin-table tr:hover td {
+            background: rgba(59, 130, 246, 0.06);
+        }
+        .loading {
+            text-align: center;
+            padding: 48px !important;
+            color: var(--text-secondary);
+        }
+        .loading i {
+            margin-right: 8px;
+        }
+
+        /* ========= 徽章 ========= */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .badge.super_admin {
+            background: rgba(245, 158, 11, 0.2);
+            color: #F59E0B;
+        }
+        .badge.admin {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60A5FA;
+        }
+        .badge.operator {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10B981;
+        }
+        .badge.auditor {
+            background: rgba(139, 92, 246, 0.2);
+            color: #A78BFA;
+        }
+        .badge.active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10B981;
+        }
+        .badge.inactive {
+            background: rgba(239, 68, 68, 0.2);
+            color: #EF4444;
+        }
+
+        /* ========= 模態框 ========= */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.show {
+            display: flex;
+        }
+        .modal-container {
+            background: #0F172A;
+            border-radius: 28px;
+            border: 1px solid var(--border-glow);
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-glow);
+        }
+        .modal-header h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-header h3 i {
+            color: var(--primary);
+        }
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 1.8rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            line-height: 1;
+        }
+        .modal-close:hover {
+            color: var(--danger);
+        }
+        .modal-body {
+            padding: 24px;
+        }
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-glow);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* ========= 表單 ========= */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .password-field {
+            display: flex;
+            gap: 10px;
+        }
+        .password-field input {
+            flex: 1;
+        }
+        .password-field button {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 0 16px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .password-field button:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .form-group small {
+            display: block;
+            margin-top: 6px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* ========= 響應式 ========= */
+        @media (max-width: 768px) {
+            .admin-layout {
+                flex-direction: column;
+            }
+            .admin-sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            .admin-nav {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .admin-nav-item {
+                flex: 0 0 auto;
+            }
+            .admin-content {
+                padding: 20px;
+            }
+            .admin-header h1 {
+                font-size: 1.2rem;
+            }
+            .action-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .action-bar, .table-container {
+            animation: fadeSlideUp 0.4s ease forwards;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 側邊導航欄 -->
+        <aside class="admin-sidebar" id="sidebar-container"></aside>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1><i class="fas fa-users-cog"></i> 管理员管理</h1>
+                <div class="admin-user">
+                    <span id="adminName">管理员</span>
+                    <button class="icon-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <div class="action-bar">
+                    <h2><i class="fas fa-list"></i> 管理员列表</h2>
+                    <button class="btn-primary" id="createAdminBtn">
+                        <i class="fas fa-plus"></i> 创建子管理员
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>用户名</th>
+                                <th>姓名</th>
+                                <th>邮箱</th>
+                                <th>角色</th>
+                                <th>状态</th>
+                                <th>最后登录</th>
+                                <th>登录IP</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTableBody">
+                            <tr><td colspan="9" class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</td</tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 创建管理员模态框 -->
+    <div class="modal-overlay" id="createAdminModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-plus"></i> 创建子管理员</h3>
+                <button class="modal-close" onclick="closeCreateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createAdminForm">
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input type="text" name="username" required placeholder="例如: operator1">
+                    </div>
+                    <div class="form-group">
+                        <label>姓名</label>
+                        <input type="text" name="name" required placeholder="真实姓名">
+                    </div>
+                    <div class="form-group">
+                        <label>邮箱</label>
+                        <input type="email" name="email" required placeholder="用于接收通知">
+                    </div>
+                    <div class="form-group">
+                        <label>角色</label>
+                        <select name="role" required>
+                            <option value="admin">管理员</option>
+                            <option value="operator">运营人员</option>
+                            <option value="auditor">审计员</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>密码</label>
+                        <div class="password-field">
+                            <input type="text" id="generatedPassword" readonly value="点击生成密码">
+                            <button type="button" onclick="generatePassword()">生成密码</button>
+                        </div>
+                        <small>请保存密码，创建后无法再次查看</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeCreateModal()">取消</button>
+                <button class="btn-primary" onclick="createAdmin()">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const UTILS = FOOTRADAPRO.UTILS;
+
+            let admins = [];
+
+            const tbody = document.getElementById('adminTableBody');
+            const createModal = document.getElementById('createAdminModal');
+            const generatedPassword = document.getElementById('generatedPassword');
+
+            window.generatePassword = function() {
+                const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+                const numbers = '0123456789';
+                const special = '!@#$%^&*';
+                
+                let password = '';
+                password += uppercase[Math.floor(Math.random() * uppercase.length)];
+                password += lowercase[Math.floor(Math.random() * lowercase.length)];
+                password += numbers[Math.floor(Math.random() * numbers.length)];
+                password += special[Math.floor(Math.random() * special.length)];
+                
+                const allChars = uppercase + lowercase + numbers + special;
+                for (let i = 0; i < 6; i++) {
+                    password += allChars[Math.floor(Math.random() * allChars.length)];
+                }
+                
+                password = password.split('').sort(() => Math.random() - 0.5).join('');
+                generatedPassword.value = password;
+            };
+
+            document.getElementById('createAdminBtn').addEventListener('click', () => {
+                createModal.classList.add('show');
+                generatePassword();
+            });
+
+            window.closeCreateModal = function() {
+                createModal.classList.remove('show');
+                document.getElementById('createAdminForm').reset();
+                generatedPassword.value = '点击生成密码';
+            };
+
+            createModal.addEventListener('click', (e) => {
+                if (e.target === createModal) {
+                    closeCreateModal();
+                }
+            });
+
+            async function adminRequest(endpoint, options = {}) {
+                const defaultOptions = {
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                };
+                
+                try {
+                    return await UTILS.request(endpoint, { ...defaultOptions, ...options });
+                } catch (err) {
+                    if (err.message === 'UNAUTHORIZED') {
+                        window.location.href = '/admin/index.html';
+                    }
+                    throw err;
+                }
+            }
+
+            async function loadAdmins() {
+                try {
+                    tbody.innerHTML = '<tr><td colspan="9" class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</td</tr>';
+                    const result = await adminRequest('/admin/admins');
+                    if (result.success) {
+                        admins = result.data;
+                        renderAdmins();
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="9" class="loading">加载失败</td</tr>';
+                    }
+                } catch (err) {
+                    console.error('加载失败:', err);
+                    tbody.innerHTML = '<tr><td colspan="9" class="loading">加载失败</td</tr>';
+                }
+            }
+
+            function renderAdmins() {
+                if (admins.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="loading">暂无管理员</td</tr>';
+                    return;
+                }
+
+                let html = '';
+                admins.forEach(admin => {
+                    const roleClass = admin.role;
+                    const roleText = {
+                        super_admin: '超级管理员',
+                        admin: '管理员',
+                        operator: '运营人员',
+                        auditor: '审计员'
+                    }[admin.role] || admin.role;
+
+                    const statusClass = admin.is_active ? 'active' : 'inactive';
+                    const statusText = admin.is_active ? '启用' : '禁用';
+                    const lastLogin = admin.last_login_at ? UTILS.formatDateTime(admin.last_login_at) : '-';
+
+                    html += `<tr>
+                        <td>${admin.id}</td>
+                        <td><strong>${escapeHtml(admin.username)}</strong></td>
+                        <td>${escapeHtml(admin.name || '-')}</td>
+                        <td>${escapeHtml(admin.email || '-')}</td>
+                        <td><span class="badge ${roleClass}">${roleText}</span></td>
+                        <td><span class="badge ${statusClass}">${statusText}</span></td>
+                        <td>${lastLogin}</td>
+                        <td>${admin.last_login_ip || '-'}</td>
+                        <td>
+                            <button class="btn-secondary" onclick="toggleAdmin(${admin.id})">
+                                ${admin.is_active ? '禁用' : '启用'}
+                            </button>
+                            <button class="btn-danger" onclick="resetPassword(${admin.id})">重置密码</button>
+                        </td>
+                    </table>`;
+                });
+                tbody.innerHTML = html;
+            }
+
+            function escapeHtml(str) {
+                if (!str) return '';
+                return str.replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                });
+            }
+
+            window.createAdmin = async function() {
+                const form = document.getElementById('createAdminForm');
+                const formData = new FormData(form);
+                
+                const password = generatedPassword.value;
+                if (!password || password === '点击生成密码') {
+                    alert('请先生成密码');
+                    return;
+                }
+                
+                const data = {
+                    username: formData.get('username'),
+                    name: formData.get('name'),
+                    email: formData.get('email'),
+                    role: formData.get('role'),
+                    password: password
+                };
+
+                if (!data.username || !data.name || !data.email) {
+                    alert('请填写所有必填字段');
+                    return;
+                }
+
+                try {
+                    const result = await adminRequest('/admin/admins', {
+                        method: 'POST',
+                        body: JSON.stringify(data)
+                    });
+
+                    if (result.success) {
+                        alert(`创建成功！\n密码: ${password}\n请保存好密码，关闭后无法再次查看。`);
+                        closeCreateModal();
+                        loadAdmins();
+                    } else {
+                        alert('创建失败：' + (result.error || result.message || '未知错误'));
+                    }
+                } catch (err) {
+                    console.error('创建失败:', err);
+                    alert('创建失败，请稍后重试');
+                }
+            };
+
+            window.toggleAdmin = async function(adminId) {
+                if (!confirm('确定要切换该管理员状态吗？')) return;
+                try {
+                    const result = await adminRequest(`/admin/admins/${adminId}/toggle`, {
+                        method: 'POST'
+                    });
+                    if (result.success) {
+                        loadAdmins();
+                        alert('操作成功');
+                    } else {
+                        alert('操作失败：' + (result.error || '未知错误'));
+                    }
+                } catch (err) {
+                    console.error('操作失败:', err);
+                    alert('操作失败');
+                }
+            };
+
+            window.resetPassword = async function(adminId) {
+                if (!confirm('确定要重置该管理员密码吗？')) return;
+                try {
+                    const result = await adminRequest(`/admin/admins/${adminId}/reset-password`, {
+                        method: 'POST'
+                    });
+                    if (result.success && result.password) {
+                        alert(`新密码: ${result.password}\n请立即保存！`);
+                    } else if (result.success) {
+                        alert('密码重置成功');
+                    } else {
+                        alert('重置失败：' + (result.error || '未知错误'));
+                    }
+                    loadAdmins();
+                } catch (err) {
+                    console.error('重置失败:', err);
+                    alert('重置失败');
+                }
+            };
+
+            const storedAdmin = localStorage.getItem('admin_name');
+            if (storedAdmin) {
+                document.getElementById('adminName').textContent = storedAdmin;
+            }
+
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('admin_name');
+                window.location.href = '/admin/index.html';
+            });
+
+            fetch('/admin/components/sidebar.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('sidebar-container').innerHTML = html;
+                    const currentPath = window.location.pathname;
+                    document.querySelectorAll('.admin-nav-item').forEach(link => {
+                        if (link.getAttribute('href') === currentPath) {
+                            link.classList.add('active');
+                        }
+                    });
+                })
+                .catch(err => console.error('加载侧边栏失败:', err));
+
+            loadAdmins();
+        })();
+    </script>
+</body>
+</html>

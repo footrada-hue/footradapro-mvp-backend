@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创建比赛 - 管理后台</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <script src="/js/core/timezone.js"></script>
+    <link rel="stylesheet" href="/css/admin-base.css">
+    <link rel="stylesheet" href="/css/admin-nav.css">
+</head>
+<body>
+    <div class="admin-container">
+        <h1>创建新比赛</h1>
+        <form id="createMatchForm">
+            <div class="form-group">
+                <label>比赛ID</label>
+                <input type="text" name="match_id" required>
+            </div>
+            <div class="form-group">
+                <label>主队</label>
+                <input type="text" name="home_team" required>
+            </div>
+            <div class="form-group">
+                <label>客队</label>
+                <input type="text" name="away_team" required>
+            </div>
+            <div class="form-group">
+                <label>联赛</label>
+                <input type="text" name="league" required>
+            </div>
+            <div class="form-group">
+                <label>比赛时间</label>
+                <input type="datetime-local" name="match_time" required>
+            </div>
+            <div class="form-group">
+                <label>截止授权时间</label>
+                <input type="datetime-local" name="cutoff_time" required>
+            </div>
+            <div class="form-group">
+                <label>主胜赔率</label>
+                <input type="number" step="0.01" name="odds_home" required>
+            </div>
+            <div class="form-group">
+                <label>平局赔率</label>
+                <input type="number" step="0.01" name="odds_draw" required>
+            </div>
+            <div class="form-group">
+                <label>客胜赔率</label>
+                <input type="number" step="0.01" name="odds_away" required>
+            </div>
+            <button type="submit">创建比赛</button>
+        </form>
+    </div>
+    <script src="/js/admin/create-match.js"></script>
+</body>
+</html>

@@ -1,0 +1,681 @@
+<!-- 
+  withdraw-content.html - 提现页面内容组件
+  用于 SPA 架构，只包含主内容区
+-->
+
+<div class="withdraw-container">
+  <!-- 模式指示器 -->
+  <div class="mode-indicator">
+    <i class="fa-solid fa-info-circle"></i>
+    <span>Current Mode: </span>
+    <span id="currentModeText" class="sandbox-mode-text">Sandbox</span>
+    <span id="testModeBadge" class="test-badge-mode" style="display: none;">🧪 Test Mode</span>
+  </div>
+
+  <!-- 提现表单卡片 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fa-solid fa-arrow-up-from-bracket"></i> Withdraw Funds</div>
+    </div>
+
+    <!-- 余额显示 -->
+    <div class="info-box" style="margin-bottom: var(--space-5);">
+      <i class="fas fa-wallet"></i>
+      <span>Available Balance: <strong id="balance">0.00 USDT</strong></span>
+    </div>
+
+    <!-- 测试模式警告 -->
+    <div id="testModeWarning" class="warning-box" style="display: none;">
+      <i class="fas fa-flask"></i>
+      <span>Test Mode does not support withdrawals. Please switch to Live Mode.</span>
+      <button id="switchToLiveBtn" style="background: var(--accent-gradient); border: none; padding: 4px 12px; border-radius: 40px; color: white; font-size: 12px; cursor: pointer;">Switch</button>
+    </div>
+
+    <!-- 余额不足警告 -->
+    <div id="balanceInsufficient" class="warning-box" style="display: none;">
+      <i class="fas fa-exclamation-triangle"></i>
+      <span>Insufficient balance. Please deposit funds first.</span>
+    </div>
+
+    <!-- 网络选择 -->
+    <div class="custom-select" id="customSelect">
+      <div class="select-trigger" id="selectTrigger">
+        <span id="selectedNetworkText">TRC20 (Tron) - Recommended</span>
+        <i class="fas fa-chevron-down"></i>
+      </div>
+      <div class="select-dropdown" id="selectDropdown">
+        <div class="select-option" data-value="TRC20" data-note="Fast & low-cost">
+          <span class="option-name">TRC20 (Tron)</span>
+          <span class="option-desc">Recommended · Low fees</span>
+        </div>
+        <div class="select-option" data-value="ERC20" data-note="Higher gas fees">
+          <span class="option-name">ERC20 (Ethereum)</span>
+          <span class="option-desc">Higher gas fees</span>
+        </div>
+        <div class="select-option" data-value="BEP20" data-note="Fast & cheap">
+          <span class="option-name">BEP20 (BSC)</span>
+          <span class="option-desc">Fast & cheap</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 提现金额 -->
+    <input type="number" id="amount" class="amount-input" placeholder="Enter amount" step="10" min="10">
+    <div id="amountHint" class="info-box" style="margin-top: -12px;">
+      <i class="fas fa-info-circle"></i>
+      <span>Minimum withdrawal: 10 USDT</span>
+    </div>
+
+    <!-- 提现地址 -->
+    <input type="text" id="address" class="address-input" placeholder="Wallet address">
+
+    <!-- 费用信息 -->
+    <div class="fee-row">
+      <span class="fee-label">Withdrawal Fee</span>
+      <span class="fee-value" id="feeAmount">1 USDT</span>
+    </div>
+    <div class="fee-row">
+      <span class="fee-label">You will receive</span>
+      <span class="fee-value" id="receiveAmount">0.00 USDT</span>
+    </div>
+
+    <!-- 确认框 -->
+    <div class="confirm-box">
+      <input type="checkbox" id="confirmCheck">
+      <label for="confirmCheck">I confirm that the withdrawal address is correct</label>
+    </div>
+
+    <!-- 提交按钮 -->
+    <button id="submitBtn" class="submit-btn" disabled>Confirm Withdrawal</button>
+  </div>
+</div>
+
+<style>
+/* ========== 提现页面样式 ========== */
+.withdraw-container {
+  flex: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+  width: 100%;
+}
+
+.mode-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--badge-soft);
+  padding: 6px 16px;
+  border-radius: 9999px;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+.sandbox-mode-text { color: #8b5cf6; font-weight: 600; }
+.live-mode-text { color: #f97316; font-weight: 600; }
+.test-badge-mode {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  margin-left: 12px;
+}
+
+.card {
+  background: var(--card-bg);
+  backdrop-filter: blur(24px);
+  border-radius: 28px;
+  border: 1px solid var(--glass-border);
+  padding: 28px;
+  margin-bottom: 24px;
+}
+.card:last-child { margin-bottom: 0; }
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.card-title i { color: var(--accent); font-size: 18px; }
+
+/* 自定义下拉选择器 */
+.custom-select {
+  position: relative;
+  margin-bottom: 20px;
+}
+.select-trigger {
+  width: 100%;
+  padding: 14px 18px;
+  background: var(--badge-soft);
+  border: 1px solid var(--glass-border);
+  border-radius: 9999px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.select-trigger:hover { border-color: var(--accent); background: var(--card-bg); }
+.select-trigger i { color: var(--accent); }
+.select-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--card-bg);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  overflow: hidden;
+  z-index: 100;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.2s ease, opacity 0.2s ease;
+  visibility: hidden;
+}
+.select-dropdown.show {
+  max-height: 300px;
+  opacity: 1;
+  visibility: visible;
+}
+.select-option {
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.select-option:hover { background: var(--badge-soft); }
+.select-option.selected { background: var(--accent-gradient); color: white; }
+.select-option .option-name { flex: 1; font-weight: 500; }
+.select-option .option-desc { font-size: 12px; color: var(--text-muted); }
+
+.amount-input, .address-input {
+  width: 100%;
+  padding: 16px 20px;
+  background: var(--badge-soft);
+  border: 1px solid var(--glass-border);
+  border-radius: 9999px;
+  color: var(--text-primary);
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+.amount-input:focus, .address-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.info-box {
+  background: rgba(59,130,246,0.1);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.warning-box {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #ef4444;
+}
+
+.fee-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: var(--badge-soft);
+  border-radius: 20px;
+  margin-bottom: 20px;
+}
+.fee-label { font-size: 14px; color: var(--text-muted); }
+.fee-value { font-weight: 700; color: var(--accent); }
+
+.confirm-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--badge-soft);
+  border-radius: 20px;
+}
+.confirm-box input { width: 20px; height: 20px; cursor: pointer; accent-color: var(--accent); }
+
+.submit-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 9999px;
+  background: var(--accent-gradient);
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px var(--accent-glow); }
+.submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.success-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+}
+.success-modal.show { opacity: 1; visibility: visible; }
+.success-content {
+  background: var(--card-bg);
+  backdrop-filter: blur(24px);
+  border-radius: 28px;
+  border: 1px solid var(--glass-border);
+  padding: 32px;
+  text-align: center;
+  max-width: 340px;
+  width: 90%;
+}
+.success-content i { font-size: 64px; color: var(--success); margin-bottom: 20px; }
+.success-content h3 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+.success-content p { color: var(--text-muted); margin-bottom: 24px; }
+
+@media (max-width: 768px) {
+  .withdraw-container { padding: 16px; }
+  .card { padding: 20px; border-radius: 24px; }
+  .amount-input, .address-input { padding: 12px 16px; font-size: 14px; }
+  .select-trigger { padding: 12px 16px; }
+  .select-option { padding: 12px 16px; }
+}
+
+@media (max-width: 480px) {
+  .withdraw-container { padding: 12px; }
+  .card { padding: 16px; border-radius: 20px; }
+  .amount-input, .address-input { padding: 10px 14px; }
+  .fee-row { padding: 12px; }
+  .confirm-box { padding: 12px; }
+}
+</style>
+
+<script>
+(function() {
+  'use strict';
+
+  // ==================== 网络配置 ====================
+  const NETWORKS = {
+    'TRC20': { withdraw_fee: 1, min_withdraw: 10, is_active: 1 },
+    'ERC20': { withdraw_fee: 1, min_withdraw: 10, is_active: 1 },
+    'BEP20': { withdraw_fee: 1, min_withdraw: 10, is_active: 1 }
+  };
+
+  let currentNetwork = 'TRC20';
+
+  // ==================== 获取当前模式 ====================
+  function getCurrentMode() {
+    return ThemeManager ? ThemeManager.isTestMode : false;
+  }
+
+  function getCurrentTheme() {
+    return ThemeManager ? ThemeManager.getTheme() : 'light';
+  }
+
+  // ==================== UI 更新 ====================
+  function updateModeUI() {
+    const isSandbox = getCurrentMode();
+    const modeText = document.getElementById('currentModeText');
+    const testBadge = document.getElementById('testModeBadge');
+    const testWarning = document.getElementById('testModeWarning');
+    
+    if (modeText) {
+      modeText.textContent = isSandbox ? 'Sandbox' : 'Live';
+      modeText.className = isSandbox ? 'sandbox-mode-text' : 'live-mode-text';
+    }
+    if (testBadge) {
+      testBadge.style.display = isSandbox ? 'inline-flex' : 'none';
+    }
+    if (testWarning) {
+      testWarning.style.display = isSandbox ? 'flex' : 'none';
+    }
+    
+    const currency = isSandbox ? 'tUSDT' : 'USDT';
+    
+    // 更新货币单位
+    document.querySelectorAll('.currency').forEach(el => {
+      if (el) el.textContent = currency;
+    });
+    
+    // 更新费用显示
+    updateNetworkInfo();
+    calculateReceive();
+    
+    // 禁用提现按钮（测试模式）
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn && isSandbox) {
+      submitBtn.disabled = true;
+    }
+  }
+
+  function updateThemeUI() {
+    const isDark = getCurrentTheme() === 'dark';
+    document.body.classList.toggle('dark', isDark);
+  }
+
+  // ==================== 余额加载 ====================
+  async function loadBalance() {
+    try {
+      const isSandbox = getCurrentMode();
+      const currency = isSandbox ? 'tUSDT' : 'USDT';
+      const response = await fetch('/api/v1/user/balance', { credentials: 'include' });
+      const data = await response.json();
+      if (data.success) {
+        const balance = isSandbox ? (data.data.test_balance || 0) : (data.data.balance || 0);
+        const balanceSpan = document.getElementById('balance');
+        if (balanceSpan) {
+          balanceSpan.innerHTML = balance.toFixed(2) + ' ' + currency;
+        }
+        
+        const balanceInsufficient = document.getElementById('balanceInsufficient');
+        if (balanceInsufficient) {
+          if (balance <= 0 && !isSandbox) {
+            balanceInsufficient.style.display = 'flex';
+          } else {
+            balanceInsufficient.style.display = 'none';
+          }
+        }
+        
+        checkForm();
+      }
+    } catch (err) {
+      console.error('Failed to load balance:', err);
+    }
+  }
+
+  // ==================== 网络信息更新 ====================
+  function updateNetworkInfo() {
+    const isSandbox = getCurrentMode();
+    const currency = isSandbox ? 'tUSDT' : 'USDT';
+    const netConfig = NETWORKS[currentNetwork];
+    if (netConfig) {
+      const fee = netConfig.withdraw_fee || 1;
+      const minWithdraw = netConfig.min_withdraw || 10;
+      const feeSpan = document.getElementById('feeAmount');
+      const amountHint = document.getElementById('amountHint');
+      const amountInput = document.getElementById('amount');
+      
+      if (feeSpan) feeSpan.innerHTML = fee + ' ' + currency;
+      if (amountHint) amountHint.innerHTML = `<i class="fas fa-info-circle"></i> Minimum withdrawal: ${minWithdraw} ${currency}`;
+      if (amountInput) amountInput.min = minWithdraw;
+    }
+  }
+
+  // ==================== 计算到账金额 ====================
+  function calculateReceive() {
+    const amount = parseFloat(document.getElementById('amount')?.value) || 0;
+    const fee = NETWORKS[currentNetwork]?.withdraw_fee || 1;
+    const isSandbox = getCurrentMode();
+    const currency = isSandbox ? 'tUSDT' : 'USDT';
+    const receive = Math.max(0, amount - fee);
+    const receiveSpan = document.getElementById('receiveAmount');
+    if (receiveSpan) {
+      receiveSpan.innerHTML = receive.toFixed(2) + ' ' + currency;
+    }
+  }
+
+  // ==================== 表单验证 ====================
+  function checkForm() {
+    const isSandbox = getCurrentMode();
+    const submitBtn = document.getElementById('submitBtn');
+    
+    if (isSandbox) {
+      if (submitBtn) submitBtn.disabled = true;
+      return;
+    }
+    
+    const amount = parseFloat(document.getElementById('amount')?.value) || 0;
+    const address = document.getElementById('address')?.value.trim() || '';
+    const checked = document.getElementById('confirmCheck')?.checked || false;
+    const balanceSpan = document.getElementById('balance')?.textContent || '0';
+    const balance = parseFloat(balanceSpan.split(' ')[0]) || 0;
+    const minWithdraw = NETWORKS[currentNetwork]?.min_withdraw || 10;
+    
+    if (submitBtn) {
+      if (amount >= minWithdraw && address && checked && amount <= balance) {
+        submitBtn.disabled = false;
+      } else {
+        submitBtn.disabled = true;
+      }
+    }
+  }
+
+  // ==================== 成功模态框 ====================
+  function showSuccessModal() {
+    const modal = document.getElementById('withdrawSuccessModal');
+    if (modal) {
+      modal.classList.add('show');
+      setTimeout(() => {
+        modal.classList.remove('show');
+      }, 3000);
+    }
+  }
+
+  // ==================== 提交提现 ====================
+  async function submitWithdraw() {
+    const isSandbox = getCurrentMode();
+    if (isSandbox) {
+      alert('Withdrawals are disabled in Test Mode. Please switch to Live Mode.');
+      return;
+    }
+    
+    const amount = parseFloat(document.getElementById('amount')?.value) || 0;
+    const address = document.getElementById('address')?.value.trim() || '';
+    const network = currentNetwork;
+    const balanceSpan = document.getElementById('balance')?.textContent || '0';
+    const balance = parseFloat(balanceSpan.split(' ')[0]) || 0;
+    const minWithdraw = NETWORKS[network]?.min_withdraw || 10;
+    
+    if (amount > balance) {
+      alert('Insufficient balance');
+      return;
+    }
+    if (!address) {
+      alert('Please enter withdrawal address');
+      return;
+    }
+    if (amount < minWithdraw) {
+      alert(`Minimum withdrawal amount is ${minWithdraw} USDT`);
+      return;
+    }
+    
+    // 检查支付密码状态
+    try {
+      const statusRes = await fetch('/api/v1/user/profile/paypassword/status', { credentials: 'include' });
+      const statusData = await statusRes.json();
+      if (!statusData.success || !statusData.data.has_paypassword) {
+        if (confirm('You need to set a payment password before withdrawing funds. Would you like to set it now?')) {
+          window.location.href = '/shell.html?page=set-paypassword&from=withdraw';
+        }
+        return;
+      }
+    } catch (err) {
+      console.error('Failed to check payment password status:', err);
+    }
+    
+    // 弹出支付密码输入框
+    const password = prompt('Please enter your payment password:');
+    if (!password) return;
+    
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Processing...';
+    
+    try {
+      const response = await fetch('/api/v1/user/withdraw/user/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ amount, address, network, pay_password: password })
+      });
+      const data = await response.json();
+      if (data.success) {
+        showSuccessModal();
+        document.getElementById('amount').value = '';
+        document.getElementById('address').value = '';
+        document.getElementById('confirmCheck').checked = false;
+        calculateReceive();
+        loadBalance();
+      } else {
+        alert(data.message || 'Withdrawal failed');
+      }
+    } catch (err) {
+      console.error('Withdrawal error:', err);
+      alert('Withdrawal failed. Please try again.');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Confirm Withdrawal';
+    }
+  }
+
+  // ==================== 下拉选择器 ====================
+  function initSelect() {
+    const selectTrigger = document.getElementById('selectTrigger');
+    const selectDropdown = document.getElementById('selectDropdown');
+    const selectedNetworkText = document.getElementById('selectedNetworkText');
+    
+    function toggleDropdown() {
+      selectDropdown.classList.toggle('show');
+    }
+    
+    function selectNetwork(value, text) {
+      currentNetwork = value;
+      selectedNetworkText.innerText = text;
+      selectDropdown.classList.remove('show');
+      updateNetworkInfo();
+      calculateReceive();
+      checkForm();
+      
+      document.querySelectorAll('.select-option').forEach(opt => {
+        opt.classList.remove('selected');
+        if (opt.dataset.value === value) opt.classList.add('selected');
+      });
+    }
+    
+    if (selectTrigger) {
+      selectTrigger.addEventListener('click', toggleDropdown);
+    }
+    
+    document.querySelectorAll('.select-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const value = opt.dataset.value;
+        const text = opt.querySelector('.option-name').innerText;
+        selectNetwork(value, text);
+      });
+    });
+    
+    document.addEventListener('click', function(e) {
+      if (selectTrigger && selectDropdown && !selectTrigger.contains(e.target) && !selectDropdown.contains(e.target)) {
+        selectDropdown.classList.remove('show');
+      }
+    });
+  }
+
+  // ==================== 事件绑定 ====================
+  function bindEvents() {
+    const amountInput = document.getElementById('amount');
+    if (amountInput) {
+      amountInput.addEventListener('input', () => {
+        calculateReceive();
+        checkForm();
+      });
+    }
+    
+    const addressInput = document.getElementById('address');
+    if (addressInput) addressInput.addEventListener('input', checkForm);
+    
+    const confirmCheck = document.getElementById('confirmCheck');
+    if (confirmCheck) confirmCheck.addEventListener('change', checkForm);
+    
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) submitBtn.addEventListener('click', submitWithdraw);
+    
+    const switchToLiveBtn = document.getElementById('switchToLiveBtn');
+    if (switchToLiveBtn) {
+      switchToLiveBtn.addEventListener('click', async () => {
+        if (ThemeManager && ThemeManager.isTestMode) {
+          await ThemeManager.toggleMode();
+          updateModeUI();
+          loadBalance();
+        }
+      });
+    }
+  }
+
+  // ==================== 监听主题和模式变化 ====================
+  function initListeners() {
+    if (window.ThemeManager) {
+      ThemeManager.addListener(() => {
+        updateModeUI();
+        loadBalance();
+        updateNetworkInfo();
+        calculateReceive();
+        checkForm();
+      });
+      
+      ThemeManager.addThemeListener(() => {
+        updateThemeUI();
+      });
+    }
+  }
+
+  // ==================== 初始化 ====================
+  function init() {
+    updateThemeUI();
+    updateModeUI();
+    initSelect();
+    bindEvents();
+    initListeners();
+    loadBalance();
+    updateNetworkInfo();
+    console.log('✅ Withdraw page initialized');
+  }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>

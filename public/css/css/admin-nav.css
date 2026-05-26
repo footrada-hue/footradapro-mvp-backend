@@ -1,0 +1,538 @@
+/* ===== 后台统一导航栏样式 ===== 
+   混搭風格：玻璃擬態 + 奢華質感 + 賽博朋克
+   比例協調・深度打磨版
+*/
+
+:root {
+    --accent: #FF6B00;
+    --accent-400: #FF8A3C;
+    --accent-300: #FFA55A;
+    --accent-rgb: 255, 107, 0;
+    
+    --bg-primary: #0A0C10;
+    --bg-secondary: #0F1422;
+    --bg-card: rgba(21, 26, 40, 0.8);
+    --bg-card-hover: rgba(30, 35, 53, 0.8);
+    --bg-surface: rgba(26, 31, 46, 0.8);
+    
+    --border-strong: rgba(255, 255, 255, 0.1);
+    --border-gold: rgba(255, 215, 0, 0.15);
+    
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --text-tertiary: #64748B;
+    
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --radius-full: 9999px;
+}
+
+/* ===== 設計令牌 ===== */
+:root {
+    /* 玻璃擬態 */
+    --glass-bg: rgba(21, 26, 40, 0.7);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.05);
+    --glass-border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    
+    /* 發光效果 */
+    --neon-glow: 0 0 20px rgba(var(--accent-rgb), 0.3);
+    --neon-glow-strong: 0 0 30px rgba(var(--accent-rgb), 0.5);
+    --gold-glow: 0 0 15px rgba(255, 215, 0, 0.2);
+    
+    /* 過渡動畫 */
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 亮色主題 */
+[data-theme="light"] {
+    --bg-primary: #F8FAFC;
+    --bg-secondary: #F1F5F9;
+    --bg-card: rgba(255, 255, 255, 0.9);
+    --bg-card-hover: rgba(248, 250, 252, 0.9);
+    --bg-surface: rgba(241, 245, 249, 0.9);
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-tertiary: #64748B;
+    --border-strong: rgba(0, 0, 0, 0.08);
+}
+
+/* ===== 佈局 ===== */
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+    background: var(--bg-primary);
+}
+
+/* 側邊導航欄 - 玻璃擬態進化版 */
+.admin-sidebar {
+    width: 280px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid var(--border-gold);
+    padding: var(--space-6) 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    overflow-y: auto;
+    box-shadow: var(--glass-shadow);
+    z-index: 100;
+    transition: var(--transition-base);
+}
+
+/* 背景光效 */
+.admin-sidebar::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(var(--accent-rgb), 0.03) 0%, transparent 70%);
+    opacity: 0.3;
+    animation: rotate 30s linear infinite;
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* 側邊欄標誌 */
+.admin-sidebar-logo {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    padding: 0 var(--space-5) var(--space-6);
+    border-bottom: 1px solid var(--border-gold);
+    margin-bottom: var(--space-5);
+    letter-spacing: -0.5px;
+    position: relative;
+}
+
+.admin-sidebar-logo span {
+    color: var(--accent);
+    text-shadow: 0 0 10px var(--accent);
+}
+
+.admin-sidebar-logo::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: var(--space-5);
+    width: 50px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    border-radius: var(--radius-full);
+    box-shadow: var(--neon-glow);
+}
+
+/* 導航菜單 */
+.admin-nav {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: 0 var(--space-3);
+}
+
+/* 導航項 */
+.admin-nav-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: var(--radius-lg);
+    transition: var(--transition-base);
+    font-size: 15px;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 導航項背景光效 */
+.admin-nav-item::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(var(--accent-rgb), 0.05) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+    pointer-events: none;
+    z-index: -1;
+}
+
+.admin-nav-item:hover::before {
+    opacity: 1;
+    animation: rotate 15s linear infinite;
+}
+
+.admin-nav-item i {
+    width: 24px;
+    font-size: 18px;
+    text-align: center;
+    transition: var(--transition-base);
+}
+
+/* 懸停效果 */
+.admin-nav-item:hover {
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--text-primary);
+    transform: translateX(4px);
+}
+
+.admin-nav-item:hover i {
+    color: var(--accent);
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 8px var(--accent));
+}
+
+/* 激活狀態 */
+.admin-nav-item.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent-400));
+    color: white;
+    box-shadow: var(--neon-glow);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.admin-nav-item.active i {
+    color: white;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+}
+
+.admin-nav-item.active::before {
+    display: none;
+}
+
+/* 主內容區 - 進化版 */
+.admin-main {
+    flex: 1;
+    margin-left: 280px;
+    padding: var(--space-6) var(--space-8);
+    background: var(--bg-primary);
+    min-height: 100vh;
+    position: relative;
+    transition: var(--transition-base);
+}
+
+/* 主內容背景光效 */
+.admin-main::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: radial-gradient(circle at 0% 0%, rgba(var(--accent-rgb), 0.02) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* 頭部導航欄 */
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-8);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--border-gold);
+    position: relative;
+    z-index: 1;
+}
+
+.admin-header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--text-primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* 用戶信息 */
+.admin-user {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    color: var(--text-secondary);
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-gold);
+    box-shadow: var(--glass-shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-user::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(var(--accent-rgb), 0.05) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+    pointer-events: none;
+}
+
+.admin-user:hover::before {
+    opacity: 1;
+    animation: rotate 15s linear infinite;
+}
+
+.admin-user i {
+    color: var(--accent);
+    font-size: 18px;
+    filter: drop-shadow(0 0 8px var(--accent));
+}
+
+.admin-user span {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* ===== 動畫定義 ===== */
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { 
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ===== 響應式 ===== */
+@media (max-width: 1024px) {
+    .admin-sidebar {
+        width: 240px;
+    }
+    
+    .admin-main {
+        margin-left: 240px;
+    }
+    
+    .admin-header h1 {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 768px) {
+    /* 摺疊側邊欄 */
+    .admin-sidebar {
+        width: 80px;
+        transform: translateX(0);
+        transition: var(--transition-base);
+    }
+    
+    /* 標誌摺疊 */
+    .admin-sidebar-logo {
+        font-size: 0;
+        padding: 0 0 var(--space-6);
+        text-align: center;
+    }
+    
+    .admin-sidebar-logo::before {
+        content: "F";
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--accent);
+        text-shadow: 0 0 10px var(--accent);
+    }
+    
+    .admin-sidebar-logo span {
+        display: none;
+    }
+    
+    .admin-sidebar-logo::after {
+        left: 50%;
+        transform: translateX(-50%);
+        width: 30px;
+    }
+    
+    /* 導航文本隱藏 */
+    .admin-nav-item span {
+        display: none;
+    }
+    
+    .admin-nav-item {
+        justify-content: center;
+        padding: var(--space-3) 0;
+    }
+    
+    .admin-nav-item i {
+        width: auto;
+        font-size: 22px;
+        margin: 0;
+    }
+    
+    /* 主內容區調整 */
+    .admin-main {
+        margin-left: 80px;
+        padding: var(--space-4);
+    }
+    
+    .admin-header {
+        flex-direction: column;
+        gap: var(--space-3);
+        text-align: center;
+        margin-bottom: var(--space-6);
+    }
+    
+    .admin-header h1 {
+        font-size: 20px;
+    }
+    
+    .admin-user {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-sidebar {
+        width: 70px;
+    }
+    
+    .admin-main {
+        margin-left: 70px;
+        padding: var(--space-3);
+    }
+    
+    .admin-header h1 {
+        font-size: 18px;
+    }
+    
+    .admin-user {
+        padding: var(--space-1) var(--space-3);
+        font-size: 13px;
+    }
+    
+    .admin-user i {
+        font-size: 16px;
+    }
+    
+    .admin-nav-item i {
+        font-size: 20px;
+    }
+}
+
+/* 移動端側邊欄開關 */
+.mobile-sidebar-toggle {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: var(--accent);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 1000;
+    box-shadow: var(--neon-glow);
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .mobile-sidebar-toggle {
+        display: flex;
+    }
+    
+    .admin-sidebar {
+        transform: translateX(-100%);
+        z-index: 1001;
+    }
+    
+    .admin-sidebar.open {
+        transform: translateX(0);
+        width: 240px;
+    }
+    
+    .admin-sidebar.open .admin-sidebar-logo {
+        font-size: 22px;
+        padding: 0 var(--space-5) var(--space-6);
+    }
+    
+    .admin-sidebar.open .admin-sidebar-logo::before {
+        display: none;
+    }
+    
+    .admin-sidebar.open .admin-sidebar-logo span {
+        display: inline;
+    }
+    
+    .admin-sidebar.open .admin-nav-item {
+        justify-content: flex-start;
+        padding: var(--space-3) var(--space-4);
+    }
+    
+    .admin-sidebar.open .admin-nav-item span {
+        display: inline;
+    }
+    
+    .admin-sidebar.open .admin-nav-item i {
+        width: 24px;
+        font-size: 18px;
+        margin-right: var(--space-3);
+    }
+    
+    .admin-main {
+        margin-left: 0;
+    }
+}
+
+/* ===== 測試模式強化 ===== */
+.test-mode .admin-sidebar-logo span {
+    color: #2563EB;
+}
+
+.test-mode .admin-nav-item.active {
+    background: linear-gradient(135deg, #2563EB, #3B82F6);
+}
+
+.test-mode .admin-user i {
+    color: #2563EB;
+}

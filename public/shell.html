@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <meta name="theme-color" content="#0B0E11" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)">
+  <title>FootRadaPro · AI Trading Dashboard</title>
+  <meta name="description" content="AI-Powered Football Trading Platform — Transparent, Verifiable, Non-Custodial">
+  
+  <!-- 字体和图标库 -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  
+  
+  <!-- 共享 CSS 样式 -->
+  <style>
+    /* ========== 全局变量和重置样式 ========== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 32px;
+      --space-8: 40px;
+      --space-9: 48px;
+      --space-10: 64px;
+      
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-base: 1rem;
+      --font-lg: 1.125rem;
+      --font-xl: 1.25rem;
+      --font-2xl: 1.5rem;
+      --font-3xl: 1.875rem;
+      --font-4xl: 2.25rem;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-bounce: cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      --duration-fast: 0.15s;
+      --duration-base: 0.24s;
+      --duration-slow: 0.4s;
+    }
+.notification-icon-wrapper {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.notification-icon-wrapper i {
+  font-size: 20px;
+  color: var(--text-secondary);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+.notification-icon-wrapper i:hover {
+  color: var(--accent);
+  transform: scale(1.05);
+}
+.notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 30px;
+  min-width: 18px;
+  text-align: center;
+}
+    /* ========== Light Theme - 蓝色（默认/Sandbox） ========== */
+    :root {
+      --bg-gradient-start: rgba(248, 250, 252, 0.92);
+      --bg-gradient-end: rgba(241, 245, 249, 0.96);
+      --glass-bg: rgba(255, 255, 255, 0.48);
+      --glass-border: rgba(37, 99, 235, 0.18);
+      --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.01), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      --glass-shadow-hover: 0 20px 35px -12px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.02), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      --accent: #2563eb;
+      --accent-glow: rgba(37, 99, 235, 0.25);
+      --accent-gradient: linear-gradient(135deg, #2563eb, #4f46e5);
+      --sandbox-gradient: linear-gradient(135deg, #2563eb, #4f46e5);
+      --live-gradient: linear-gradient(135deg, #f97316, #ea580c);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --border-light: rgba(148, 163, 184, 0.18);
+      --card-bg: rgba(255, 255, 255, 0.62);
+      --ticker-bg: rgba(37, 99, 235, 0.92);
+      --ticker-text: #ffffff;
+      --badge-soft: rgba(37, 99, 235, 0.1);
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    /* ========== Light Theme - 蓝色（测试模式） ========== */
+    body.test-mode {
+      --glass-border: rgba(37, 99, 235, 0.22);
+      --accent: #2563eb;
+      --accent-glow: rgba(37, 99, 235, 0.3);
+      --accent-gradient: linear-gradient(135deg, #2563eb, #4f46e5);
+      --ticker-bg: rgba(37, 99, 235, 0.92);
+      --badge-soft: rgba(37, 99, 235, 0.12);
+    }
+
+    /* ========== Light Theme - 橙色（Live 模式） ========== */
+    body.live-mode {
+      --glass-border: rgba(249, 115, 22, 0.22);
+      --accent: #f97316;
+      --accent-glow: rgba(249, 115, 22, 0.3);
+      --accent-gradient: linear-gradient(135deg, #f97316, #ea580c);
+      --ticker-bg: rgba(249, 115, 22, 0.92);
+      --badge-soft: rgba(249, 115, 22, 0.12);
+    }
+
+    /* ========== Dark Theme - 蓝色（默认/Sandbox） ========== */
+    body.dark {
+      --bg-gradient-start: rgba(10, 16, 30, 0.94);
+      --bg-gradient-end: rgba(2, 6, 18, 0.98);
+      --glass-bg: rgba(20, 28, 44, 0.52);
+      --glass-border: rgba(59, 130, 246, 0.28);
+      --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      --glass-shadow-hover: 0 20px 35px -12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.35);
+      --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      --success: #34d399;
+      --warning: #fbbf24;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --border-light: rgba(255, 255, 255, 0.08);
+      --card-bg: rgba(20, 28, 44, 0.58);
+      --ticker-bg: rgba(30, 58, 138, 0.92);
+      --ticker-text: #e2e8f0;
+      --badge-soft: rgba(59, 130, 246, 0.18);
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.15);
+    }
+
+    /* ========== Dark Theme - 蓝色（测试模式） ========== */
+    body.dark.test-mode {
+      --glass-border: rgba(59, 130, 246, 0.35);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.4);
+      --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      --ticker-bg: rgba(30, 58, 138, 0.92);
+      --badge-soft: rgba(59, 130, 246, 0.2);
+    }
+
+    /* ========== Dark Theme - 橙色（Live 模式） ========== */
+    body.dark.live-mode {
+      --glass-border: rgba(249, 115, 22, 0.35);
+      --accent: #fb923c;
+      --accent-glow: rgba(251, 146, 60, 0.4);
+      --accent-gradient: linear-gradient(135deg, #fb923c, #ea580c);
+      --ticker-bg: rgba(234, 88, 12, 0.92);
+      --badge-soft: rgba(249, 115, 22, 0.2);
+    }
+
+    body {
+      background: radial-gradient(ellipse at 30% 40%, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+      transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: repeating-linear-gradient(90deg, rgba(59,130,246,0.02) 0px, rgba(59,130,246,0.02) 1px, transparent 1px, transparent 40px),
+                        repeating-linear-gradient(0deg, rgba(59,130,246,0.02) 0px, rgba(59,130,246,0.02) 1px, transparent 1px, transparent 40px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--border-light); border-radius: 12px; }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 12px; }
+
+    .app-wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ========== 跑马灯 - 动态速度（消息数量不影响滚动速度） ========== */
+    .ticker {
+      background: var(--ticker-bg);
+      backdrop-filter: blur(16px);
+      color: var(--ticker-text);
+      padding: 10px 0;
+      font-size: var(--font-sm);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      border-bottom: 1px solid var(--glass-border);
+      position: relative;
+      transition: background var(--duration-base) var(--ease-out);
+    }
+    .ticker::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 80px;
+      background: linear-gradient(90deg, transparent, var(--ticker-bg));
+      pointer-events: none;
+    }
+    .ticker-content {
+      display: inline-block;
+      white-space: nowrap;
+      animation: tickerScroll var(--scroll-duration, 60s) linear infinite;
+    }
+    .ticker:hover .ticker-content {
+      animation-play-state: paused;
+    }
+
+    @keyframes tickerScroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
+    /* ========== 头部导航 ========== */
+    .header {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: var(--space-4) var(--space-6);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--glass-shadow);
+      transition: all var(--duration-base) var(--ease-out);
+    }
+
+    .header-container {
+      max-width: 1600px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .logo-icon { font-size: 28px; }
+    .logo-text {
+      font-size: var(--font-xl);
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -0.3px;
+      transition: all var(--duration-base) var(--ease-out);
+    }
+
+    .desktop-nav {
+      display: flex;
+      gap: var(--space-2);
+      background: var(--badge-soft);
+      padding: 4px;
+      border-radius: 60px;
+      backdrop-filter: blur(8px);
+      transition: background var(--duration-base) var(--ease-out);
+    }
+
+    .nav-link {
+      padding: 8px 20px;
+      border-radius: 60px;
+      font-size: var(--font-sm);
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all var(--duration-fast) var(--ease-out);
+    }
+
+    .nav-link:hover {
+      color: var(--accent);
+      background: rgba(255,255,255,0.1);
+    }
+
+    .nav-link.active {
+      background: var(--accent-gradient);
+      color: white;
+      box-shadow: 0 2px 8px var(--accent-glow);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: var(--space-4);
+      align-items: center;
+    }
+
+    .header-actions i {
+      font-size: 20px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-out);
+    }
+
+    .header-actions i:hover {
+      color: var(--accent);
+      transform: scale(1.05);
+    }
+
+    .user-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--badge-soft);
+      backdrop-filter: blur(8px);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      border: 1px solid var(--glass-border);
+      cursor: pointer;
+      transition: all var(--duration-base) var(--ease-out);
+    }
+
+    /* 模式切换按钮样式 */
+    .mode-switch {
+      display: flex;
+      background: var(--badge-soft);
+      border-radius: 40px;
+      padding: 3px;
+      gap: 2px;
+    }
+    .mode-switch-btn {
+      padding: 6px 16px;
+      border-radius: 40px;
+      font-size: 12px;
+      font-weight: 600;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .mode-switch-btn.sandbox.active {
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      color: white;
+    }
+    .mode-switch-btn.live.active {
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      color: white;
+    }
+
+    /* ========== 内容容器 ========== */
+    #app-content {
+      flex: 1;
+    }
+
+    /* ========== 底部导航 ========== */
+    .bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card-bg);
+      backdrop-filter: blur(32px);
+      border-top: 1px solid var(--glass-border);
+      padding: var(--space-3) var(--space-5);
+      z-index: 60;
+      transition: all var(--duration-base) var(--ease-out);
+    }
+
+    .bottom-nav-items {
+      display: flex;
+      justify-content: space-around;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .nav-item-mobile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: all var(--duration-fast) var(--ease-out);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: var(--space-2);
+    }
+
+    .nav-item-mobile.active { color: var(--accent); }
+    .nav-item-mobile i { font-size: 22px; }
+
+    /* Toast 容器 */
+    #toastContainer {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* 内容加载动画 */
+    .content-loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 60px;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 899px) {
+      .desktop-nav { display: none; }
+      .bottom-nav { display: block; }
+      body { padding-bottom: 70px; }
+      .header { padding: var(--space-3) var(--space-4); }
+      .logo-text { font-size: var(--font-lg); }
+    }
+
+    /* 通知下拉面板 */
+.notification-dropdown {
+  position: absolute;
+  top: 55px;
+  right: 0;
+  width: 380px;
+  max-height: 450px;
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  display: none;
+  overflow: hidden;
+}
+
+.notification-dropdown.show {
+  display: block;
+  animation: fadeInDown 0.2s ease;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notification-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notification-header h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.notification-header h4 i {
+  margin-right: 8px;
+  color: var(--accent);
+}
+
+.mark-all-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.7rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mark-all-btn:hover {
+  opacity: 0.8;
+}
+
+.notification-list {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.notification-item:hover {
+  background: var(--badge-soft);
+}
+
+.notification-item.unread {
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.notification-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.notification-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notification-time {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.notification-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.notification-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-light);
+  text-align: center;
+}
+
+.notification-footer a {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+.notification-footer a:hover {
+  text-decoration: underline;
+}
+
+.empty-notifications {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.empty-notifications i {
+  font-size: 2rem;
+  margin-bottom: 8px;
+  display: block;
+  opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+  .notification-dropdown {
+    width: calc(100vw - 40px);
+    right: 20px;
+    left: 20px;
+  }
+}
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <!-- 跑马灯 -->
+  <div class="ticker">
+    <div class="ticker-content" id="tickerContent"></div>
+  </div>
+
+  <!-- 头部导航 -->
+  <header class="header">
+    <div class="header-container">
+      <div class="logo">
+        <div class="logo-icon">⚽</div>
+        <div class="logo-text">FootRadaPro</div>
+      </div>
+
+      <nav class="desktop-nav">
+        <a href="/shell.html?page=home" class="nav-link" data-nav="home">Home</a>
+        <a href="/shell.html?page=markets" class="nav-link" data-nav="markets">Markets</a>
+        <a href="/shell.html?page=records" class="nav-link" data-nav="records">Records</a>
+        <a href="javascript:void(0)" class="nav-link" data-nav="support" id="supportNavLink">Support</a>
+        <a href="/shell.html?page=profile" class="nav-link" data-nav="profile">Profile</a>
+      </nav>
+
+      <div class="header-actions">
+        <div class="mode-switch" id="modeSwitch">
+          <button class="mode-switch-btn sandbox active" data-mode="sandbox">Sandbox</button>
+          <button class="mode-switch-btn live" data-mode="live">Live</button>
+        </div>
+          <!-- ✅ 添加通知图标 -->
+  <div class="notification-icon-wrapper" id="notificationIcon">
+    <i class="fa-regular fa-bell"></i>
+    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+  </div>
+  <i class="fa-regular fa-moon" id="themeToggle"></i>
+  <div class="user-badge" id="langToggle">EN</div>
+</div>
+        
+       
+      
+    
+    </div>
+  </header>
+
+  <!-- 动态内容区域 -->
+  <div id="app-content">
+    <div class="content-loading">
+      <i class="fas fa-spinner fa-pulse"></i> Loading...
+    </div>
+  </div>
+
+  <!-- 底部导航 -->
+<div class="bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="/shell.html?page=home" class="nav-item-mobile" data-nav="home"><i class="fa-solid fa-home"></i><span>Home</span></a>
+    <a href="/shell.html?page=markets" class="nav-item-mobile" data-nav="markets"><i class="fa-solid fa-chart-line"></i><span>Markets</span></a>
+    <a href="/shell.html?page=records" class="nav-item-mobile" data-nav="records"><i class="fa-solid fa-list"></i><span>Records</span></a>
+    <a href="/shell.html?page=support-chat" class="nav-item-mobile" data-nav="support-chat"><i class="fa-solid fa-headset"></i><span>Support</span></a>
+    <a href="/shell.html?page=profile" class="nav-item-mobile" data-nav="profile"><i class="fa-solid fa-user"></i><span>Profile</span></a>
+ 
+
+
+  </div>
+  
+</div>
+</div>
+    <!-- 通知下拉面板 -->
+<div class="notification-dropdown" id="notificationDropdown">
+  <div class="notification-header">
+    <h4><i class="fa-regular fa-bell"></i> 通知</h4>
+    <button class="mark-all-btn" id="markAllReadBtn">
+      <i class="fa-regular fa-circle-check"></i> 全部已读
+    </button>
+  </div>
+  <div class="notification-list" id="notificationList">
+    <div class="empty-notifications">
+      <i class="fa-regular fa-bell-slash"></i>
+      <p>暂无通知</p>
+    </div>
+  </div>
+  <div class="notification-footer">
+    <a href="/shell.html?page=notifications">查看所有通知 <i class="fa-solid fa-arrow-right"></i></a>
+  </div>
+</div>
+<!-- Socket.io 客户端 -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<!-- 核心 JS 依赖 -->
+<script src="/js/core/theme.js"></script>
+<script src="/js/core/api-client.js"></script>
+<script src="/js/core/sync.js"></script>
+<script src="/js/user/match-market_controller.js"></script>
+
+<!-- 路由脚本 -->
+<script src="/js/core/router.js"></script>
+
+<script>
+  // ========== 全局货币符号工具函数 ==========
+  function getCurrencySymbol() {
+    if (window.ThemeManager && !window.ThemeManager.isTestMode) {
+      return 'USDT';
+    }
+    return 'tUSDT';
+  }
+
+  function formatAmountWithCurrency(amount) {
+    const symbol = getCurrencySymbol();
+    return amount.toFixed(2) + ' ' + symbol;
+  }
+
+  // ========== 跑马灯 - 支持断点续播 + 固定滚动速度 ==========
+  (function() {
+    let tickerMessages = [];
+    let currentIndex = 0;
+    let tickerInterval = null;
+    let lastMessagesHash = ''; // 用于检测消息变化
+
+    async function fetchTickerMessages() {
+      try {
+        const res = await APIClient.get('/api/v1/ticker/messages?limit=1000');
+        const result = await res.json();
+        let newMessages = [];
+        if (result.success && result.data && result.data.length > 0) {
+          newMessages = result.data.map(m => m.message);
+        } else {
+          newMessages = [
+            'VERIFIABLE ON-CHAIN',
+            'AI POWERED FOOTBALL LIQUIDITY',
+            '20% PERFORMANCE FEE ONLY ON PROFITS',
+            'CUTOFF ENFORCED'
+          ];
+        }
+        
+        // 检测消息是否变化
+        const newHash = JSON.stringify(newMessages);
+        const messagesChanged = (lastMessagesHash !== '' && lastMessagesHash !== newHash);
+        
+        if (messagesChanged) {
+          // 消息变化时，重置索引从头开始
+          currentIndex = 0;
+          localStorage.setItem('ticker_index', 0);
+        }
+        
+        tickerMessages = newMessages;
+        lastMessagesHash = newHash;
+        
+        // 恢复保存的索引（仅在消息未变化时）
+        if (!messagesChanged) {
+          const savedIndex = localStorage.getItem('ticker_index');
+          if (savedIndex !== null && parseInt(savedIndex) < tickerMessages.length) {
+            currentIndex = parseInt(savedIndex);
+          } else {
+            currentIndex = 0;
+          }
+        }
+        
+        updateTickerDisplay();
+        startTickerLoop();
+      } catch (err) {
+        console.warn('获取跑马灯消息失败:', err);
+        tickerMessages = [
+          'VERIFIABLE ON-CHAIN',
+          'AI POWERED FOOTBALL LIQUIDITY',
+          '20% PERFORMANCE FEE ONLY ON PROFITS',
+          'CUTOFF ENFORCED'
+        ];
+        updateTickerDisplay();
+        startTickerLoop();
+      }
+    }
+
+    function updateTickerDisplay() {
+      const tickerContent = document.getElementById('tickerContent');
+      if (!tickerContent) return;
+      
+      if (tickerMessages.length === 0) return;
+      
+      // 构建消息（只放一次，不复制）
+      let allMessages = '';
+      for (let i = 0; i < tickerMessages.length; i++) {
+        const idx = (currentIndex + i) % tickerMessages.length;
+        allMessages += ` ⚡ ${escapeHtmlForTicker(tickerMessages[idx])} `;
+      }
+      tickerContent.innerHTML = allMessages;
+      
+      // ========== 动态计算滚动速度 ==========
+      // 估算内容宽度（每个字符约 8px，⚡ 图标 20px，间距 40px）
+      const estimatedCharWidth = 8;
+      const iconWidth = 20;
+      const spacing = 40;
+      let totalLength = 0;
+      for (let i = 0; i < tickerMessages.length; i++) {
+        totalLength += tickerMessages[i].length * estimatedCharWidth + iconWidth + spacing;
+      }
+      
+      const targetSpeed = 35; // 目标速度 35 像素/秒（可调整）
+      const duration = totalLength / targetSpeed; // 动画时间 = 总长度 ÷ 速度
+      
+      // 设置 CSS 变量，动画会自动使用新时间
+      tickerContent.style.setProperty('--scroll-duration', Math.max(duration, 10) + 's');
+      // =====================================
+    }
+
+    function nextTickerMessage() {
+      if (tickerMessages.length === 0) return;
+      
+      currentIndex = (currentIndex + 1) % tickerMessages.length;
+      localStorage.setItem('ticker_index', currentIndex);
+      updateTickerDisplay();
+    }
+
+    function startTickerLoop() {
+      if (tickerInterval) clearInterval(tickerInterval);
+      tickerInterval = setInterval(() => {
+        nextTickerMessage();
+      }, 5000);
+    }
+
+    function escapeHtmlForTicker(str) {
+      if (!str) return '';
+      return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+      });
+    }
+
+    window.addEventListener('beforeunload', () => {
+      localStorage.setItem('ticker_index', currentIndex);
+    });
+
+    // 定期刷新消息（每30秒检查一次是否有新消息）
+    setInterval(() => {
+      fetchTickerMessages();
+    }, 30000);
+
+    fetchTickerMessages();
+  })();
+
+  // ========== 使用全局 ThemeManager ==========
+  (function() {
+    if (!window.ThemeManager) return;
+    
+    if (window.__shellInitialized) {
+      console.log('[Shell] Already initialized, skipping');
+      return;
+    }
+    window.__shellInitialized = true;
+    
+    const currentTheme = ThemeManager.getTheme();
+    document.body.classList.toggle('dark', currentTheme === 'dark');
+    
+    const isLiveMode = !ThemeManager.isTestMode;
+    if (isLiveMode) {
+      document.body.classList.add('live-mode');
+    } else {
+      document.body.classList.remove('live-mode');
+    }
+    
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+      if (currentTheme === 'dark') {
+        themeToggle.classList.remove('fa-moon');
+        themeToggle.classList.add('fa-sun');
+      } else {
+        themeToggle.classList.remove('fa-sun');
+        themeToggle.classList.add('fa-moon');
+      }
+      
+      const newToggle = themeToggle.cloneNode(true);
+      themeToggle.parentNode.replaceChild(newToggle, themeToggle);
+      newToggle.onclick = (e) => {
+        e.preventDefault();
+        ThemeManager.toggleTheme();
+      };
+    }
+    
+    const modeSwitchBtns = document.querySelectorAll('.mode-switch-btn');
+    if (modeSwitchBtns.length) {
+      modeSwitchBtns.forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const mode = btn.dataset.mode;
+          const targetIsTestMode = mode === 'sandbox';
+          if (ThemeManager && ThemeManager.isTestMode !== targetIsTestMode) {
+            await ThemeManager.toggleMode();
+          }
+        });
+      });
+    }
+    
+    ThemeManager.addThemeListener((state) => {
+      document.body.classList.toggle('dark', state.isDarkMode);
+      const toggleIcon = document.getElementById('themeToggle');
+      if (toggleIcon) {
+        if (state.isDarkMode) {
+          toggleIcon.classList.remove('fa-moon');
+          toggleIcon.classList.add('fa-sun');
+        } else {
+          toggleIcon.classList.remove('fa-sun');
+          toggleIcon.classList.add('fa-moon');
+        }
+      }
+    });
+    
+    // Support 导航点击跳转到聊天页面
+    const supportNavLink = document.getElementById('supportNavLink');
+    if (supportNavLink) {
+      supportNavLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        // 路由跳转到聊天页面
+        if (window.router && window.router.navigate) {
+          window.router.navigate('support-chat');
+        } else {
+          window.location.href = '/shell.html?page=support-chat';
+        }
+      });
+    }
+    
+    ThemeManager.addListener((state) => {
+      const isSandbox = state.isTestMode;
+      if (isSandbox) {
+        document.body.classList.remove('live-mode');
+      } else {
+        document.body.classList.add('live-mode');
+      }
+      
+      document.querySelectorAll('.mode-switch-btn').forEach(btn => {
+        if ((isSandbox && btn.classList.contains('sandbox')) || (!isSandbox && btn.classList.contains('live'))) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      
+      window.dispatchEvent(new CustomEvent('modeChanged', { detail: { isTestMode: isSandbox } }));
+      
+      console.log(`🎨 切换到 ${isSandbox ? 'Sandbox (tUSDT)' : 'Live (USDT)'} 模式`);
+    });
+  })();
+
+  // ========== 导航栏高亮 ==========
+  function highlightCurrentNav() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const page = urlParams.get('page') || 'home';
+    
+    document.querySelectorAll('.desktop-nav .nav-link, .nav-item-mobile').forEach(link => {
+      const linkNav = link.dataset.nav;
+      if (linkNav === page) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    });
+  }
+  
+  highlightCurrentNav();
+  window.addEventListener('popstate', highlightCurrentNav);
+
+  // ========== 暴露工具函数到全局 ==========
+  window.getCurrencySymbol = getCurrencySymbol;
+  window.formatAmountWithCurrency = formatAmountWithCurrency;
+
+// ========== 通知中心功能（下拉面板版）==========
+
+let notifications = [];
+
+// 获取未读通知数量
+async function fetchUnreadCount() {
+  try {
+    const response = await fetch('/api/v1/user/notifications/unread-count', {
+      credentials: 'include'
+    });
+    const data = await response.json();
+    const badge = document.getElementById('notificationBadge');
+    if (badge && data.success && data.data.unreadCount > 0) {
+      badge.textContent = data.data.unreadCount > 99 ? '99+' : data.data.unreadCount;
+      badge.style.display = 'inline-block';
+    } else if (badge) {
+      badge.style.display = 'none';
+    }
+  } catch (err) {
+    console.error('获取未读数量失败:', err);
+  }
+}
+
+// 获取未读通知列表
+async function fetchNotifications() {
+  try {
+    const response = await fetch('/api/v1/user/notifications', {
+      credentials: 'include'
+    });
+    const data = await response.json();
+    if (data.success) {
+      notifications = data.data;
+      renderNotificationList();
+    }
+  } catch (err) {
+    console.error('获取通知列表失败:', err);
+  }
+}
+
+// 渲染通知列表
+function renderNotificationList() {
+  const container = document.getElementById('notificationList');
+  if (!container) return;
+  
+  if (!notifications || notifications.length === 0) {
+    container.innerHTML = `
+      <div class="empty-notifications">
+        <i class="fa-regular fa-bell-slash"></i>
+        <p>暂无未读通知</p>
+      </div>
+    `;
+    return;
+  }
+  
+  let html = '';
+  for (const notif of notifications) {
+    const typeColor = {
+      'info': '#3b82f6',
+      'success': '#10b981',
+      'warning': '#f59e0b',
+      'danger': '#ef4444'
+    }[notif.type] || '#3b82f6';
+    
+    const typeIcon = {
+      'info': 'fa-circle-info',
+      'success': 'fa-circle-check',
+      'warning': 'fa-triangle-exclamation',
+      'danger': 'fa-circle-exclamation'
+    }[notif.type] || 'fa-bell';
+    
+    const timeAgo = formatTimeAgo(notif.created_at);
+    const title = notif.title || '通知';
+    const content = notif.content || '';
+    
+    html += `
+      <div class="notification-item unread" data-id="${notif.id}">
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+          <div class="notification-icon" style="background: ${typeColor}15;">
+            <i class="fa-regular ${typeIcon}" style="color: ${typeColor}; font-size: 16px;"></i>
+          </div>
+          <div class="notification-content">
+            <div class="notification-title">${escapeHtml(title)}</div>
+            <div class="notification-text">${escapeHtml(content.substring(0, 80))}${content.length > 80 ? '...' : ''}</div>
+            <div class="notification-time">${timeAgo}</div>
+          </div>
+          <div class="notification-dot" style="background: ${typeColor};"></div>
+        </div>
+      </div>
+    `;
+  }
+  
+  container.innerHTML = html;
+  
+  container.querySelectorAll('.notification-item').forEach(item => {
+    item.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = item.dataset.id;
+      await markAsRead(id);
+      window.location.href = `/shell.html?page=notification-detail&id=${id}`;
+    });
+  });
+}
+
+// 标记单个为已读
+async function markAsRead(id) {
+  try {
+    await fetch(`/api/v1/user/notifications/read/${id}`, {
+      method: 'PUT',
+      credentials: 'include'
+    });
+    fetchUnreadCount();
+    // 注意：这里不重新渲染列表，因为即将跳转
+  } catch (err) {
+    console.error('标记已读失败:', err);
+  }
+}
+
+// 全部标记为已读
+async function markAllAsRead() {
+  try {
+    const response = await fetch('/api/v1/user/notifications/read-all', {
+      method: 'PUT',
+      credentials: 'include'
+    });
+    const data = await response.json();
+    if (data.success) {
+      fetchUnreadCount();
+      notifications = [];
+      renderNotificationList();
+      showToastMessage('已标记所有通知为已读', 'success');
+    }
+  } catch (err) {
+    console.error('全部标记已读失败:', err);
+  }
+}
+
+function formatTimeAgo(dateStr) {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = Math.floor((now - date) / 1000);
+  if (diff < 60) return '刚刚';
+  if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}天前`;
+  return date.toLocaleDateString();
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+}
+
+function showToastMessage(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    background: ${type === 'success' ? '#10b981' : '#3b82f6'};
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    z-index: 10000;
+    animation: slideIn 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  `;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+function initNotifications() {
+  fetchUnreadCount();
+  
+  const notificationIcon = document.getElementById('notificationIcon');
+  const dropdown = document.getElementById('notificationDropdown');
+  
+  if (notificationIcon && dropdown) {
+    notificationIcon.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (dropdown.classList.contains('show')) {
+        dropdown.classList.remove('show');
+      } else {
+        await fetchNotifications();
+        dropdown.classList.add('show');
+      }
+    });
+    
+    document.addEventListener('click', (e) => {
+      if (!notificationIcon.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.remove('show');
+      }
+    });
+  }
+  
+  const markAllBtn = document.getElementById('markAllReadBtn');
+  if (markAllBtn) {
+    markAllBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await markAllAsRead();
+    });
+  }
+}
+
+setInterval(fetchUnreadCount, 30000);
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initNotifications);
+} else {
+  initNotifications();
+}
+// ========== Socket.io 初始化（客服实时通信）==========
+(function initSocket() {
+    if (window.socketInitialized) return;
+    
+    // 等待 io 函数加载
+    if (typeof io === 'undefined') {
+        console.log('⏳ 等待 Socket.io 加载...');
+        setTimeout(initSocket, 500);
+        return;
+    }
+    
+    // 获取用户信息并连接 Socket
+    fetch('/api/v1/user/profile', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.data) {
+                const userId = data.data.id;
+                console.log('🔌 连接 Socket 服务器, userId:', userId);
+                
+                window.socket = io({
+                    path: '/socket.io',
+                    transports: ['websocket', 'polling'],
+                    query: { userId: userId }
+                });
+                
+                window.socket.on('connect', () => {
+                    console.log('✅ Socket 已连接:', window.socket.id);
+                    window.socket.emit('register', userId);
+                });
+                
+                window.socket.on('disconnect', () => {
+                    console.log('❌ Socket 断开连接');
+                });
+                
+                window.socket.on('connect_error', (err) => {
+                    console.error('Socket 连接错误:', err.message);
+                });
+                
+                window.socket.on('new-message', (data) => {
+                    console.log('📨 收到新消息:', data);
+                    // 触发自定义事件，让聊天页面处理
+                    window.dispatchEvent(new CustomEvent('new-message', { detail: data }));
+                });
+                
+                window.socketInitialized = true;
+            }
+        })
+        .catch(err => console.error('获取用户信息失败:', err));
+})();
+</script>
+</body>
+</html>

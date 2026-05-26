@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>FootRadaPro · AI-Powered Football Trading</title>
+  <meta name="description" content="AI-powered football trading platform with verifiable trust system">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #0A0C10;
+      --bg-secondary: #13161C;
+      --bg-card: #1A1F2A;
+      --bg-hover: #232833;
+      --text-primary: #FFFFFF;
+      --text-secondary: #A0A8B8;
+      --text-muted: #6C757D;
+      --border-color: #2A3040;
+      --accent: #FF6B00;
+      --accent-light: rgba(255,107,0,0.1);
+      --accent-gradient: linear-gradient(135deg, #FF6B00, #FF4500);
+      --success: #00D68F;
+      --warning: #FFAA00;
+      --danger: #FF3B5C;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --radius-2xl: 32px;
+      --radius-full: 9999px;
+      --shadow: 0 4px 20px rgba(0,0,0,0.2);
+      --shadow-hover: 0 8px 30px rgba(255,107,0,0.15);
+    }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* 自定义滚动条 */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: var(--radius-full); }
+
+    /* 导航栏 */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 16px 32px;
+      transition: all 0.3s ease;
+      background: transparent;
+    }
+    .navbar.scrolled {
+      background: rgba(10,12,16,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,107,0,0.2);
+    }
+    .nav-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: 800;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+    }
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-btn {
+      background: var(--accent-gradient);
+      border: none;
+      padding: 8px 20px;
+      border-radius: var(--radius-full);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* 主容器 */
+    .container { max-width: 1400px; margin: 0 auto; padding: 0 32px; }
+
+    /* Hero 区域 */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 120px 0 80px;
+      position: relative;
+    }
+    .hero-content {
+      flex: 1;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent-light);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      color: var(--accent);
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: 56px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, #fff, var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .hero p {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 500px;
+      margin-bottom: 32px;
+    }
+    .hero-stats {
+      display: flex;
+      gap: 32px;
+      margin-top: 40px;
+    }
+    .hero-stats h3 { font-size: 32px; font-weight: 700; color: var(--accent); }
+    .hero-stats p { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+
+    /* 雷达容器 */
+    .radar-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    canvas#footballRadar {
+      width: 420px;
+      height: 420px;
+      filter: drop-shadow(0 0 20px rgba(255,107,0,0.3));
+    }
+
+    /* 仪表盘卡片网格 */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin: 80px 0;
+    }
+    .dashboard-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-color);
+      padding: 24px;
+      transition: all 0.3s ease;
+    }
+    .dashboard-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+      box-shadow: var(--shadow-hover);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .metric-value {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .progress-bar {
+      height: 4px;
+      background: var(--bg-hover);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin-top: 16px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent-gradient);
+      width: 0%;
+      border-radius: var(--radius-full);
+    }
+
+    /* 本托网格 */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      margin: 80px 0;
+    }
+    .bento-item {
+      background: var(--bg-card);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-color);
+      padding: 24px;
+      transition: all 0.3s ease;
+    }
+    .bento-item.large { grid-column: span 2; }
+    .bento-item.full { grid-column: span 4; }
+
+    /* 新闻网格 */
+    .news-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 24px;
+    }
+    .news-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .news-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+    }
+    .news-image {
+      height: 160px;
+      background-size: cover;
+      background-position: center;
+    }
+    .news-content { padding: 20px; }
+    .news-source { font-size: 12px; color: var(--accent); margin-bottom: 8px; }
+    .news-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+    .news-summary { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+    .news-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); }
+
+    /* 事件卡片 */
+    .events-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .event-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: var(--bg-hover);
+      border-radius: var(--radius-md);
+    }
+    .event-badge {
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .event-badge.success { background: rgba(0,214,143,0.15); color: var(--success); }
+    .event-badge.pending { background: rgba(255,170,0,0.15); color: var(--warning); }
+
+    /* 图表容器 */
+    .chart-container {
+      height: 200px;
+      margin-top: 16px;
+    }
+
+    /* 积分榜 */
+    .standings-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .standing-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      background: var(--bg-hover);
+      border-radius: var(--radius-md);
+    }
+    .standing-position { width: 30px; font-weight: 700; color: var(--accent); }
+    .standing-team { flex: 1; }
+    .standing-points { font-weight: 600; }
+
+    /* 验证徽章 */
+    .badge-ring {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+
+    /* 加载动画 */
+    .loading-state { text-align: center; padding: 60px; }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border-color);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 响应式 */
+    @media (max-width: 1024px) {
+      .hero { flex-direction: column; text-align: center; }
+      .hero p { margin: 0 auto 32px; }
+      .hero-stats { justify-content: center; }
+      .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+      .bento-grid { grid-template-columns: repeat(2, 1fr); }
+      .news-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .container { padding: 0 20px; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .bento-grid { grid-template-columns: 1fr; }
+      .bento-item.large { grid-column: span 1; }
+      .news-grid { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 36px; }
+      .navbar { padding: 12px 20px; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 导航栏 -->
+<nav class="navbar" id="navbar">
+  <div class="nav-container">
+    <div class="logo">FOOT<span style="color:white;">RADA</span></div>
+    <div class="nav-links">
+      <a href="#">Home</a>
+      <a href="#">Markets</a>
+      <a href="#">Reports</a>
+      <a href="#">Support</a>
+      <button class="nav-btn" onclick="location.href='/login.html'">Sign In</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <!-- Hero 区域 -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <i class="fas fa-robot"></i>
+        <span>AI-Powered Trading System</span>
+      </div>
+      <h1>Trade Smarter<br>with AI Execution</h1>
+      <p>Authorize once, AI executes automatically. Transparent, verifiable, non-custodial.</p>
+      <button class="nav-btn" onclick="location.href='/register.html'" style="padding: 12px 32px;">Get Started →</button>
+      <div class="hero-stats">
+        <div><h3 id="totalVolume">$1.28B</h3><p>Total Volume</p></div>
+        <div><h3 id="avgReturn">15.3%</h3><p>Avg Return</p></div>
+        <div><h3 id="maxDrawdown">2.1%</h3><p>Max Drawdown</p></div>
+      </div>
+    </div>
+    <div class="radar-container">
+      <canvas id="footballRadar" width="420" height="420"></canvas>
+    </div>
+  </section>
+
+  <!-- 仪表盘卡片 -->
+  <div class="dashboard-grid">
+    <div class="dashboard-card">
+      <div class="card-header">
+        <span class="card-title">Active Nodes</span>
+        <i class="fas fa-circle-nodes" style="color: var(--accent);"></i>
+      </div>
+      <div class="metric-value">12</div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 85%;"></div></div>
+    </div>
+    <div class="dashboard-card">
+      <div class="card-header">
+        <span class="card-title">System Uptime</span>
+        <i class="fas fa-chart-line" style="color: var(--accent);"></i>
+      </div>
+      <div class="metric-value">99.3%</div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 99%;"></div></div>
+    </div>
+    <div class="dashboard-card">
+      <div class="card-header">
+        <span class="card-title">Today's Volume</span>
+        <i class="fas fa-chart-simple" style="color: var(--accent);"></i>
+      </div>
+      <div class="metric-value">$124M</div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 68%;"></div></div>
+    </div>
+  </div>
+
+  <!-- 本托网格 -->
+  <div class="bento-grid">
+    <div class="bento-item">
+      <div class="card-title">System Status</div>
+      <div class="metric-value" id="activeUsers">1,284</div>
+      <div class="progress-bar"><div class="progress-fill" id="systemLoadFill" style="width: 78%;"></div></div>
+      <div class="load-value" id="systemLoadValue">78%</div>
+    </div>
+    <div class="bento-item large">
+      <div class="card-header"><span class="card-title">Trade Performance</span></div>
+      <div class="chart-container">
+        <canvas id="performanceChart"></canvas>
+      </div>
+      <div class="chart-footer" style="display: flex; justify-content: space-between; margin-top: 16px;">
+        <span class="trend-indicator">+12.3%</span>
+        <span>+15% volume</span>
+      </div>
+    </div>
+    <div class="bento-item">
+      <div class="card-title">Events</div>
+      <div class="events-list">
+        <div class="event-item"><span class="event-time">15:23:04</span><span class="event-name">Authorization deadline</span><span class="event-badge success">LOCKED</span></div>
+        <div class="event-item"><span class="event-time">16:30:00</span><span class="event-name">Match settlement</span><span class="event-badge pending">PENDING</span></div>
+        <div class="event-item"><span class="event-time">17:45:00</span><span class="event-name">Liquidity reallocation</span><span class="event-badge">SCHEDULED</span></div>
+      </div>
+    </div>
+    <div class="bento-item">
+      <div class="badge-ring"><i class="fas fa-shield-alt" style="font-size: 32px; color: var(--accent);"></i></div>
+      <div class="trust-number" style="font-size: 24px; font-weight: 700; text-align: center;">98.5<span style="font-size: 14px;">/100</span></div>
+      <div class="badge-desc" style="text-align: center; font-size: 12px; color: var(--text-muted);">Trust Score</div>
+    </div>
+    <div class="bento-item full">
+      <div class="card-title">Premier League Standings</div>
+      <div class="standings-grid" id="standingsGrid">
+        <div class="loading-state"><div class="spinner"></div><p>Loading...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新闻区域 -->
+  <div class="dashboard-grid" style="margin-top: 0;">
+    <div class="dashboard-card" style="grid-column: span 3;">
+      <div class="card-header">
+        <span class="card-title">Latest News</span>
+        <button id="refreshNews" style="background: none; border: none; color: var(--accent); cursor: pointer;">Refresh →</button>
+      </div>
+      <div class="news-grid" id="newsGrid">
+        <div class="loading-state"><div class="spinner"></div><p>Loading news...</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 导航栏滚动效果
+  function initNavbar() {
+    const navbar = document.querySelector(".navbar");
+    window.addEventListener("scroll", () => {
+      if (window.scrollY > 20) navbar.classList.add("scrolled");
+      else navbar.classList.remove("scrolled");
+    });
+  }
+
+  // 雷达扫描
+  function initRadar() {
+    const radar = document.getElementById("footballRadar");
+    if (!radar) return;
+    const ctx = radar.getContext("2d");
+    const width = 420, height = 420;
+    radar.width = width; radar.height = height;
+    let angle = 0;
+    function drawRadar() {
+      ctx.clearRect(0, 0, width, height);
+      const cx = width / 2, cy = height / 2;
+      ctx.strokeStyle = "rgba(255, 107, 0, 0.15)";
+      for (let r = 60; r <= 180; r += 30) {
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.moveTo(cx - 180, cy); ctx.lineTo(cx + 180, cy);
+      ctx.moveTo(cx, cy - 180); ctx.lineTo(cx, cy + 180);
+      ctx.stroke();
+      const rad = (angle * Math.PI) / 180;
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(rad) * 180, cy + Math.sin(rad) * 180);
+      ctx.strokeStyle = "#FF6B00"; ctx.lineWidth = 2; ctx.stroke();
+      angle = (angle + 1) % 360;
+      requestAnimationFrame(drawRadar);
+    }
+    drawRadar();
+  }
+
+  // 性能图表
+  function initCharts() {
+    const ctx = document.getElementById('performanceChart');
+    if (!ctx) return;
+    new Chart(ctx, {
+      type: 'line',
+      data: { labels: ['2021', '2022', '2023', '2024', '2025', '2026'], datasets: [{ data: [1.0, 1.12, 1.25, 1.41, 1.58, 1.73], borderColor: '#FF6B00', borderWidth: 3, pointBackgroundColor: '#FF6B00', tension: 0.2, fill: false }] },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#A0A8B8' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#A0A8B8' } } } }
+    });
+  }
+
+  // 积分榜
+  async function loadStandings() {
+    const grid = document.getElementById('standingsGrid');
+    if (!grid) return;
+    const fallback = [
+      { position: 1, team: 'Liverpool', points: 67, played: 28 },
+      { position: 2, team: 'Manchester City', points: 65, played: 28 },
+      { position: 3, team: 'Arsenal', points: 61, played: 28 },
+      { position: 4, team: 'Aston Villa', points: 56, played: 28 },
+      { position: 5, team: 'Tottenham', points: 53, played: 28 },
+      { position: 6, team: 'Manchester United', points: 47, played: 28 }
+    ];
+    grid.innerHTML = fallback.map(item => `<div class="standing-item"><span class="standing-position">${item.position}</span><span class="standing-team">${item.team}</span><span class="standing-points">${item.points} pts</span></div>`).join('');
+  }
+
+  // 新闻加载
+  async function loadNews() {
+    const grid = document.getElementById('newsGrid');
+    if (!grid) return;
+    const fallback = [
+      { source: 'Sky Sports', title: 'Man City make €120m offer for Musiala', time: Date.now() - 7200000, imageUrl: '' },
+      { source: 'Marca', title: 'Real Madrid agree Mbappe deal', time: Date.now() - 18000000, imageUrl: '' },
+      { source: 'BBC Sport', title: 'Premier League title race heats up', time: Date.now() - 3600000, imageUrl: '' }
+    ];
+    function timeAgo(ts) { const s = Math.floor((Date.now() - ts) / 1000); if (s < 60) return 'just now'; if (s < 3600) return `${Math.floor(s / 60)}m ago`; if (s < 86400) return `${Math.floor(s / 3600)}h ago`; return `${Math.floor(s / 86400)}d ago`; }
+    grid.innerHTML = fallback.map(item => `<div class="news-card"><div class="news-content"><div class="news-source">${item.source}</div><div class="news-title">${item.title}</div><div class="news-meta"><span>${timeAgo(item.time)}</span></div></div></div>`).join('');
+  }
+
+  // GSAP 动画
+  function initGSAP() {
+    if (typeof gsap === 'undefined') return;
+    gsap.fromTo('.dashboard-card', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.1, scrollTrigger: { trigger: '.dashboard-grid', start: 'top 80%' } });
+    gsap.fromTo('.bento-item', { opacity: 0, scale: 0.95 }, { opacity: 1, scale: 1, duration: 0.6, stagger: 0.1, scrollTrigger: { trigger: '.bento-grid', start: 'top 80%' } });
+  }
+
+  // 本托网格动态更新
+  function updateBentoData() {
+    const users = Math.floor(Math.random() * 500) + 1000;
+    const load = Math.floor(Math.random() * 30) + 60;
+    document.getElementById('activeUsers')?.setAttribute('data-value', users);
+    if (document.getElementById('activeUsers')) document.getElementById('activeUsers').textContent = users;
+    const fill = document.getElementById('systemLoadFill');
+    const value = document.getElementById('systemLoadValue');
+    if (fill) fill.style.width = load + '%';
+    if (value) value.textContent = load + '%';
+  }
+  setInterval(updateBentoData, 10000);
+
+  // 系统统计
+  function loadSystemStats() {
+    const totalVolume = document.getElementById('totalVolume');
+    const avgReturn = document.getElementById('avgReturn');
+    const maxDrawdown = document.getElementById('maxDrawdown');
+    if (totalVolume) totalVolume.textContent = '$1.28B';
+    if (avgReturn) avgReturn.textContent = '15.3%';
+    if (maxDrawdown) maxDrawdown.textContent = '2.1%';
+  }
+
+  // 刷新新闻
+  document.getElementById('refreshNews')?.addEventListener('click', () => loadNews());
+
+  // 初始化所有
+  document.addEventListener('DOMContentLoaded', () => {
+    initNavbar();
+    initRadar();
+    initCharts();
+    loadStandings();
+    loadNews();
+    loadSystemStats();
+    updateBentoData();
+    initGSAP();
+  });
+</script>
+</body>
+</html>

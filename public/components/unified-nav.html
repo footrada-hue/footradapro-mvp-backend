@@ -1,0 +1,42 @@
+<!-- =========================================================
+     FOOTRADAPRO - 統一底部導航欄組件
+     使用方式：複製 <nav> 部分到每個頁面的 </body> 之前
+     ========================================================= -->
+
+<nav class="bottom-nav">
+    <a href="/" class="nav-item">
+        <i class="fas fa-home"></i>
+        <span>首頁</span>
+    </a>
+    <a href="/match-market.html" class="nav-item">
+        <i class="fas fa-chart-line"></i>
+        <span>市場</span>
+    </a>
+    <a href="/support.html" class="nav-item">
+        <i class="fas fa-headset"></i>
+        <span>支援</span>
+    </a>
+    <a href="/profile.html" class="nav-item">
+        <i class="fas fa-user"></i>
+        <span>我的</span>
+    </a>
+</nav>
+
+<script>
+// 自動激活當前頁面對應的導航項
+(function() {
+    const currentPath = window.location.pathname;
+    const navItems = document.querySelectorAll('.nav-item');
+    
+    navItems.forEach(item => {
+        const href = item.getAttribute('href');
+        if (href === currentPath || 
+            (currentPath === '/' && href === '/') ||
+            (currentPath.includes('match-market') && href.includes('match-market')) ||
+            (currentPath.includes('support') && href.includes('support')) ||
+            (currentPath.includes('profile') && href.includes('profile'))) {
+            item.classList.add('active');
+        }
+    });
+})();
+</script>

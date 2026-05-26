@@ -1,0 +1,60 @@
+時間處理更新報告
+================
+生成時間: 2026/3/15 23:25:18
+修改文件數: 49
+
+修改的文件列表:
+  - public\js\user\transaction-detail.js
+  - public\js\user\result_controller.js
+  - public\js\user\report_controller.js
+  - public\js\user\match-market_controller.js
+  - public\js\user\index_controller.js
+  - public\js\user\home.js
+  - public\js\user\historical_reports_controller.js
+  - public\js\admin\settle_controller.js
+  - public\js\admin\report_editor.js
+  - public\js\admin\matches_controller.js
+  - public\withdraw.html
+  - public\wallet.html
+  - public\vip-details.html
+  - public\transaction-list.html
+  - public\transaction-detail.html
+  - public\terms.html
+  - public\support.html
+  - public\result.html
+  - public\report-detail.html
+  - public\register.html
+  - public\profile.html
+  - public\privacy.html
+  - public\match-market.html
+  - public\login.html
+  - public\index.html
+  - public\home.html
+  - public\historical-reports.html
+  - public\deposit.html
+  - public\authorize-submit.html
+  - public\admin\withdrawals.html
+  - public\admin\users.html
+  - public\admin\ticker-manager.html
+  - public\admin\stats.html
+  - public\admin\settle.html
+  - public\admin\report-editor.html
+  - public\admin\notifications.html
+  - public\admin\matches.html
+  - public\admin\index.html
+  - public\admin\finance.html
+  - public\admin\deposits.html
+  - public\admin\dashboard.html
+  - public\admin\create-match.html
+  - public\admin\admins.html
+  - public\admin\settings\withdraw.html
+  - public\admin\settings\trade.html
+  - public\admin\settings\layout.html
+  - public\admin\settings\index.html
+  - public\admin\settings\email.html
+  - public\admin\settings\basic.html
+
+注意事項:
+1. 部分文件可能需要手動調整
+2. 請確認所有時間顯示是否符合預期
+3. 建議在測試環境驗證後再上線

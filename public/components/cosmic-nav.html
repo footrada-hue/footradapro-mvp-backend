@@ -1,0 +1,72 @@
+<!-- =====================================================
+     宇宙級高端導航欄組件 - 支援真實/測試雙模式
+     版本: 2.0.0
+     ===================================================== -->
+
+<nav class="cosmic-nav">
+    <div class="cosmic-particles"></div>
+    <div class="cosmic-glow-line"></div>
+    <div class="cosmic-container">
+        <a href="/" class="cosmic-item" data-nav="home">
+            <div class="cosmic-icon-ring">
+                <div class="cosmic-icon-bg"></div>
+                <i class="fas fa-home"></i>
+            </div>
+            <div class="cosmic-label">
+                <span class="cosmic-text">首頁</span>
+                <span class="cosmic-dot"></span>
+            </div>
+        </a>
+        <a href="/match-market.html" class="cosmic-item" data-nav="market">
+            <div class="cosmic-icon-ring">
+                <div class="cosmic-icon-bg"></div>
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="cosmic-label">
+                <span class="cosmic-text">市場</span>
+                <span class="cosmic-dot"></span>
+            </div>
+        </a>
+        <a href="/support.html" class="cosmic-item" data-nav="support">
+            <div class="cosmic-icon-ring">
+                <div class="cosmic-icon-bg"></div>
+                <i class="fas fa-headset"></i>
+            </div>
+            <div class="cosmic-label">
+                <span class="cosmic-text">支援</span>
+                <span class="cosmic-dot"></span>
+            </div>
+        </a>
+        <a href="/profile.html" class="cosmic-item" data-nav="profile">
+            <div class="cosmic-icon-ring">
+                <div class="cosmic-icon-bg"></div>
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="cosmic-label">
+                <span class="cosmic-text">我的</span>
+                <span class="cosmic-dot"></span>
+            </div>
+        </a>
+    </div>
+    <div class="cosmic-orb"></div>
+    <div class="cosmic-scan-line"></div>
+</nav>
+
+<script>
+// 自動激活當前頁面對應的導航項
+(function() {
+    const currentPath = window.location.pathname;
+    const navItems = document.querySelectorAll('.cosmic-item');
+    
+    navItems.forEach(item => {
+        const href = item.getAttribute('href');
+        if (href === currentPath || 
+            (currentPath === '/' && href === '/') ||
+            (currentPath.includes('match-market') && href.includes('match-market')) ||
+            (currentPath.includes('support') && href.includes('support')) ||
+            (currentPath.includes('profile') && href.includes('profile'))) {
+            item.classList.add('active');
+        }
+    });
+})();
+</script>

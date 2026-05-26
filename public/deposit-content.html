@@ -1,0 +1,741 @@
+<!-- 
+  deposit-content.html - 充值页面内容组件
+  用于 SPA 架构，只包含主内容区
+-->
+
+<div class="deposit-container">
+  <!-- 模式指示器 -->
+  <div class="mode-indicator">
+    <i class="fa-solid fa-info-circle"></i>
+    <span>Current Mode: </span>
+    <span id="currentModeText" class="sandbox-mode-text">Sandbox</span>
+    <span id="testModeBadge" class="test-badge-mode" style="display: none;">🧪 Test Mode</span>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fa-solid fa-circle-dollar-to-slot"></i> Deposit Funds</div>
+    </div>
+
+    <!-- 自定义下拉选择器 -->
+    <div class="custom-select" id="customSelect">
+      <div class="select-trigger" id="selectTrigger">
+        <span id="selectedNetworkText">TRC20 (Tron) - Recommended</span>
+        <i class="fas fa-chevron-down"></i>
+      </div>
+      <div class="select-dropdown" id="selectDropdown">
+        <div class="select-option" data-value="TRC20" data-note="Fast & low-cost">
+          <span class="option-name">TRC20 (Tron)</span>
+          <span class="option-desc">Recommended · Low fees</span>
+        </div>
+        <div class="select-option" data-value="ERC20" data-note="Higher gas fees">
+          <span class="option-name">ERC20 (Ethereum)</span>
+          <span class="option-desc">Higher gas fees</span>
+        </div>
+        <div class="select-option" data-value="BEP20" data-note="Fast & cheap">
+          <span class="option-name">BEP20 (BSC)</span>
+          <span class="option-desc">Fast & cheap</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 地址容器 -->
+    <div class="address-container">
+      <div class="address-label">Deposit Address</div>
+      <div class="address-value" id="depositAddress">TXez8vPf1AbC3xYz7pQr2LmN9kHj5FgDsW</div>
+      <button class="copy-btn" onclick="window.copyAddress()"><i class="fa-regular fa-copy"></i> Copy Address</button>
+    </div>
+
+    <!-- 警告和提示 -->
+    <div id="addressWarning" class="warning-box">
+      <i class="fas fa-exclamation-triangle"></i>
+      <span>Send only USDT (TRC20) to this address</span>
+    </div>
+    <div id="networkNote" class="info-box">
+      <i class="fas fa-info-circle"></i>
+      <span>TRC20 (Tron) - Recommended for low fees</span>
+    </div>
+
+    <!-- 金额输入 -->
+    <input type="number" id="amount" class="amount-input" placeholder="Enter amount" step="10" min="10">
+    <div id="minAmountHint" class="info-box" style="margin-top: -12px;">
+      <i class="fas fa-info-circle"></i>
+      <span>Minimum deposit: 10 USDT</span>
+    </div>
+
+    <!-- 截图上传 -->
+    <div id="uploadArea" class="upload-area">
+      <i class="fas fa-cloud-upload-alt"></i>
+      <p>Click or drag to upload transfer screenshot</p>
+      <p style="font-size: 12px; margin-top: 8px;">PNG, JPG, JPEG (Max 10MB)</p>
+    </div>
+    <input type="file" id="screenshot" accept="image/png,image/jpeg,image/jpg" style="display: none;">
+    <div id="previewArea" class="preview-area" style="display: none;">
+      <img id="preview" class="preview-img" alt="Preview">
+      <div><button class="remove-img-btn" onclick="window.removeImage()">Remove</button></div>
+    </div>
+
+    <!-- 确认框 -->
+    <div class="confirm-box">
+      <input type="checkbox" id="confirmCheck">
+      <label for="confirmCheck" id="confirmText">I confirm that I have sent the funds to the address above (USDT)</label>
+    </div>
+
+    <!-- 提交按钮 -->
+    <button id="submitBtn" class="submit-btn" disabled>Submit Deposit</button>
+  </div>
+</div>
+
+<style>
+/* ========== 充值页面样式 ========== */
+.deposit-container {
+  flex: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+  width: 100%;
+}
+
+.mode-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--badge-soft);
+  padding: 6px 16px;
+  border-radius: 9999px;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+.sandbox-mode-text { color: #8b5cf6; font-weight: 600; }
+.live-mode-text { color: #f97316; font-weight: 600; }
+.test-badge-mode {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  margin-left: 12px;
+}
+
+.card {
+  background: var(--card-bg);
+  backdrop-filter: blur(24px);
+  border-radius: 28px;
+  border: 1px solid var(--glass-border);
+  padding: 28px;
+  margin-bottom: 24px;
+}
+.card:last-child { margin-bottom: 0; }
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.card-title i { color: var(--accent); font-size: 18px; }
+
+/* 自定义下拉选择器 */
+.custom-select {
+  position: relative;
+  margin-bottom: 20px;
+}
+.select-trigger {
+  width: 100%;
+  padding: 14px 18px;
+  background: var(--badge-soft);
+  border: 1px solid var(--glass-border);
+  border-radius: 9999px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.select-trigger:hover { border-color: var(--accent); background: var(--card-bg); }
+.select-trigger i { color: var(--accent); }
+.select-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--card-bg);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  overflow: hidden;
+  z-index: 100;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.2s ease, opacity 0.2s ease;
+  visibility: hidden;
+}
+.select-dropdown.show {
+  max-height: 300px;
+  opacity: 1;
+  visibility: visible;
+}
+.select-option {
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.select-option:hover { background: var(--badge-soft); }
+.select-option.selected { background: var(--accent-gradient); color: white; }
+.select-option .option-name { flex: 1; font-weight: 500; }
+.select-option .option-desc { font-size: 12px; color: var(--text-muted); }
+
+.address-container {
+  background: var(--badge-soft);
+  border-radius: 24px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.address-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.address-value {
+  font-family: monospace;
+  font-size: 14px;
+  word-break: break-all;
+  background: rgba(0,0,0,0.1);
+  padding: 16px;
+  border-radius: 16px;
+  margin-bottom: 12px;
+}
+.copy-btn {
+  background: var(--accent-gradient);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 9999px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.copy-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px var(--accent-glow); }
+
+.warning-box {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #ef4444;
+}
+.info-box {
+  background: rgba(59,130,246,0.1);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.amount-input {
+  width: 100%;
+  padding: 16px 20px;
+  background: var(--badge-soft);
+  border: 1px solid var(--glass-border);
+  border-radius: 9999px;
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 20px;
+}
+.amount-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.upload-area {
+  border: 2px dashed var(--glass-border);
+  border-radius: 24px;
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 20px;
+}
+.upload-area:hover { border-color: var(--accent); background: var(--badge-soft); }
+.upload-area i { font-size: 48px; color: var(--text-muted); margin-bottom: 12px; }
+.upload-area p { font-size: 14px; color: var(--text-muted); }
+
+.preview-area {
+  background: var(--badge-soft);
+  border-radius: 24px;
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+.preview-img { max-width: 100%; max-height: 200px; border-radius: 16px; margin-bottom: 12px; }
+.remove-img-btn {
+  background: rgba(239,68,68,0.2);
+  border: none;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  color: #ef4444;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.remove-img-btn:hover { background: #ef4444; color: white; }
+
+.confirm-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--badge-soft);
+  border-radius: 20px;
+}
+.confirm-box input { width: 20px; height: 20px; cursor: pointer; accent-color: var(--accent); }
+
+.submit-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 9999px;
+  background: var(--accent-gradient);
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px var(--accent-glow); }
+.submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.copy-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  background: var(--card-bg);
+  backdrop-filter: blur(24px);
+  border-radius: 24px;
+  border: 1px solid var(--glass-border);
+  padding: 20px;
+  min-width: 280px;
+  display: flex;
+  gap: 16px;
+  opacity: 0;
+  transition: all 0.2s ease;
+  z-index: 1000;
+  box-shadow: var(--glass-shadow-hover);
+}
+.copy-toast.show { opacity: 1; transform: translateX(-50%) scale(1); }
+.copy-toast-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(16,185,129,0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.copy-toast-icon i { font-size: 24px; color: #10b981; }
+.copy-toast-title { font-weight: 700; margin-bottom: 4px; }
+.copy-toast-address,
+.copy-toast-network {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.copy-toast-tip { margin-top: 8px; font-size: 12px; color: var(--accent); }
+
+@media (max-width: 768px) {
+  .deposit-container { padding: 16px; }
+  .card { padding: 20px; border-radius: 24px; }
+  .address-value { font-size: 12px; padding: 12px; word-break: break-all; }
+  .copy-btn { width: 100%; justify-content: center; }
+  .copy-toast { width: calc(100% - 40px); min-width: auto; bottom: 80px; }
+}
+
+@media (max-width: 480px) {
+  .deposit-container { padding: 12px; }
+  .card { padding: 16px; border-radius: 20px; }
+  .address-value { font-size: 10px; }
+  .warning-box, .info-box { font-size: 12px; padding: 12px; }
+  .amount-input { font-size: 16px; padding: 12px 16px; }
+  .upload-area { padding: 24px; }
+  .upload-area i { font-size: 36px; }
+}
+</style>
+
+<script>
+(function() {
+  'use strict';
+
+  // 获取当前模式
+  function getCurrentMode() {
+    return ThemeManager ? ThemeManager.isTestMode : false;
+  }
+
+  // 获取当前主题
+  function getCurrentTheme() {
+    return ThemeManager ? ThemeManager.getTheme() : 'light';
+  }
+
+  // 更新模式 UI
+  function updateModeUI() {
+    const isSandbox = getCurrentMode();
+    const modeText = document.getElementById('currentModeText');
+    const testBadge = document.getElementById('testModeBadge');
+    
+    if (modeText) {
+      modeText.textContent = isSandbox ? 'Sandbox' : 'Live';
+      modeText.className = isSandbox ? 'sandbox-mode-text' : 'live-mode-text';
+    }
+    if (testBadge) {
+      testBadge.style.display = isSandbox ? 'inline-flex' : 'none';
+    }
+    
+    const currency = isSandbox ? 'tUSDT' : 'USDT';
+    
+    // 更新最小金额提示
+    const minHint = document.getElementById('minAmountHint');
+    if (minHint) {
+      minHint.innerHTML = `<i class="fas fa-info-circle"></i> Minimum deposit: 10 ${currency}`;
+    }
+    
+    // 更新确认文本
+    const confirmText = document.getElementById('confirmText');
+    if (confirmText) {
+      confirmText.innerHTML = `I confirm that I have sent the funds to the address above (${currency})`;
+    }
+    
+    // 更新警告框
+    updateAddressForNetwork(currentNetwork);
+  }
+
+  // 更新主题 UI
+  function updateThemeUI() {
+    const isDark = getCurrentTheme() === 'dark';
+    document.body.classList.toggle('dark', isDark);
+  }
+
+  // 网络配置
+  const depositAddresses = {
+    'TRC20': { address: 'TXez8vPf1AbC3xYz7pQr2LmN9kHj5FgDsW', note: 'TRC20 (Tron) - Recommended for low fees' },
+    'ERC20': { address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', note: 'ERC20 (Ethereum) - Higher gas fees' },
+    'BEP20': { address: '0x8F3a91cA1d2Bc9E7F3d5aB8c4D6eF9a0b1c2d3e4', note: 'BEP20 (BSC) - Fast and cheap' }
+  };
+  
+  let currentNetwork = 'TRC20';
+
+  // 更新地址
+  function updateAddressForNetwork(network) {
+    const isSandbox = getCurrentMode();
+    const currency = isSandbox ? 'tUSDT' : 'USDT';
+    const addr = depositAddresses[network] || depositAddresses['TRC20'];
+    
+    const addressSpan = document.getElementById('depositAddress');
+    if (addressSpan) addressSpan.textContent = addr.address;
+    
+    const warningBox = document.getElementById('addressWarning');
+    if (warningBox) {
+      warningBox.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Send only ${currency} (${network}) to this address`;
+    }
+    
+    const noteBox = document.getElementById('networkNote');
+    if (noteBox) {
+      noteBox.innerHTML = `<i class="fas fa-info-circle"></i> ${addr.note}`;
+    }
+  }
+
+  // 检查表单是否完整
+  function checkForm() {
+    const amountInput = document.getElementById('amount');
+    const confirmCheck = document.getElementById('confirmCheck');
+    const screenshotInput = document.getElementById('screenshot');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    const amount = amountInput ? amountInput.value : null;
+    const checked = confirmCheck ? confirmCheck.checked : false;
+    const hasScreenshot = screenshotInput && screenshotInput.files.length > 0;
+    
+    if (submitBtn) {
+      if (amount && checked && parseFloat(amount) >= 10 && hasScreenshot) {
+        submitBtn.disabled = false;
+      } else {
+        submitBtn.disabled = true;
+      }
+    }
+  }
+
+  // 处理文件上传
+  function handleFileUpload(file) {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (PNG, JPG, JPEG)');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image size cannot exceed 10MB');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const preview = document.getElementById('preview');
+      const uploadArea = document.getElementById('uploadArea');
+      const previewArea = document.getElementById('previewArea');
+      if (preview) preview.src = e.target.result;
+      if (uploadArea) uploadArea.style.display = 'none';
+      if (previewArea) previewArea.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+    checkForm();
+  }
+
+  // 移除图片
+  window.removeImage = function() {
+    const screenshotInput = document.getElementById('screenshot');
+    const uploadArea = document.getElementById('uploadArea');
+    const previewArea = document.getElementById('previewArea');
+    const preview = document.getElementById('preview');
+    if (screenshotInput) screenshotInput.value = '';
+    if (uploadArea) uploadArea.style.display = 'block';
+    if (previewArea) previewArea.style.display = 'none';
+    if (preview) preview.src = '';
+    checkForm();
+  };
+
+  // 提交充值
+  async function submitDeposit() {
+    const amountInput = document.getElementById('amount');
+    const screenshotInput = document.getElementById('screenshot');
+    const submitBtn = document.getElementById('submitBtn');
+    const isSandbox = getCurrentMode();
+    const currency = isSandbox ? 'tUSDT' : 'USDT';
+    
+    const amount = amountInput ? amountInput.value : null;
+    const file = screenshotInput ? screenshotInput.files[0] : null;
+    
+    if (!amount || parseFloat(amount) < 10) {
+      alert(`Please enter a valid amount (minimum 10 ${currency})`);
+      return;
+    }
+    if (!file) {
+      alert('Please upload a transfer screenshot');
+      return;
+    }
+    
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+    }
+    
+    // TODO: 替换为真实 API 调用
+    setTimeout(() => {
+      alert(`✅ Deposit request submitted!\nAmount: ${amount} ${currency}\nNetwork: ${currentNetwork}\nWe will review within 24 hours.`);
+      if (amountInput) amountInput.value = '';
+      const confirmCheck = document.getElementById('confirmCheck');
+      if (confirmCheck) confirmCheck.checked = false;
+      window.removeImage();
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submit Deposit';
+      }
+    }, 1000);
+  }
+
+  // 复制地址
+  window.copyAddress = function() {
+    const addressSpan = document.getElementById('depositAddress');
+    const address = addressSpan ? addressSpan.textContent : '';
+    
+    if (!address || address === 'Loading...') {
+      alert('No address to copy');
+      return;
+    }
+    
+    navigator.clipboard.writeText(address).then(() => {
+      showCopyToast(address, currentNetwork);
+    }).catch(() => {
+      const textarea = document.createElement('textarea');
+      textarea.value = address;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      showCopyToast(address, currentNetwork);
+    });
+  };
+
+  // 显示复制提示
+  function showCopyToast(address, network) {
+    const existingToast = document.querySelector('.copy-toast');
+    if (existingToast) existingToast.remove();
+    
+    const shortAddress = address.length > 20 ? `${address.substring(0, 8)}...${address.substring(address.length - 6)}` : address;
+    const networkNames = { 'TRC20': 'TRC20 (Tron)', 'ERC20': 'ERC20 (Ethereum)', 'BEP20': 'BEP20 (BSC)' };
+    const displayNetwork = networkNames[network] || network;
+    
+    const toast = document.createElement('div');
+    toast.className = 'copy-toast';
+    toast.innerHTML = `
+      <div class="copy-toast-icon"><i class="fas fa-check-circle"></i></div>
+      <div class="copy-toast-content">
+        <div class="copy-toast-title">Address Copied!</div>
+        <div class="copy-toast-address"><i class="fas fa-wallet"></i> ${escapeHtml(shortAddress)}</div>
+        <div class="copy-toast-network"><i class="fas fa-network-wired"></i> ${escapeHtml(displayNetwork)}</div>
+        <div class="copy-toast-tip"><i class="fas fa-shield-alt"></i> Double-check the address before sending</div>
+      </div>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+  }
+
+  // 下拉选择器
+  function initSelect() {
+    const selectTrigger = document.getElementById('selectTrigger');
+    const selectDropdown = document.getElementById('selectDropdown');
+    const selectedNetworkText = document.getElementById('selectedNetworkText');
+    
+    function toggleDropdown() {
+      selectDropdown.classList.toggle('show');
+    }
+    
+    function selectNetwork(value, text) {
+      currentNetwork = value;
+      selectedNetworkText.innerText = text;
+      selectDropdown.classList.remove('show');
+      updateAddressForNetwork(value);
+      
+      document.querySelectorAll('.select-option').forEach(opt => {
+        opt.classList.remove('selected');
+        if (opt.dataset.value === value) opt.classList.add('selected');
+      });
+    }
+    
+    if (selectTrigger) {
+      selectTrigger.addEventListener('click', toggleDropdown);
+    }
+    
+    document.querySelectorAll('.select-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const value = opt.dataset.value;
+        const text = opt.querySelector('.option-name').innerText;
+        selectNetwork(value, text);
+      });
+    });
+    
+    document.addEventListener('click', function(e) {
+      if (selectTrigger && selectDropdown && !selectTrigger.contains(e.target) && !selectDropdown.contains(e.target)) {
+        selectDropdown.classList.remove('show');
+      }
+    });
+  }
+
+  // 绑定事件
+  function bindEvents() {
+    const amountInput = document.getElementById('amount');
+    if (amountInput) amountInput.addEventListener('input', checkForm);
+    
+    const confirmCheck = document.getElementById('confirmCheck');
+    if (confirmCheck) confirmCheck.addEventListener('change', checkForm);
+    
+    const uploadArea = document.getElementById('uploadArea');
+    const screenshotInput = document.getElementById('screenshot');
+    if (uploadArea && screenshotInput) {
+      uploadArea.addEventListener('click', () => screenshotInput.click());
+      screenshotInput.addEventListener('change', (e) => {
+        if (e.target.files[0]) handleFileUpload(e.target.files[0]);
+        checkForm();
+      });
+      uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.style.borderColor = 'var(--accent)'; });
+      uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = ''; });
+      uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '';
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+          screenshotInput.files = e.dataTransfer.files;
+          handleFileUpload(file);
+          checkForm();
+        }
+      });
+    }
+    
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) submitBtn.addEventListener('click', submitDeposit);
+  }
+
+  // 监听主题和模式变化
+  function initListeners() {
+    if (window.ThemeManager) {
+      // 监听模式变化
+      ThemeManager.addListener(() => {
+        updateModeUI();
+      });
+      
+      // 监听主题变化
+      ThemeManager.addThemeListener(() => {
+        updateThemeUI();
+      });
+    }
+  }
+
+  // 初始化
+  function init() {
+    updateThemeUI();
+    updateModeUI();
+    initSelect();
+    bindEvents();
+    initListeners();
+    updateAddressForNetwork('TRC20');
+    console.log('✅ Deposit page initialized');
+  }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>

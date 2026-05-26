@@ -1,0 +1,779 @@
+<!-- 
+  settings-content.html - 设置页面内容片段
+  用于 SPA 架构，通过 shell.html 的 #app-content 区域加载
+  版本: 2.0 - 添加模式监听 + 样式优化
+-->
+
+<div class="settings-container">
+  <!-- 头部 -->
+  <div class="settings-header">
+    <div class="mode-badge sandbox" id="modeBadge">
+      <i class="fas fa-flask"></i>
+      <span>Sandbox Mode</span>
+    </div>
+    <h1>Settings</h1>
+    <p>Manage your account preferences and security</p>
+  </div>
+
+  <!-- 外观设置 -->
+  <div class="settings-section">
+    <div class="section-header">
+      <i class="fas fa-palette"></i>
+      <div>
+        <h2>Appearance</h2>
+        <p>Customize how FootRadaPro looks</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 偏好设置 -->
+  <div class="settings-section">
+    <div class="section-header">
+      <i class="fas fa-sliders-h"></i>
+      <div>
+        <h2>Preferences</h2>
+        <p>Control your experience</p>
+      </div>
+    </div>
+    <div class="settings-item">
+      <div class="item-info">
+        <div class="item-title">Privacy Mode</div>
+        <div class="item-desc">Hide sensitive information on screen</div>
+      </div>
+      <div class="item-action">
+        <label class="toggle">
+          <input type="checkbox" id="privacyToggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="settings-item">
+      <div class="item-info">
+        <div class="item-title">Push Notifications</div>
+        <div class="item-desc">Receive alerts about trades and updates</div>
+      </div>
+      <div class="item-action">
+        <label class="toggle">
+          <input type="checkbox" id="notificationToggle" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="settings-item">
+      <div class="item-info">
+        <div class="item-title">Language</div>
+        <div class="item-desc">Select your preferred language</div>
+      </div>
+      <div class="item-action">
+        <div class="lang-selector" id="currentLang">
+          <i class="fas fa-globe"></i>
+          <span>English</span>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 安全设置 -->
+  <div class="settings-section">
+    <div class="section-header">
+      <i class="fas fa-shield-alt"></i>
+      <div>
+        <h2>Security</h2>
+        <p>Protect your account</p>
+      </div>
+    </div>
+    <div class="settings-item">
+      <div class="item-info">
+        <div class="item-title">Change Password</div>
+        <div class="item-desc">Update your login password</div>
+      </div>
+      <div class="item-action">
+        <button class="link-btn" id="changePasswordBtn">Update →</button>
+      </div>
+    </div>
+    <div class="settings-item">
+      <div class="item-info">
+        <div class="item-title">Payment Password</div>
+        <div class="item-desc" id="payPasswordDesc">Required for withdrawals</div>
+      </div>
+      <div class="item-action">
+        <span class="badge warning" id="payPasswordStatus">Not Set</span>
+        <button class="link-btn" id="setPayPasswordBtn">Set →</button>
+      </div>
+    </div>
+    <div class="settings-item">
+      <div class="item-info">
+        <div class="item-title">Two-Factor Authentication</div>
+        <div class="item-desc">Add an extra layer of security</div>
+      </div>
+      <div class="item-action">
+        <span class="badge neutral">Coming Soon</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 账户操作 -->
+  <div class="settings-section">
+    <div class="section-header">
+      <i class="fas fa-user-circle"></i>
+      <div>
+        <h2>Account</h2>
+        <p>Manage your account</p>
+      </div>
+    </div>
+    <div class="settings-item logout-item">
+      <div class="item-info">
+        <div class="item-title">Logout</div>
+        <div class="item-desc">Sign out of your account</div>
+      </div>
+      <div class="item-action">
+        <button class="logout-btn" id="logoutBtn">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .settings-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--space-6);
+    animation: fadeInUp 0.4s var(--ease-out);
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(15px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .settings-header {
+    margin-bottom: var(--space-8);
+  }
+  .settings-header h1 {
+    font-size: var(--font-2xl);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: var(--space-2);
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: inline-block;
+  }
+  .settings-header p {
+    color: var(--text-muted);
+    font-size: var(--font-sm);
+  }
+
+  .mode-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: var(--bg-tertiary);
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-xs);
+    font-weight: 500;
+    margin-bottom: var(--space-5);
+    transition: all var(--duration-fast);
+  }
+  .mode-badge i { font-size: 12px; }
+  .mode-badge.sandbox { background: rgba(139,92,246,0.15); color: #8B5CF6; }
+  .mode-badge.live { background: rgba(249,115,22,0.15); color: #F97316; }
+
+  .settings-section {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border-radius: var(--radius-2xl);
+    border: 1px solid var(--glass-border);
+    margin-bottom: var(--space-6);
+    overflow: hidden;
+    box-shadow: var(--glass-shadow);
+    transition: all var(--duration-base) var(--ease-out);
+  }
+  .settings-section:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--glass-shadow-hover);
+    border-color: var(--accent);
+  }
+
+  .section-header {
+    padding: var(--space-5) var(--space-6);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    background: rgba(255,255,255,0.02);
+  }
+  .section-header i {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-light);
+    border-radius: var(--radius-md);
+    color: var(--accent);
+    font-size: 18px;
+    transition: all var(--duration-fast);
+  }
+  .section-header:hover i {
+    transform: scale(1.05);
+  }
+  .section-header h2 {
+    font-size: var(--font-md);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .section-header p {
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .settings-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-6);
+    border-bottom: 1px solid var(--border-light);
+    transition: all var(--duration-fast);
+  }
+  .settings-item:last-child {
+    border-bottom: none;
+  }
+  .settings-item:hover {
+    background: var(--badge-soft);
+    padding-left: calc(var(--space-6) + 4px);
+  }
+  .logout-item:hover {
+    background: rgba(239,68,68,0.08);
+  }
+  .item-info {
+    flex: 1;
+  }
+  .item-title {
+    font-size: var(--font-sm);
+    font-weight: 500;
+    margin-bottom: 2px;
+    color: var(--text-primary);
+  }
+  .item-desc {
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+  }
+  .item-action {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  /* 优化开关样式 */
+  .toggle {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    display: inline-block;
+  }
+  .toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--border-light);
+    transition: var(--duration-fast);
+    border-radius: var(--radius-full);
+  }
+  .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: var(--duration-fast);
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  input:checked + .toggle-slider {
+    background: var(--accent-gradient);
+  }
+  input:checked + .toggle-slider:before {
+    transform: translateX(24px);
+  }
+
+  .lang-selector {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: var(--bg-tertiary);
+    padding: 8px 16px;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all var(--duration-fast);
+    font-size: var(--font-sm);
+    border: 1px solid transparent;
+  }
+  .lang-selector:hover {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    transform: scale(1.02);
+  }
+  .lang-selector i { font-size: 14px; }
+
+  .badge {
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-xs);
+    font-weight: 600;
+  }
+  .badge.success {
+    background: var(--success-light);
+    color: var(--success);
+  }
+  .badge.warning {
+    background: rgba(245,166,35,0.15);
+    color: var(--warning);
+  }
+  .badge.neutral {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+  }
+
+  .link-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: var(--font-sm);
+    font-weight: 500;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: var(--radius-full);
+    transition: all var(--duration-fast);
+  }
+  .link-btn:hover {
+    background: var(--accent-light);
+    transform: translateX(2px);
+  }
+
+  .logout-btn {
+    width: auto;
+    padding: 10px 20px;
+    border-radius: var(--radius-xl);
+    background: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--danger);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--duration-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+  }
+  .logout-btn:hover {
+    background: rgba(239,68,68,0.15);
+    border-color: var(--danger);
+    transform: translateX(2px);
+  }
+
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .modal-content {
+    background: var(--card-bg);
+    backdrop-filter: blur(24px);
+    border-radius: var(--radius-2xl);
+    width: 90%;
+    max-width: 320px;
+    padding: var(--space-6);
+    border: 1px solid var(--glass-border);
+    animation: modalIn 0.2s ease;
+    box-shadow: var(--glass-shadow-hover);
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .modal-content h3 {
+    font-size: var(--font-lg);
+    font-weight: 600;
+    margin-bottom: var(--space-4);
+    color: var(--text-primary);
+  }
+  .lang-option {
+    width: 100%;
+    padding: 12px 16px;
+    background: transparent;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    font-size: var(--font-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all var(--duration-fast);
+    margin-bottom: var(--space-2);
+  }
+  .lang-option:hover {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    transform: translateX(4px);
+  }
+
+  @media (max-width: 768px) {
+    .settings-container { padding: var(--space-4); }
+    .settings-header h1 { font-size: var(--font-xl); }
+    .section-header { padding: var(--space-4) var(--space-5); }
+    .settings-item { padding: var(--space-3) var(--space-5); }
+    .settings-item:hover { padding-left: var(--space-5); }
+    .toggle { width: 46px; height: 24px; }
+    .toggle-slider:before { height: 18px; width: 18px; }
+    input:checked + .toggle-slider:before { transform: translateX(22px); }
+  }
+
+  @media (max-width: 480px) {
+    .settings-container { padding: var(--space-3); }
+    .settings-item { flex-wrap: wrap; gap: var(--space-2); }
+    .item-action { width: 100%; justify-content: flex-end; }
+    .logout-btn { width: 100%; }
+  }
+</style>
+
+<script>
+(function() {
+  const elements = {
+    themeToggle: document.getElementById('themeToggle'),
+    privacyToggle: document.getElementById('privacyToggle'),
+    notificationToggle: document.getElementById('notificationToggle'),
+    currentLang: document.getElementById('currentLang'),
+    logoutBtn: document.getElementById('logoutBtn'),
+    modeBadge: document.getElementById('modeBadge'),
+    payPasswordStatus: document.getElementById('payPasswordStatus'),
+    payPasswordDesc: document.getElementById('payPasswordDesc'),
+    changePasswordBtn: document.getElementById('changePasswordBtn'),
+    setPayPasswordBtn: document.getElementById('setPayPasswordBtn')
+  };
+
+// 请求浏览器通知权限
+function requestNotificationPermission() {
+    if ('Notification' in window) {
+        if (Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }
+}
+
+// 显示浏览器通知
+function showBrowserNotification(title, body, icon = '/favicon.ico') {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+    
+    const enabled = localStorage.getItem('notifications_enabled') !== 'false';
+    if (!enabled) return;
+    
+    new Notification(title, { body, icon });
+}
+
+// 监听 WebSocket 通知
+function initNotificationSocket() {
+    if (!window.socket) return;
+    
+    window.socket.on('new-notification', (notification) => {
+        console.log('收到新通知:', notification);
+        
+        // 显示浏览器通知
+        showBrowserNotification(notification.title, notification.content);
+        
+        // 显示 Toast
+        showToast(notification.title, notification.content);
+        
+        // 更新未读数量
+        updateUnreadBadge();
+    });
+}
+
+// 显示 Toast 提示
+function showToast(title, message) {
+    const toast = document.createElement('div');
+    toast.className = 'notification-toast';
+    toast.innerHTML = `
+        <div class="toast-icon"><i class="fas fa-bell"></i></div>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+    `;
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--card-bg);
+        backdrop-filter: blur(20px);
+        border-radius: 12px;
+        padding: 12px 16px;
+        min-width: 280px;
+        max-width: 360px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border: 1px solid var(--accent);
+        z-index: 10000;
+        display: flex;
+        gap: 12px;
+        animation: slideInRight 0.3s ease;
+        cursor: pointer;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+    toast.onclick = () => toast.remove();
+}
+
+  function getAppMode() { 
+    // 优先从 ThemeManager 获取，否则从 localStorage
+    if (window.ThemeManager) {
+      return window.ThemeManager.isTestMode ? 'sandbox' : 'live';
+    }
+    return localStorage.getItem('appMode') || 'sandbox'; 
+  }
+  function getThemeMode() { return localStorage.getItem('theme') || 'light'; }
+  function setThemeMode(theme) { localStorage.setItem('theme', theme); updateThemeUI(); }
+
+  function updateThemeUI() {
+    const theme = getThemeMode();
+    const isDark = theme === 'dark';
+    if (isDark) {
+      document.body.classList.add('dark');
+      if (elements.themeToggle) elements.themeToggle.checked = false;
+    } else {
+      document.body.classList.remove('dark');
+      if (elements.themeToggle) elements.themeToggle.checked = true;
+    }
+    if (window.ThemeManager) {
+      
+    }
+  }
+
+  async function fetchPayPasswordStatus() {
+    try {
+      const res = await fetch('/api/v1/user/profile/paypassword/status', { credentials: 'include' });
+      const data = await res.json();
+      if (data.success) {
+        return data.data.has_paypassword;
+      }
+    } catch (err) {
+      console.error('Failed to fetch pay password status:', err);
+    }
+    return false;
+  }
+
+async function updateModeUI() {
+  const isSandbox = getAppMode() === 'sandbox';
+  console.log('[Settings] updateModeUI - isSandbox:', isSandbox);
+  
+  if (elements.modeBadge) {
+    elements.modeBadge.className = `mode-badge ${isSandbox ? 'sandbox' : 'live'}`;
+    elements.modeBadge.innerHTML = isSandbox 
+      ? '<i class="fas fa-flask"></i><span>Sandbox Mode</span>'
+      : '<i class="fas fa-bolt"></i><span>Live Mode</span>';
+  }
+  if (elements.payPasswordStatus && elements.payPasswordDesc) {
+    if (isSandbox) {
+      elements.payPasswordStatus.textContent = 'N/A';
+      elements.payPasswordStatus.className = 'badge neutral';
+      elements.payPasswordDesc.textContent = 'Not required in test mode';
+    } else {
+      const hasPayPassword = await fetchPayPasswordStatus();
+      console.log('[Settings] 支付密码状态:', hasPayPassword);  // ← 添加这一行
+      elements.payPasswordStatus.textContent = hasPayPassword ? 'Set' : 'Not Set';
+      elements.payPasswordStatus.className = hasPayPassword ? 'badge success' : 'badge warning';
+      elements.payPasswordDesc.textContent = hasPayPassword ? 'Used for withdrawals' : 'Required for withdrawals';
+    }
+  }
+}
+
+  // 重新绑定所有事件（模式切换时调用）
+  function reBindEvents() {
+    // 重新绑定主题切换
+    if (elements.themeToggle) {
+      const newToggle = elements.themeToggle.cloneNode(true);
+      elements.themeToggle.parentNode.replaceChild(newToggle, elements.themeToggle);
+      elements.themeToggle = newToggle;
+      elements.themeToggle.addEventListener('change', () => {
+        const newTheme = elements.themeToggle.checked ? 'light' : 'dark';
+        setThemeMode(newTheme);
+      });
+    }
+    
+    // 重新绑定隐私模式
+    if (elements.privacyToggle) {
+      const isPrivacyMode = localStorage.getItem('privacy_mode') === 'true';
+      elements.privacyToggle.checked = isPrivacyMode;
+      const newPrivacyToggle = elements.privacyToggle.cloneNode(true);
+      elements.privacyToggle.parentNode.replaceChild(newPrivacyToggle, elements.privacyToggle);
+      elements.privacyToggle = newPrivacyToggle;
+      elements.privacyToggle.addEventListener('change', () => {
+        localStorage.setItem('privacy_mode', elements.privacyToggle.checked);
+      });
+    }
+    
+    // 重新绑定通知开关
+    if (elements.notificationToggle) {
+      const notificationsEnabled = localStorage.getItem('notifications_enabled') !== 'false';
+      elements.notificationToggle.checked = notificationsEnabled;
+      const newNotificationToggle = elements.notificationToggle.cloneNode(true);
+      elements.notificationToggle.parentNode.replaceChild(newNotificationToggle, elements.notificationToggle);
+      elements.notificationToggle = newNotificationToggle;
+      elements.notificationToggle.addEventListener('change', () => {
+        localStorage.setItem('notifications_enabled', elements.notificationToggle.checked);
+      });
+    }
+    
+    // 重新绑定语言选择器
+    if (elements.currentLang) {
+      const newLangSelector = elements.currentLang.cloneNode(true);
+      elements.currentLang.parentNode.replaceChild(newLangSelector, elements.currentLang);
+      elements.currentLang = newLangSelector;
+      const savedLang = localStorage.getItem('preferred_lang') || 'en';
+      const langMap = { 'en': 'English', 'zh': '中文', 'es': 'Español', 'ja': '日本語' };
+      const span = elements.currentLang.querySelector('span');
+      if (span) span.textContent = langMap[savedLang] || 'English';
+      elements.currentLang.addEventListener('click', showLanguageModal);
+    }
+    
+    // 重新绑定退出登录
+    if (elements.logoutBtn) {
+      const newLogoutBtn = elements.logoutBtn.cloneNode(true);
+      elements.logoutBtn.parentNode.replaceChild(newLogoutBtn, elements.logoutBtn);
+      elements.logoutBtn = newLogoutBtn;
+      elements.logoutBtn.addEventListener('click', handleLogout);
+    }
+    
+    // 重新绑定按钮
+    if (elements.changePasswordBtn) {
+      const newBtn = elements.changePasswordBtn.cloneNode(true);
+      elements.changePasswordBtn.parentNode.replaceChild(newBtn, elements.changePasswordBtn);
+      elements.changePasswordBtn = newBtn;
+      elements.changePasswordBtn.onclick = () => {
+        window.location.href = '/shell.html?page=change-password';
+      };
+    }
+    if (elements.setPayPasswordBtn) {
+      const newBtn = elements.setPayPasswordBtn.cloneNode(true);
+      elements.setPayPasswordBtn.parentNode.replaceChild(newBtn, elements.setPayPasswordBtn);
+      elements.setPayPasswordBtn = newBtn;
+      elements.setPayPasswordBtn.onclick = () => {
+        window.location.href = '/shell.html?page=set-paypassword&mode=change&from=settings';
+      };
+    }
+  }
+
+  async function handleLogout() {
+    const confirmed = confirm('Are you sure you want to logout?');
+    if (confirmed) {
+      try {
+        await fetch('/api/v1/user/logout', { method: 'POST', credentials: 'include' });
+      } catch(e) {}
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('footradapro_token');
+      window.location.href = '/login.html';
+    }
+  }
+
+  function showLanguageModal() {
+    const languages = [
+      { code: 'en', name: 'English', flag: '🇬🇧' },
+      { code: 'zh', name: '中文', flag: '🇨🇳' },
+      { code: 'es', name: 'Español', flag: '🇪🇸' },
+      { code: 'ja', name: '日本語', flag: '🇯🇵' }
+    ];
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-content">
+        <h3>Select Language</h3>
+        ${languages.map(lang => `
+          <button class="lang-option" data-lang="${lang.code}">
+            <span style="font-size: 20px;">${lang.flag}</span>
+            <span>${lang.name}</span>
+          </button>
+        `).join('')}
+        <button class="lang-option" style="justify-content: center; margin-top: 8px;" id="closeModalBtn">Cancel</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.querySelectorAll('.lang-option').forEach(btn => {
+      if (btn.id === 'closeModalBtn') {
+        btn.addEventListener('click', () => modal.remove());
+      } else {
+        btn.addEventListener('click', () => {
+          const langCode = btn.dataset.lang;
+          const langMap = { 'en': 'English', 'zh': '中文', 'es': 'Español', 'ja': '日本語' };
+          localStorage.setItem('preferred_lang', langCode);
+          const span = elements.currentLang?.querySelector('span');
+          if (span) span.textContent = langMap[langCode] || 'English';
+          modal.remove();
+        });
+      }
+    });
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  }
+
+  // ========== 监听模式切换 ==========
+  function initModeListener() {
+    if (window.ThemeManager) {
+      window.ThemeManager.addListener(async () => {
+        console.log('🔄 Mode changed, reinitializing settings page');
+        await updateModeUI();
+        reBindEvents();
+      });
+    }
+  }
+
+  // 初始化
+  async function init() {
+    updateThemeUI();
+    await updateModeUI();
+    reBindEvents();
+    initModeListener();
+  }
+  
+  init();
+})();
+</script>

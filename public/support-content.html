@@ -1,0 +1,878 @@
+<!-- 
+  support-content.html - 客服支持内容
+  简化版：移除搜索框和多余描述，保留核心功能
+-->
+
+<div class="support-container">
+  <!-- 简化 Hero 区域 -->
+  <div class="hero">
+    <h1>Support Center</h1>
+  </div>
+
+  <!-- 分类导航 -->
+  <div class="category-nav">
+    <button class="category-btn active" data-category="all">All</button>
+    <button class="category-btn" data-category="guide">Getting Started</button>
+    <button class="category-btn" data-category="auth">Authorization</button>
+    <button class="category-btn" data-category="funds">Funds & Settlement</button>
+  </div>
+
+  <!-- FAQ 卡片网格 -->
+  <div class="faq-grid" id="faqGrid"></div>
+
+  <!-- 热门问题 -->
+  <div class="popular-section">
+    <div class="section-header">
+      <h2>Popular questions</h2>
+      <a href="#" id="viewAllLink">View all →</a>
+    </div>
+    <div class="popular-list" id="popularList"></div>
+  </div>
+
+  <!-- 联系区域 -->
+  <div class="contact-section">
+    <h2>Still need help?</h2>
+    <p>Our support team is available 24/7</p>
+    
+    <!-- 其他联系方式 -->
+    <div class="contact-buttons-secondary">
+      <button class="contact-btn contact-btn-primary" id="contactEmailBtn">
+        <i class="fas fa-envelope"></i> Email
+      </button>
+      <button class="contact-btn contact-btn-secondary" id="contactTelegramBtn">
+        <i class="fab fa-telegram"></i> Telegram
+      </button>
+      <button class="contact-btn contact-btn-secondary" id="contactTwitterBtn">
+        <i class="fab fa-twitter"></i> Twitter
+      </button>
+    </div>
+    
+    <!-- Live Chat 突出框 -->
+    <button class="live-chat-box" id="liveChatBtn">
+      <div class="live-chat-icon">
+        <i class="fas fa-comment-dots"></i>
+      </div>
+      <div class="live-chat-content">
+        <div class="live-chat-title">Live Chat</div>
+        <div class="live-chat-desc">Real-time support from our team</div>
+      </div>
+      <div class="live-chat-arrow">
+        <i class="fas fa-arrow-right"></i>
+      </div>
+    </button>
+  </div>
+</div>
+
+<!-- 弹窗 -->
+<div id="faqModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Title</h3>
+      <button class="modal-close" id="closeModal">&times;</button>
+    </div>
+    <div class="modal-body" id="modalContent"></div>
+  </div>
+</div>
+
+<style>
+/* ========== 客服支持样式 - 简化版 ========== */
+.support-container {
+  flex: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  width: 100%;
+}
+
+/* Hero 区域 - 简化 */
+.hero {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.hero h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* 分类导航 */
+.category-nav {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.category-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 40px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.category-btn:hover {
+  background: var(--badge-soft);
+  color: var(--accent);
+}
+
+.category-btn.active {
+  background: var(--accent);
+  color: white;
+}
+
+/* FAQ 网格 */
+.faq-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.faq-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.faq-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.faq-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.faq-card p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* 热门问题区域 */
+.popular-section {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-light);
+  border-radius: 24px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 20px;
+}
+
+.section-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.section-header a {
+  color: var(--accent);
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.popular-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.popular-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.popular-item:hover {
+  background: var(--badge-soft);
+  transform: translateX(4px);
+}
+
+.popular-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.popular-item-left i {
+  color: var(--accent);
+  font-size: 14px;
+}
+
+.popular-question {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.popular-item i:last-child {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* 联系区域 */
+.contact-section {
+  text-align: center;
+  padding: 32px;
+  background: var(--badge-soft);
+  border-radius: 24px;
+}
+
+.contact-section h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.contact-section p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+.contact-buttons-secondary {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.contact-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 40px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.contact-btn-primary {
+  background: var(--accent);
+  color: white;
+}
+
+.contact-btn-primary:hover {
+  transform: translateY(-2px);
+  background: #1d4ed8;
+}
+
+.contact-btn-secondary {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+}
+
+.contact-btn-secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Live Chat 突出框 */
+.live-chat-box {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+}
+
+.live-chat-box:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(16, 185, 129, 0.4);
+}
+
+.live-chat-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: white;
+}
+
+.live-chat-content {
+  flex: 1;
+  text-align: left;
+  padding-left: 16px;
+}
+
+.live-chat-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 4px;
+}
+
+.live-chat-desc {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.live-chat-arrow {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: white;
+  transition: all 0.2s;
+}
+
+.live-chat-box:hover .live-chat-arrow {
+  transform: translateX(4px);
+}
+
+/* 弹窗 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal {
+  background: var(--card-bg);
+  backdrop-filter: blur(24px);
+  border-radius: 24px;
+  border: 1px solid var(--border-light);
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow: hidden;
+  animation: modalIn 0.2s ease;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.modal-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  color: var(--accent);
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  max-height: 60vh;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+/* 空状态 */
+.empty-state {
+  grid-column: span 2;
+  text-align: center;
+  padding: 48px;
+}
+
+.empty-state i {
+  font-size: 40px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.empty-state p {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--success);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 40px;
+  font-size: 13px;
+  z-index: 9999;
+  animation: fadeInUp 0.3s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* 聊天弹窗 */
+.chat-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.chat-modal-overlay.active {
+  display: flex;
+}
+
+.chat-modal {
+  background: var(--card-bg);
+  backdrop-filter: blur(24px);
+  border-radius: 28px;
+  border: 1px solid var(--glass-border);
+  width: 90%;
+  max-width: 480px;
+  height: 640px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalIn 0.25s ease;
+}
+
+.chat-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-light);
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.chat-modal-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-modal-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.chat-modal-close:hover {
+  opacity: 1;
+}
+
+.chat-modal-iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .support-container {
+    padding: 20px 16px;
+  }
+  
+  .hero h1 {
+    font-size: 24px;
+  }
+  
+  .faq-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .faq-card {
+    padding: 16px;
+  }
+  
+  .popular-section {
+    padding: 20px;
+  }
+  
+  .section-header h2 {
+    font-size: 16px;
+  }
+  
+  .contact-section {
+    padding: 24px;
+  }
+  
+  .contact-section h2 {
+    font-size: 16px;
+  }
+  
+  .contact-btn {
+    padding: 8px 20px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .support-container {
+    padding: 16px 12px;
+  }
+  
+  .hero h1 {
+    font-size: 20px;
+  }
+  
+  .category-btn {
+    padding: 6px 14px;
+    font-size: 12px;
+  }
+  
+  .popular-item {
+    padding: 10px;
+  }
+  
+  .popular-question {
+    font-size: 13px;
+  }
+  
+  .contact-buttons-secondary {
+    gap: 8px;
+  }
+  
+  .contact-btn {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+  
+  .live-chat-box {
+    padding: 16px 20px;
+  }
+  
+  .live-chat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+  
+  .live-chat-title {
+    font-size: 16px;
+  }
+  
+  .live-chat-desc {
+    font-size: 11px;
+  }
+  
+  .live-chat-arrow {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  
+  .modal-header {
+    padding: 16px 20px;
+  }
+  
+  .modal-header h3 {
+    font-size: 16px;
+  }
+  
+  .modal-body {
+    padding: 20px;
+    font-size: 13px;
+  }
+}
+</style>
+
+<script>
+// ========== 客服支持简化版 ==========
+(function() {
+  'use strict';
+  
+  // FAQ 数据
+  const faqData = {
+    guide: [
+      { q: 'How do I get started?', a: 'Register an account, and you\'ll receive 10,000 USDT in test funds. Navigate to Match Market, select a match, and click Authorize to start.' },
+      { q: 'What is the 10,000 USDT test fund?', a: 'Every new user receives 10,000 USDT in test funds to experience the platform risk-free before depositing real funds.' },
+      { q: 'Do I need to deposit money to start?', a: 'No. You can fully experience the platform using the 10,000 USDT test funds. Minimum deposit is 100 USDT when ready.' }
+    ],
+    auth: [
+      { q: 'What is One-Click Authorization?', a: 'With one click, you lock in your strategy and authorize the AI to execute trades. Once authorized, the rules cannot be modified.' },
+      { q: 'Can I cancel an authorization?', a: 'No. Once submitted, it is permanently locked and cannot be canceled or modified.' },
+      { q: 'How accurate is the AI?', a: 'Our AI model maintains an average win rate of 82%+ across all major leagues.' }
+    ],
+    funds: [
+      { q: 'When do I get settlement?', a: 'Settlement is automatically completed within 5 minutes after the official match result is confirmed.' },
+      { q: 'What are the withdrawal fees?', a: 'Withdrawal fee is fixed at 1 USDT. Processing time is within 2 hours.' },
+      { q: 'Is my money safe?', a: 'Yes. User funds are held in segregated cold wallets with quarterly third-party security audits.' }
+    ]
+  };
+
+  const allFaqs = [
+    ...faqData.guide.map(item => ({ ...item, category: 'guide' })),
+    ...faqData.auth.map(item => ({ ...item, category: 'auth' })),
+    ...faqData.funds.map(item => ({ ...item, category: 'funds' }))
+  ];
+
+  let currentCategory = 'all';
+
+  const faqGrid = document.getElementById('faqGrid');
+  const popularList = document.getElementById('popularList');
+  const categoryBtns = document.querySelectorAll('.category-btn');
+  const viewAllLink = document.getElementById('viewAllLink');
+  const modal = document.getElementById('faqModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalContent = document.getElementById('modalContent');
+  const closeModalBtn = document.getElementById('closeModal');
+  
+  const contactEmailBtn = document.getElementById('contactEmailBtn');
+  const contactTelegramBtn = document.getElementById('contactTelegramBtn');
+  const contactTwitterBtn = document.getElementById('contactTwitterBtn');
+
+  const escapeHtml = (str) => {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+  };
+
+  const showToast = (message) => {
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) existingToast.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = '<i class="fas fa-check-circle"></i> ' + message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
+  };
+
+  const getFilteredFaqs = () => {
+    if (currentCategory === 'all') return allFaqs;
+    return allFaqs.filter(f => f.category === currentCategory);
+  };
+
+  window.openFaqModal = function(question, answer) {
+    if (modalTitle && modalContent) {
+      modalTitle.textContent = question;
+      modalContent.innerHTML = `<div style="line-height: 1.6;">${escapeHtml(answer)}</div>`;
+      modal.classList.add('active');
+    }
+  };
+
+  const closeModal = () => {
+    if (modal) modal.classList.remove('active');
+  };
+
+  const renderFaqGrid = () => {
+    if (!faqGrid) return;
+    
+    const filtered = getFilteredFaqs();
+    
+    if (filtered.length === 0) {
+      faqGrid.innerHTML = `<div class="empty-state"><i class="fas fa-search"></i><p>No results found</p></div>`;
+      return;
+    }
+    
+    faqGrid.innerHTML = filtered.slice(0, 6).map(faq => `
+      <div class="faq-card" onclick="openFaqModal('${escapeHtml(faq.q)}', '${escapeHtml(faq.a)}')">
+        <h3>${escapeHtml(faq.q)}</h3>
+        <p>${escapeHtml(faq.a.substring(0, 100))}...</p>
+      </div>
+    `).join('');
+  };
+
+  const renderPopularList = () => {
+    if (!popularList) return;
+    
+    const popular = allFaqs.slice(0, 5);
+    popularList.innerHTML = popular.map(faq => `
+      <div class="popular-item" onclick="openFaqModal('${escapeHtml(faq.q)}', '${escapeHtml(faq.a)}')">
+        <div class="popular-item-left">
+          <i class="fas fa-question-circle"></i>
+          <span class="popular-question">${escapeHtml(faq.q)}</span>
+        </div>
+        <i class="fas fa-chevron-right"></i>
+      </div>
+    `).join('');
+  };
+
+  // 打开聊天弹窗
+  function openChatModal() {
+    let chatModal = document.getElementById('chatModal');
+    if (chatModal) {
+      chatModal.classList.add('active');
+      return;
+    }
+    
+    chatModal = document.createElement('div');
+    chatModal.id = 'chatModal';
+    chatModal.className = 'chat-modal-overlay';
+    chatModal.innerHTML = `
+      <div class="chat-modal">
+        <div class="chat-modal-header">
+          <h3><i class="fas fa-headset"></i> Live Support</h3>
+          <button class="chat-modal-close">&times;</button>
+        </div>
+        <iframe src="/support-chat-content.html" class="chat-modal-iframe" title="Live Chat Support"></iframe>
+      </div>
+    `;
+    document.body.appendChild(chatModal);
+    
+    const closeBtn = chatModal.querySelector('.chat-modal-close');
+    closeBtn.onclick = () => chatModal.classList.remove('active');
+    
+    chatModal.onclick = (e) => {
+      if (e.target === chatModal) chatModal.classList.remove('active');
+    };
+    
+    chatModal.classList.add('active');
+  }
+
+  const bindEvents = () => {
+    categoryBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        categoryBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentCategory = btn.dataset.category;
+        renderFaqGrid();
+      });
+    });
+    
+    const liveChatBtn = document.getElementById('liveChatBtn');
+    if (liveChatBtn) {
+      liveChatBtn.addEventListener('click', openChatModal);
+    }
+    
+    if (viewAllLink) {
+      viewAllLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        const allBtn = document.querySelector('.category-btn[data-category="all"]');
+        if (allBtn) allBtn.click();
+        window.scrollTo({ top: 300, behavior: 'smooth' });
+      });
+    }
+    
+    if (closeModalBtn) {
+      closeModalBtn.addEventListener('click', closeModal);
+    }
+    
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+    }
+    
+    if (contactEmailBtn) {
+      contactEmailBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText('support@footradapro.com').then(() => {
+          showToast('Email address copied');
+        }).catch(() => {
+          window.location.href = 'mailto:support@footradapro.com';
+        });
+      });
+    }
+    
+    if (contactTelegramBtn) {
+      contactTelegramBtn.addEventListener('click', () => {
+        window.open('https://t.me/footradapro', '_blank');
+      });
+    }
+    
+    if (contactTwitterBtn) {
+      contactTwitterBtn.addEventListener('click', () => {
+        window.open('https://twitter.com/footradapro', '_blank');
+      });
+    }
+  };
+
+  const init = () => {
+    console.log('📞 Support page initialized');
+    renderFaqGrid();
+    renderPopularList();
+    bindEvents();
+  };
+  
+  init();
+})();
+</script>

@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Deposit · FootRadaPro</title>
+  <meta name="description" content="Deposit funds to your account via multiple networks">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 28px;
+      --space-8: 32px;
+      --space-9: 40px;
+      
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-base: 1rem;
+      --font-md: 1.125rem;
+      --font-lg: 1.25rem;
+      --font-xl: 1.5rem;
+      --font-2xl: 1.75rem;
+      
+      --radius-sm: 12px;
+      --radius-md: 16px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --radius-2xl: 28px;
+      --radius-full: 9999px;
+      
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-fast: 0.15s;
+      --duration-base: 0.24s;
+    }
+
+    :root {
+      --bg-gradient-start: rgba(248, 250, 252, 0.95);
+      --bg-gradient-end: rgba(241, 245, 249, 0.98);
+      --glass-bg: rgba(255, 255, 255, 0.52);
+      --glass-border: rgba(59, 130, 246, 0.12);
+      --glass-shadow: 0 2px 8px rgba(0,0,0,0.02), 0 8px 24px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.9);
+      --glass-shadow-hover: 0 8px 24px rgba(0,0,0,0.06), 0 16px 32px -12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.95);
+      --accent: #2563eb;
+      --accent-glow: rgba(37,99,235,0.2);
+      --accent-gradient: linear-gradient(135deg, #2563eb, #4f46e5);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --border-light: rgba(148,163,184,0.12);
+      --card-bg: rgba(255,255,255,0.65);
+      --ticker-bg: rgba(37,99,235,0.9);
+      --badge-soft: rgba(37,99,235,0.08);
+    }
+
+    body.dark {
+      --bg-gradient-start: rgba(10,16,30,0.96);
+      --bg-gradient-end: rgba(2,6,18,0.98);
+      --glass-bg: rgba(20,28,44,0.55);
+      --glass-border: rgba(59,130,246,0.2);
+      --glass-shadow: 0 2px 8px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04);
+      --glass-shadow-hover: 0 8px 24px rgba(0,0,0,0.35), 0 16px 32px -12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59,130,246,0.3);
+      --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #f87171;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --card-bg: rgba(20,28,44,0.6);
+    }
+
+    body {
+      background: radial-gradient(ellipse at 30% 40%, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: ''; position: fixed; top:0; left:0; width:100%; height:100%;
+      background-image: repeating-linear-gradient(90deg, rgba(59,130,246,0.015) 0px, rgba(59,130,246,0.015) 1px, transparent 1px, transparent 40px),
+                        repeating-linear-gradient(0deg, rgba(59,130,246,0.015) 0px, rgba(59,130,246,0.015) 1px, transparent 1px, transparent 40px);
+      background-size: 40px 40px;
+      pointer-events: none; z-index:0;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--border-light); border-radius: var(--radius-full); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: var(--radius-full); }
+
+    .app-wrapper { position: relative; z-index:1; min-height:100vh; display: flex; flex-direction: column; }
+
+    .ticker {
+      background: var(--ticker-bg); backdrop-filter: blur(12px); color: white; padding: 10px 0; font-size: var(--font-sm); font-weight: 500;
+      white-space: nowrap; overflow: hidden; border-bottom: 1px solid var(--glass-border);
+    }
+    .ticker-content { display: inline-block; animation: ticker 32s linear infinite; padding-left: 100%; letter-spacing: 0.3px; }
+    @keyframes ticker { to { transform: translateX(-100%); } }
+
+    .header {
+      background: var(--glass-bg); backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border);
+      padding: var(--space-4) var(--space-6); position: sticky; top:0; z-index:50; box-shadow: var(--glass-shadow);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: var(--space-3); }
+    .logo-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+    .logo-text { font-size: var(--font-md); font-weight: 700; background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .header-actions { display: flex; gap: var(--space-5); align-items: center; }
+    .header-actions i { font-size: 20px; color: var(--text-secondary); cursor: pointer; transition: all var(--duration-fast) var(--ease-out); }
+
+    .container { display: flex; flex:1; padding: var(--space-6); gap: var(--space-6); max-width: 900px; margin: 0 auto; width: 100%; }
+    .content { flex:1; }
+
+    .mode-indicator {
+      display: inline-flex; align-items: center; gap: var(--space-2); background: var(--badge-soft); backdrop-filter: blur(8px);
+      padding: 6px 16px; border-radius: var(--radius-full); width: fit-content; margin-bottom: var(--space-5);
+      font-size: var(--font-sm);
+    }
+    .mode-indicator .sandbox-mode-text { color: #8b5cf6; font-weight: 600; }
+    .mode-indicator .live-mode-text { color: #f97316; font-weight: 600; }
+    .test-badge-mode { background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white; padding: 4px 12px; border-radius: var(--radius-full); font-size: var(--font-xs); margin-left: var(--space-3); }
+
+    .card {
+      background: var(--card-bg); backdrop-filter: blur(24px); border-radius: var(--radius-2xl);
+      border: 1px solid var(--glass-border); padding: var(--space-7);
+      margin-bottom: var(--space-6);
+      transition: all var(--duration-base);
+    }
+    .card:last-child { margin-bottom: 0; }
+    .card-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-5);
+      padding-bottom: var(--space-3); border-bottom: 1px solid var(--border-light);
+    }
+    .card-title { display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-base); font-weight: 600; color: var(--text-secondary); }
+    .card-title i { color: var(--accent); font-size: var(--font-lg); }
+
+    /* 自定义下拉选择器 - 无动画 */
+    .custom-select {
+      position: relative;
+      margin-bottom: var(--space-5);
+    }
+    .select-trigger {
+      width: 100%; padding: 14px 18px; background: var(--badge-soft); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-full); color: var(--text-primary); font-size: var(--font-sm);
+      cursor: pointer; transition: all var(--duration-fast); display: flex; justify-content: space-between; align-items: center;
+    }
+    .select-trigger:hover { border-color: var(--accent); background: var(--card-bg); }
+    .select-trigger i { color: var(--accent); }
+    .select-dropdown {
+      position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+      background: var(--card-bg); backdrop-filter: blur(24px); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl); overflow: hidden; z-index: 100;
+      max-height: 0; opacity: 0; transition: max-height 0.2s ease, opacity 0.2s ease;
+      visibility: hidden;
+    }
+    .select-dropdown.show {
+      max-height: 300px; opacity: 1; visibility: visible;
+    }
+    .select-option {
+      padding: 14px 18px; cursor: pointer; transition: background var(--duration-fast);
+      display: flex; align-items: center; gap: var(--space-3);
+    }
+    .select-option:hover { background: var(--badge-soft); }
+    .select-option.selected { background: var(--accent-gradient); color: white; }
+    .select-option .option-icon { width: 24px; }
+    .select-option .option-name { flex: 1; font-weight: 500; }
+    .select-option .option-desc { font-size: var(--font-xs); color: var(--text-muted); }
+
+    .address-container {
+      background: var(--badge-soft); border-radius: var(--radius-xl); padding: var(--space-5);
+      margin-bottom: var(--space-5);
+    }
+    .address-label { font-size: var(--font-xs); color: var(--text-muted); margin-bottom: var(--space-2); }
+    .address-value {
+      font-family: monospace; font-size: var(--font-sm); word-break: break-all;
+      background: rgba(0,0,0,0.2); padding: var(--space-4); border-radius: var(--radius-md);
+      margin-bottom: var(--space-3);
+    }
+    .copy-btn {
+      background: var(--accent-gradient); border: none; padding: 10px 20px; border-radius: var(--radius-full);
+      color: white; font-weight: 600; cursor: pointer; transition: all var(--duration-fast);
+      display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--font-sm);
+    }
+    .copy-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px var(--accent-glow); }
+
+    .warning-box {
+      background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+      border-radius: var(--radius-lg); padding: var(--space-4); margin-bottom: var(--space-5);
+      display: flex; align-items: center; gap: var(--space-3); font-size: var(--font-sm);
+      color: #ef4444;
+    }
+    .info-box {
+      background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2);
+      border-radius: var(--radius-lg); padding: var(--space-4); margin-bottom: var(--space-5);
+      display: flex; align-items: center; gap: var(--space-3); font-size: var(--font-sm);
+      color: var(--text-muted);
+    }
+
+    .amount-input {
+      width: 100%; padding: 16px 20px; background: var(--badge-soft); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-full); color: var(--text-primary); font-size: var(--font-lg);
+      font-weight: 600; text-align: center; margin-bottom: var(--space-5);
+    }
+    .amount-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+    .upload-area {
+      border: 2px dashed var(--glass-border); border-radius: var(--radius-xl); padding: var(--space-7);
+      text-align: center; cursor: pointer; transition: all var(--duration-fast); margin-bottom: var(--space-5);
+    }
+    .upload-area:hover { border-color: var(--accent); background: var(--badge-soft); }
+    .upload-area i { font-size: 48px; color: var(--text-muted); margin-bottom: var(--space-3); }
+    .upload-area p { font-size: var(--font-sm); color: var(--text-muted); }
+
+    .preview-area {
+      background: var(--badge-soft); border-radius: var(--radius-xl); padding: var(--space-4);
+      text-align: center; margin-bottom: var(--space-5);
+    }
+    .preview-img { max-width: 100%; max-height: 200px; border-radius: var(--radius-md); margin-bottom: var(--space-3); }
+    .remove-img-btn {
+      background: rgba(239,68,68,0.2); border: none; padding: 6px 16px; border-radius: var(--radius-full);
+      color: #ef4444; font-size: var(--font-xs); cursor: pointer; transition: all var(--duration-fast);
+    }
+    .remove-img-btn:hover { background: #ef4444; color: white; }
+
+    .confirm-box {
+      display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-6);
+      padding: var(--space-4); background: var(--badge-soft); border-radius: var(--radius-lg);
+    }
+    .confirm-box input { width: 20px; height: 20px; cursor: pointer; accent-color: var(--accent); }
+
+    .submit-btn {
+      width: 100%; padding: 16px; border-radius: var(--radius-full); background: var(--accent-gradient);
+      color: white; font-weight: 700; font-size: var(--font-base); border: none; cursor: pointer;
+      transition: all var(--duration-fast); margin-bottom: var(--space-5);
+    }
+    .submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px var(--accent-glow); }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .copy-toast {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) scale(0.9);
+      background: var(--card-bg); backdrop-filter: blur(24px); border-radius: var(--radius-xl);
+      border: 1px solid var(--glass-border); padding: var(--space-5); min-width: 280px;
+      display: flex; gap: var(--space-4); opacity: 0; transition: all 0.2s ease; z-index: 1000;
+      box-shadow: var(--glass-shadow-hover);
+    }
+    .copy-toast.show { opacity: 1; transform: translateX(-50%) scale(1); }
+    .copy-toast-icon { width: 48px; height: 48px; background: rgba(16,185,129,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .copy-toast-icon i { font-size: 24px; color: #10b981; }
+    .copy-toast-title { font-weight: 700; margin-bottom: var(--space-1); }
+    .copy-toast-address, .copy-toast-network { font-size: var(--font-xs); color: var(--text-muted); display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-1); }
+    .copy-toast-tip { margin-top: var(--space-2); font-size: var(--font-xs); color: var(--accent); }
+
+    .bottom-nav { display: none; position: fixed; bottom:0; left:0; right:0; background: var(--card-bg); backdrop-filter: blur(24px); border-top: 1px solid var(--glass-border); padding: var(--space-3) var(--space-5); z-index:60; }
+    .bottom-nav-items { display: flex; justify-content: space-around; max-width: 500px; margin:0 auto; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); font-size: var(--font-xs); color: var(--text-muted); cursor: pointer; padding: var(--space-2) 0; transition: all var(--duration-fast); }
+    .nav-item.active { color: var(--accent); }
+    .nav-item i { font-size: 22px; }
+
+    .fab { position: fixed; bottom: 28px; right: 28px; width: 52px; height: 52px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px var(--accent-glow); z-index:55; cursor: pointer; transition: all var(--duration-fast); border: 1px solid rgba(255,255,255,0.2); }
+
+    @media (max-width: 768px) {
+      .container { padding: var(--space-4); }
+      .card { padding: var(--space-5); }
+      .address-value { font-size: 12px; padding: var(--space-3); word-break: break-all; line-height: 1.4; }
+      .copy-btn { padding: 8px 16px; font-size: var(--font-xs); width: 100%; justify-content: center; }
+      .address-container { padding: var(--space-4); }
+      .copy-toast { width: calc(100% - 40px); min-width: auto; bottom: 80px; }
+      .bottom-nav { display: block; }
+      body { padding-bottom: 70px; }
+      .fab { bottom: 80px; right: 20px; width: 48px; height: 48px; }
+      .select-trigger { padding: 12px 16px; font-size: var(--font-sm); }
+      .select-option { padding: 12px 16px; }
+      .select-option .option-desc { font-size: 10px; }
+    }
+
+    @media (max-width: 480px) {
+      .container { padding: var(--space-3); }
+      .card { padding: var(--space-4); }
+      .address-value { font-size: 10px; }
+      .warning-box, .info-box { font-size: var(--font-xs); padding: var(--space-3); }
+      .amount-input { font-size: var(--font-md); padding: 12px 16px; }
+      .upload-area { padding: var(--space-5); }
+      .upload-area i { font-size: 36px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <div class="ticker">
+    <div class="ticker-content">
+      <i class="fa-regular fa-circle-check"></i> SYSTEM STATUS: ACTIVE · ALL OPERATIONS VERIFIABLE ON-CHAIN &nbsp;|&nbsp;
+      <i class="fa-regular fa-clock"></i> AUTHORIZATION CUTOFF ENFORCED · NO POST-MODIFICATION &nbsp;|&nbsp;
+      <i class="fa-regular fa-futbol"></i> WORLD CUP 2026 PREHEAT — EARLY ACCESS SOON
+    </div>
+  </div>
+
+  <div class="header">
+    <div class="logo"><div class="logo-icon">⚽</div><div class="logo-text">FootRadaPro</div></div>
+    <div class="header-actions"><i class="fa-regular fa-moon" id="themeToggle"></i><i class="fa-regular fa-bell"></i></div>
+  </div>
+
+  <div class="container">
+    <main class="content">
+
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fa-solid fa-circle-dollar-to-slot"></i> Deposit Funds</div>
+        </div>
+
+        <div class="custom-select" id="customSelect">
+          <div class="select-trigger" id="selectTrigger">
+            <span id="selectedNetworkText">TRC20 (Tron) - Recommended</span>
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="select-dropdown" id="selectDropdown">
+<div class="select-option" data-value="TRC20" data-note="Fast & low-cost">
+  <span class="option-name">TRC20 (Tron)</span>
+  <span class="option-desc">Recommended · Low fees</span>
+</div>
+<div class="select-option" data-value="ERC20" data-note="Higher gas fees">
+  <span class="option-name">ERC20 (Ethereum)</span>
+  <span class="option-desc">Higher gas fees</span>
+</div>
+<div class="select-option" data-value="BEP20" data-note="Fast & cheap">
+  <span class="option-name">BEP20 (BSC)</span>
+  <span class="option-desc">Fast & cheap</span>
+</div>
+          </div>
+        </div>
+
+        <div class="address-container">
+          <div class="address-label">Deposit Address</div>
+          <div class="address-value" id="depositAddress">TXez8vPf1AbC3xYz7pQr2LmN9kHj5FgDsW</div>
+          <button class="copy-btn" onclick="window.copyAddress()"><i class="fa-regular fa-copy"></i> Copy Address</button>
+        </div>
+
+        <div id="addressWarning" class="warning-box">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Send only USDT (TRC20) to this address</span>
+        </div>
+        <div id="networkNote" class="info-box">
+          <i class="fas fa-info-circle"></i>
+          <span>TRC20 (Tron) - Recommended for low fees</span>
+        </div>
+
+        <input type="number" id="amount" class="amount-input" placeholder="Enter amount" step="10" min="10">
+        <div id="minAmountHint" class="info-box" style="margin-top: -12px;">
+          <i class="fas fa-info-circle"></i>
+          <span>Minimum deposit: 10 USDT</span>
+        </div>
+
+        <div id="uploadArea" class="upload-area">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <p>Click or drag to upload transfer screenshot</p>
+          <p style="font-size: 12px; margin-top: 8px;">PNG, JPG, JPEG (Max 10MB)</p>
+        </div>
+        <input type="file" id="screenshot" accept="image/png,image/jpeg,image/jpg" style="display: none;">
+        <div id="previewArea" class="preview-area" style="display: none;">
+          <img id="preview" class="preview-img" alt="Preview">
+          <div><button class="remove-img-btn" onclick="window.removeImage()">Remove</button></div>
+        </div>
+
+        <div class="confirm-box">
+          <input type="checkbox" id="confirmCheck">
+          <label for="confirmCheck" id="confirmText">I confirm that I have sent the funds to the address above (USDT)</label>
+        </div>
+
+        <button id="submitBtn" class="submit-btn" disabled>Submit Deposit</button>
+      </div>
+    </main>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="bottom-nav-items">
+      <div class="nav-item" data-nav="home"><i class="fa-solid fa-home"></i><span>Home</span></div>
+      <div class="nav-item" data-nav="market"><i class="fa-solid fa-chart-line"></i><span>Market</span></div>
+      <div class="nav-item" data-nav="records"><i class="fa-solid fa-list"></i><span>Records</span></div>
+      <div class="nav-item active" data-nav="support"><i class="fa-solid fa-headset"></i><span>Support</span></div>
+      <div class="nav-item" data-nav="profile"><i class="fa-solid fa-user"></i><span>Profile</span></div>
+    </div>
+  </div>
+
+  <div class="fab" onclick="alert('Support: contact via Telegram')"><i class="fa-solid fa-comment-dots"></i></div>
+</div>
+
+<script>
+  // 自定义下拉选择器（无动画）
+  const selectTrigger = document.getElementById('selectTrigger');
+  const selectDropdown = document.getElementById('selectDropdown');
+  const selectedNetworkText = document.getElementById('selectedNetworkText');
+  let currentNetwork = 'TRC20';
+
+  function toggleDropdown() {
+    selectDropdown.classList.toggle('show');
+  }
+
+  function selectNetwork(value, text, note) {
+    currentNetwork = value;
+    selectedNetworkText.innerText = text;
+    selectDropdown.classList.remove('show');
+    
+    updateAddressForNetwork(value, note);
+    
+    document.querySelectorAll('.select-option').forEach(opt => {
+      opt.classList.remove('selected');
+      if (opt.dataset.value === value) opt.classList.add('selected');
+    });
+  }
+
+  selectTrigger.addEventListener('click', toggleDropdown);
+  
+  document.querySelectorAll('.select-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const value = opt.dataset.value;
+      const text = opt.querySelector('.option-name').innerText;
+      const note = opt.dataset.note;
+      selectNetwork(value, text, note);
+    });
+  });
+  
+  document.addEventListener('click', function(e) {
+    if (!selectTrigger.contains(e.target) && !selectDropdown.contains(e.target)) {
+      selectDropdown.classList.remove('show');
+    }
+  });
+
+  function getAppMode() { return localStorage.getItem('appMode') || 'sandbox'; }
+  function getThemeMode() { return localStorage.getItem('theme') || 'light'; }
+
+  function updateThemeUI() {
+    const theme = getThemeMode();
+    if (theme === 'dark') document.body.classList.add('dark');
+    else document.body.classList.remove('dark');
+    const icon = document.getElementById('themeToggle');
+    if (icon) {
+      if (theme === 'dark') { icon.classList.remove('fa-moon'); icon.classList.add('fa-sun'); }
+      else { icon.classList.remove('fa-sun'); icon.classList.add('fa-moon'); }
+    }
+  }
+
+  function updateModeUI() {
+    const isSandbox = getAppMode() === 'sandbox';
+    const modeText = document.getElementById('currentModeText');
+    if (modeText) {
+      modeText.textContent = isSandbox ? 'Sandbox' : 'Live';
+      modeText.className = isSandbox ? 'sandbox-mode-text' : 'live-mode-text';
+    }
+    const testBadge = document.getElementById('testModeBadge');
+    if (testBadge) testBadge.style.display = isSandbox ? 'inline-flex' : 'none';
+    
+    const currency = isSandbox ? 'tUSDT' : 'USDT';
+    document.querySelectorAll('.currency').forEach(el => {
+      if (el) el.textContent = currency;
+    });
+    
+    const minHint = document.getElementById('minAmountHint');
+    if (minHint) minHint.innerHTML = `<i class="fas fa-info-circle"></i> Minimum deposit: 10 ${currency}`;
+    
+    const confirmText = document.getElementById('confirmText');
+    if (confirmText) confirmText.innerHTML = `I confirm that I have sent the funds to the address above (${currency})`;
+    
+    updateAddressForNetwork(currentNetwork);
+  }
+
+  const depositAddresses = {
+    'TRC20': { address: 'TXez8vPf1AbC3xYz7pQr2LmN9kHj5FgDsW', note: 'TRC20 (Tron) - Recommended for low fees' },
+    'ERC20': { address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', note: 'ERC20 (Ethereum) - Higher gas fees' },
+    'BEP20': { address: '0x8F3a91cA1d2Bc9E7F3d5aB8c4D6eF9a0b1c2d3e4', note: 'BEP20 (BSC) - Fast and cheap' }
+  };
+
+  function updateAddressForNetwork(network, customNote) {
+    const isSandbox = getAppMode() === 'sandbox';
+    const currency = isSandbox ? 'tUSDT' : 'USDT';
+    const addr = depositAddresses[network] || depositAddresses['TRC20'];
+    
+    const addressSpan = document.getElementById('depositAddress');
+    if (addressSpan) addressSpan.textContent = addr.address;
+    
+    const warningBox = document.getElementById('addressWarning');
+    if (warningBox) warningBox.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Send only ${currency} (${network}) to this address`;
+    
+    const noteBox = document.getElementById('networkNote');
+    if (noteBox) noteBox.innerHTML = `<i class="fas fa-info-circle"></i> ${customNote || addr.note}`;
+  }
+
+  function checkForm() {
+    const amountInput = document.getElementById('amount');
+    const confirmCheck = document.getElementById('confirmCheck');
+    const screenshotInput = document.getElementById('screenshot');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    const amount = amountInput ? amountInput.value : null;
+    const checked = confirmCheck ? confirmCheck.checked : false;
+    const hasScreenshot = screenshotInput && screenshotInput.files.length > 0;
+    
+    if (submitBtn) {
+      if (amount && checked && parseFloat(amount) >= 10 && hasScreenshot) {
+        submitBtn.disabled = false;
+      } else {
+        submitBtn.disabled = true;
+      }
+    }
+  }
+
+  function handleFileUpload(file) {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (PNG, JPG, JPEG)');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image size cannot exceed 10MB');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const preview = document.getElementById('preview');
+      const uploadArea = document.getElementById('uploadArea');
+      const previewArea = document.getElementById('previewArea');
+      if (preview) preview.src = e.target.result;
+      if (uploadArea) uploadArea.style.display = 'none';
+      if (previewArea) previewArea.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+    checkForm();
+  }
+
+  window.removeImage = function() {
+    const screenshotInput = document.getElementById('screenshot');
+    const uploadArea = document.getElementById('uploadArea');
+    const previewArea = document.getElementById('previewArea');
+    const preview = document.getElementById('preview');
+    if (screenshotInput) screenshotInput.value = '';
+    if (uploadArea) uploadArea.style.display = 'block';
+    if (previewArea) previewArea.style.display = 'none';
+    if (preview) preview.src = '';
+    checkForm();
+  };
+
+  async function submitDeposit() {
+    const amountInput = document.getElementById('amount');
+    const screenshotInput = document.getElementById('screenshot');
+    const submitBtn = document.getElementById('submitBtn');
+    const isSandbox = getAppMode() === 'sandbox';
+    const currency = isSandbox ? 'tUSDT' : 'USDT';
+    
+    const amount = amountInput ? amountInput.value : null;
+    const file = screenshotInput ? screenshotInput.files[0] : null;
+    
+    if (!amount || parseFloat(amount) < 10) {
+      alert(`Please enter a valid amount (minimum 10 ${currency})`);
+      return;
+    }
+    if (!file) {
+      alert('Please upload a transfer screenshot');
+      return;
+    }
+    
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+    }
+    
+    setTimeout(() => {
+      alert(`✅ Deposit request submitted!\nAmount: ${amount} ${currency}\nNetwork: ${currentNetwork}\nWe will review within 24 hours.`);
+      if (amountInput) amountInput.value = '';
+      const confirmCheck = document.getElementById('confirmCheck');
+      if (confirmCheck) confirmCheck.checked = false;
+      window.removeImage();
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submit Deposit';
+      }
+    }, 1000);
+  }
+
+  window.copyAddress = function() {
+    const addressSpan = document.getElementById('depositAddress');
+    const address = addressSpan ? addressSpan.textContent : '';
+    
+    if (!address || address === 'Loading...') {
+      alert('No address to copy');
+      return;
+    }
+    
+    navigator.clipboard.writeText(address).then(() => {
+      showCopyToast(address, currentNetwork);
+    }).catch(() => {
+      const textarea = document.createElement('textarea');
+      textarea.value = address;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      showCopyToast(address, currentNetwork);
+    });
+  };
+
+  function showCopyToast(address, network) {
+    const existingToast = document.querySelector('.copy-toast');
+    if (existingToast) existingToast.remove();
+    
+    const shortAddress = address.length > 20 ? `${address.substring(0, 8)}...${address.substring(address.length - 6)}` : address;
+    const networkNames = { 'TRC20': 'TRC20 (Tron)', 'ERC20': 'ERC20 (Ethereum)', 'BEP20': 'BEP20 (BSC)' };
+    const displayNetwork = networkNames[network] || network;
+    
+    const toast = document.createElement('div');
+    toast.className = 'copy-toast';
+    toast.innerHTML = `
+      <div class="copy-toast-icon"><i class="fas fa-check-circle"></i></div>
+      <div class="copy-toast-content">
+        <div class="copy-toast-title">Address Copied!</div>
+        <div class="copy-toast-address"><i class="fas fa-wallet"></i> ${escapeHtml(shortAddress)}</div>
+        <div class="copy-toast-network"><i class="fas fa-network-wired"></i> ${escapeHtml(displayNetwork)}</div>
+        <div class="copy-toast-tip"><i class="fas fa-shield-alt"></i> Double-check the address before sending</div>
+      </div>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+  }
+
+  function bindEvents() {
+    const amountInput = document.getElementById('amount');
+    if (amountInput) amountInput.addEventListener('input', checkForm);
+    
+    const confirmCheck = document.getElementById('confirmCheck');
+    if (confirmCheck) confirmCheck.addEventListener('change', checkForm);
+    
+    const uploadArea = document.getElementById('uploadArea');
+    const screenshotInput = document.getElementById('screenshot');
+    if (uploadArea && screenshotInput) {
+      uploadArea.addEventListener('click', () => screenshotInput.click());
+      screenshotInput.addEventListener('change', (e) => {
+        if (e.target.files[0]) handleFileUpload(e.target.files[0]);
+        checkForm();
+      });
+      uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.style.borderColor = 'var(--accent)'; });
+      uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = ''; });
+      uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '';
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+          screenshotInput.files = e.dataTransfer.files;
+          handleFileUpload(file);
+          checkForm();
+        }
+      });
+    }
+    
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) submitBtn.addEventListener('click', submitDeposit);
+  }
+
+  document.getElementById('themeToggle')?.addEventListener('click', () => {
+    const newTheme = getThemeMode() === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', newTheme);
+    window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
+    updateThemeUI();
+  });
+
+  window.addEventListener('appModeChanged', () => updateModeUI());
+  window.addEventListener('themeChanged', () => updateThemeUI());
+
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const nav = item.dataset.nav;
+      if (nav === 'home') window.location.href = '/index.html';
+      if (nav === 'market') window.location.href = '/match-market.html';
+      if (nav === 'records') window.location.href = '/transaction-list.html';
+      if (nav === 'support') window.location.href = '/support.html';
+      if (nav === 'profile') window.location.href = '/profile.html';
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+
+  updateThemeUI();
+  updateModeUI();
+  updateAddressForNetwork('TRC20');
+  bindEvents();
+</script>
+</body>
+</html>
