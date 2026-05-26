@@ -1,6 +1,6 @@
 /**
  * FOOTRADAPRO MVP - Application Entry Point
- * @description Express应用入口，生产环境标准配置
+ * @description Express应用入口，支持 SQLite(本地) 和 PostgreSQL(生产)
  */
 
 import express from 'express';
@@ -24,6 +24,7 @@ const __dirname = path.dirname(__filename);
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const PORT = process.env.PORT || 3000;
+const isProduction = NODE_ENV === 'production';
 
 // ==================== 确保日志目录存在 ====================
 const logDir = path.join(process.cwd(), 'logs');
@@ -81,7 +82,6 @@ import { initSocket } from './socket/index.js';
 import './jobs/auto-fetch-scores.js';
 import depositNotifyRoutes from './api/v1/user/deposit-notify.routes.js';
 import './services/emailservice.js';
-import SQLiteStore from 'connect-sqlite3';
 import configRoutes from './api/v1/admin/config.routes.js';
 import notificationRoutes from './api/v1/user/notifications.routes.js';
 
@@ -94,6 +94,62 @@ import { startAutoFetchJob } from './jobs/auto-fetch-matches.js';
 
 // ==================== 初始化 Express ====================
 const app = express();
+
+// ==================== Session 配置（兼容双数据库） ====================
+let sessionMiddleware;
+if (isProduction) {
+    // 生产环境使用内存存储（PostgreSQL 环境）
+    sessionMiddleware = session({
+        secret: process.env.SESSION_SECRET || 'footradapro-super-secret-key-2024',
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            secure: true,
+            httpOnly: true,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            sameSite: 'lax'
+        },
+        name: 'footradapro.sid'
+    });
+} else {
+    // 本地开发使用 SQLite 存储
+    try {
+        const SQLiteStore = (await import('connect-sqlite3')).default;
+        const SQLiteStoreSession = SQLiteStore(session);
+        sessionMiddleware = session({
+            store: new SQLiteStoreSession({
+                db: 'sessions.db',
+                dir: './src/database/data',
+                table: 'sessions'
+            }),
+            secret: process.env.SESSION_SECRET || 'footradapro-super-secret-key-2024',
+            resave: false,
+            saveUninitialized: false,
+            cookie: {
+                secure: false,
+                httpOnly: true,
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+                sameSite: 'lax'
+            },
+            name: 'footradapro.sid'
+        });
+    } catch (err) {
+        logger.warn('SQLiteStore not available, using memory store');
+        sessionMiddleware = session({
+            secret: process.env.SESSION_SECRET || 'footradapro-super-secret-key-2024',
+            resave: false,
+            saveUninitialized: false,
+            cookie: {
+                secure: false,
+                httpOnly: true,
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+                sameSite: 'lax'
+            },
+            name: 'footradapro.sid'
+        });
+    }
+}
+
 // ==================== 显式 JS 文件路由（解决 500 错误） ====================
 app.get('/js/core/config.js', (req, res) => {
     res.type('application/javascript');
@@ -119,6 +175,7 @@ app.get('/js/core/theme.js', (req, res) => {
     res.type('application/javascript');
     res.sendFile(path.join(process.cwd(), 'public', 'js', 'core', 'theme.js'));
 });
+
 // ==================== 安全中间件 ====================
 app.use(helmet({
     contentSecurityPolicy: {
@@ -130,49 +187,43 @@ app.use(helmet({
                 "https://fonts.googleapis.com",
                 "https://cdnjs.cloudflare.com",
                 "https://www.gstatic.com",
-                
-                
             ],
             fontSrc: [
                 "'self'", 
                 "https://fonts.gstatic.com",
                 "https://cdnjs.cloudflare.com",
-                
-                
             ],
-scriptSrc: [
-    "'self'",
-    "'unsafe-inline'",
-    "'unsafe-eval'",
-    "https://cdnjs.cloudflare.com",
-    "https://www.gstatic.com",
-    "https://challenges.cloudflare.com",
-    "https://cdn.jsdelivr.net",
-    "https://cdn.socket.io",
-    "https://www.footradapro.com",
-    "https://api.footradapro.com"
-],
+            scriptSrc: [
+                "'self'",
+                "'unsafe-inline'",
+                "'unsafe-eval'",
+                "https://cdnjs.cloudflare.com",
+                "https://www.gstatic.com",
+                "https://challenges.cloudflare.com",
+                "https://cdn.jsdelivr.net",
+                "https://cdn.socket.io",
+                "https://www.footradapro.com",
+                "https://api.footradapro.com"
+            ],
             scriptSrcAttr: ["'unsafe-inline'"],
             imgSrc: [
                 "'self'", 
                 "data:", 
                 "https:",
-                
             ],
-connectSrc: [
-    "'self'", 
-    "https://cdn.jsdelivr.net",
-    "https://cdn.socket.io",           // 👈 添加这行
-    "https://api.footradapro.com",
-    "https://www.footradapro.com",
-    "ws://localhost:*",
-    "wss://localhost:*",
-    "ws://localhost:3000",              // 👈 添加这行
-    "wss://localhost:3000"              // 👈 添加这行
-],
+            connectSrc: [
+                "'self'", 
+                "https://cdn.jsdelivr.net",
+                "https://cdn.socket.io",
+                "https://api.footradapro.com",
+                "https://www.footradapro.com",
+                "ws://localhost:*",
+                "wss://localhost:*",
+                "ws://localhost:3000",
+                "wss://localhost:3000"
+            ],
             frameSrc: [
                 "'self'",
-                
             ],
         },
     },
@@ -182,7 +233,6 @@ connectSrc: [
 // ==================== CORS 配置 ====================
 const corsOptions = {
     origin: function(origin, callback) {
-        // 允许的域名列表（生产环境）
         const allowedOrigins = [
             'https://www.footradapro.com',
             'https://footradapro.com',
@@ -191,12 +241,10 @@ const corsOptions = {
             'http://localhost:5500'
         ];
         
-        // 开发环境允许所有
         if (NODE_ENV === 'development') {
             return callback(null, true);
         }
         
-        // 允许没有 origin 的请求（如 Postman、服务器内部调用）
         if (!origin) {
             return callback(null, true);
         }
@@ -217,29 +265,7 @@ app.use(cors(corsOptions));
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// ==================== Session 配置 ====================
-
-const SQLiteStoreSession = SQLiteStore(session);
-
-app.use(session({
-    store: new SQLiteStoreSession({
-        db: 'sessions.db',
-        dir: './src/database/data',
-        table: 'sessions'
-    }),
-    secret: process.env.SESSION_SECRET || 'footradapro-super-secret-key-2024',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        secure: true,
-        httpOnly: true,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        sameSite: 'lax'
-    },
-    name: 'footradapro.sid'
-}));
-
+app.use(sessionMiddleware);
 app.use(cookieParser());
 
 // ==================== 请求日志 ====================
@@ -248,23 +274,21 @@ app.use(morgan(NODE_ENV === 'production' ? 'combined' : 'dev', {
         write: (message) => logger.info(message.trim())
     }
 }));
+
 // 仪表盘页面
 app.get('/index.html', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
 });
-// 官网首页
 
+// 官网首页
 app.get('/', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'home.html'));
 });
+
 // ==================== 静态文件服务 ====================
 app.use(express.static(path.join(process.cwd(), 'public'), config.staticOptions));
 
 // ==================== 多页面应用路由 ====================
-
-
-
-// 认证相关
 app.get('/login', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'login.html'));
 });
@@ -273,7 +297,6 @@ app.get('/register', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'register.html'));
 });
 
-// 用户相关
 app.get('/profile', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'profile.html'));
 });
@@ -290,7 +313,6 @@ app.get('/set-paypassword', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'set-paypassword.html'));
 });
 
-// 资金相关
 app.get('/deposit', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'deposit.html'));
 });
@@ -303,7 +325,6 @@ app.get('/fund-detail', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'fund-detail.html'));
 });
 
-// 交易相关
 app.get('/match-market', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'match-market.html'));
 });
@@ -316,7 +337,6 @@ app.get('/transaction-detail', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'transaction-detail.html'));
 });
 
-// 报表相关
 app.get('/platform-reports', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'platform-reports.html'));
 });
@@ -329,7 +349,6 @@ app.get('/report-detail', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'report-detail.html'));
 });
 
-// 授权相关
 app.get('/authorizations', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'authorizations.html'));
 });
@@ -338,7 +357,6 @@ app.get('/authorize-submit', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'authorize-submit.html'));
 });
 
-// FAQ 相关
 app.get('/faq-list', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'faq-list.html'));
 });
@@ -351,7 +369,6 @@ app.get('/faq-auth', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'faq-auth.html'));
 });
 
-// 客服相关
 app.get('/support', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'support.html'));
 });
@@ -360,12 +377,10 @@ app.get('/support-chat', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'support-chat-content.html'));
 });
 
-// VIP
 app.get('/vip-details', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'vip-details.html'));
 });
 
-// 其他
 app.get('/privacy', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'privacy.html'));
 });
@@ -392,33 +407,41 @@ app.get('/health', (req, res) => {
     });
 });
 
-// ==================== 用户活动记录中间件 ====================
-app.use('/api/v1/user', (req, res, next) => {
+// ==================== 用户活动记录中间件（兼容双数据库） ====================
+app.use('/api/v1/user', async (req, res, next) => {
     if (req.session && req.session.userId) {
-        const db = database.get();
-        setImmediate(() => {
-            try {
+        try {
+            if (isProduction) {
+                // PostgreSQL 版本
+                const { query } = database;
+                await query('UPDATE users SET last_active_at = NOW() WHERE id = $1', [req.session.userId]);
+            } else {
+                // SQLite 版本
+                const db = database.get();
                 db.prepare('UPDATE users SET last_active_at = CURRENT_TIMESTAMP WHERE id = ?').run(req.session.userId);
-                logger.debug(`更新用户最后活动时间: userId=${req.session.userId}`);
-            } catch (err) {
-                logger.error('更新用户最后活动时间失败:', err);
             }
-        });
+            logger.debug(`更新用户最后活动时间: userId=${req.session.userId}`);
+        } catch (err) {
+            logger.error('更新用户最后活动时间失败:', err);
+        }
     }
     next();
 });
 
-app.use('/api/v1/admin', (req, res, next) => {
+app.use('/api/v1/admin', async (req, res, next) => {
     if (req.session && req.session.userId) {
-        const db = database.get();
-        setImmediate(() => {
-            try {
+        try {
+            if (isProduction) {
+                const { query } = database;
+                await query('UPDATE users SET last_active_at = NOW() WHERE id = $1', [req.session.userId]);
+            } else {
+                const db = database.get();
                 db.prepare('UPDATE users SET last_active_at = CURRENT_TIMESTAMP WHERE id = ?').run(req.session.userId);
-                logger.debug(`更新管理员最后活动时间: userId=${req.session.userId}`);
-            } catch (err) {
-                logger.error('更新管理员最后活动时间失败:', err);
             }
-        });
+            logger.debug(`更新管理员最后活动时间: userId=${req.session.userId}`);
+        } catch (err) {
+            logger.error('更新管理员最后活动时间失败:', err);
+        }
     }
     next();
 });
@@ -466,6 +489,7 @@ app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/user/deposit', depositNotifyRoutes);
 app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 app.use('/api/v1/admin/config', configRoutes);
+
 // ==================== 404 处理 ====================
 app.use((req, res) => {
     res.status(404).sendFile(path.join(process.cwd(), 'public', '404.html'));
@@ -499,6 +523,150 @@ app.use((err, req, res, next) => {
     res.status(statusCode).json(errorResponse);
 });
 
+// ==================== 初始化测试模式表（兼容双数据库） ====================
+const initTestModeTables = async () => {
+    try {
+        if (isProduction) {
+            // PostgreSQL 版本
+            const { query } = database;
+            await query(`
+                CREATE TABLE IF NOT EXISTS mode_switch_logs (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    from_mode INTEGER NOT NULL,
+                    to_mode INTEGER NOT NULL,
+                    ip_address TEXT,
+                    user_agent TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+            await query(`
+                CREATE TABLE IF NOT EXISTS test_balance_logs (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    amount DECIMAL NOT NULL,
+                    balance_before DECIMAL NOT NULL,
+                    balance_after DECIMAL NOT NULL,
+                    type TEXT NOT NULL,
+                    reference_id INTEGER,
+                    match_id TEXT,
+                    description TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+            await query(`
+                CREATE TABLE IF NOT EXISTS test_reset_logs (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    previous_balance DECIMAL NOT NULL,
+                    new_balance DECIMAL NOT NULL,
+                    reset_count INTEGER DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+            
+            // 检查并添加列
+            const columns = await query(`
+                SELECT column_name FROM information_schema.columns 
+                WHERE table_name = 'users'
+            `);
+            const hasTestMode = columns.some(col => col.column_name === 'is_test_mode');
+            const hasTestBalance = columns.some(col => col.column_name === 'test_balance');
+            
+            if (!hasTestMode) {
+                await query('ALTER TABLE users ADD COLUMN is_test_mode INTEGER DEFAULT 1');
+                logger.info('✅ Added is_test_mode column to users table');
+            }
+            if (!hasTestBalance) {
+                await query('ALTER TABLE users ADD COLUMN test_balance DECIMAL DEFAULT 10000');
+                logger.info('✅ Added test_balance column to users table');
+            }
+            
+            const authColumns = await query(`
+                SELECT column_name FROM information_schema.columns 
+                WHERE table_name = 'authorizations'
+            `);
+            const hasAuthTest = authColumns.some(col => col.column_name === 'is_test');
+            if (!hasAuthTest) {
+                await query('ALTER TABLE authorizations ADD COLUMN is_test INTEGER DEFAULT 0');
+                logger.info('✅ Added is_test column to authorizations table');
+            }
+            
+            await query(`
+                UPDATE users SET test_balance = 10000 
+                WHERE test_balance IS NULL OR test_balance = 0
+            `);
+            
+        } else {
+            // SQLite 版本
+            const db = database.get();
+            db.exec(`
+                CREATE TABLE IF NOT EXISTS mode_switch_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    from_mode INTEGER NOT NULL,
+                    to_mode INTEGER NOT NULL,
+                    ip_address TEXT,
+                    user_agent TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+
+                CREATE TABLE IF NOT EXISTS test_balance_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    amount REAL NOT NULL,
+                    balance_before REAL NOT NULL,
+                    balance_after REAL NOT NULL,
+                    type TEXT NOT NULL,
+                    reference_id INTEGER,
+                    match_id TEXT,
+                    description TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+
+                CREATE TABLE IF NOT EXISTS test_reset_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    previous_balance REAL NOT NULL,
+                    new_balance REAL NOT NULL,
+                    reset_count INTEGER DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+            `);
+
+            const tableInfo = db.prepare("PRAGMA table_info(users)").all();
+            const hasTestMode = tableInfo.some(col => col.name === 'is_test_mode');
+            const hasTestBalance = tableInfo.some(col => col.name === 'test_balance');
+            
+            if (!hasTestMode) {
+                db.exec("ALTER TABLE users ADD COLUMN is_test_mode INTEGER DEFAULT 1");
+                logger.info('✅ Added is_test_mode column to users table');
+            }
+            if (!hasTestBalance) {
+                db.exec("ALTER TABLE users ADD COLUMN test_balance REAL DEFAULT 10000");
+                logger.info('✅ Added test_balance column to users table');
+            }
+
+            const authTableInfo = db.prepare("PRAGMA table_info(authorizations)").all();
+            const hasAuthTest = authTableInfo.some(col => col.name === 'is_test');
+            if (!hasAuthTest) {
+                db.exec("ALTER TABLE authorizations ADD COLUMN is_test INTEGER DEFAULT 0");
+                logger.info('✅ Added is_test column to authorizations table');
+            }
+
+            db.exec(`
+                UPDATE users 
+                SET test_balance = 10000 
+                WHERE test_balance IS NULL OR test_balance = 0
+            `);
+        }
+        
+        logger.info('✅ Test mode initialization complete');
+    } catch (error) {
+        logger.error('Failed to initialize test mode tables:', error);
+    }
+};
+
 // ==================== 启动服务器 ====================
 const startServer = async () => {
     try {
@@ -506,75 +674,8 @@ const startServer = async () => {
         await database.init();
         logger.info('Database initialized successfully');
 
-        // ===== 測試模式相關表初始化 =====
-        const db = database.get();
-        
-        db.exec(`
-            CREATE TABLE IF NOT EXISTS mode_switch_logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                from_mode INTEGER NOT NULL,
-                to_mode INTEGER NOT NULL,
-                ip_address TEXT,
-                user_agent TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id)
-            );
-
-            CREATE TABLE IF NOT EXISTS test_balance_logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                amount REAL NOT NULL,
-                balance_before REAL NOT NULL,
-                balance_after REAL NOT NULL,
-                type TEXT NOT NULL,
-                reference_id INTEGER,
-                match_id TEXT,
-                description TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id)
-            );
-
-            CREATE TABLE IF NOT EXISTS test_reset_logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                previous_balance REAL NOT NULL,
-                new_balance REAL NOT NULL,
-                reset_count INTEGER DEFAULT 1,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id)
-            );
-        `);
-
-        const tableInfo = db.prepare("PRAGMA table_info(users)").all();
-        const hasTestMode = tableInfo.some(col => col.name === 'is_test_mode');
-        const hasTestBalance = tableInfo.some(col => col.name === 'test_balance');
-        
-        if (!hasTestMode) {
-            db.exec("ALTER TABLE users ADD COLUMN is_test_mode INTEGER DEFAULT 1");
-            logger.info('✅ Added is_test_mode column to users table');
-        }
-        
-        if (!hasTestBalance) {
-            db.exec("ALTER TABLE users ADD COLUMN test_balance REAL DEFAULT 10000");
-            logger.info('✅ Added test_balance column to users table');
-        }
-
-        const authTableInfo = db.prepare("PRAGMA table_info(authorizations)").all();
-        const hasAuthTest = authTableInfo.some(col => col.name === 'is_test');
-        
-        if (!hasAuthTest) {
-            db.exec("ALTER TABLE authorizations ADD COLUMN is_test INTEGER DEFAULT 0");
-            logger.info('✅ Added is_test column to authorizations table');
-        }
-
-        db.exec(`
-            UPDATE users 
-            SET test_balance = 10000 
-            WHERE test_balance IS NULL OR test_balance = 0
-        `);
-        
-        logger.info('✅ Test mode initialization complete');
+        // 初始化测试模式表
+        await initTestModeTables();
 
         // ===== 创建 HTTP 服务器并集成 WebSocket =====
         const server = http.createServer(app);
