@@ -157,7 +157,7 @@ const createTablesPostgres = async () => {
             )
         `);
         
-        // 比赛表
+        // 比赛表（包含所有必要字段）
         await client.query(`
             CREATE TABLE IF NOT EXISTS matches (
                 id SERIAL PRIMARY KEY,
@@ -181,7 +181,10 @@ const createTablesPostgres = async () => {
                 is_active INTEGER DEFAULT 0,
                 last_sync TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                home_score INTEGER,
+                away_score INTEGER,
+                settled BOOLEAN DEFAULT FALSE
             )
         `);
         
@@ -355,6 +358,26 @@ const createTablesPostgres = async () => {
         await client.query(`CREATE INDEX IF NOT EXISTS idx_authorizations_match_id ON authorizations(match_id)`);
         await client.query(`CREATE INDEX IF NOT EXISTS idx_authorizations_status ON authorizations(status)`);
         
+        // 检查并添加缺失的字段（针对已存在的表，确保升级兼容）
+        logger.info('[Database] Checking for missing columns...');
+        
+        const missingColumns = [
+            { name: 'home_score', type: 'INTEGER' },
+            { name: 'away_score', type: 'INTEGER' },
+            { name: 'settled', type: 'BOOLEAN DEFAULT FALSE' }
+        ];
+        
+        for (const col of missingColumns) {
+            try {
+                await client.query(`
+                    ALTER TABLE matches ADD COLUMN IF NOT EXISTS ${col.name} ${col.type}
+                `);
+                logger.info(`[Database] Added column: ${col.name}`);
+            } catch (err) {
+                logger.debug(`Column ${col.name} already exists or error:`, err.message);
+            }
+        }
+        
         logger.info('[Database] PostgreSQL tables created/verified');
         
     } finally {
@@ -415,7 +438,10 @@ const createTablesSqlite = () => {
             is_active INTEGER DEFAULT 0,
             last_sync TIMESTAMP,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            home_score INTEGER,
+            away_score INTEGER,
+            settled INTEGER DEFAULT 0
         )
     `);
 
@@ -704,8 +730,6 @@ export const closeDatabase = async () => {
 export const isUserTestMode = (userId) => {
     const dbInstance = getDb();
     if (isProduction && pgPool) {
-        // PostgreSQL 版本需要异步，这里保持同步兼容
-        // 实际使用建议改为异步
         return false;
     } else {
         const result = dbInstance.prepare('SELECT is_test_mode FROM users WHERE id = ?').get(userId);
