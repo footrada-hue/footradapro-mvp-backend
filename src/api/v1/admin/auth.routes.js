@@ -1,17 +1,16 @@
 import express from 'express';
 import bcrypt from 'bcrypt';
-import { getDb } from '../../../database/connection.js';
+import { query, getDb } from '../../../database/connection.js';
 import logger from '../../../utils/logger.js';
 
 const router = express.Router();
+const isProduction = process.env.NODE_ENV === 'production';
 
 // 获取环境变量
-const NODE_ENV = process.env.NODE_ENV || 'development';
-// Cookie 域名配置 - 從環境變量讀取，便於不同環境部署
 const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || null;
 
 // ==================== 管理员登录 ====================
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
     const { username, password } = req.body;
     
     if (!username || !password) {
@@ -21,11 +20,21 @@ router.post('/login', (req, res) => {
         });
     }
     
-    const db = getDb();
-    
     try {
-        // 查找管理员
-        const admin = db.prepare('SELECT * FROM admins WHERE username = ?').get(username);
+        let admin = null;
+        
+        if (isProduction) {
+            // PostgreSQL 版本
+            const result = await query(
+                'SELECT id, username, password, role, name FROM admins WHERE username = $1',
+                [username]
+            );
+            admin = result?.[0];
+        } else {
+            // SQLite 版本
+            const db = getDb();
+            admin = db.prepare('SELECT id, username, password, role, name FROM admins WHERE username = ?').get(username);
+        }
         
         if (!admin) {
             logger.warn('管理员登录失败: 用户不存在 - ' + username);
@@ -48,26 +57,24 @@ router.post('/login', (req, res) => {
         
         // ==================== 设置认证信息 ====================
         
-        // 1. 生成 Cookie Token（用于前端可能的用途）
+        // 1. 生成 Cookie Token
         const token = Buffer.from(admin.id + ':' + Date.now()).toString('base64');
         
-        // Cookie 配置（生产环境安全配置）
         const cookieOptions = {
-            httpOnly: true,                           // 防止 XSS 攻击
-            secure: NODE_ENV === 'production',        // 生产环境强制 HTTPS
-            sameSite: 'strict',                       // 防止 CSRF 攻击
-            maxAge: 7 * 24 * 60 * 60 * 1000,          // 7天
-            path: '/'                                  // 全站有效
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            path: '/'
         };
         
-        // 仅在明确配置域名时添加（支持跨子域名）
         if (COOKIE_DOMAIN) {
             cookieOptions.domain = COOKIE_DOMAIN;
         }
         
         res.cookie('admin_token', token, cookieOptions);
         
-        // 2. 设置 Session（中间件 adminAuth 需要）
+        // 2. 设置 Session
         req.session.userId = admin.id;
         req.session.adminId = admin.id;
         req.session.adminRole = admin.role;
@@ -80,7 +87,6 @@ router.post('/login', (req, res) => {
             userAgent: req.headers['user-agent']
         });
         
-        // 3. 返回用户信息（不包含敏感数据）
         res.json({
             success: true,
             data: {
@@ -101,35 +107,49 @@ router.post('/login', (req, res) => {
 });
 
 // ==================== 验证当前登录状态 ====================
-router.get('/verify', (req, res) => {
-    // 添加防快取頭
+router.get('/verify', async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     
-    // 优先检查 Session（中间件使用的方式）
+    // 优先检查 Session
     if (req.session && req.session.adminId) {
-        const db = getDb();
-        const admin = db.prepare(`
-            SELECT id, username, name, role 
-            FROM admins 
-            WHERE id = ? AND is_active = 1 AND is_locked = 0
-        `).get(req.session.adminId);
-        
-        if (admin) {
-            // 更新 session 信息
-            req.session.adminName = admin.name;
-            req.session.adminRole = admin.role;
+        try {
+            let admin = null;
             
-            return res.json({
-                success: true,
-                data: {
-                    id: admin.id,
-                    username: admin.username,
-                    name: admin.name || admin.username,
-                    role: admin.role
-                }
-            });
+            if (isProduction) {
+                const result = await query(
+                    `SELECT id, username, name, role 
+                     FROM admins 
+                     WHERE id = $1`,
+                    [req.session.adminId]
+                );
+                admin = result?.[0];
+            } else {
+                const db = getDb();
+                admin = db.prepare(`
+                    SELECT id, username, name, role 
+                    FROM admins 
+                    WHERE id = ?
+                `).get(req.session.adminId);
+            }
+            
+            if (admin) {
+                req.session.adminName = admin.name;
+                req.session.adminRole = admin.role;
+                
+                return res.json({
+                    success: true,
+                    data: {
+                        id: admin.id,
+                        username: admin.username,
+                        name: admin.name || admin.username,
+                        role: admin.role
+                    }
+                });
+            }
+        } catch (error) {
+            logger.error('Session验证错误:', error);
         }
     }
     
@@ -149,12 +169,24 @@ router.get('/verify', (req, res) => {
         const parts = decoded.split(':');
         const adminId = parts[0];
         
-        const db = getDb();
-        const admin = db.prepare(`
-            SELECT id, username, name, role 
-            FROM admins 
-            WHERE id = ? AND is_active = 1 AND is_locked = 0
-        `).get(adminId);
+        let admin = null;
+        
+        if (isProduction) {
+            const result = await query(
+                `SELECT id, username, name, role 
+                 FROM admins 
+                 WHERE id = $1`,
+                [adminId]
+            );
+            admin = result?.[0];
+        } else {
+            const db = getDb();
+            admin = db.prepare(`
+                SELECT id, username, name, role 
+                FROM admins 
+                WHERE id = ?
+            `).get(adminId);
+        }
         
         if (!admin) {
             return res.status(401).json({ 
@@ -192,10 +224,9 @@ router.get('/verify', (req, res) => {
 
 // ==================== 退出登录 ====================
 router.post('/logout', (req, res) => {
-    // 清除 Cookie
     const cookieOptions = {
         httpOnly: true,
-        secure: NODE_ENV === 'production',
+        secure: isProduction,
         sameSite: 'strict',
         path: '/'
     };
@@ -206,7 +237,6 @@ router.post('/logout', (req, res) => {
     
     res.clearCookie('admin_token', cookieOptions);
     
-    // 销毁 Session
     if (req.session) {
         req.session.destroy((err) => {
             if (err) {
@@ -226,9 +256,8 @@ router.post('/logout', (req, res) => {
     });
 });
 
-// ==================== 修改密码（可选） ====================
+// ==================== 修改密码 ====================
 router.post('/change-password', async (req, res) => {
-    // 先验证登录状态
     if (!req.session || !req.session.adminId) {
         return res.status(401).json({
             success: false,
@@ -253,10 +282,19 @@ router.post('/change-password', async (req, res) => {
         });
     }
     
-    const db = getDb();
-    
     try {
-        const admin = db.prepare('SELECT password FROM admins WHERE id = ?').get(req.session.adminId);
+        let admin = null;
+        
+        if (isProduction) {
+            const result = await query(
+                'SELECT password FROM admins WHERE id = $1',
+                [req.session.adminId]
+            );
+            admin = result?.[0];
+        } else {
+            const db = getDb();
+            admin = db.prepare('SELECT password FROM admins WHERE id = ?').get(req.session.adminId);
+        }
         
         if (!admin) {
             return res.status(404).json({
@@ -276,7 +314,15 @@ router.post('/change-password', async (req, res) => {
         
         const hashedNewPassword = bcrypt.hashSync(newPassword, 10);
         
-        db.prepare('UPDATE admins SET password = ? WHERE id = ?').run(hashedNewPassword, req.session.adminId);
+        if (isProduction) {
+            await query(
+                'UPDATE admins SET password = $1 WHERE id = $2',
+                [hashedNewPassword, req.session.adminId]
+            );
+        } else {
+            const db = getDb();
+            db.prepare('UPDATE admins SET password = ? WHERE id = ?').run(hashedNewPassword, req.session.adminId);
+        }
         
         logger.info('管理员密码已修改', { adminId: req.session.adminId });
         
