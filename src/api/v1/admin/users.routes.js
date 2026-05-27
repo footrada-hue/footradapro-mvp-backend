@@ -1,31 +1,46 @@
 import express from 'express';
-import { getDb } from '../../../database/connection.js';
+import { query, getDb } from '../../../database/connection.js';
 import { adminAuth } from '../../../middlewares/admin.middleware.js';
 import { hasPermission, logAdminAction } from '../../../middlewares/permission.middleware.js';
 import logger from '../../../utils/logger.js';
 import bcrypt from 'bcrypt';
 
 const router = express.Router();
+const isProduction = process.env.NODE_ENV === 'production';
 
 // 所有路由都需要管理员登录
 router.use(adminAuth);
 
 // ==================== 获取所有用户列表 ====================
-router.get('/', hasPermission('users.view'), (req, res) => {
-    const db = getDb();
-    
+router.get('/', hasPermission('users.view'), async (req, res) => {
     try {
-        const users = db.prepare(`
-            SELECT 
-                id, uid, username, balance, vip_level, status,
-                is_new_user, has_claimed_bonus, completed_steps,
-                is_test_mode, is_mode_locked, account_status, first_deposit_at,
-                created_at, last_login_at, last_active_at
-            FROM users 
-            ORDER BY id DESC
-        `).all();
+        let users;
         
-        logAdminAction(req, 'view_users', { count: users.length });
+        if (isProduction) {
+            const result = await query(`
+                SELECT 
+                    id, uid, username, balance, vip_level, status,
+                    is_new_user, has_claimed_bonus, completed_steps,
+                    is_test_mode, is_mode_locked, account_status, first_deposit_at,
+                    created_at, last_login_at, last_active_at
+                FROM users 
+                ORDER BY id DESC
+            `);
+            users = result || [];
+        } else {
+            const db = getDb();
+            users = db.prepare(`
+                SELECT 
+                    id, uid, username, balance, vip_level, status,
+                    is_new_user, has_claimed_bonus, completed_steps,
+                    is_test_mode, is_mode_locked, account_status, first_deposit_at,
+                    created_at, last_login_at, last_active_at
+                FROM users 
+                ORDER BY id DESC
+            `).all();
+        }
+        
+        await logAdminAction(req, 'view_users', { count: users.length });
         
         res.json({ success: true, data: users });
     } catch (error) {
@@ -33,34 +48,48 @@ router.get('/', hasPermission('users.view'), (req, res) => {
         res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
     }
 });
+
 // ==================== 获取最近注册用户（用于仪表盘）====================
-/**
- * GET /api/v1/admin/users/recent
- * 功能：获取最近注册的用户列表，用于仪表盘显示
- * 权限：users.view
- * 参数：limit (可选，默认5)
- */
-router.get('/recent', hasPermission('users.view'), (req, res) => {
-    const db = getDb();
-    const limit = Math.min(parseInt(req.query.limit) || 5, 50); // 最大50条
+router.get('/recent', hasPermission('users.view'), async (req, res) => {
+    const limit = Math.min(parseInt(req.query.limit) || 5, 50);
     
     try {
-        const users = db.prepare(`
-            SELECT 
-                id,
-                uid,
-                username,
-                balance,
-                vip_level,
-                status,
-                is_test_mode,
-                created_at
-            FROM users 
-            ORDER BY created_at DESC 
-            LIMIT ?
-        `).all(limit);
+        let users;
         
-        // 格式化返回数据
+        if (isProduction) {
+            const result = await query(`
+                SELECT 
+                    id,
+                    uid,
+                    username,
+                    balance,
+                    vip_level,
+                    status,
+                    is_test_mode,
+                    created_at
+                FROM users 
+                ORDER BY created_at DESC 
+                LIMIT $1
+            `, [limit]);
+            users = result || [];
+        } else {
+            const db = getDb();
+            users = db.prepare(`
+                SELECT 
+                    id,
+                    uid,
+                    username,
+                    balance,
+                    vip_level,
+                    status,
+                    is_test_mode,
+                    created_at
+                FROM users 
+                ORDER BY created_at DESC 
+                LIMIT ?
+            `).all(limit);
+        }
+        
         const formattedUsers = users.map(user => ({
             id: user.id,
             uid: user.uid,
@@ -68,7 +97,7 @@ router.get('/recent', hasPermission('users.view'), (req, res) => {
             balance: user.balance || 0,
             vip_level: user.vip_level || 0,
             status: user.status || 'active',
-            is_test_mode: user.is_test_mode === 1,
+            is_test_mode: isProduction ? (user.is_test_mode === true) : (user.is_test_mode === 1),
             created_at: user.created_at
         }));
         
@@ -87,23 +116,41 @@ router.get('/recent', hasPermission('users.view'), (req, res) => {
         });
     }
 });
+
 // ==================== 获取单个用户详情 ====================
-router.get('/:userId', hasPermission('users.detail'), (req, res) => {
+router.get('/:userId', hasPermission('users.detail'), async (req, res) => {
     const { userId } = req.params;
-    const db = getDb();
     
     try {
-        const user = db.prepare(`
-            SELECT 
-                id, uid, username, balance, vip_level, status,
-                is_new_user, has_claimed_bonus, completed_steps,
-                is_test_mode, is_mode_locked, account_status, first_deposit_at,
-                bonus_claimed_at, created_at, updated_at,
-                last_login_at, last_active_at,
-                password
-            FROM users 
-            WHERE id = ?
-        `).get(userId);
+        let user;
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT 
+                    id, uid, username, balance, vip_level, status,
+                    is_new_user, has_claimed_bonus, completed_steps,
+                    is_test_mode, is_mode_locked, account_status, first_deposit_at,
+                    bonus_claimed_at, created_at, updated_at,
+                    last_login_at, last_active_at,
+                    password
+                FROM users 
+                WHERE id = $1
+            `, [userId]);
+            user = result?.[0];
+        } else {
+            const db = getDb();
+            user = db.prepare(`
+                SELECT 
+                    id, uid, username, balance, vip_level, status,
+                    is_new_user, has_claimed_bonus, completed_steps,
+                    is_test_mode, is_mode_locked, account_status, first_deposit_at,
+                    bonus_claimed_at, created_at, updated_at,
+                    last_login_at, last_active_at,
+                    password
+                FROM users 
+                WHERE id = ?
+            `).get(userId);
+        }
         
         if (!user) {
             return res.status(404).json({ success: false, error: 'USER_NOT_FOUND' });
@@ -112,32 +159,61 @@ router.get('/:userId', hasPermission('users.detail'), (req, res) => {
         // 檢查支付密碼是否設置
         let hasPayPassword = false;
         try {
-            const payResult = db.prepare('SELECT paypassword FROM users WHERE id = ?').get(userId);
-            hasPayPassword = payResult && payResult.paypassword && payResult.paypassword !== '';
+            if (isProduction) {
+                const payResult = await query('SELECT paypassword FROM users WHERE id = $1', [userId]);
+                hasPayPassword = payResult?.[0]?.paypassword && payResult[0].paypassword !== '';
+            } else {
+                const db = getDb();
+                const payResult = db.prepare('SELECT paypassword FROM users WHERE id = ?').get(userId);
+                hasPayPassword = payResult && payResult.paypassword && payResult.paypassword !== '';
+            }
         } catch (err) {
             hasPayPassword = false;
         }
         
-        const authorizations = db.prepare(`
-            SELECT * FROM authorizations 
-            WHERE user_id = ? 
-            ORDER BY created_at DESC 
-            LIMIT 20
-        `).all(userId);
+        let authorizations = [];
+        if (isProduction) {
+            const result = await query(`
+                SELECT * FROM authorizations 
+                WHERE user_id = $1 
+                ORDER BY created_at DESC 
+                LIMIT 20
+            `, [userId]);
+            authorizations = result || [];
+        } else {
+            const db = getDb();
+            authorizations = db.prepare(`
+                SELECT * FROM authorizations 
+                WHERE user_id = ? 
+                ORDER BY created_at DESC 
+                LIMIT 20
+            `).all(userId);
+        }
         
         let balanceLogs = [];
         try {
-            balanceLogs = db.prepare(`
-                SELECT * FROM balance_logs 
-                WHERE user_id = ? 
-                ORDER BY created_at DESC 
-                LIMIT 50
-            `).all(userId);
+            if (isProduction) {
+                const result = await query(`
+                    SELECT * FROM balance_logs 
+                    WHERE user_id = $1 
+                    ORDER BY created_at DESC 
+                    LIMIT 50
+                `, [userId]);
+                balanceLogs = result || [];
+            } else {
+                const db = getDb();
+                balanceLogs = db.prepare(`
+                    SELECT * FROM balance_logs 
+                    WHERE user_id = ? 
+                    ORDER BY created_at DESC 
+                    LIMIT 50
+                `).all(userId);
+            }
         } catch (err) {
             logger.debug('balance_logs表可能不存在', err.message);
         }
         
-        logAdminAction(req, 'view_user_detail', { 
+        await logAdminAction(req, 'view_user_detail', { 
             userId: user.id, 
             username: user.username 
         }, 'user', userId);
@@ -161,17 +237,26 @@ router.get('/:userId', hasPermission('users.detail'), (req, res) => {
 });
 
 // ==================== 切换用户模式（测试/主网）====================
-router.post('/:userId/toggle-mode', hasPermission('users.toggle_mode'), (req, res) => {
+router.post('/:userId/toggle-mode', hasPermission('users.toggle_mode'), async (req, res) => {
     const { userId } = req.params;
     const { mode } = req.body;
     
-    const db = getDb();
-    
     try {
-        const user = db.prepare(`
-            SELECT id, uid, username, is_test_mode, account_status, is_mode_locked 
-            FROM users WHERE uid = ? OR id = ?
-        `).get(userId, userId);
+        let user;
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT id, uid, username, is_test_mode, account_status, is_mode_locked 
+                FROM users WHERE uid = $1 OR id = $2
+            `, [userId, userId]);
+            user = result?.[0];
+        } else {
+            const db = getDb();
+            user = db.prepare(`
+                SELECT id, uid, username, is_test_mode, account_status, is_mode_locked 
+                FROM users WHERE uid = ? OR id = ?
+            `).get(userId, userId);
+        }
         
         if (!user) {
             return res.status(404).json({ 
@@ -188,20 +273,35 @@ router.post('/:userId/toggle-mode', hasPermission('users.toggle_mode'), (req, re
             });
         }
         
-        const isTestMode = mode === 'test' ? 1 : 0;
+        const isTestMode = mode === 'test';
         const accountStatus = mode === 'test' ? 'test' : 'live';
-        const newLockStatus = mode === 'live' ? 1 : 0;
+        const newLockStatus = mode === 'live';
         
-        const result = db.prepare(`
-            UPDATE users 
-            SET is_test_mode = ?,
-                account_status = ?,
-                is_mode_locked = ?,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        `).run(isTestMode, accountStatus, newLockStatus, user.id);
+        let changes;
+        if (isProduction) {
+            const result = await query(`
+                UPDATE users 
+                SET is_test_mode = $1,
+                    account_status = $2,
+                    is_mode_locked = $3,
+                    updated_at = NOW()
+                WHERE id = $4
+            `, [isTestMode, accountStatus, newLockStatus, user.id]);
+            changes = result?.rowCount || 0;
+        } else {
+            const db = getDb();
+            const result = db.prepare(`
+                UPDATE users 
+                SET is_test_mode = ?,
+                    account_status = ?,
+                    is_mode_locked = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            `).run(isTestMode ? 1 : 0, accountStatus, newLockStatus ? 1 : 0, user.id);
+            changes = result.changes;
+        }
         
-        if (result.changes === 0) {
+        if (changes === 0) {
             return res.status(400).json({
                 success: false,
                 error: 'NO_CHANGES',
@@ -209,7 +309,7 @@ router.post('/:userId/toggle-mode', hasPermission('users.toggle_mode'), (req, re
             });
         }
         
-        logAdminAction(req, 'toggle_user_mode', { 
+        await logAdminAction(req, 'toggle_user_mode', { 
             userId: user.uid,
             username: user.username,
             oldMode: user.is_test_mode === 1 ? 'test' : 'live',
@@ -227,7 +327,7 @@ router.post('/:userId/toggle-mode', hasPermission('users.toggle_mode'), (req, re
             data: {
                 uid: user.uid,
                 mode: mode,
-                is_mode_locked: newLockStatus === 1
+                is_mode_locked: newLockStatus
             }
         });
         
@@ -242,7 +342,7 @@ router.post('/:userId/toggle-mode', hasPermission('users.toggle_mode'), (req, re
 });
 
 // ==================== 手动锁定/解锁用户模式 ====================
-router.post('/:userId/toggle-mode-lock', hasPermission('users.toggle_mode'), (req, res) => {
+router.post('/:userId/toggle-mode-lock', hasPermission('users.toggle_mode'), async (req, res) => {
     const { userId } = req.params;
     const { locked } = req.body;
     
@@ -254,13 +354,22 @@ router.post('/:userId/toggle-mode-lock', hasPermission('users.toggle_mode'), (re
         });
     }
     
-    const db = getDb();
-    
     try {
-        const user = db.prepare(`
-            SELECT id, uid, username, is_mode_locked, is_test_mode 
-            FROM users WHERE uid = ? OR id = ?
-        `).get(userId, userId);
+        let user;
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT id, uid, username, is_mode_locked, is_test_mode 
+                FROM users WHERE uid = $1 OR id = $2
+            `, [userId, userId]);
+            user = result?.[0];
+        } else {
+            const db = getDb();
+            user = db.prepare(`
+                SELECT id, uid, username, is_mode_locked, is_test_mode 
+                FROM users WHERE uid = ? OR id = ?
+            `).get(userId, userId);
+        }
         
         if (!user) {
             return res.status(404).json({ 
@@ -271,14 +380,24 @@ router.post('/:userId/toggle-mode-lock', hasPermission('users.toggle_mode'), (re
         
         const newLockStatus = locked ? 1 : 0;
         
-        db.prepare(`
-            UPDATE users 
-            SET is_mode_locked = ?,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        `).run(newLockStatus, user.id);
+        if (isProduction) {
+            await query(`
+                UPDATE users 
+                SET is_mode_locked = $1,
+                    updated_at = NOW()
+                WHERE id = $2
+            `, [newLockStatus, user.id]);
+        } else {
+            const db = getDb();
+            db.prepare(`
+                UPDATE users 
+                SET is_mode_locked = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            `).run(newLockStatus, user.id);
+        }
         
-        logAdminAction(req, 'toggle_mode_lock', { 
+        await logAdminAction(req, 'toggle_mode_lock', { 
             userId: user.uid,
             username: user.username,
             oldLocked: user.is_mode_locked === 1,
@@ -307,19 +426,33 @@ router.post('/:userId/toggle-mode-lock', hasPermission('users.toggle_mode'), (re
 });
 
 // ==================== 获取测试模式用户列表 ====================
-router.get('/test-mode/list', hasPermission('users.view'), (req, res) => {
-    const db = getDb();
-    
+router.get('/test-mode/list', hasPermission('users.view'), async (req, res) => {
     try {
-        const users = db.prepare(`
-            SELECT 
-                id, uid, username, balance, created_at,
-                has_claimed_bonus, completed_steps, first_deposit_at,
-                is_mode_locked
-            FROM users 
-            WHERE is_test_mode = 1
-            ORDER BY created_at DESC
-        `).all();
+        let users;
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT 
+                    id, uid, username, balance, created_at,
+                    has_claimed_bonus, completed_steps, first_deposit_at,
+                    is_mode_locked
+                FROM users 
+                WHERE is_test_mode = true
+                ORDER BY created_at DESC
+            `);
+            users = result || [];
+        } else {
+            const db = getDb();
+            users = db.prepare(`
+                SELECT 
+                    id, uid, username, balance, created_at,
+                    has_claimed_bonus, completed_steps, first_deposit_at,
+                    is_mode_locked
+                FROM users 
+                WHERE is_test_mode = 1
+                ORDER BY created_at DESC
+            `).all();
+        }
         
         res.json({
             success: true,
@@ -334,9 +467,8 @@ router.get('/test-mode/list', hasPermission('users.view'), (req, res) => {
 });
 
 // ==================== 批量切换测试用户到主网 ====================
-router.post('/bulk/switch-to-live', hasPermission('users.bulk_toggle'), (req, res) => {
+router.post('/bulk/switch-to-live', hasPermission('users.bulk_toggle'), async (req, res) => {
     const { userIds } = req.body;
-    const db = getDb();
     
     if (!Array.isArray(userIds) || userIds.length === 0) {
         return res.status(400).json({
@@ -347,26 +479,42 @@ router.post('/bulk/switch-to-live', hasPermission('users.bulk_toggle'), (req, re
     }
     
     try {
-        const placeholders = userIds.map(() => '?').join(',');
+        let changes;
         
-        const result = db.prepare(`
-            UPDATE users 
-            SET is_test_mode = 0,
-                account_status = 'live',
-                is_mode_locked = 1,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id IN (${placeholders}) AND is_test_mode = 1
-        `).run(...userIds);
+        if (isProduction) {
+            const placeholders = userIds.map((_, i) => `$${i + 1}`).join(',');
+            const result = await query(`
+                UPDATE users 
+                SET is_test_mode = false,
+                    account_status = 'live',
+                    is_mode_locked = true,
+                    updated_at = NOW()
+                WHERE id IN (${placeholders}) AND is_test_mode = true
+            `, userIds);
+            changes = result?.rowCount || 0;
+        } else {
+            const db = getDb();
+            const placeholders = userIds.map(() => '?').join(',');
+            const result = db.prepare(`
+                UPDATE users 
+                SET is_test_mode = 0,
+                    account_status = 'live',
+                    is_mode_locked = 1,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id IN (${placeholders}) AND is_test_mode = 1
+            `).run(...userIds);
+            changes = result.changes;
+        }
         
-        logAdminAction(req, 'bulk_switch_to_live', { 
-            count: result.changes,
+        await logAdminAction(req, 'bulk_switch_to_live', { 
+            count: changes,
             userIds: userIds
         });
         
         res.json({
             success: true,
-            message: `成功将 ${result.changes} 个用户切换到主网模式并锁定`,
-            updated: result.changes
+            message: `成功将 ${changes} 个用户切换到主网模式并锁定`,
+            updated: changes
         });
         
     } catch (error) {
@@ -376,13 +524,21 @@ router.post('/bulk/switch-to-live', hasPermission('users.bulk_toggle'), (req, re
 });
 
 // ==================== 编辑用户信息 ====================
-router.put('/:userId', hasPermission('users.edit'), (req, res) => {
+router.put('/:userId', hasPermission('users.edit'), async (req, res) => {
     const { userId } = req.params;
     const { vip_level, status, notes } = req.body;
-    const db = getDb();
     
     try {
-        const user = db.prepare('SELECT id, username FROM users WHERE id = ?').get(userId);
+        let user;
+        
+        if (isProduction) {
+            const result = await query('SELECT id, username FROM users WHERE id = $1', [userId]);
+            user = result?.[0];
+        } else {
+            const db = getDb();
+            user = db.prepare('SELECT id, username FROM users WHERE id = ?').get(userId);
+        }
+        
         if (!user) {
             return res.status(404).json({ success: false, error: 'USER_NOT_FOUND' });
         }
@@ -391,11 +547,11 @@ router.put('/:userId', hasPermission('users.edit'), (req, res) => {
         let values = [];
         
         if (vip_level !== undefined) {
-            updates.push('vip_level = ?');
+            updates.push(isProduction ? 'vip_level = $' : 'vip_level = ?');
             values.push(vip_level);
         }
         if (status !== undefined) {
-            updates.push('status = ?');
+            updates.push(isProduction ? 'status = $' : 'status = ?');
             values.push(status);
         }
         
@@ -404,9 +560,16 @@ router.put('/:userId', hasPermission('users.edit'), (req, res) => {
         }
         
         values.push(userId);
-        db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...values);
         
-        logAdminAction(req, 'edit_user', { 
+        if (isProduction) {
+            const setClause = updates.map((u, i) => u + (i + 1)).join(', ');
+            await query(`UPDATE users SET ${setClause} WHERE id = $${values.length}`, values);
+        } else {
+            const db = getDb();
+            db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+        }
+        
+        await logAdminAction(req, 'edit_user', { 
             userId, 
             username: user.username,
             updates: req.body 
@@ -420,20 +583,34 @@ router.put('/:userId', hasPermission('users.edit'), (req, res) => {
 });
 
 // ==================== 启用/禁用用户 ====================
-router.post('/:userId/toggle', hasPermission('users.toggle'), (req, res) => {
+router.post('/:userId/toggle', hasPermission('users.toggle'), async (req, res) => {
     const { userId } = req.params;
-    const db = getDb();
     
     try {
-        const user = db.prepare('SELECT id, username, status FROM users WHERE id = ?').get(userId);
+        let user;
+        
+        if (isProduction) {
+            const result = await query('SELECT id, username, status FROM users WHERE id = $1', [userId]);
+            user = result?.[0];
+        } else {
+            const db = getDb();
+            user = db.prepare('SELECT id, username, status FROM users WHERE id = ?').get(userId);
+        }
+        
         if (!user) {
             return res.status(404).json({ success: false, error: 'USER_NOT_FOUND' });
         }
         
         const newStatus = user.status === 'active' ? 'disabled' : 'active';
-        db.prepare('UPDATE users SET status = ? WHERE id = ?').run(newStatus, userId);
         
-        logAdminAction(req, 'toggle_user', { 
+        if (isProduction) {
+            await query('UPDATE users SET status = $1 WHERE id = $2', [newStatus, userId]);
+        } else {
+            const db = getDb();
+            db.prepare('UPDATE users SET status = ? WHERE id = ?').run(newStatus, userId);
+        }
+        
+        await logAdminAction(req, 'toggle_user', { 
             userId, 
             username: user.username,
             oldStatus: user.status,
@@ -450,10 +627,18 @@ router.post('/:userId/toggle', hasPermission('users.toggle'), (req, res) => {
 // ==================== 重置用户登录密码 ====================
 router.post('/:userId/reset-password', hasPermission('users.edit'), async (req, res) => {
     const { userId } = req.params;
-    const db = getDb();
     
     try {
-        const user = db.prepare('SELECT id, username FROM users WHERE id = ?').get(userId);
+        let user;
+        
+        if (isProduction) {
+            const result = await query('SELECT id, username FROM users WHERE id = $1', [userId]);
+            user = result?.[0];
+        } else {
+            const db = getDb();
+            user = db.prepare('SELECT id, username FROM users WHERE id = ?').get(userId);
+        }
+        
         if (!user) {
             return res.status(404).json({ success: false, error: 'USER_NOT_FOUND' });
         }
@@ -471,10 +656,14 @@ router.post('/:userId/reset-password', hasPermission('users.edit'), async (req, 
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
         
-        db.prepare('UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-            .run(hashedPassword, userId);
+        if (isProduction) {
+            await query('UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2', [hashedPassword, userId]);
+        } else {
+            const db = getDb();
+            db.prepare('UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(hashedPassword, userId);
+        }
         
-        logAdminAction(req, 'reset_user_password', {
+        await logAdminAction(req, 'reset_user_password', {
             userId: user.id,
             username: user.username
         }, 'user', userId);
@@ -497,10 +686,18 @@ router.post('/:userId/reset-password', hasPermission('users.edit'), async (req, 
 // ==================== 重置用户支付密码 ====================
 router.post('/:userId/reset-paypassword', hasPermission('users.edit'), async (req, res) => {
     const { userId } = req.params;
-    const db = getDb();
     
     try {
-        const user = db.prepare('SELECT id, username FROM users WHERE id = ?').get(userId);
+        let user;
+        
+        if (isProduction) {
+            const result = await query('SELECT id, username FROM users WHERE id = $1', [userId]);
+            user = result?.[0];
+        } else {
+            const db = getDb();
+            user = db.prepare('SELECT id, username FROM users WHERE id = ?').get(userId);
+        }
+        
         if (!user) {
             return res.status(404).json({ success: false, error: 'USER_NOT_FOUND' });
         }
@@ -513,20 +710,32 @@ router.post('/:userId/reset-paypassword', hasPermission('users.edit'), async (re
         const saltRounds = 10;
         const hashedPayPassword = await bcrypt.hash(newPayPassword, saltRounds);
         
-        try {
-            db.prepare('UPDATE users SET paypassword = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-                .run(hashedPayPassword, userId);
-        } catch (err) {
-            if (err.message.includes('no such column')) {
-                db.exec('ALTER TABLE users ADD COLUMN paypassword TEXT');
-                db.prepare('UPDATE users SET paypassword = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-                    .run(hashedPayPassword, userId);
-            } else {
-                throw err;
+        if (isProduction) {
+            try {
+                await query('UPDATE users SET paypassword = $1, updated_at = NOW() WHERE id = $2', [hashedPayPassword, userId]);
+            } catch (err) {
+                if (err.message.includes('column "paypassword" does not exist')) {
+                    await query('ALTER TABLE users ADD COLUMN paypassword TEXT');
+                    await query('UPDATE users SET paypassword = $1, updated_at = NOW() WHERE id = $2', [hashedPayPassword, userId]);
+                } else {
+                    throw err;
+                }
+            }
+        } else {
+            const db = getDb();
+            try {
+                db.prepare('UPDATE users SET paypassword = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(hashedPayPassword, userId);
+            } catch (err) {
+                if (err.message.includes('no such column')) {
+                    db.exec('ALTER TABLE users ADD COLUMN paypassword TEXT');
+                    db.prepare('UPDATE users SET paypassword = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(hashedPayPassword, userId);
+                } else {
+                    throw err;
+                }
             }
         }
         
-        logAdminAction(req, 'reset_user_paypassword', {
+        await logAdminAction(req, 'reset_user_paypassword', {
             userId: user.id,
             username: user.username
         }, 'user', userId);
@@ -547,18 +756,26 @@ router.post('/:userId/reset-paypassword', hasPermission('users.edit'), async (re
 });
 
 // ==================== 获取用户授权记录（按模式区分）====================
-router.get('/:userId/authorizations', hasPermission('users.detail'), (req, res) => {
+router.get('/:userId/authorizations', hasPermission('users.detail'), async (req, res) => {
     const { userId } = req.params;
     const { mode, limit = 50 } = req.query;
-    const db = getDb();
     
     try {
-        const user = db.prepare('SELECT id, username, is_test_mode FROM users WHERE id = ?').get(userId);
+        let user;
+        
+        if (isProduction) {
+            const result = await query('SELECT id, username, is_test_mode FROM users WHERE id = $1', [userId]);
+            user = result?.[0];
+        } else {
+            const db = getDb();
+            user = db.prepare('SELECT id, username, is_test_mode FROM users WHERE id = ?').get(userId);
+        }
+        
         if (!user) {
             return res.status(404).json({ success: false, error: 'USER_NOT_FOUND' });
         }
         
-        let query = `
+        let queryStr = `
             SELECT 
                 a.id,
                 a.auth_id,
@@ -577,21 +794,26 @@ router.get('/:userId/authorizations', hasPermission('users.detail'), (req, res) 
                 m.match_time
             FROM authorizations a
             LEFT JOIN matches m ON a.match_id = m.match_id
-            WHERE a.user_id = ?
+            WHERE a.user_id = $1
         `;
         
-        const params = [userId];
-        
         if (mode === 'test') {
-            query += ` AND a.is_test = 1`;
+            queryStr += ` AND a.is_test = true`;
         } else if (mode === 'live') {
-            query += ` AND (a.is_test = 0 OR a.is_test IS NULL)`;
+            queryStr += ` AND (a.is_test = false OR a.is_test IS NULL)`;
         }
         
-        query += ` ORDER BY a.created_at DESC LIMIT ?`;
-        params.push(parseInt(limit) || 50);
+        queryStr += ` ORDER BY a.created_at DESC LIMIT $2`;
         
-        const authorizations = db.prepare(query).all(...params);
+        let authorizations;
+        if (isProduction) {
+            const result = await query(queryStr, [userId, parseInt(limit) || 50]);
+            authorizations = result || [];
+        } else {
+            const db = getDb();
+            let sql = queryStr.replace(/\$1/g, '?').replace(/\$2/g, '?');
+            authorizations = db.prepare(sql).all(userId, parseInt(limit) || 50);
+        }
         
         const formattedAuths = authorizations.map(auth => ({
             id: auth.id,
@@ -626,16 +848,21 @@ router.get('/:userId/authorizations', hasPermission('users.detail'), (req, res) 
 });
 
 // ==================== 检查用户是否设置了支付密码 ====================
-router.get('/:userId/has-paypassword', hasPermission('users.detail'), (req, res) => {
+router.get('/:userId/has-paypassword', hasPermission('users.detail'), async (req, res) => {
     const { userId } = req.params;
-    const db = getDb();
     
     try {
         let hasPayPassword = false;
         
         try {
-            const result = db.prepare('SELECT paypassword FROM users WHERE id = ?').get(userId);
-            hasPayPassword = result && result.paypassword && result.paypassword !== '';
+            if (isProduction) {
+                const result = await query('SELECT paypassword FROM users WHERE id = $1', [userId]);
+                hasPayPassword = result?.[0]?.paypassword && result[0].paypassword !== '';
+            } else {
+                const db = getDb();
+                const result = db.prepare('SELECT paypassword FROM users WHERE id = ?').get(userId);
+                hasPayPassword = result && result.paypassword && result.paypassword !== '';
+            }
         } catch (err) {
             hasPayPassword = false;
         }
