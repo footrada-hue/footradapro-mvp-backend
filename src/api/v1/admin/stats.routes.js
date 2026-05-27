@@ -111,11 +111,11 @@ router.get('/today', hasPermission('stats.view'), async (req, res) => {
             `);
             bet = betRes.rows[0]?.total || 0;
             
-            const settlementRes = await query(`
-                SELECT COALESCE(SUM(profit), 0) as total 
-                FROM settlements 
-                WHERE DATE(settled_at) = CURRENT_DATE ${modeFilter}
-            `);
+const settlementRes = await query(`
+    SELECT COALESCE(SUM(profit), 0) as total 
+    FROM authorizations 
+    WHERE status = 'settled' AND DATE(settled_at) = CURRENT_DATE ${modeFilter}
+`);
             settlement = settlementRes.rows[0]?.total || 0;
             
             const betUsersRes = await query(`
@@ -161,11 +161,11 @@ router.get('/today', hasPermission('stats.view'), async (req, res) => {
             `).get();
             bet = betRes.total || 0;
             
-            const settlementRes = db.prepare(`
-                SELECT COALESCE(SUM(profit), 0) as total 
-                FROM settlements 
-                WHERE date(settled_at) = date('now') ${modeFilter}
-            `).get();
+const settlementRes = db.prepare(`
+    SELECT COALESCE(SUM(profit), 0) as total 
+    FROM authorizations 
+    WHERE status = 'settled' AND date(settled_at) = date('now') ${modeFilter}
+`).get();
             settlement = settlementRes.total || 0;
             
             const betUsersRes = db.prepare(`
@@ -213,7 +213,7 @@ router.get('/cards', hasPermission('stats.view'), async (req, res) => {
             const totalUsersRes = await query('SELECT COUNT(*) as count FROM users');
             totalUsers = totalUsersRes[0]?.count || 0;
             
-            const volumeRes = await query(`SELECT COALESCE(SUM(profit), 0) as total FROM settlements WHERE 1=1 ${modeFilter}`);
+            const volumeRes = await query(`SELECT COALESCE(SUM(profit), 0) as total FROM authorizations WHERE status = 'settled' ${modeFilter}`);
             totalVolume = parseFloat(volumeRes[0]?.total || 0);
             
             const authsRes = await query(`SELECT COUNT(*) as count FROM authorizations WHERE 1=1 ${modeFilter}`);
@@ -224,7 +224,7 @@ router.get('/cards', hasPermission('stats.view'), async (req, res) => {
         } else {
             const db = getDb();
             totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get();
-            totalVolume = db.prepare(`SELECT COALESCE(SUM(profit), 0) as total FROM settlements WHERE 1=1 ${modeFilter}`).get().total || 0;
+            totalVolume = db.prepare(`SELECT COALESCE(SUM(profit), 0) as total FROM authorizations WHERE status = 'settled' ${modeFilter}`).get().total || 0;
             totalAuths = db.prepare(`SELECT COUNT(*) as count FROM authorizations WHERE 1=1 ${modeFilter}`).get().count || 0;
             finishedMatches = db.prepare('SELECT COUNT(*) as count FROM matches WHERE status = "finished"').get().count || 0;
         }
@@ -281,7 +281,7 @@ router.get('/trend', hasPermission('stats.view'), async (req, res) => {
                 deposits.push(deposit);
                 
                 let settlement = 0;
-                const s = await query(`SELECT COALESCE(SUM(profit), 0) as total FROM settlements WHERE DATE(settled_at) = $1 ${modeFilter}`, [dateStr]);
+                const s = await query(`SELECT COALESCE(SUM(profit), 0) as total FROM authorizations WHERE status = 'settled' AND DATE(settled_at) = $1 ${modeFilter}`, [dateStr]);
                 settlement = parseFloat(s[0]?.total || 0);
                 settlements.push(settlement);
                 
@@ -301,8 +301,8 @@ router.get('/trend', hasPermission('stats.view'), async (req, res) => {
                 deposits.push(deposit);
                 
                 let settlement = 0;
-                const s = db.prepare(`SELECT COALESCE(SUM(profit), 0) as total FROM settlements WHERE date(settled_at) = ? ${modeFilter}`).get(dateStr);
-                settlement = s.total || 0;
+const s = db.prepare(`SELECT COALESCE(SUM(profit), 0) as total FROM authorizations WHERE status = 'settled' AND date(settled_at) = ? ${modeFilter}`).get(dateStr);
+settlement = s.total || 0;
                 settlements.push(settlement);
                 
                 let withdraw = 0;
@@ -568,7 +568,7 @@ router.get('/trend/7days', hasPermission('stats.view'), async (req, res) => {
                 deposits.push(deposit);
                 
                 let settlement = 0;
-                const s = await query(`SELECT COALESCE(SUM(profit), 0) as total FROM settlements WHERE DATE(settled_at) = $1 ${modeFilter}`, [dateStr]);
+                const s = await query(`SELECT COALESCE(SUM(profit), 0) as total FROM authorizations WHERE status = 'settled' AND DATE(settled_at) = $1 ${modeFilter}`, [dateStr]);
                 settlement = parseFloat(s[0]?.total || 0);
                 settlements.push(settlement);
                 
@@ -588,8 +588,8 @@ router.get('/trend/7days', hasPermission('stats.view'), async (req, res) => {
                 deposits.push(deposit);
                 
                 let settlement = 0;
-                const s = db.prepare(`SELECT COALESCE(SUM(profit), 0) as total FROM settlements WHERE date(settled_at) = ? ${modeFilter}`).get(dateStr);
-                settlement = s.total || 0;
+const s = db.prepare(`SELECT COALESCE(SUM(profit), 0) as total FROM authorizations WHERE status = 'settled' AND date(settled_at) = ? ${modeFilter}`).get(dateStr);
+settlement = s.total || 0;
                 settlements.push(settlement);
                 
                 let withdraw = 0;
