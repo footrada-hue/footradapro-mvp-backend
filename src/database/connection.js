@@ -130,7 +130,7 @@ const createTablesPostgres = async () => {
     const client = await pgPool.connect();
     
     try {
-        // 用户表
+        // 用户表（完整字段）
         await client.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -140,8 +140,10 @@ const createTablesPostgres = async () => {
                 balance DECIMAL DEFAULT 0,
                 test_balance DECIMAL DEFAULT 10000,
                 is_test_mode BOOLEAN DEFAULT FALSE,
+                is_mode_locked BOOLEAN DEFAULT FALSE,
                 role TEXT DEFAULT 'user',
                 status TEXT DEFAULT 'active',
+                account_status TEXT DEFAULT 'live',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 is_new_user BOOLEAN DEFAULT TRUE,
@@ -153,7 +155,9 @@ const createTablesPostgres = async () => {
                 vip_level INTEGER DEFAULT 0,
                 total_authorized DECIMAL DEFAULT 0,
                 last_active_at TIMESTAMP,
-                last_mode_switch TIMESTAMP
+                last_mode_switch TIMESTAMP,
+                last_login_at TIMESTAMP,
+                paypassword TEXT
             )
         `);
         
@@ -359,20 +363,41 @@ const createTablesPostgres = async () => {
         await client.query(`CREATE INDEX IF NOT EXISTS idx_authorizations_status ON authorizations(status)`);
         
         // 检查并添加缺失的字段（针对已存在的表，确保升级兼容）
-        logger.info('[Database] Checking for missing columns...');
+        logger.info('[Database] Checking for missing columns in matches table...');
         
-        const missingColumns = [
+        const matchesMissingColumns = [
             { name: 'home_score', type: 'INTEGER' },
             { name: 'away_score', type: 'INTEGER' },
             { name: 'settled', type: 'BOOLEAN DEFAULT FALSE' }
         ];
         
-        for (const col of missingColumns) {
+        for (const col of matchesMissingColumns) {
             try {
                 await client.query(`
                     ALTER TABLE matches ADD COLUMN IF NOT EXISTS ${col.name} ${col.type}
                 `);
-                logger.info(`[Database] Added column: ${col.name}`);
+                logger.info(`[Database] Added column to matches: ${col.name}`);
+            } catch (err) {
+                logger.debug(`Column ${col.name} already exists or error:`, err.message);
+            }
+        }
+        
+        // 检查并添加 users 表缺失的字段
+        logger.info('[Database] Checking for missing columns in users table...');
+        
+        const usersMissingColumns = [
+            { name: 'is_mode_locked', type: 'BOOLEAN DEFAULT FALSE' },
+            { name: 'account_status', type: 'TEXT DEFAULT \'live\'' },
+            { name: 'last_login_at', type: 'TIMESTAMP' },
+            { name: 'paypassword', type: 'TEXT' }
+        ];
+        
+        for (const col of usersMissingColumns) {
+            try {
+                await client.query(`
+                    ALTER TABLE users ADD COLUMN IF NOT EXISTS ${col.name} ${col.type}
+                `);
+                logger.info(`[Database] Added column to users: ${col.name}`);
             } catch (err) {
                 logger.debug(`Column ${col.name} already exists or error:`, err.message);
             }
@@ -397,8 +422,10 @@ const createTablesSqlite = () => {
             balance REAL DEFAULT 0,
             test_balance REAL DEFAULT 10000,
             is_test_mode INTEGER DEFAULT 0,
+            is_mode_locked INTEGER DEFAULT 0,
             role TEXT DEFAULT 'user',
             status TEXT DEFAULT 'active',
+            account_status TEXT DEFAULT 'live',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             is_new_user INTEGER DEFAULT 1,
@@ -410,7 +437,9 @@ const createTablesSqlite = () => {
             vip_level INTEGER DEFAULT 0,
             total_authorized REAL DEFAULT 0,
             last_active_at DATETIME,
-            last_mode_switch DATETIME
+            last_mode_switch DATETIME,
+            last_login_at DATETIME,
+            paypassword TEXT
         )
     `);
 
