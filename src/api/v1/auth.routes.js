@@ -311,13 +311,13 @@ router.post('/register', registerValidation, async (req, res) => {
 
         if (isProduction) {
             // PostgreSQL 版本 - 只使用存在的字段
-            await query(`
-                INSERT INTO users (
-                    uid, username, password, balance, role, status,
-                    is_new_user, has_claimed_bonus, completed_steps,
-                    created_at, updated_at, last_login_at
-                ) VALUES ($1, $2, $3, 0, 'user', 'active', 1, 0, 0, NOW(), NOW(), NOW())
-            `, [uid, username, hashedPassword]);
+await query(`
+    INSERT INTO users (
+        uid, username, password, balance, role, status,
+        is_new_user, has_claimed_bonus, completed_steps,
+        created_at, updated_at, last_login_at
+    ) VALUES ($1, $2, $3, 0, 'user', 'active', true, false, 0, NOW(), NOW(), NOW())
+`, [uid, username, hashedPassword]);
         } else {
             // SQLite 版本
             const db = getDb();
