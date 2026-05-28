@@ -1,8 +1,9 @@
 import express from 'express';
-import { getDb } from '../../database/connection.js';
+import { query, getDb } from '../../database/connection.js';
 import { updateLastActive } from '../../middlewares/updateActivity.middleware.js';
 
 const router = express.Router();
+const isProduction = process.env.NODE_ENV === 'production';
 
 // ==================== 工具函数 ====================
 
@@ -24,22 +25,39 @@ function formatAmount(amount) {
 
 // ==================== 新增：获取格式化的消息列表 ====================
 // 这个接口返回已经格式化好的消息，前端直接显示
-router.get('/messages', (req, res) => {
-    const db = getDb();
+router.get('/messages', async (req, res) => {
     const limit = parseInt(req.query.limit) || 30;
     
     try {
-        // 从 ticker_messages 表获取消息
-        const messages = db.prepare(`
-            SELECT 
-                id,
-                type,
-                message,
-                created_at
-            FROM ticker_messages 
-            ORDER BY created_at DESC
-            LIMIT ?
-        `).all(limit);
+        let messages;
+        
+        if (isProduction) {
+            // PostgreSQL 版本
+            const result = await query(`
+                SELECT 
+                    id,
+                    type,
+                    message,
+                    created_at
+                FROM ticker_messages 
+                ORDER BY created_at DESC
+                LIMIT $1
+            `, [limit]);
+            messages = result || [];
+        } else {
+            // SQLite 版本
+            const db = getDb();
+            messages = db.prepare(`
+                SELECT 
+                    id,
+                    type,
+                    message,
+                    created_at
+                FROM ticker_messages 
+                ORDER BY created_at DESC
+                LIMIT ?
+            `).all(limit);
+        }
         
         // 如果消息表为空，返回默认的欢迎消息
         if (messages.length === 0) {
@@ -61,19 +79,35 @@ router.get('/messages', (req, res) => {
 });
 
 // ==================== 原有接口：获取最近动态（保持兼容）====================
-router.get('/recent', (req, res) => {
-    const db = getDb();
-    
+router.get('/recent', async (req, res) => {
     try {
-        const messages = db.prepare(`
-            SELECT 
-                t.*,
-                u.username as user_name
-            FROM ticker_messages t
-            LEFT JOIN users u ON t.user_id = u.id
-            ORDER BY t.created_at DESC
-            LIMIT 50
-        `).all();
+        let messages;
+        
+        if (isProduction) {
+            // PostgreSQL 版本
+            const result = await query(`
+                SELECT 
+                    t.*,
+                    u.username as user_name
+                FROM ticker_messages t
+                LEFT JOIN users u ON t.user_id = u.id
+                ORDER BY t.created_at DESC
+                LIMIT 50
+            `);
+            messages = result || [];
+        } else {
+            // SQLite 版本
+            const db = getDb();
+            messages = db.prepare(`
+                SELECT 
+                    t.*,
+                    u.username as user_name
+                FROM ticker_messages t
+                LEFT JOIN users u ON t.user_id = u.id
+                ORDER BY t.created_at DESC
+                LIMIT 50
+            `).all();
+        }
 
         const formatted = messages.map(msg => ({
             ...msg,
@@ -90,29 +124,49 @@ router.get('/recent', (req, res) => {
 });
 
 // ==================== 修改：统计数据（从授权表获取真实数据）====================
-router.get('/stats', (req, res) => {
-    const db = getDb();
-    
+router.get('/stats', async (req, res) => {
     try {
-        // 今日交易额（从授权表获取真实数据）
-        const todayVolume = db.prepare(`
-            SELECT COALESCE(SUM(amount), 0) as total
-            FROM authorizations 
-            WHERE date(created_at) = date('now')
-        `).get();
-
-        // 总授权量
-        const totalVolume = db.prepare(`
-            SELECT COALESCE(SUM(amount), 0) as total
-            FROM authorizations 
-            WHERE status = 'settled'
-        `).get();
+        let todayVolumeTotal = 0;
+        let totalVolumeTotal = 0;
+        
+        if (isProduction) {
+            // PostgreSQL 版本
+            const todayVolume = await query(`
+                SELECT COALESCE(SUM(amount), 0) as total
+                FROM authorizations 
+                WHERE DATE(created_at) = CURRENT_DATE
+            `);
+            todayVolumeTotal = parseFloat(todayVolume[0]?.total || 0);
+            
+            const totalVolume = await query(`
+                SELECT COALESCE(SUM(amount), 0) as total
+                FROM authorizations 
+                WHERE status = 'settled'
+            `);
+            totalVolumeTotal = parseFloat(totalVolume[0]?.total || 0);
+        } else {
+            // SQLite 版本
+            const db = getDb();
+            const todayVolume = db.prepare(`
+                SELECT COALESCE(SUM(amount), 0) as total
+                FROM authorizations 
+                WHERE date(created_at) = date('now')
+            `).get();
+            todayVolumeTotal = todayVolume.total || 0;
+            
+            const totalVolume = db.prepare(`
+                SELECT COALESCE(SUM(amount), 0) as total
+                FROM authorizations 
+                WHERE status = 'settled'
+            `).get();
+            totalVolumeTotal = totalVolume.total || 0;
+        }
 
         res.json({
             success: true,
             data: {
-                today_volume: todayVolume.total,
-                total_volume: totalVolume.total
+                today_volume: todayVolumeTotal,
+                total_volume: totalVolumeTotal
             }
         });
     } catch (error) {
