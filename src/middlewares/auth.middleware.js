@@ -3,6 +3,7 @@ import logger from '../utils/logger.js';
 import database from '../database/connection.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'footradapro-jwt-secret-key-2024';
+const isProduction = process.env.NODE_ENV === 'production';
 
 /**
  * 用户认证中间件（基于 JWT）
@@ -105,7 +106,7 @@ export const optionalAuth = (req, res, next) => {
 /**
  * 检查用户是否为测试模式
  */
-export const requireTestMode = (req, res, next) => {
+export const requireTestMode = async (req, res, next) => {
     try {
         const userId = req.user?.id;
         if (!userId) {
@@ -116,9 +117,17 @@ export const requireTestMode = (req, res, next) => {
             });
         }
         
-        const db = database.get();
-        const user = db.prepare('SELECT is_test_mode FROM users WHERE id = ?').get(userId);
-        const isTestMode = user ? user.is_test_mode === 1 : true;
+        let isTestMode = true;
+        
+        if (isProduction) {
+            const { query } = await import('../database/connection.js');
+            const result = await query('SELECT is_test_mode FROM users WHERE id = $1', [userId]);
+            isTestMode = result?.[0]?.is_test_mode === true;
+        } else {
+            const db = database.get();
+            const user = db.prepare('SELECT is_test_mode FROM users WHERE id = ?').get(userId);
+            isTestMode = user ? user.is_test_mode === 1 : true;
+        }
         
         if (!isTestMode) {
             logger.warn('Test mode required but user is in live mode', {
@@ -145,7 +154,7 @@ export const requireTestMode = (req, res, next) => {
 /**
  * 检查用户是否为真实模式
  */
-export const requireLiveMode = (req, res, next) => {
+export const requireLiveMode = async (req, res, next) => {
     try {
         const userId = req.user?.id;
         if (!userId) {
@@ -156,9 +165,17 @@ export const requireLiveMode = (req, res, next) => {
             });
         }
         
-        const db = database.get();
-        const user = db.prepare('SELECT is_test_mode FROM users WHERE id = ?').get(userId);
-        const isTestMode = user ? user.is_test_mode === 1 : true;
+        let isTestMode = true;
+        
+        if (isProduction) {
+            const { query } = await import('../database/connection.js');
+            const result = await query('SELECT is_test_mode FROM users WHERE id = $1', [userId]);
+            isTestMode = result?.[0]?.is_test_mode === true;
+        } else {
+            const db = database.get();
+            const user = db.prepare('SELECT is_test_mode FROM users WHERE id = ?').get(userId);
+            isTestMode = user ? user.is_test_mode === 1 : true;
+        }
         
         if (isTestMode) {
             logger.warn('Live mode required but user is in test mode', {
@@ -185,16 +202,22 @@ export const requireLiveMode = (req, res, next) => {
 /**
  * 根据模式过滤数据的中间件
  */
-export const filterByMode = (req, res, next) => {
+export const filterByMode = async (req, res, next) => {
     try {
         const userId = req.user?.id;
         let isTestMode = true;
         
         if (userId) {
             try {
-                const db = database.get();
-                const user = db.prepare('SELECT is_test_mode FROM users WHERE id = ?').get(userId);
-                isTestMode = user ? user.is_test_mode === 1 : true;
+                if (isProduction) {
+                    const { query } = await import('../database/connection.js');
+                    const result = await query('SELECT is_test_mode FROM users WHERE id = $1', [userId]);
+                    isTestMode = result?.[0]?.is_test_mode === true;
+                } else {
+                    const db = database.get();
+                    const user = db.prepare('SELECT is_test_mode FROM users WHERE id = ?').get(userId);
+                    isTestMode = user ? user.is_test_mode === 1 : true;
+                }
             } catch (err) {
                 logger.error('Failed to fetch user mode in filterByMode:', err);
             }
@@ -219,14 +242,22 @@ export const filterByMode = (req, res, next) => {
  */
 export const logModeSwitch = async (userId, fromMode, toMode, req) => {
     try {
-        const db = database.get();
         const ip = req.ip || req.connection?.remoteAddress || '';
         const userAgent = req.get('User-Agent') || '';
         
-        db.prepare(`
-            INSERT INTO mode_switch_logs (user_id, from_mode, to_mode, ip_address, user_agent)
-            VALUES (?, ?, ?, ?, ?)
-        `).run(userId, fromMode ? 1 : 0, toMode ? 1 : 0, ip, userAgent);
+        if (isProduction) {
+            const { query } = await import('../database/connection.js');
+            await query(`
+                INSERT INTO mode_switch_logs (user_id, from_mode, to_mode, ip_address, user_agent)
+                VALUES ($1, $2, $3, $4, $5)
+            `, [userId, fromMode ? 1 : 0, toMode ? 1 : 0, ip, userAgent]);
+        } else {
+            const db = database.get();
+            db.prepare(`
+                INSERT INTO mode_switch_logs (user_id, from_mode, to_mode, ip_address, user_agent)
+                VALUES (?, ?, ?, ?, ?)
+            `).run(userId, fromMode ? 1 : 0, toMode ? 1 : 0, ip, userAgent);
+        }
         
         logger.info(`👤 User ${userId} switched to ${toMode ? 'TEST' : 'LIVE'} mode`, {
             fromMode,
@@ -242,11 +273,17 @@ export const logModeSwitch = async (userId, fromMode, toMode, req) => {
 /**
  * 获取用户当前模式
  */
-export const getUserMode = (userId) => {
+export const getUserMode = async (userId) => {
     try {
-        const db = database.get();
-        const user = db.prepare('SELECT is_test_mode FROM users WHERE id = ?').get(userId);
-        return user ? user.is_test_mode === 1 : true;
+        if (isProduction) {
+            const { query } = await import('../database/connection.js');
+            const result = await query('SELECT is_test_mode FROM users WHERE id = $1', [userId]);
+            return result?.[0]?.is_test_mode === true;
+        } else {
+            const db = database.get();
+            const user = db.prepare('SELECT is_test_mode FROM users WHERE id = ?').get(userId);
+            return user ? user.is_test_mode === 1 : true;
+        }
     } catch (err) {
         logger.error('Failed to get user mode:', err);
         return true;
