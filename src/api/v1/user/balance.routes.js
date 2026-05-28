@@ -1,10 +1,12 @@
 import express from 'express';
-import { getDb } from '../../../database/connection.js';
+import { query, getDb } from '../../../database/connection.js';
 import { auth } from '../../../middlewares/auth.middleware.js';
 import { updateLastActive } from '../../../middlewares/updateActivity.middleware.js';
 import logger from '../../../utils/logger.js';
 
 const router = express.Router();
+const isProduction = process.env.NODE_ENV === 'production';
+
 router.use(auth);
 
 /**
@@ -17,7 +19,7 @@ router.use(auth);
  * 
  * @returns { success: boolean, data: { balance: number, test_balance: number, real_balance: number, mode: string, is_test_mode: boolean } }
  */
-router.get('/', updateLastActive, (req, res) => {
+router.get('/', updateLastActive, async (req, res) => {
     const userId = req.session.userId;
     
     if (!userId) {
@@ -28,15 +30,26 @@ router.get('/', updateLastActive, (req, res) => {
         });
     }
 
-    const db = getDb();
-
     try {
-        // 查询用户余额和模式
-        const user = db.prepare(`
-            SELECT balance, test_balance, is_test_mode 
-            FROM users 
-            WHERE id = ?
-        `).get(userId);
+        let user = null;
+        
+        if (isProduction) {
+            // PostgreSQL 版本
+            const result = await query(`
+                SELECT balance, test_balance, is_test_mode 
+                FROM users 
+                WHERE id = $1
+            `, [userId]);
+            user = result?.[0];
+        } else {
+            // SQLite 版本
+            const db = getDb();
+            user = db.prepare(`
+                SELECT balance, test_balance, is_test_mode 
+                FROM users 
+                WHERE id = ?
+            `).get(userId);
+        }
 
         if (!user) {
             logger.warn(`Balance fetch failed: User not found - ID: ${userId}`);
@@ -47,7 +60,9 @@ router.get('/', updateLastActive, (req, res) => {
             });
         }
 
-        const isTestMode = user.is_test_mode === 1;
+        const isTestMode = isProduction 
+            ? (user.is_test_mode === true)
+            : (user.is_test_mode === 1);
         
         // 根据当前模式返回对应的余额
         const currentBalance = isTestMode 
@@ -83,7 +98,7 @@ router.get('/', updateLastActive, (req, res) => {
  * 
  * 返回真实余额和测试余额，供管理员或调试使用
  */
-router.get('/all', updateLastActive, (req, res) => {
+router.get('/all', updateLastActive, async (req, res) => {
     const userId = req.session.userId;
 
     if (!userId) {
@@ -93,14 +108,26 @@ router.get('/all', updateLastActive, (req, res) => {
         });
     }
 
-    const db = getDb();
-
     try {
-        const user = db.prepare(`
-            SELECT balance, test_balance, is_test_mode 
-            FROM users 
-            WHERE id = ?
-        `).get(userId);
+        let user = null;
+        
+        if (isProduction) {
+            // PostgreSQL 版本
+            const result = await query(`
+                SELECT balance, test_balance, is_test_mode 
+                FROM users 
+                WHERE id = $1
+            `, [userId]);
+            user = result?.[0];
+        } else {
+            // SQLite 版本
+            const db = getDb();
+            user = db.prepare(`
+                SELECT balance, test_balance, is_test_mode 
+                FROM users 
+                WHERE id = ?
+            `).get(userId);
+        }
 
         if (!user) {
             return res.status(404).json({
@@ -109,13 +136,17 @@ router.get('/all', updateLastActive, (req, res) => {
             });
         }
 
+        const isTestMode = isProduction 
+            ? (user.is_test_mode === true)
+            : (user.is_test_mode === 1);
+
         res.json({
             success: true,
             data: {
                 real_balance: user.balance || 0,
                 test_balance: user.test_balance || 10000,
-                current_mode: user.is_test_mode === 1 ? 'test' : 'live',
-                is_test_mode: user.is_test_mode === 1
+                current_mode: isTestMode ? 'test' : 'live',
+                is_test_mode: isTestMode
             }
         });
 
