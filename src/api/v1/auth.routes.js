@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
 import fetch from 'node-fetch';
-import { getDb } from '../../database/connection.js';
+import { query, getDb } from '../../database/connection.js';
 import logger from '../../utils/logger.js';
 import { captchaStore } from './captcha.routes.js';
 import { generateToken } from '../../middlewares/jwt.middleware.js';
@@ -23,7 +23,6 @@ if (fs.existsSync(envPath)) {
     dotenv.config({ path: envPath });
 } else {
     console.log('[AUTH] ⚠️ .env file not found at:', envPath);
-    // 尝试从当前工作目录加载
     const cwdPath = path.join(process.cwd(), '.env');
     if (fs.existsSync(cwdPath)) {
         console.log('[AUTH] ✅ .env file found at:', cwdPath);
@@ -39,6 +38,7 @@ console.log('[AUTH] JWT_SECRET:', process.env.JWT_SECRET ? '✅ Loaded' : '❌ M
 console.log('');
 
 const router = express.Router();
+const isProduction = process.env.NODE_ENV === 'production';
 
 // ==================== 邮件配置 ====================
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
@@ -98,8 +98,15 @@ router.post('/send-code',
         const { email } = req.body;
         console.log('Email:', email);
 
-        const db = getDb();
-        const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(email);
+        let existing = null;
+        if (isProduction) {
+            const result = await query('SELECT id FROM users WHERE username = $1', [email]);
+            existing = result?.[0];
+        } else {
+            const db = getDb();
+            existing = db.prepare('SELECT id FROM users WHERE username = ?').get(email);
+        }
+        
         if (existing) {
             console.log('❌ Email already registered:', email);
             return res.status(409).json({ success: false, error: 'EMAIL_ALREADY_REGISTERED' });
@@ -116,11 +123,9 @@ router.post('/send-code',
         
         console.log('✅ Generated email code for', email, ':', code);
 
-        // 检查 API Key 是否可用
         if (!BREVO_API_KEY) {
             console.error('❌ BREVO_API_KEY is missing! Cannot send email.');
             console.log('⚠️ [DEV MODE] Returning success with dev code for testing');
-            // 开发模式：返回成功，验证码在控制台显示
             return res.json({ success: true, devCode: code, devMode: true });
         }
 
@@ -155,12 +160,9 @@ router.post('/send-code',
 
             if (!response.ok) {
                 console.error('❌ Brevo API error:', response.status, responseData);
-                
-                // 如果是认证错误，提示检查 API Key
                 if (response.status === 401) {
                     console.error('   → Invalid API Key. Please check your BREVO_API_KEY in .env');
                 }
-                
                 return res.status(500).json({ success: false, error: 'SEND_FAILED' });
             }
 
@@ -170,7 +172,6 @@ router.post('/send-code',
             console.error('❌ Error sending email:', err.message);
             console.error('   Stack:', err.stack);
             
-            // 开发模式：即使发送失败也返回成功（用于测试）
             if (process.env.NODE_ENV === 'development') {
                 console.log('⚠️ [DEV MODE] Returning success despite email failure');
                 return res.json({ success: true, devCode: code, devMode: true });
@@ -286,10 +287,16 @@ router.post('/register', registerValidation, async (req, res) => {
         return res.status(401).json({ success: false, error: 'INVALID_TOKEN' });
     }
 
-    const db = getDb();
-
     try {
-        const existingUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+        let existingUser = null;
+        if (isProduction) {
+            const result = await query('SELECT id FROM users WHERE username = $1', [username]);
+            existingUser = result?.[0];
+        } else {
+            const db = getDb();
+            existingUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+        }
+        
         if (existingUser) {
             return res.status(409).json({ 
                 success: false, 
@@ -302,49 +309,65 @@ router.post('/register', registerValidation, async (req, res) => {
         const uid = 'U' + Date.now().toString().slice(-8) + Math.random().toString(36).substring(2, 5).toUpperCase();
         console.log('Generated UID:', uid);
 
-        const stmt = db.prepare(`
-            INSERT INTO users (
-                uid, username, email, password, first_name, last_name, country, occupation,
-                balance, role, status, is_new_user, has_claimed_bonus, completed_steps,
-                reg_ip, reg_verified_at, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 'user', 'active', 1, 0, 0, ?, datetime('now'), datetime('now'), datetime('now'))
-        `);
+        if (isProduction) {
+            await query(`
+                INSERT INTO users (
+                    uid, username, email, password, first_name, last_name, country, occupation,
+                    balance, role, status, is_new_user, has_claimed_bonus, completed_steps,
+                    reg_ip, reg_verified_at, created_at, updated_at, last_login_at
+                ) VALUES ($1, $2, $2, $3, $4, $5, $6, $7, 0, 'user', 'active', 1, 0, 0, $8, NOW(), NOW(), NOW(), NOW())
+            `, [uid, username, hashedPassword, firstName, lastName, country, occupation, req.ip]);
+        } else {
+            const db = getDb();
+            const stmt = db.prepare(`
+                INSERT INTO users (
+                    uid, username, email, password, first_name, last_name, country, occupation,
+                    balance, role, status, is_new_user, has_claimed_bonus, completed_steps,
+                    reg_ip, reg_verified_at, created_at, updated_at, last_login_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 'user', 'active', 1, 0, 0, ?, datetime('now'), datetime('now'), datetime('now'), datetime('now'))
+            `);
+            stmt.run(uid, username, hashedPassword, firstName, lastName, country, occupation, req.ip);
+        }
 
-        stmt.run(
-            uid, username, username, hashedPassword, firstName, lastName, country, occupation,
-            req.ip
-        );
-
-        const newUser = db.prepare('SELECT id, uid, username, role FROM users WHERE uid = ?').get(uid);
+        let newUser = null;
+        if (isProduction) {
+            const result = await query('SELECT id, uid, username, role FROM users WHERE uid = $1', [uid]);
+            newUser = result?.[0];
+        } else {
+            const db = getDb();
+            newUser = db.prepare('SELECT id, uid, username, role FROM users WHERE uid = ?').get(uid);
+        }
+        
         console.log('New user in DB:', newUser);
 
-        // 生成 JWT token
         const jwtToken = generateToken(newUser);
 
-        // 设置 Cookie - 兼容 HTTP 和 HTTPS
-        const isProduction = process.env.NODE_ENV === 'production';
         const cookieOptions = {
             httpOnly: true,
-            secure: false,  // 开发环境设为 false
+            secure: isProduction,
             sameSite: 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000
         };
 
         res.cookie('footradapro_token', jwtToken, cookieOptions);
 
-        // 自动登录：设置 session（兼容旧代码）
         req.session.userId = newUser.id;
         req.session.uid = newUser.uid;
         req.session.role = newUser.role;
         req.session.isNewUser = true;
         
-        req.session.save((err) => {
+        req.session.save(async (err) => {
             if (err) {
                 console.error('Session save error:', err);
                 return res.status(500).json({ success: false, error: 'SESSION_ERROR' });
             }
             
-            db.prepare('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?').run(newUser.id);
+            if (isProduction) {
+                await query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [newUser.id]);
+            } else {
+                const db = getDb();
+                db.prepare('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?').run(newUser.id);
+            }
             
             console.log('Auto login successful for new user:', newUser.uid);
             
@@ -388,10 +411,16 @@ router.post('/login', loginValidation, async (req, res) => {
     const { username, password } = req.body;
     console.log('Login attempt for:', username);
 
-    const db = getDb();
-
     try {
-        const user = db.prepare('SELECT id, uid, username, password, balance, role, status FROM users WHERE username = ?').get(username);
+        let user = null;
+        if (isProduction) {
+            const result = await query('SELECT id, uid, username, password, balance, role, status FROM users WHERE username = $1', [username]);
+            user = result?.[0];
+        } else {
+            const db = getDb();
+            user = db.prepare('SELECT id, uid, username, password, balance, role, status FROM users WHERE username = ?').get(username);
+        }
+        
         console.log('User found:', user ? 'Yes' : 'No');
 
         if (!user) {
@@ -418,29 +447,31 @@ router.post('/login', loginValidation, async (req, res) => {
             });
         }
 
-        // 生成 JWT token
         const jwtToken = generateToken(user);
 
-        // 设置 Cookie
         res.cookie('footradapro_token', jwtToken, {
             httpOnly: true,
-            secure: false,
+            secure: isProduction,
             sameSite: 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
-        // 设置 session（兼容旧代码）
         req.session.userId = user.id;
         req.session.uid = user.uid;
         req.session.role = user.role;
         
-        req.session.save((err) => {
+        req.session.save(async (err) => {
             if (err) {
                 console.error('Session save error:', err);
                 return res.status(500).json({ success: false, error: 'SESSION_ERROR' });
             }
             
-            db.prepare('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
+            if (isProduction) {
+                await query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [user.id]);
+            } else {
+                const db = getDb();
+                db.prepare('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
+            }
             
             console.log('Login successful:', user.uid);
             
@@ -478,15 +509,20 @@ router.post('/logout', (req, res) => {
 });
 
 // ==================== 获取当前会话 ====================
-router.get('/session', (req, res) => {
-    // 优先从 JWT token 获取
+router.get('/session', async (req, res) => {
     const token = req.cookies.footradapro_token;
     if (token) {
         try {
             const jwtSecret = process.env.JWT_SECRET || 'footradapro-jwt-secret-key-2024';
             const decoded = jwt.verify(token, jwtSecret);
-            const db = getDb();
-            const user = db.prepare('SELECT uid, username, balance, role FROM users WHERE id = ?').get(decoded.id);
+            let user = null;
+            if (isProduction) {
+                const result = await query('SELECT uid, username, balance, role FROM users WHERE id = $1', [decoded.id]);
+                user = result?.[0];
+            } else {
+                const db = getDb();
+                user = db.prepare('SELECT uid, username, balance, role FROM users WHERE id = ?').get(decoded.id);
+            }
             if (user) {
                 return res.json({ success: true, data: user });
             }
@@ -495,13 +531,18 @@ router.get('/session', (req, res) => {
         }
     }
     
-    // 降级到 session
     if (!req.session.userId) {
         return res.status(401).json({ success: false, error: 'NOT_AUTHENTICATED' });
     }
 
-    const db = getDb();
-    const user = db.prepare('SELECT uid, username, balance, role FROM users WHERE id = ?').get(req.session.userId);
+    let user = null;
+    if (isProduction) {
+        const result = await query('SELECT uid, username, balance, role FROM users WHERE id = $1', [req.session.userId]);
+        user = result?.[0];
+    } else {
+        const db = getDb();
+        user = db.prepare('SELECT uid, username, balance, role FROM users WHERE id = ?').get(req.session.userId);
+    }
 
     if (!user) {
         req.session.destroy();
