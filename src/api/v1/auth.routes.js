@@ -310,23 +310,25 @@ router.post('/register', registerValidation, async (req, res) => {
         console.log('Generated UID:', uid);
 
         if (isProduction) {
+            // PostgreSQL 版本 - 只使用存在的字段
             await query(`
                 INSERT INTO users (
-                    uid, username, email, password, first_name, last_name, country, occupation,
-                    balance, role, status, is_new_user, has_claimed_bonus, completed_steps,
-                    reg_ip, reg_verified_at, created_at, updated_at, last_login_at
-                ) VALUES ($1, $2, $2, $3, $4, $5, $6, $7, 0, 'user', 'active', 1, 0, 0, $8, NOW(), NOW(), NOW(), NOW())
-            `, [uid, username, hashedPassword, firstName, lastName, country, occupation, req.ip]);
+                    uid, username, password, balance, role, status,
+                    is_new_user, has_claimed_bonus, completed_steps,
+                    created_at, updated_at, last_login_at
+                ) VALUES ($1, $2, $3, 0, 'user', 'active', 1, 0, 0, NOW(), NOW(), NOW())
+            `, [uid, username, hashedPassword]);
         } else {
+            // SQLite 版本
             const db = getDb();
             const stmt = db.prepare(`
                 INSERT INTO users (
-                    uid, username, email, password, first_name, last_name, country, occupation,
-                    balance, role, status, is_new_user, has_claimed_bonus, completed_steps,
-                    reg_ip, reg_verified_at, created_at, updated_at, last_login_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 'user', 'active', 1, 0, 0, ?, datetime('now'), datetime('now'), datetime('now'), datetime('now'))
+                    uid, username, password, balance, role, status,
+                    is_new_user, has_claimed_bonus, completed_steps,
+                    created_at, updated_at, last_login_at
+                ) VALUES (?, ?, ?, 0, 'user', 'active', 1, 0, 0, datetime('now'), datetime('now'), datetime('now'))
             `);
-            stmt.run(uid, username, hashedPassword, firstName, lastName, country, occupation, req.ip);
+            stmt.run(uid, username, hashedPassword);
         }
 
         let newUser = null;
@@ -376,7 +378,7 @@ router.post('/register', registerValidation, async (req, res) => {
                 data: {
                     uid: newUser.uid,
                     username: newUser.username,
-                    balance: 100.00,
+                    balance: 0,
                     role: newUser.role,
                     isNewUser: true,
                     token: jwtToken
