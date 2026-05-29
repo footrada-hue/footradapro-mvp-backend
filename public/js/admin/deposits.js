@@ -1,6 +1,6 @@
 /**
  * deposits.js - 充值审核页面控制器（手动审核版）
- * @version 2.0.0
+ * @version 2.0.1
  */
 
 (function() {
@@ -79,7 +79,7 @@
         try {
             const res = await adminRequest('/api/v1/admin/deposit/stats');
             if (res.success && res.data) {
-                const pendingCount = res.data.pending_count || 0;
+                const pendingCount = parseInt(res.data.pending_count) || 0;
                 const lastCount = parseInt(localStorage.getItem('lastPendingCount') || '0');
                 
                 if (pendingCount > lastCount && lastCount > 0) {
@@ -135,18 +135,22 @@
 
     async function loadDeposits() {
         if (elements.depositTableBody) {
-            elements.depositTableBody.innerHTML = '<tr><td colspan="7" class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...<\/td><\/tr>';
+            elements.depositTableBody.innerHTML = '<td><td colspan="7" class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...<\/td><\/tr>';
         }
         
         try {
             const statsRes = await adminRequest('/api/v1/admin/deposit/stats');
             if (statsRes.success) {
-                if (elements.pendingCount) elements.pendingCount.textContent = statsRes.data.pending_count || 0;
-                if (elements.completedCount) elements.completedCount.textContent = statsRes.data.completed_count || 0;
-                if (elements.rejectedCount) elements.rejectedCount.textContent = statsRes.data.rejected_count || 0;
-                if (elements.pendingAmount) elements.pendingAmount.innerHTML = (statsRes.data.pending_amount || 0).toFixed(2) + ' USDT';
+                // 修复：使用 parseFloat 和 parseInt 确保类型正确
+                if (elements.pendingCount) elements.pendingCount.textContent = parseInt(statsRes.data.pending_count) || 0;
+                if (elements.completedCount) elements.completedCount.textContent = parseInt(statsRes.data.completed_count) || 0;
+                if (elements.rejectedCount) elements.rejectedCount.textContent = parseInt(statsRes.data.rejected_count) || 0;
+                if (elements.pendingAmount) {
+                    const pendingAmount = parseFloat(statsRes.data.pending_amount) || 0;
+                    elements.pendingAmount.innerHTML = pendingAmount.toFixed(2) + ' USDT';
+                }
                 
-                localStorage.setItem('lastPendingCount', statsRes.data.pending_count || 0);
+                localStorage.setItem('lastPendingCount', parseInt(statsRes.data.pending_count) || 0);
             }
             
             const depositsRes = await adminRequest('/api/v1/admin/deposit/all');
@@ -157,7 +161,7 @@
         } catch (err) {
             console.error('加载充值列表失败:', err);
             if (elements.depositTableBody) {
-                elements.depositTableBody.innerHTML = '<tr><td colspan="7" class="loading" style="color: var(--danger);">加载失败，请刷新重试<\/td><\/tr>';
+                elements.depositTableBody.innerHTML = '<td><td colspan="7" class="loading" style="color: var(--danger);">加载失败，请刷新重试<\/td><\/tr>';
             }
         }
     }
@@ -223,9 +227,8 @@
             const res = await adminRequest(`/api/v1/admin/deposit/detail/${id}`);
             if (res.success) {
                 const d = res.data;
-                            // 添加调试日志
-            console.log('充值详情:', d);
-            console.log('截图路径:', d.screenshot);
+                console.log('充值详情:', d);
+                console.log('截图路径:', d.screenshot);
                 
                 if (elements.reviewId) elements.reviewId.value = d.id;
                 if (elements.reviewUser) elements.reviewUser.textContent = `${d.username} (UID: ${d.uid})`;
