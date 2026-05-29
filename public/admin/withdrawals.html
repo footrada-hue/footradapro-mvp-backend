@@ -893,17 +893,17 @@
             
             try {
                 const stats = await adminRequest('/api/v1/admin/withdraw/stats');
-                if (stats.success) {
-                    const pendingCount = document.getElementById('pendingCount');
-                    const approvedCount = document.getElementById('approvedCount');
-                    const rejectedCount = document.getElementById('rejectedCount');
-                    const pendingAmount = document.getElementById('pendingAmount');
-                    
-                    if (pendingCount) pendingCount.textContent = stats.data.pending_count || 0;
-                    if (approvedCount) approvedCount.textContent = stats.data.approved_count || 0;
-                    if (rejectedCount) rejectedCount.textContent = stats.data.rejected_count || 0;
-                    if (pendingAmount) pendingAmount.textContent = (stats.data.pending_amount || 0).toFixed(2) + ' USDT';
-                }
+if (stats.success) {
+    const pendingCount = document.getElementById('pendingCount');
+    const approvedCount = document.getElementById('approvedCount');
+    const rejectedCount = document.getElementById('rejectedCount');
+    const pendingAmount = document.getElementById('pendingAmount');
+    
+    if (pendingCount) pendingCount.textContent = stats.data.pending_count || 0;
+    if (approvedCount) approvedCount.textContent = stats.data.approved_count || 0;
+    if (rejectedCount) rejectedCount.textContent = stats.data.rejected_count || 0;
+    if (pendingAmount) pendingAmount.textContent = (parseFloat(stats.data.pending_amount) || 0).toFixed(2) + ' USDT';
+}
 
                 const res = await adminRequest('/api/v1/admin/withdraw/all');
                 if (res.success) {
