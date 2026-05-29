@@ -263,10 +263,10 @@
             
             const defaultOptions = {
                 method: 'GET',
-                headers: {
-                    'Content-Type': application/json',
-                    'X-App-Version': ENV_CONFIG.version
-                },
+headers: {
+    'Content-Type': 'application/json',
+    'X-App-Version': ENV_CONFIG.version
+},
                 credentials: 'include',
                 timeout: ENV_CONFIG.requestTimeout
             };
