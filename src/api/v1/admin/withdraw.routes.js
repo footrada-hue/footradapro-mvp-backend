@@ -11,7 +11,7 @@ router.use(adminAuth);
 
 /**
  * ======================================================
- * 获取提现统计（简化版）
+ * 获取提现统计（完整版）
  * ======================================================
  */
 router.get('/stats', async (req, res) => {
@@ -25,39 +25,23 @@ router.get('/stats', async (req, res) => {
                     COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved_count,
                     COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_count,
                     COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0) as pending_amount,
-                    COALESCE(SUM(CASE WHEN status = 'approved' THEN amount ELSE 0 END), 0) as total_withdrawn
+                    COALESCE(SUM(CASE WHEN status = 'pending' THEN fee ELSE 0 END), 0) as pending_fee,
+                    COALESCE(SUM(CASE WHEN status = 'approved' THEN fee ELSE 0 END), 0) as total_fee_collected,
+                    COALESCE(SUM(CASE WHEN status = 'approved' THEN net_amount ELSE 0 END), 0) as total_withdrawn
                 FROM withdraw_requests
             `);
             stats = result?.[0] || {};
         } else {
             const db = getDb();
-            
-            // 检查表是否存在
-            const tableExists = db.prepare(`
-                SELECT name FROM sqlite_master 
-                WHERE type='table' AND name='withdraw_requests'
-            `).get();
-            
-            if (!tableExists) {
-                return res.json({
-                    success: true,
-                    data: {
-                        pending_count: 0,
-                        approved_count: 0,
-                        rejected_count: 0,
-                        pending_amount: 0,
-                        total_withdrawn: 0
-                    }
-                });
-            }
-            
             stats = db.prepare(`
                 SELECT 
                     COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
                     COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved_count,
                     COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_count,
                     COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0) as pending_amount,
-                    COALESCE(SUM(CASE WHEN status = 'approved' THEN amount ELSE 0 END), 0) as total_withdrawn
+                    COALESCE(SUM(CASE WHEN status = 'pending' THEN fee ELSE 0 END), 0) as pending_fee,
+                    COALESCE(SUM(CASE WHEN status = 'approved' THEN fee ELSE 0 END), 0) as total_fee_collected,
+                    COALESCE(SUM(CASE WHEN status = 'approved' THEN net_amount ELSE 0 END), 0) as total_withdrawn
                 FROM withdraw_requests
             `).get();
         }
@@ -74,7 +58,7 @@ router.get('/stats', async (req, res) => {
 
 /**
  * ======================================================
- * 获取所有提现记录（简化版）
+ * 获取所有提现记录（完整版）
  * ======================================================
  */
 router.get('/all', async (req, res) => {
@@ -89,6 +73,7 @@ router.get('/all', async (req, res) => {
                     w.*,
                     u.username,
                     u.uid,
+                    u.email,
                     u.balance as user_balance
                 FROM withdraw_requests w
                 LEFT JOIN users u ON w.user_id = u.id
@@ -108,24 +93,12 @@ router.get('/all', async (req, res) => {
             withdrawals = await query(queryStr, params);
         } else {
             const db = getDb();
-            
-            const tableExists = db.prepare(`
-                SELECT name FROM sqlite_master 
-                WHERE type='table' AND name='withdraw_requests'
-            `).get();
-            
-            if (!tableExists) {
-                return res.json({
-                    success: true,
-                    data: []
-                });
-            }
-            
             let queryStr = `
                 SELECT 
                     w.*,
                     u.username,
                     u.uid,
+                    u.email,
                     u.balance as user_balance
                 FROM withdraw_requests w
                 LEFT JOIN users u ON w.user_id = u.id
@@ -149,6 +122,63 @@ router.get('/all', async (req, res) => {
         });
     } catch (error) {
         console.error('获取提现列表失败:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * ======================================================
+ * 获取单个提现详情
+ * ======================================================
+ */
+router.get('/detail/:id', async (req, res) => {
+    const { id } = req.params;
+    
+    try {
+        let withdrawal = null;
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT 
+                    w.*,
+                    u.username,
+                    u.uid,
+                    u.email,
+                    u.balance as user_balance
+                FROM withdraw_requests w
+                LEFT JOIN users u ON w.user_id = u.id
+                WHERE w.id = $1
+            `, [id]);
+            withdrawal = result?.[0];
+        } else {
+            const db = getDb();
+            withdrawal = db.prepare(`
+                SELECT 
+                    w.*,
+                    u.username,
+                    u.uid,
+                    u.email,
+                    u.balance as user_balance
+                FROM withdraw_requests w
+                LEFT JOIN users u ON w.user_id = u.id
+                WHERE w.id = ?
+            `).get(id);
+        }
+        
+        if (!withdrawal) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'NOT_FOUND',
+                message: '提现记录不存在'
+            });
+        }
+        
+        res.json({
+            success: true,
+            data: withdrawal
+        });
+    } catch (error) {
+        console.error('获取提现详情失败:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -230,7 +260,9 @@ router.post('/:id/approve', async (req, res) => {
                 id: withdraw.id,
                 status: 'approved',
                 tx_hash: tx_hash,
-                amount: withdraw.amount
+                amount: withdraw.amount,
+                fee: withdraw.fee || 1,
+                net_amount: withdraw.net_amount || (withdraw.amount - 1)
             }
         });
         
@@ -322,6 +354,7 @@ router.post('/:id/reject', async (req, res) => {
                 id: withdraw.id,
                 status: 'rejected',
                 amount: withdraw.amount,
+                fee: withdraw.fee || 1,
                 reject_reason: reason
             }
         });
