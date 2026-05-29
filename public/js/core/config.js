@@ -1,8 +1,8 @@
 /**
  * FOOTRADAPRO MVP 全局配置文件
  * 适用范围：所有前端页面，统一管理项目常量、路由、业务规则、工具函数
- * @version 1.0.1
- * @description 生产环境标准配置 - API 使用 www 主域名确保 Cookie 正常传递
+ * @version 1.0.2
+ * @description 生产环境标准配置 - API 使用相对路径自动适配当前域名
  */
 
 ;(function(window) {
@@ -13,12 +13,12 @@
         // 当前环境：dev 开发环境 | prod 生产环境
         env: 'prod',
         // 版本号，用于静态资源缓存更新
-        version: '1.0.1',
+        version: '1.0.2',
         // API基础地址，开发/生产一键切换
-        // 注意：必须使用主域名 www.footradapro.com 而非 api 子域名，以确保 Cookie 正确传递
+        // 生产环境使用相对路径，自动适配当前域名
         apiBaseUrl: {
             dev: 'http://localhost:3000/api/v1',
-            prod: 'http://localhost:3000/api/v1'
+            prod: '/api/v1'
         },
         // API请求超时时间（毫秒）
         requestTimeout: 30000,
@@ -56,7 +56,6 @@
     };
 
     // ====================== 4. 主题与UI配置 ======================
-    // 注意：主題切換功能已移至各頁面獨立管理，避免衝突
     const THEME_CONFIG = {
         defaultTheme: 'dark',
         storageKey: `${ENV_CONFIG.storagePrefix}theme`,
@@ -265,7 +264,7 @@
             const defaultOptions = {
                 method: 'GET',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': application/json',
                     'X-App-Version': ENV_CONFIG.version
                 },
                 credentials: 'include',
@@ -293,7 +292,6 @@
                 if (!response.ok) {
                     if (response.status === 401) {
                         console.warn('Session expired or unauthorized');
-                        // 不在 API 调用中自动跳转，让调用方处理
                     }
                     throw new Error(data.error || 'Request failed');
                 }
