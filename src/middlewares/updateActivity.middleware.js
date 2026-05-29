@@ -2,10 +2,13 @@
  * 更新用户最后活动时间中间件
  * 功能：在每次 API 请求时异步更新用户的最后活动时间
  * 用于统计活跃用户、会话管理等
+ * @version 2.0.0 - 支持 PostgreSQL 和 SQLite
  */
 
-import { getDb } from '../database/connection.js';
+import { query, getDb } from '../database/connection.js';
 import logger from '../utils/logger.js';
+
+const isProduction = process.env.NODE_ENV === 'production';
 
 /**
  * 更新用户最后活动时间中间件
@@ -17,28 +20,30 @@ import logger from '../utils/logger.js';
  */
 export const updateLastActive = (req, res, next) => {
     // 尝试从多种来源获取用户ID
-    // 优先级：req.user.id（JWT认证） > req.session.userId（Session认证）
     const userId = req.user?.id || req.session?.userId;
     
     if (userId) {
-        const db = getDb();
-        
         // 使用 setImmediate 异步执行，不阻塞请求响应
-        setImmediate(() => {
+        setImmediate(async () => {
             try {
-                // SQLite 日期时间函数使用单引号包裹字符串参数
-                // datetime('now', 'localtime') 获取当前本地时间
-                const stmt = db.prepare(`
-                    UPDATE users 
-                    SET last_active_at = datetime('now', 'localtime') 
-                    WHERE id = ?
-                `);
-                
-                const result = stmt.run(userId);
-                
-                if (result.changes > 0) {
-                    logger.debug(`用户 ${userId} 活动时间已更新`);
+                if (isProduction) {
+                    // PostgreSQL 版本
+                    await query(`
+                        UPDATE users 
+                        SET last_active_at = NOW() 
+                        WHERE id = $1
+                    `, [userId]);
+                } else {
+                    // SQLite 版本
+                    const db = getDb();
+                    const stmt = db.prepare(`
+                        UPDATE users 
+                        SET last_active_at = datetime('now', 'localtime') 
+                        WHERE id = ?
+                    `);
+                    stmt.run(userId);
                 }
+                logger.debug(`用户 ${userId} 活动时间已更新`);
             } catch (err) {
                 // 记录错误但不中断请求，避免影响用户体验
                 logger.error(`更新用户 ${userId} 最后活动时间失败:`, {
@@ -62,21 +67,33 @@ export const updateLastActive = (req, res, next) => {
 export const batchUpdateLastActive = async (userIds) => {
     if (!userIds || userIds.length === 0) return;
     
-    const db = getDb();
     const now = new Date().toISOString();
     
     try {
-        const placeholders = userIds.map(() => '?').join(',');
-        const stmt = db.prepare(`
-            UPDATE users 
-            SET last_active_at = ? 
-            WHERE id IN (${placeholders})
-        `);
+        let changes = 0;
         
-        const result = stmt.run(now, ...userIds);
+        if (isProduction) {
+            const placeholders = userIds.map((_, i) => `$${i + 2}`).join(',');
+            const result = await query(`
+                UPDATE users 
+                SET last_active_at = $1 
+                WHERE id IN (${placeholders})
+            `, [now, ...userIds]);
+            changes = result?.rowCount || 0;
+        } else {
+            const db = getDb();
+            const placeholders = userIds.map(() => '?').join(',');
+            const stmt = db.prepare(`
+                UPDATE users 
+                SET last_active_at = ? 
+                WHERE id IN (${placeholders})
+            `);
+            const result = stmt.run(now, ...userIds);
+            changes = result.changes;
+        }
         
-        logger.info(`批量更新 ${result.changes} 个用户的活动时间`);
-        return result.changes;
+        logger.info(`批量更新 ${changes} 个用户的活动时间`);
+        return changes;
     } catch (err) {
         logger.error('批量更新用户活动时间失败:', err);
         throw err;
@@ -88,17 +105,18 @@ export const batchUpdateLastActive = async (userIds) => {
  * @param {number} userId - 用户ID
  * @returns {string|null} 最后活动时间
  */
-export const getUserLastActive = (userId) => {
+export const getUserLastActive = async (userId) => {
     if (!userId) return null;
     
-    const db = getDb();
-    
     try {
-        const result = db.prepare(`
-            SELECT last_active_at FROM users WHERE id = ?
-        `).get(userId);
-        
-        return result?.last_active_at || null;
+        if (isProduction) {
+            const result = await query('SELECT last_active_at FROM users WHERE id = $1', [userId]);
+            return result?.[0]?.last_active_at || null;
+        } else {
+            const db = getDb();
+            const result = db.prepare('SELECT last_active_at FROM users WHERE id = ?').get(userId);
+            return result?.last_active_at || null;
+        }
     } catch (err) {
         logger.error(`获取用户 ${userId} 最后活动时间失败:`, err);
         return null;
@@ -110,17 +128,24 @@ export const getUserLastActive = (userId) => {
  * @param {number} minutes - 最近N分钟
  * @returns {number} 活跃用户数
  */
-export const getActiveUserCount = (minutes = 30) => {
-    const db = getDb();
-    
+export const getActiveUserCount = async (minutes = 30) => {
     try {
-        const result = db.prepare(`
-            SELECT COUNT(*) as count 
-            FROM users 
-            WHERE last_active_at >= datetime('now', '-' || ? || ' minutes')
-        `).get(minutes);
-        
-        return result?.count || 0;
+        if (isProduction) {
+            const result = await query(`
+                SELECT COUNT(*) as count 
+                FROM users 
+                WHERE last_active_at >= NOW() - INTERVAL '$1 minutes'
+            `, [minutes]);
+            return parseInt(result?.[0]?.count || 0);
+        } else {
+            const db = getDb();
+            const result = db.prepare(`
+                SELECT COUNT(*) as count 
+                FROM users 
+                WHERE last_active_at >= datetime('now', '-' || ? || ' minutes')
+            `).get(minutes);
+            return result?.count || 0;
+        }
     } catch (err) {
         logger.error('获取活跃用户统计失败:', err);
         return 0;
