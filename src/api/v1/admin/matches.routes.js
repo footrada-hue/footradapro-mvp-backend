@@ -1,10 +1,11 @@
 /**
  * FOOTRADAPRO MVP - Admin Match Management Routes
+ * @version 2.0.0 - 支持 PostgreSQL 和 SQLite
  */
 
 import express from 'express';
 import { body, param, validationResult } from 'express-validator';
-import { getDb } from '../../../database/connection.js';
+import { query, getDb } from '../../../database/connection.js';
 import { adminAuth } from '../../../middlewares/admin.middleware.js';
 import logger from '../../../utils/logger.js';
 import fetch from 'node-fetch';
@@ -14,21 +15,36 @@ import fs from 'fs';
 import { autoFetchAndInsertMatches } from '../../../services/match-auto-fetch.service.js';
 
 const router = express.Router();
+const isProduction = process.env.NODE_ENV === 'production';
 
 // ==================== 所有路由需要管理员认证 ====================
 router.use(adminAuth);
 
 // ==================== 获取联赛列表（必须在 /:id 之前）====================
-router.get('/leagues', (req, res) => {
-    const db = getDb();
+router.get('/leagues', async (req, res) => {
     try {
-        const leagues = db.prepare(`
-            SELECT league, COUNT(*) as match_count
-            FROM matches 
-            WHERE league IS NOT NULL AND league != ''
-            GROUP BY league
-            ORDER BY match_count DESC
-        `).all();
+        let leagues = [];
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT league, COUNT(*) as match_count
+                FROM matches 
+                WHERE league IS NOT NULL AND league != ''
+                GROUP BY league
+                ORDER BY match_count DESC
+            `);
+            leagues = result || [];
+        } else {
+            const db = getDb();
+            leagues = db.prepare(`
+                SELECT league, COUNT(*) as match_count
+                FROM matches 
+                WHERE league IS NOT NULL AND league != ''
+                GROUP BY league
+                ORDER BY match_count DESC
+            `).all();
+        }
+        
         res.json({ success: true, data: leagues });
     } catch (error) {
         logger.error('Fetch leagues error:', error);
@@ -37,9 +53,9 @@ router.get('/leagues', (req, res) => {
 });
 
 // ==================== 获取缺少队徽的球队列表（必须在 /:id 之前）====================
-router.get('/missing-logos', (req, res) => {
+router.get('/missing-logos', async (req, res) => {
     const { league, search } = req.query;
-    const db = getDb();
+    
     try {
         let sql = `
             SELECT 
@@ -54,16 +70,34 @@ router.get('/missing-logos', (req, res) => {
             WHERE tl.logo_status = 'missing'
         `;
         const params = [];
+        
         if (league && league !== 'all') {
-            sql += ` AND league = ?`;
+            if (isProduction) {
+                sql += ` AND league = $${params.length + 1}`;
+            } else {
+                sql += ` AND league = ?`;
+            }
             params.push(league);
         }
         if (search) {
-            sql += ` AND tl.team_name LIKE ?`;
+            if (isProduction) {
+                sql += ` AND tl.team_name LIKE $${params.length + 1}`;
+            } else {
+                sql += ` AND tl.team_name LIKE ?`;
+            }
             params.push(`%${search}%`);
         }
         sql += ` ORDER BY tl.involved_matches DESC, tl.team_name`;
-        const teams = db.prepare(sql).all(...params);
+        
+        let teams = [];
+        if (isProduction) {
+            const result = await query(sql, params);
+            teams = result || [];
+        } else {
+            const db = getDb();
+            teams = db.prepare(sql).all(...params);
+        }
+        
         res.json({ success: true, data: teams });
     } catch (error) {
         logger.error('Get missing logos error:', error);
@@ -72,20 +106,38 @@ router.get('/missing-logos', (req, res) => {
 });
 
 // ==================== 获取比赛统计概览 ====================
-router.get('/stats/overview', (req, res) => {
-    const db = getDb();
+router.get('/stats/overview', async (req, res) => {
     try {
-        const stats = db.prepare(`
-            SELECT 
-                COUNT(*) as total,
-                SUM(CASE WHEN status = 'upcoming' THEN 1 ELSE 0 END) as upcoming,
-                SUM(CASE WHEN status = 'live' THEN 1 ELSE 0 END) as live,
-                SUM(CASE WHEN status = 'finished' THEN 1 ELSE 0 END) as finished,
-                COUNT(DISTINCT source) as sources,
-                MIN(match_time) as oldest_match,
-                MAX(match_time) as newest_match
-            FROM matches
-        `).get();
+        let stats = {};
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN status = 'upcoming' THEN 1 ELSE 0 END) as upcoming,
+                    SUM(CASE WHEN status = 'live' THEN 1 ELSE 0 END) as live,
+                    SUM(CASE WHEN status = 'finished' THEN 1 ELSE 0 END) as finished,
+                    COUNT(DISTINCT source) as sources,
+                    MIN(match_time) as oldest_match,
+                    MAX(match_time) as newest_match
+                FROM matches
+            `);
+            stats = result?.[0] || {};
+        } else {
+            const db = getDb();
+            stats = db.prepare(`
+                SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN status = 'upcoming' THEN 1 ELSE 0 END) as upcoming,
+                    SUM(CASE WHEN status = 'live' THEN 1 ELSE 0 END) as live,
+                    SUM(CASE WHEN status = 'finished' THEN 1 ELSE 0 END) as finished,
+                    COUNT(DISTINCT source) as sources,
+                    MIN(match_time) as oldest_match,
+                    MAX(match_time) as newest_match
+                FROM matches
+            `).get();
+        }
+        
         res.json({ success: true, data: stats });
     } catch (error) {
         logger.error('Get stats error:', error);
@@ -94,63 +146,103 @@ router.get('/stats/overview', (req, res) => {
 });
 
 // ==================== 從 matches 表獲取所有球隊信息（直接用於管理）====================
-router.get('/all-teams-from-matches', (req, res) => {
+router.get('/all-teams-from-matches', async (req, res) => {
     const { search } = req.query;
-    const db = getDb();
     
     try {
-        // 先獲取所有不重複的球隊名稱
-        let sql = `
-            SELECT DISTINCT 
-                team_name,
-                COUNT(*) as involved_matches
-            FROM (
-                SELECT home_team as team_name FROM matches
-                UNION ALL
-                SELECT away_team as team_name FROM matches
-            )
-            WHERE 1=1
-        `;
-        const params = [];
+        let teams = [];
         
-        if (search) {
-            sql += ` AND team_name LIKE ?`;
-            params.push(`%${search}%`);
+        if (isProduction) {
+            let sql = `
+                SELECT DISTINCT 
+                    team_name,
+                    COUNT(*) as involved_matches
+                FROM (
+                    SELECT home_team as team_name FROM matches
+                    UNION ALL
+                    SELECT away_team as team_name FROM matches
+                ) sub
+                WHERE 1=1
+            `;
+            const params = [];
+            
+            if (search) {
+                sql += ` AND team_name LIKE $1`;
+                params.push(`%${search}%`);
+            }
+            
+            sql += ` GROUP BY team_name ORDER BY team_name`;
+            
+            const result = await query(sql, params);
+            teams = result || [];
+        } else {
+            const db = getDb();
+            let sql = `
+                SELECT DISTINCT 
+                    team_name,
+                    COUNT(*) as involved_matches
+                FROM (
+                    SELECT home_team as team_name FROM matches
+                    UNION ALL
+                    SELECT away_team as team_name FROM matches
+                )
+                WHERE 1=1
+            `;
+            const params = [];
+            
+            if (search) {
+                sql += ` AND team_name LIKE ?`;
+                params.push(`%${search}%`);
+            }
+            
+            sql += ` GROUP BY team_name ORDER BY team_name`;
+            
+            teams = db.prepare(sql).all(...params);
         }
         
-        sql += ` GROUP BY team_name ORDER BY team_name`;
-        
-        const teams = db.prepare(sql).all(...params);
-        
-        // 為每個球隊獲取隊徽 URL（從任意一場比賽中獲取）
-        const results = teams.map(team => {
+        const results = [];
+        for (const team of teams) {
             let logoUrl = null;
-            try {
-                const logoResult = db.prepare(`
-                    SELECT home_logo as logo_url FROM matches WHERE home_team = ? AND home_logo IS NOT NULL AND home_logo != ''
-                    UNION ALL
-                    SELECT away_logo as logo_url FROM matches WHERE away_team = ? AND away_logo IS NOT NULL AND away_logo != ''
-                    LIMIT 1
-                `).get(team.team_name, team.team_name);
-                if (logoResult) logoUrl = logoResult.logo_url;
-            } catch(e) {}
-            
-            // 獲取聯賽名稱（從任意一場比賽中獲取）
             let league = null;
+            
             try {
-                const leagueResult = db.prepare(`
-                    SELECT league FROM matches WHERE home_team = ? OR away_team = ? LIMIT 1
-                `).get(team.team_name, team.team_name);
-                if (leagueResult) league = leagueResult.league;
+                if (isProduction) {
+                    const logoResult = await query(`
+                        SELECT home_logo as logo_url FROM matches WHERE home_team = $1 AND home_logo IS NOT NULL AND home_logo != ''
+                        UNION ALL
+                        SELECT away_logo as logo_url FROM matches WHERE away_team = $1 AND away_logo IS NOT NULL AND away_logo != ''
+                        LIMIT 1
+                    `, [team.team_name]);
+                    if (logoResult && logoResult.length > 0) logoUrl = logoResult[0].logo_url;
+                    
+                    const leagueResult = await query(`
+                        SELECT league FROM matches WHERE home_team = $1 OR away_team = $1 LIMIT 1
+                    `, [team.team_name]);
+                    if (leagueResult && leagueResult.length > 0) league = leagueResult[0].league;
+                } else {
+                    const db = getDb();
+                    const logoResult = db.prepare(`
+                        SELECT home_logo as logo_url FROM matches WHERE home_team = ? AND home_logo IS NOT NULL AND home_logo != ''
+                        UNION ALL
+                        SELECT away_logo as logo_url FROM matches WHERE away_team = ? AND away_logo IS NOT NULL AND away_logo != ''
+                        LIMIT 1
+                    `).get(team.team_name, team.team_name);
+                    if (logoResult) logoUrl = logoResult.logo_url;
+                    
+                    const leagueResult = db.prepare(`
+                        SELECT league FROM matches WHERE home_team = ? OR away_team = ? LIMIT 1
+                    `).get(team.team_name, team.team_name);
+                    if (leagueResult) league = leagueResult.league;
+                }
             } catch(e) {}
             
-            return {
+            results.push({
                 team_name: team.team_name,
                 league: league || 'Unknown',
                 involved_matches: team.involved_matches,
                 logo_url: logoUrl || null
-            };
-        });
+            });
+        }
         
         res.json({ success: true, data: results });
     } catch (error) {
@@ -159,80 +251,65 @@ router.get('/all-teams-from-matches', (req, res) => {
     }
 });
 
-// ==================== 获取比赛列表 ====================
-router.get('/', (req, res) => {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = (page - 1) * limit;
-    const status = req.query.status;
-    const db = getDb();
-
-    try {
-        let query = 'SELECT * FROM matches';
-        let countQuery = 'SELECT COUNT(*) as total FROM matches';
-        const params = [];
-
-        if (status && status !== 'all') {
-            query += ' WHERE status = ?';
-            countQuery += ' WHERE status = ?';
-            params.push(status);
-        }
-
-        query += ' ORDER BY match_time DESC LIMIT ? OFFSET ?';
-        
-        const { total } = db.prepare(countQuery).get(...params);
-        const matches = db.prepare(query).all(...params, limit, offset);
-
-        res.json({
-            success: true,
-            data: matches,
-            pagination: {
-                page,
-                limit,
-                total,
-                pages: Math.ceil(total / limit)
-            }
-        });
-    } catch (error) {
-        logger.error('Fetch matches list error:', error);
-        res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
-    }
-});
-
 // ==================== 获取比赛列表（分页）====================
-router.get('/list', (req, res) => {
+router.get('/list', async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
     const status = req.query.status;
-    const db = getDb();
 
     try {
-        let query = 'SELECT * FROM matches';
+        let queryStr = 'SELECT * FROM matches';
         let countQuery = 'SELECT COUNT(*) as total FROM matches';
         const params = [];
 
         if (status && status !== 'all') {
-            query += ' WHERE status = ?';
-            countQuery += ' WHERE status = ?';
+            if (isProduction) {
+                queryStr += ' WHERE status = $1';
+                countQuery += ' WHERE status = $1';
+            } else {
+                queryStr += ' WHERE status = ?';
+                countQuery += ' WHERE status = ?';
+            }
             params.push(status);
         }
 
-        query += ' ORDER BY match_time DESC LIMIT ? OFFSET ?';
-        
-        const { total } = db.prepare(countQuery).get(...params);
-        const matches = db.prepare(query).all(...params, limit, offset);
-
-        res.json({
-            success: true,
-            data: matches,
-            pagination: {
-                page,
-                limit,
-                total,
-                pages: Math.ceil(total / limit)
-            }
-        });
+        if (isProduction) {
+            queryStr += ' ORDER BY match_time DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
+            
+            const totalResult = await query(countQuery, params);
+            const total = totalResult?.[0]?.total || 0;
+            
+            const matches = await query(queryStr, [...params, limit, offset]);
+            
+            res.json({
+                success: true,
+                data: matches || [],
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    pages: Math.ceil(total / limit)
+                }
+            });
+        } else {
+            const db = getDb();
+            queryStr += ' ORDER BY match_time DESC LIMIT ? OFFSET ?';
+            
+            const { total } = db.prepare(countQuery).get(...params);
+            const matches = db.prepare(queryStr).all(...params, limit, offset);
+            
+            res.json({
+                success: true,
+                data: matches,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    pages: Math.ceil(total / limit)
+                }
+            });
+        }
     } catch (error) {
         logger.error('Fetch matches list error:', error);
         res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
@@ -240,13 +317,10 @@ router.get('/list', (req, res) => {
 });
 
 // ==================== 自动从 DeepSeek AI 获取比赛数据 ====================
-
-
 router.post('/auto-fetch', async (req, res) => {
     try {
         logger.info('Starting auto-fetch matches from DeepSeek AI...');
         
-        // 直接調用 DeepSeek API 服務，不使用任何硬編碼數據
         const results = await autoFetchAndInsertMatches();
         
         logger.info(`Auto-fetch completed: ${results.newToMatches} new matches added, total: ${results.total}`);
@@ -274,20 +348,27 @@ router.post('/auto-fetch', async (req, res) => {
     }
 });
 
-// ==================== 获取单个比赛（必须放在最后）====================
+// ==================== 获取单个比赛 ====================
 router.get('/:id',
     [param('id').notEmpty()],
-    (req, res) => {
+    async (req, res) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ success: false, error: 'VALIDATION_ERROR' });
         }
 
         const { id } = req.params;
-        const db = getDb();
 
         try {
-            const match = db.prepare('SELECT * FROM matches WHERE id = ?').get(id);
+            let match = null;
+            
+            if (isProduction) {
+                const result = await query('SELECT * FROM matches WHERE id = $1', [id]);
+                match = result?.[0];
+            } else {
+                const db = getDb();
+                match = db.prepare('SELECT * FROM matches WHERE id = ?').get(id);
+            }
             
             if (!match) {
                 return res.status(404).json({ success: false, error: 'MATCH_NOT_FOUND' });
@@ -302,7 +383,7 @@ router.get('/:id',
 );
 
 // ==================== 添加比赛 ====================
-router.post('/add', (req, res) => {
+router.post('/add', async (req, res) => {
     const {
         match_id, home_team, away_team, league,
         match_time, cutoff_time,
@@ -313,44 +394,49 @@ router.post('/add', (req, res) => {
         is_active = 1
     } = req.body;
 
-    const db = getDb();
-
     try {
-        const existing = db.prepare('SELECT id FROM matches WHERE match_id = ?').get(match_id);
+        let existing = null;
+        
+        if (isProduction) {
+            const result = await query('SELECT id FROM matches WHERE match_id = $1', [match_id]);
+            existing = result?.[0];
+        } else {
+            const db = getDb();
+            existing = db.prepare('SELECT id FROM matches WHERE match_id = ?').get(match_id);
+        }
+        
         if (existing) {
             return res.status(409).json({ success: false, error: 'MATCH_ID_EXISTS' });
         }
 
-        const tableInfo = db.prepare("PRAGMA table_info(matches)").all();
-        const hasIsActive = tableInfo.some(col => col.name === 'is_active');
-
-        if (hasIsActive) {
+        if (isProduction) {
+            await query(`
+                INSERT INTO matches (
+                    match_id, home_team, away_team, league, 
+                    match_time, cutoff_time, 
+                    execution_rate, min_authorization, match_limit,
+                    status, is_active, source, created_at, updated_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'upcoming', $10, $11, NOW(), NOW())
+            `, [
+                match_id, home_team, away_team, league || 'Unknown',
+                match_time, cutoff_time,
+                execution_rate, min_authorization, match_limit,
+                is_active, source
+            ]);
+        } else {
+            const db = getDb();
             db.prepare(`
                 INSERT INTO matches (
                     match_id, home_team, away_team, league, 
                     match_time, cutoff_time, 
                     execution_rate, min_authorization, match_limit,
-                    status, is_active, source
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', ?, ?)
+                    status, is_active, source, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', ?, ?, datetime('now'), datetime('now'))
             `).run(
                 match_id, home_team, away_team, league || 'Unknown',
                 match_time, cutoff_time,
                 execution_rate, min_authorization, match_limit,
                 is_active, source
-            );
-        } else {
-            db.prepare(`
-                INSERT INTO matches (
-                    match_id, home_team, away_team, league, 
-                    match_time, cutoff_time, 
-                    execution_rate, min_authorization, match_limit,
-                    status, source
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', ?)
-            `).run(
-                match_id, home_team, away_team, league || 'Unknown',
-                match_time, cutoff_time,
-                execution_rate, min_authorization, match_limit,
-                source
             );
         }
 
@@ -362,13 +448,21 @@ router.post('/add', (req, res) => {
 });
 
 // ==================== 更新比赛 ====================
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
-    const db = getDb();
 
     try {
-        const existing = db.prepare('SELECT id FROM matches WHERE id = ?').get(id);
+        let existing = null;
+        
+        if (isProduction) {
+            const result = await query('SELECT id FROM matches WHERE id = $1', [id]);
+            existing = result?.[0];
+        } else {
+            const db = getDb();
+            existing = db.prepare('SELECT id FROM matches WHERE id = ?').get(id);
+        }
+        
         if (!existing) {
             return res.status(404).json({ success: false, error: 'MATCH_NOT_FOUND' });
         }
@@ -384,7 +478,11 @@ router.put('/:id', (req, res) => {
 
         for (const field of allowedFields) {
             if (updates[field] !== undefined) {
-                fields.push(`${field} = ?`);
+                if (isProduction) {
+                    fields.push(`${field} = $${fields.length + 1}`);
+                } else {
+                    fields.push(`${field} = ?`);
+                }
                 values.push(updates[field]);
             }
         }
@@ -394,7 +492,13 @@ router.put('/:id', (req, res) => {
         }
 
         values.push(id);
-        db.prepare(`UPDATE matches SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+        
+        if (isProduction) {
+            await query(`UPDATE matches SET ${fields.join(', ')}, updated_at = NOW() WHERE id = $${values.length}`, values);
+        } else {
+            const db = getDb();
+            db.prepare(`UPDATE matches SET ${fields.join(', ')}, updated_at = datetime('now') WHERE id = ?`).run(...values);
+        }
 
         res.json({ success: true });
     } catch (error) {
@@ -404,7 +508,7 @@ router.put('/:id', (req, res) => {
 });
 
 // ==================== 切换前台显示状态 ====================
-router.put('/:id/toggle-active', (req, res) => {
+router.put('/:id/toggle-active', async (req, res) => {
     const { id } = req.params;
     const { is_active } = req.body;
 
@@ -412,15 +516,27 @@ router.put('/:id/toggle-active', (req, res) => {
         return res.status(400).json({ success: false, error: 'INVALID_PARAMETERS' });
     }
 
-    const db = getDb();
-
     try {
-        const existing = db.prepare('SELECT id, is_active FROM matches WHERE id = ?').get(id);
+        let existing = null;
+        
+        if (isProduction) {
+            const result = await query('SELECT id, is_active FROM matches WHERE id = $1', [id]);
+            existing = result?.[0];
+        } else {
+            const db = getDb();
+            existing = db.prepare('SELECT id, is_active FROM matches WHERE id = ?').get(id);
+        }
+        
         if (!existing) {
             return res.status(404).json({ success: false, error: 'MATCH_NOT_FOUND' });
         }
 
-        db.prepare('UPDATE matches SET is_active = ? WHERE id = ?').run(is_active, id);
+        if (isProduction) {
+            await query('UPDATE matches SET is_active = $1 WHERE id = $2', [is_active, id]);
+        } else {
+            const db = getDb();
+            db.prepare('UPDATE matches SET is_active = ? WHERE id = ?').run(is_active, id);
+        }
         
         res.json({ success: true, message: is_active ? '比赛已在前台显示' : '比赛已隐藏' });
     } catch (error) {
@@ -430,18 +546,28 @@ router.put('/:id/toggle-active', (req, res) => {
 });
 
 // ==================== 批量切换显示状态 ====================
-router.post('/batch-toggle', (req, res) => {
+router.post('/batch-toggle', async (req, res) => {
     const { ids, is_active } = req.body;
-    const db = getDb();
 
     if (!Array.isArray(ids) || ids.length === 0) {
         return res.status(400).json({ success: false, error: 'INVALID_PARAMETERS' });
     }
 
     try {
-        const placeholders = ids.map(() => '?').join(',');
-        const result = db.prepare(`UPDATE matches SET is_active = ? WHERE id IN (${placeholders})`).run(is_active, ...ids);
-        res.json({ success: true, updated: result.changes });
+        let changes = 0;
+        
+        if (isProduction) {
+            const placeholders = ids.map((_, i) => `$${i + 2}`).join(',');
+            const result = await query(`UPDATE matches SET is_active = $1 WHERE id IN (${placeholders})`, [is_active, ...ids]);
+            changes = result?.rowCount || 0;
+        } else {
+            const db = getDb();
+            const placeholders = ids.map(() => '?').join(',');
+            const result = db.prepare(`UPDATE matches SET is_active = ? WHERE id IN (${placeholders})`).run(is_active, ...ids);
+            changes = result.changes;
+        }
+        
+        res.json({ success: true, updated: changes });
     } catch (error) {
         logger.error('Batch toggle error:', error);
         res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
@@ -471,21 +597,43 @@ router.post('/upload-logo', (req, res) => {
             return res.status(400).json({ success: false, error: '缺少球队名称或图片' });
         }
         const logoUrl = `/uploads/teams/${req.file.filename}`;
-        const db = getDb();
+        
         try {
-            db.prepare('BEGIN TRANSACTION').run();
-            db.prepare(`UPDATE team_logos SET logo_url = ?, logo_status = 'ok', last_updated = CURRENT_TIMESTAMP WHERE team_name = ?`).run(logoUrl, team_name);
-            db.prepare(`UPDATE matches SET home_logo = ? WHERE home_team = ?`).run(logoUrl, team_name);
-            db.prepare(`UPDATE matches SET away_logo = ? WHERE away_team = ?`).run(logoUrl, team_name);
-            db.prepare('COMMIT').run();
-            res.json({ success: true, updated_matches: db.prepare(`SELECT COUNT(*) FROM matches WHERE home_team = ? OR away_team = ?`).get(team_name, team_name).count });
+            if (isProduction) {
+                await query(`UPDATE team_logos SET logo_url = $1, logo_status = 'ok', last_updated = NOW() WHERE team_name = $2`, [logoUrl, team_name]);
+                await query(`UPDATE matches SET home_logo = $1 WHERE home_team = $2`, [logoUrl, team_name]);
+                await query(`UPDATE matches SET away_logo = $1 WHERE away_team = $2`, [logoUrl, team_name]);
+            } else {
+                const db = getDb();
+                db.prepare('BEGIN TRANSACTION').run();
+                db.prepare(`UPDATE team_logos SET logo_url = ?, logo_status = 'ok', last_updated = CURRENT_TIMESTAMP WHERE team_name = ?`).run(logoUrl, team_name);
+                db.prepare(`UPDATE matches SET home_logo = ? WHERE home_team = ?`).run(logoUrl, team_name);
+                db.prepare(`UPDATE matches SET away_logo = ? WHERE away_team = ?`).run(logoUrl, team_name);
+                db.prepare('COMMIT').run();
+            }
+            
+            let count = 0;
+            if (isProduction) {
+                const result = await query(`SELECT COUNT(*) as count FROM matches WHERE home_team = $1 OR away_team = $1`, [team_name]);
+                count = result?.[0]?.count || 0;
+            } else {
+                const db = getDb();
+                const result = db.prepare(`SELECT COUNT(*) as count FROM matches WHERE home_team = ? OR away_team = ?`).get(team_name, team_name);
+                count = result.count;
+            }
+            
+            res.json({ success: true, updated_matches: count });
         } catch (error) {
-            db.prepare('ROLLBACK').run();
+            if (!isProduction) {
+                const db = getDb();
+                db.prepare('ROLLBACK').run();
+            }
             logger.error('Upload logo error:', error);
             res.status(500).json({ success: false, error: error.message });
         }
     });
 });
+
 // ==================== 编辑球队信息（名称 + 队徽）====================
 const editTeamUploadDir = path.join(process.cwd(), 'public', 'uploads', 'teams');
 if (!fs.existsSync(editTeamUploadDir)) fs.mkdirSync(editTeamUploadDir, { recursive: true });
@@ -509,7 +657,6 @@ router.post('/edit-team', (req, res) => {
         }
         
         const { original_name, new_name } = req.body;
-        const db = getDb();
         
         if (!original_name) {
             return res.status(400).json({ success: false, error: '缺少原始球隊名稱' });
@@ -518,34 +665,48 @@ router.post('/edit-team', (req, res) => {
         const finalNewName = (new_name && new_name.trim()) ? new_name.trim() : original_name;
         
         try {
-            db.prepare('BEGIN TRANSACTION').run();
-            
             let updatedMatches = 0;
             
-            // 1. 更新 matches 表中的 home_team
-            const homeResult = db.prepare(`UPDATE matches SET home_team = ? WHERE home_team = ?`).run(finalNewName, original_name);
-            updatedMatches += homeResult.changes;
+            if (isProduction) {
+                const homeResult = await query(`UPDATE matches SET home_team = $1 WHERE home_team = $2`, [finalNewName, original_name]);
+                updatedMatches += homeResult?.rowCount || 0;
+                const awayResult = await query(`UPDATE matches SET away_team = $1 WHERE away_team = $2`, [finalNewName, original_name]);
+                updatedMatches += awayResult?.rowCount || 0;
+                await query(`UPDATE match_pool SET home_team = $1 WHERE home_team = $2`, [finalNewName, original_name]);
+                await query(`UPDATE match_pool SET away_team = $1 WHERE away_team = $2`, [finalNewName, original_name]);
+            } else {
+                const db = getDb();
+                db.prepare('BEGIN TRANSACTION').run();
+                const homeResult = db.prepare(`UPDATE matches SET home_team = ? WHERE home_team = ?`).run(finalNewName, original_name);
+                updatedMatches += homeResult.changes;
+                const awayResult = db.prepare(`UPDATE matches SET away_team = ? WHERE away_team = ?`).run(finalNewName, original_name);
+                updatedMatches += awayResult.changes;
+                db.prepare(`UPDATE match_pool SET home_team = ? WHERE home_team = ?`).run(finalNewName, original_name);
+                db.prepare(`UPDATE match_pool SET away_team = ? WHERE away_team = ?`).run(finalNewName, original_name);
+            }
             
-            // 2. 更新 matches 表中的 away_team
-            const awayResult = db.prepare(`UPDATE matches SET away_team = ? WHERE away_team = ?`).run(finalNewName, original_name);
-            updatedMatches += awayResult.changes;
-            
-            // 3. 更新 match_pool 表中的 home_team
-            db.prepare(`UPDATE match_pool SET home_team = ? WHERE home_team = ?`).run(finalNewName, original_name);
-            
-            // 4. 更新 match_pool 表中的 away_team
-            db.prepare(`UPDATE match_pool SET away_team = ? WHERE away_team = ?`).run(finalNewName, original_name);
-            
-            // 5. 更新 team_logos 表
             let logoUrl = null;
             if (req.file) {
                 logoUrl = `/uploads/teams/${req.file.filename}`;
-                db.prepare(`UPDATE team_logos SET team_name = ?, logo_url = ?, logo_status = 'ok', last_updated = CURRENT_TIMESTAMP WHERE team_name = ?`).run(finalNewName, logoUrl, original_name);
+                if (isProduction) {
+                    await query(`UPDATE team_logos SET team_name = $1, logo_url = $2, logo_status = 'ok', last_updated = NOW() WHERE team_name = $3`, [finalNewName, logoUrl, original_name]);
+                } else {
+                    const db = getDb();
+                    db.prepare(`UPDATE team_logos SET team_name = ?, logo_url = ?, logo_status = 'ok', last_updated = CURRENT_TIMESTAMP WHERE team_name = ?`).run(finalNewName, logoUrl, original_name);
+                }
             } else {
-                db.prepare(`UPDATE team_logos SET team_name = ? WHERE team_name = ?`).run(finalNewName, original_name);
+                if (isProduction) {
+                    await query(`UPDATE team_logos SET team_name = $1 WHERE team_name = $2`, [finalNewName, original_name]);
+                } else {
+                    const db = getDb();
+                    db.prepare(`UPDATE team_logos SET team_name = ? WHERE team_name = ?`).run(finalNewName, original_name);
+                }
             }
             
-            db.prepare('COMMIT').run();
+            if (!isProduction) {
+                const db = getDb();
+                db.prepare('COMMIT').run();
+            }
             
             logger.info(`Team edited: ${original_name} -> ${finalNewName}, affected matches: ${updatedMatches}`);
             
@@ -561,20 +722,34 @@ router.post('/edit-team', (req, res) => {
             });
             
         } catch (error) {
-            db.prepare('ROLLBACK').run();
+            if (!isProduction) {
+                const db = getDb();
+                db.prepare('ROLLBACK').run();
+            }
             logger.error('Edit team error:', error);
             res.status(500).json({ success: false, error: error.message });
         }
     });
 });
+
 // ==================== 清理过期数据 ====================
-router.post('/cleanup', (req, res) => {
-    const db = getDb();
+router.post('/cleanup', async (req, res) => {
     try {
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - 30);
-        const result = db.prepare(`DELETE FROM matches WHERE status = 'finished' AND match_time < ?`).run(cutoffDate.toISOString());
-        res.json({ success: true, message: `已清理 ${result.changes} 场过期比赛` });
+        
+        let changes = 0;
+        
+        if (isProduction) {
+            const result = await query(`DELETE FROM matches WHERE status = 'finished' AND match_time < $1`, [cutoffDate.toISOString()]);
+            changes = result?.rowCount || 0;
+        } else {
+            const db = getDb();
+            const result = db.prepare(`DELETE FROM matches WHERE status = 'finished' AND match_time < ?`).run(cutoffDate.toISOString());
+            changes = result.changes;
+        }
+        
+        res.json({ success: true, message: `已清理 ${changes} 场过期比赛` });
     } catch (error) {
         logger.error('Cleanup error:', error);
         res.status(500).json({ success: false, error: error.message });
