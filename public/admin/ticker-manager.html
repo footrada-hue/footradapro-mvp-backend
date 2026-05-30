@@ -1005,6 +1005,29 @@ async function publishMessages() {
         return;
     }
     
+    // 获取选中的比赛数据
+    let selectedMatches = Array.from(document.querySelectorAll('#matchSelector .match-checkbox-item:checked')).map(cb => ({
+        id: cb.value,
+        name: cb.dataset.name,
+        home_team: cb.dataset.home,
+        away_team: cb.dataset.away
+    }));
+    
+    if (selectedMatches.length === 0) {
+        const allMatches = await getAvailableMatchesForMessages();
+        selectedMatches = allMatches.map(m => ({
+            id: m.id,
+            name: `${m.home_team} vs ${m.away_team}`,
+            home_team: m.home_team,
+            away_team: m.away_team
+        }));
+    }
+    
+    if (selectedMatches.length === 0) {
+        UTILS.showToast('没有可用的比赛数据，请先在比赛管理中添加比赛', 'error');
+        return;
+    }
+    
     const selectedMessages = [];
     checkboxes.forEach(cb => {
         const idx = parseInt(cb.dataset.index);
@@ -1023,19 +1046,20 @@ async function publishMessages() {
     let successCount = 0;
     let failCount = 0;
     
-    // 逐条发布消息（绕过 batch-generate 接口问题）
+    // 逐条发布，每条消息关联一个随机比赛
     for (let i = 0; i < selectedMessages.length; i++) {
         const msg = selectedMessages[i];
+        const randomMatch = selectedMatches[Math.floor(Math.random() * selectedMatches.length)];
+        
         try {
-            // 尝试调用单个消息保存接口
-            const response = await fetch('/api/v1/admin/ticker-manager/message', {
+            const response = await fetch('/api/v1/admin/ticker-manager/batch-generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify({
-                    type: msg.type,
-                    message: msg.message,
-                    weight: msg.weight || 100
+                    messages: [msg],
+                    match_id: randomMatch.id,
+                    match_name: randomMatch.name
                 })
             });
             
@@ -1051,8 +1075,7 @@ async function publishMessages() {
             console.error('发布错误:', err);
         }
         
-        // 更新进度提示
-        if ((i + 1) % 10 === 0 || i === selectedMessages.length - 1) {
+        if ((i + 1) % 5 === 0 || i === selectedMessages.length - 1) {
             UTILS.showToast(`进度: ${i + 1}/${selectedMessages.length} (成功: ${successCount}, 失败: ${failCount})`);
         }
     }
@@ -1065,9 +1088,11 @@ async function publishMessages() {
         await updateStats();
         currentPreviewMessages = [];
     } else {
-        UTILS.showToast('发布失败，请检查网络或联系管理员', 'error');
+        UTILS.showToast('发布失败，请检查比赛数据', 'error');
     }
 }
+
+
             window.deleteMessage = async function(id) {
                 if (!confirm('确定要删除这条消息吗？')) return;
                 try {
