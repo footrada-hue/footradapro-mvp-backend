@@ -1217,6 +1217,72 @@
                             </tr>`;
                         });
                         tbody.innerHTML = html;
+                        // 表格渲染完成后重新绑定事件
+setTimeout(() => {
+    const teamListBody = document.getElementById('teamListBody');
+    if (teamListBody) {
+        // 移除旧监听器避免重复
+        if (window._teamClickHandler) {
+            teamListBody.removeEventListener('click', window._teamClickHandler);
+        }
+        
+        window._teamClickHandler = function(e) {
+            // 编辑按钮
+            const editBtn = e.target.closest('.edit-team-final');
+            if (editBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('编辑球队:', editBtn.dataset.team);
+                
+                const editTeamNameInput = document.getElementById('editTeamName');
+                const currentLogoImg = document.getElementById('currentLogoImg');
+                const affectedCountSpan = document.getElementById('affectedCount');
+                const editTeamModal = document.getElementById('editTeamModal');
+                
+                if (!editTeamNameInput || !currentLogoImg || !affectedCountSpan || !editTeamModal) {
+                    console.error('模态框元素未找到');
+                    return;
+                }
+                
+                editTeamNameInput.value = editBtn.dataset.team;
+                const logoBase64 = editBtn.dataset.logoBase64;
+                if (logoBase64 && logoBase64 !== 'null' && logoBase64 !== 'undefined' && logoBase64 !== '') {
+                    currentLogoImg.src = logoBase64;
+                } else {
+                    currentLogoImg.src = editBtn.dataset.logo || '/uploads/teams/default.png';
+                }
+                affectedCountSpan.textContent = editBtn.dataset.matches;
+                window.currentEditTeam = editBtn.dataset.team;
+                editTeamModal.classList.add('show');
+                return;
+            }
+            
+            // 上传按钮
+            const uploadBtn = e.target.closest('.upload-logo-final');
+            if (uploadBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('上传队徽:', uploadBtn.dataset.team);
+                
+                const uploadTeamNameSpan = document.getElementById('uploadTeamName');
+                const uploadTeamInfoSpan = document.getElementById('uploadTeamInfo');
+                const uploadLogoModal = document.getElementById('uploadLogoModal');
+                
+                if (!uploadTeamNameSpan || !uploadTeamInfoSpan || !uploadLogoModal) {
+                    console.error('上传模态框元素未找到');
+                    return;
+                }
+                
+                uploadTeamNameSpan.textContent = uploadBtn.dataset.team;
+                uploadTeamInfoSpan.textContent = `${uploadBtn.dataset.league} • 涉及 ${uploadBtn.dataset.matches} 场比赛`;
+                window.currentUploadTeam = uploadBtn.dataset.team;
+                uploadLogoModal.classList.add('show');
+            }
+        };
+        
+        teamListBody.addEventListener('click', window._teamClickHandler);
+    }
+}, 100);
                     }
                 } else {
                     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:48px;">加载失败<\/td><\/tr>';
@@ -1227,68 +1293,7 @@
             }
         }
         
-// 在页面加载时绑定一次事件委托
-document.getElementById('teamListBody')?.addEventListener('click', function(e) {
-    // 编辑按钮
-    const editBtn = e.target.closest('.edit-team-final');
-    if (editBtn) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('编辑球队:', editBtn.dataset.team);
-        
-        // 每次点击时重新获取元素（确保元素存在）
-        const editTeamNameInput = document.getElementById('editTeamName');
-        const currentLogoImg = document.getElementById('currentLogoImg');
-        const affectedCountSpan = document.getElementById('affectedCount');
-        const editTeamModal = document.getElementById('editTeamModal');
-        
-        console.log('editTeamNameInput:', editTeamNameInput);
-        console.log('currentLogoImg:', currentLogoImg);
-        console.log('affectedCountSpan:', affectedCountSpan);
-        console.log('editTeamModal:', editTeamModal);
-        
-        if (!editTeamNameInput || !currentLogoImg || !affectedCountSpan || !editTeamModal) {
-            console.error('模态框元素未找到');
-            alert('页面加载异常，请刷新页面后重试');
-            return;
-        }
-        
-        editTeamNameInput.value = editBtn.dataset.team;
-        const logoBase64 = editBtn.dataset.logoBase64;
-        if (logoBase64 && logoBase64 !== 'null' && logoBase64 !== 'undefined' && logoBase64 !== '') {
-            currentLogoImg.src = logoBase64;
-        } else {
-            currentLogoImg.src = editBtn.dataset.logo || '/uploads/teams/default.png';
-        }
-        affectedCountSpan.textContent = editBtn.dataset.matches;
-        window.currentEditTeam = editBtn.dataset.team;
-        editTeamModal.classList.add('show');
-        return;
-    }
-    
-    // 上传按钮
-    const uploadBtn = e.target.closest('.upload-logo-final');
-    if (uploadBtn) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('上传队徽:', uploadBtn.dataset.team);
-        
-        const uploadTeamNameSpan = document.getElementById('uploadTeamName');
-        const uploadTeamInfoSpan = document.getElementById('uploadTeamInfo');
-        const uploadLogoModal = document.getElementById('uploadLogoModal');
-        
-        if (!uploadTeamNameSpan || !uploadTeamInfoSpan || !uploadLogoModal) {
-            console.error('上传模态框元素未找到');
-            alert('页面加载异常，请刷新页面后重试');
-            return;
-        }
-        
-        uploadTeamNameSpan.textContent = uploadBtn.dataset.team;
-        uploadTeamInfoSpan.textContent = `${uploadBtn.dataset.league} • 涉及 ${uploadBtn.dataset.matches} 场比赛`;
-        window.currentUploadTeam = uploadBtn.dataset.team;
-        uploadLogoModal.classList.add('show');
-    }
-});
+
         const newBtn = manageBtn.cloneNode(true);
         manageBtn.parentNode.replaceChild(newBtn, manageBtn);
         newBtn.onclick = () => { modal.classList.add('show'); loadLeagues(); loadTeams(); };
