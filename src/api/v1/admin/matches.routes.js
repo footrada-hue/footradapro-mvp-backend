@@ -1,6 +1,6 @@
 /**
  * FOOTRADAPRO MVP - Admin Match Management Routes
- * @version 2.0.0 - 支持 PostgreSQL 和 SQLite
+ * @version 2.1.0 - 支持 PostgreSQL 和 SQLite，增强队徽上传功能
  */
 
 import express from 'express';
@@ -574,7 +574,7 @@ router.post('/batch-toggle', async (req, res) => {
     }
 });
 
-// ==================== 上传球队队徽 ====================
+// ==================== 上传球队队徽（增强版）====================
 const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'teams');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
@@ -587,31 +587,79 @@ const logoStorage = multer.diskStorage({
         cb(null, `${safeName}${ext}`);
     }
 });
-const uploadLogo = multer({ storage: logoStorage, limits: { fileSize: 2 * 1024 * 1024 } }).single('logo');
+
+const uploadLogo = multer({ 
+    storage: logoStorage, 
+    limits: { fileSize: 2 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('只支持 JPG、PNG、WEBP、GIF 格式'), false);
+        }
+    }
+}).single('logo');
 
 router.post('/upload-logo', (req, res) => {
     uploadLogo(req, res, async (err) => {
-        if (err) return res.status(400).json({ success: false, error: err.message });
-        const { team_name } = req.body;
-        if (!team_name || !req.file) {
-            return res.status(400).json({ success: false, error: '缺少球队名称或图片' });
+        // 处理 multer 错误
+        if (err) {
+            console.error('Upload error:', err);
+            return res.status(400).json({ success: false, error: err.message });
         }
+        
+        const { team_name } = req.body;
+        
+        // 验证参数
+        if (!team_name) {
+            return res.status(400).json({ success: false, error: '缺少球队名称' });
+        }
+        
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: '请选择图片文件' });
+        }
+        
+        console.log('File uploaded:', {
+            team_name,
+            filename: req.file.filename,
+            size: req.file.size,
+            mimetype: req.file.mimetype
+        });
+        
         const logoUrl = `/uploads/teams/${req.file.filename}`;
         
         try {
+            // 检查 team_logos 表是否有记录，没有则插入
             if (isProduction) {
-                await query(`UPDATE team_logos SET logo_url = $1, logo_status = 'ok', last_updated = NOW() WHERE team_name = $2`, [logoUrl, team_name]);
+                const existing = await query('SELECT id FROM team_logos WHERE team_name = $1', [team_name]);
+                
+                if (existing && existing.length > 0) {
+                    await query(`UPDATE team_logos SET logo_url = $1, logo_status = 'ok', last_updated = NOW() WHERE team_name = $2`, [logoUrl, team_name]);
+                } else {
+                    await query(`INSERT INTO team_logos (team_name, logo_url, logo_status, involved_matches, last_updated) VALUES ($1, $2, 'ok', 0, NOW())`, [team_name, logoUrl]);
+                }
+                
+                // 更新 matches 表中的队徽
                 await query(`UPDATE matches SET home_logo = $1 WHERE home_team = $2`, [logoUrl, team_name]);
                 await query(`UPDATE matches SET away_logo = $1 WHERE away_team = $2`, [logoUrl, team_name]);
             } else {
                 const db = getDb();
                 db.prepare('BEGIN TRANSACTION').run();
-                db.prepare(`UPDATE team_logos SET logo_url = ?, logo_status = 'ok', last_updated = CURRENT_TIMESTAMP WHERE team_name = ?`).run(logoUrl, team_name);
+                
+                const existing = db.prepare('SELECT id FROM team_logos WHERE team_name = ?').get(team_name);
+                if (existing) {
+                    db.prepare(`UPDATE team_logos SET logo_url = ?, logo_status = 'ok', last_updated = CURRENT_TIMESTAMP WHERE team_name = ?`).run(logoUrl, team_name);
+                } else {
+                    db.prepare(`INSERT INTO team_logos (team_name, logo_url, logo_status, involved_matches, last_updated) VALUES (?, ?, 'ok', 0, CURRENT_TIMESTAMP)`).run(team_name, logoUrl);
+                }
+                
                 db.prepare(`UPDATE matches SET home_logo = ? WHERE home_team = ?`).run(logoUrl, team_name);
                 db.prepare(`UPDATE matches SET away_logo = ? WHERE away_team = ?`).run(logoUrl, team_name);
                 db.prepare('COMMIT').run();
             }
             
+            // 获取影响的比赛数量
             let count = 0;
             if (isProduction) {
                 const result = await query(`SELECT COUNT(*) as count FROM matches WHERE home_team = $1 OR away_team = $1`, [team_name]);
@@ -622,13 +670,21 @@ router.post('/upload-logo', (req, res) => {
                 count = result.count;
             }
             
-            res.json({ success: true, updated_matches: count });
+            console.log(`✅ 队徽上传成功: ${team_name}, 影响 ${count} 场比赛`);
+            
+            res.json({ 
+                success: true, 
+                message: '队徽上传成功',
+                updated_matches: count,
+                logo_url: logoUrl
+            });
+            
         } catch (error) {
             if (!isProduction) {
                 const db = getDb();
                 db.prepare('ROLLBACK').run();
             }
-            logger.error('Upload logo error:', error);
+            console.error('Upload logo database error:', error);
             res.status(500).json({ success: false, error: error.message });
         }
     });
@@ -647,9 +703,23 @@ const editTeamStorage = multer.diskStorage({
         cb(null, `${safeName}${ext}`);
     }
 });
-const uploadEditTeamLogo = multer({ storage: editTeamStorage, limits: { fileSize: 2 * 1024 * 1024 } }).single('logo');
+const uploadEditTeamLogo = multer({ 
+    storage: editTeamStorage, 
+    limits: { fileSize: 2 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('只支持 JPG、PNG、WEBP、GIF 格式'), false);
+        }
+    }
+}).single('logo');
 
 router.post('/edit-team', (req, res) => {
+    console.log('Edit team request body:', req.body);
+    console.log('Edit team file:', req.file);
+    
     uploadEditTeamLogo(req, res, async (err) => {
         if (err) {
             logger.error('Upload error:', err);
@@ -672,8 +742,14 @@ router.post('/edit-team', (req, res) => {
                 updatedMatches += homeResult?.rowCount || 0;
                 const awayResult = await query(`UPDATE matches SET away_team = $1 WHERE away_team = $2`, [finalNewName, original_name]);
                 updatedMatches += awayResult?.rowCount || 0;
-                await query(`UPDATE match_pool SET home_team = $1 WHERE home_team = $2`, [finalNewName, original_name]);
-                await query(`UPDATE match_pool SET away_team = $1 WHERE away_team = $2`, [finalNewName, original_name]);
+                
+                // 更新 match_pool 表（如果存在）
+                try {
+                    await query(`UPDATE match_pool SET home_team = $1 WHERE home_team = $2`, [finalNewName, original_name]);
+                    await query(`UPDATE match_pool SET away_team = $1 WHERE away_team = $2`, [finalNewName, original_name]);
+                } catch (e) {
+                    console.log('match_pool table not found, skipping');
+                }
             } else {
                 const db = getDb();
                 db.prepare('BEGIN TRANSACTION').run();
@@ -681,8 +757,14 @@ router.post('/edit-team', (req, res) => {
                 updatedMatches += homeResult.changes;
                 const awayResult = db.prepare(`UPDATE matches SET away_team = ? WHERE away_team = ?`).run(finalNewName, original_name);
                 updatedMatches += awayResult.changes;
-                db.prepare(`UPDATE match_pool SET home_team = ? WHERE home_team = ?`).run(finalNewName, original_name);
-                db.prepare(`UPDATE match_pool SET away_team = ? WHERE away_team = ?`).run(finalNewName, original_name);
+                
+                // 更新 match_pool 表（如果存在）
+                try {
+                    db.prepare(`UPDATE match_pool SET home_team = ? WHERE home_team = ?`).run(finalNewName, original_name);
+                    db.prepare(`UPDATE match_pool SET away_team = ? WHERE away_team = ?`).run(finalNewName, original_name);
+                } catch (e) {
+                    console.log('match_pool table not found, skipping');
+                }
             }
             
             let logoUrl = null;
