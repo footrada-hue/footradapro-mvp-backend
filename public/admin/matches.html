@@ -1144,344 +1144,349 @@
         </div>
     </div>
 
-    <script src="/js/admin/matches_controller.js"></script>
-    <script>
-        document.getElementById('logoutBtn')?.addEventListener('click', () => window.location.href = '/admin/index.html');
-        const storedAdmin = localStorage.getItem('admin_name');
-        if (storedAdmin) document.getElementById('adminName').textContent = storedAdmin;
+<script src="/js/admin/matches_controller.js"></script>
+<script>
+    document.getElementById('logoutBtn')?.addEventListener('click', () => window.location.href = '/admin/index.html');
+    const storedAdmin = localStorage.getItem('admin_name');
+    if (storedAdmin) document.getElementById('adminName').textContent = storedAdmin;
+    
+    // 比赛信息管理功能
+    (function() {
+        const manageBtn = document.getElementById('manageLogosBtn');
+        const modal = document.getElementById('teamLogoModal');
+        const tbody = document.getElementById('teamListBody');
+        const leagueFilter = document.getElementById('teamLogoLeagueFilter');
+        const searchInput = document.getElementById('teamLogoSearchInput');
+        const refreshBtn = document.getElementById('refreshTeamLogosBtn');
         
-        // 比赛信息管理功能
-        (function() {
-            const manageBtn = document.getElementById('manageLogosBtn');
-            const modal = document.getElementById('teamLogoModal');
-            const tbody = document.getElementById('teamListBody');
-            const leagueFilter = document.getElementById('teamLogoLeagueFilter');
-            const searchInput = document.getElementById('teamLogoSearchInput');
-            const refreshBtn = document.getElementById('refreshTeamLogosBtn');
-            
-            if (!manageBtn) return;
-            
-            function escapeHtml(str) {
-                if (!str) return '';
-                return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
-            }
-            
-            async function loadLeagues() {
-                try {
-                    const res = await fetch('/api/v1/admin/matches/leagues', { credentials: 'include' });
-                    const result = await res.json();
-                    if (result.success && result.data && leagueFilter) {
-                        leagueFilter.innerHTML = '<option value="all">全部联赛</option>' + 
-                            result.data.map(l => `<option value="${escapeHtml(l.league)}">${escapeHtml(l.league)} (${l.match_count})</option>`).join('');
-                    }
-                } catch(err) { console.error(err); }
-            }
-            
-            async function loadTeams() {
-                if (!tbody) return;
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:48px;"><i class="fas fa-spinner fa-spin"></i> 加载中...<\/td><\/tr>';
-                try {
-                    const league = leagueFilter ? leagueFilter.value : 'all';
-                    const search = searchInput ? searchInput.value.trim() : '';
-                    let url = '/api/v1/admin/matches/all-teams-from-matches?t=' + Date.now() + '&league=' + encodeURIComponent(league);
-                    if (search) url += '&search=' + encodeURIComponent(search);
-                    const res = await fetch(url, { credentials: 'include' });
-                    const result = await res.json();
-                    if (result.success && result.data) {
-                        if (result.data.length === 0) {
-                            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:48px;">暂无球队数据<\/td><\/tr>';
-                        } else {
-                            let html = '';
-                            result.data.forEach((team, index) => {
-                                // 优先使用 Base64 队徽
-                                let logoDisplay = '';
-                                if (team.logo_base64) {
-                                    logoDisplay = `<img src="${team.logo_base64}" style="width:40px;height:40px;border-radius:50%;">`;
-                                } else if (team.logo_url && team.logo_url !== '/uploads/teams/default.png') {
-                                    logoDisplay = `<img src="${team.logo_url}" style="width:40px;height:40px;border-radius:50%;" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=\'fas fa-futbol\' style=\'font-size:24px;color:var(--primary);\'></i>';">`;
-                                } else {
-                                    logoDisplay = `<i class="fas fa-futbol" style="font-size:24px;color:var(--primary);"></i>`;
-                                }
-                                
-                                html += `<tr>
-                                    <td style="padding:12px; text-align:center;">${index + 1}<\/td>
-                                    <td style="padding:12px;"><strong>${escapeHtml(team.team_name)}<\/strong><\/td>
-                                    <td style="padding:12px;">${escapeHtml(team.league || '-')}<\/td>
-                                    <td style="padding:12px; text-align:center;">${team.involved_matches} 场<\/td>
-                                    <td style="padding:12px; text-align:center;">${logoDisplay}<\/td>
-                                    <td style="padding:12px;">
-                                        <div style="display: flex; gap: 8px; justify-content: center;">
-                                            <button class="edit-team-final" data-team="${escapeHtml(team.team_name)}" data-league="${escapeHtml(team.league || '')}" data-matches="${team.involved_matches}" data-logo="${team.logo_url || ''}" data-logo-base64="${team.logo_base64 || ''}" style="padding: 5px 12px; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); border-radius: 6px; color: var(--primary-light); cursor: pointer;"><i class="fas fa-edit"></i> 编辑</button>
-                                            <button class="upload-logo-final" data-team="${escapeHtml(team.team_name)}" data-league="${escapeHtml(team.league || '')}" data-matches="${team.involved_matches}" style="padding: 5px 12px; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; color: #10B981; cursor: pointer;"><i class="fas fa-upload"></i> 上传</button>
-                                        </div>
-                                    <\/td>
-                                </tr>`;
-                            });
-                            tbody.innerHTML = html;
-                            
-                            // 使用事件委托监听编辑按钮
-                            document.getElementById('teamListBody').addEventListener('click', function(e) {
-                                const editBtn = e.target.closest('.edit-team-final');
-                                if (editBtn) {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    console.log('编辑球队:', editBtn.dataset.team);
-                                    
-                                    const editTeamNameInput = document.getElementById('editTeamName');
-                                    const currentLogoImg = document.getElementById('currentLogoImg');
-                                    const affectedCountSpan = document.getElementById('affectedCount');
-                                    const editTeamModal = document.getElementById('editTeamModal');
-                                    
-                                    if (!editTeamNameInput || !currentLogoImg || !affectedCountSpan || !editTeamModal) {
-                                        console.error('模态框元素未找到');
-                                        return;
-                                    }
-                                    
-                                    editTeamNameInput.value = editBtn.dataset.team;
-                                    const logoBase64 = editBtn.dataset.logoBase64;
-                                    if (logoBase64 && logoBase64 !== 'null' && logoBase64 !== 'undefined') {
-                                        currentLogoImg.src = logoBase64;
-                                    } else {
-                                        currentLogoImg.src = editBtn.dataset.logo || '/uploads/teams/default.png';
-                                    }
-                                    affectedCountSpan.textContent = editBtn.dataset.matches;
-                                    window.currentEditTeam = editBtn.dataset.team;
-                                    editTeamModal.classList.add('show');
-                                }
-                            });
-                            
-                            // 使用事件委托监听上传按钮
-                            document.getElementById('teamListBody').addEventListener('click', function(e) {
-                                const uploadBtn = e.target.closest('.upload-logo-final');
-                                if (uploadBtn) {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    console.log('上传队徽:', uploadBtn.dataset.team);
-                                    
-                                    const uploadTeamNameSpan = document.getElementById('uploadTeamName');
-                                    const uploadTeamInfoSpan = document.getElementById('uploadTeamInfo');
-                                    const uploadLogoModal = document.getElementById('uploadLogoModal');
-                                    
-                                    if (!uploadTeamNameSpan || !uploadTeamInfoSpan || !uploadLogoModal) {
-                                        console.error('上传模态框元素未找到');
-                                        return;
-                                    }
-                                    
-                                    uploadTeamNameSpan.textContent = uploadBtn.dataset.team;
-                                    uploadTeamInfoSpan.textContent = `${uploadBtn.dataset.league} • 涉及 ${uploadBtn.dataset.matches} 场比赛`;
-                                    window.currentUploadTeam = uploadBtn.dataset.team;
-                                    uploadLogoModal.classList.add('show');
-                                }
-                            });
-                        }
+        if (!manageBtn) return;
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
+        }
+        
+        async function loadLeagues() {
+            try {
+                const res = await fetch('/api/v1/admin/matches/leagues', { credentials: 'include' });
+                const result = await res.json();
+                if (result.success && result.data && leagueFilter) {
+                    leagueFilter.innerHTML = '<option value="all">全部联赛</option>' + 
+                        result.data.map(l => `<option value="${escapeHtml(l.league)}">${escapeHtml(l.league)} (${l.match_count})</option>`).join('');
+                }
+            } catch(err) { console.error(err); }
+        }
+        
+        async function loadTeams() {
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:48px;"><i class="fas fa-spinner fa-spin"></i> 加载中...<\/td><\/tr>';
+            try {
+                const league = leagueFilter ? leagueFilter.value : 'all';
+                const search = searchInput ? searchInput.value.trim() : '';
+                let url = '/api/v1/admin/matches/all-teams-from-matches?t=' + Date.now() + '&league=' + encodeURIComponent(league);
+                if (search) url += '&search=' + encodeURIComponent(search);
+                const res = await fetch(url, { credentials: 'include' });
+                const result = await res.json();
+                if (result.success && result.data) {
+                    if (result.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:48px;">暂无球队数据<\/td><\/tr>';
                     } else {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:48px;">加载失败<\/td><\/tr>';
+                        let html = '';
+                        result.data.forEach((team, index) => {
+                            let logoDisplay = '';
+                            if (team.logo_base64) {
+                                logoDisplay = `<img src="${team.logo_base64}" style="width:40px;height:40px;border-radius:50%;">`;
+                            } else if (team.logo_url && team.logo_url !== '/uploads/teams/default.png') {
+                                logoDisplay = `<img src="${team.logo_url}" style="width:40px;height:40px;border-radius:50%;" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=\'fas fa-futbol\' style=\'font-size:24px;color:var(--primary);\'></i>';">`;
+                            } else {
+                                logoDisplay = `<i class="fas fa-futbol" style="font-size:24px;color:var(--primary);"></i>`;
+                            }
+                            
+                            html += `<tr>
+                                <td style="padding:12px; text-align:center;">${index + 1}<\/td>
+                                <td style="padding:12px;"><strong>${escapeHtml(team.team_name)}<\/strong><\/td>
+                                <td style="padding:12px;">${escapeHtml(team.league || '-')}<\/td>
+                                <td style="padding:12px; text-align:center;">${team.involved_matches} 场<\/td>
+                                <td style="padding:12px; text-align:center;">${logoDisplay}<\/td>
+                                <td style="padding:12px;">
+                                    <div style="display: flex; gap: 8px; justify-content: center;">
+                                        <button class="edit-team-final" data-team="${escapeHtml(team.team_name)}" data-league="${escapeHtml(team.league || '')}" data-matches="${team.involved_matches}" data-logo="${team.logo_url || ''}" data-logo-base64="${team.logo_base64 || ''}" style="padding: 5px 12px; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); border-radius: 6px; color: var(--primary-light); cursor: pointer;"><i class="fas fa-edit"></i> 编辑</button>
+                                        <button class="upload-logo-final" data-team="${escapeHtml(team.team_name)}" data-league="${escapeHtml(team.league || '')}" data-matches="${team.involved_matches}" style="padding: 5px 12px; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; color: #10B981; cursor: pointer;"><i class="fas fa-upload"></i> 上传</button>
+                                    </div>
+                                <\/td>
+                            </tr>`;
+                        });
+                        tbody.innerHTML = html;
                     }
-                } catch(err) {
-                    console.error(err);
+                } else {
                     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:48px;">加载失败<\/td><\/tr>';
                 }
+            } catch(err) {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:48px;">加载失败<\/td><\/tr>';
             }
-            
-            const newBtn = manageBtn.cloneNode(true);
-            manageBtn.parentNode.replaceChild(newBtn, manageBtn);
-            newBtn.onclick = () => { modal.classList.add('show'); loadLeagues(); loadTeams(); };
-            if (refreshBtn) refreshBtn.onclick = loadTeams;
-            if (leagueFilter) leagueFilter.onchange = loadTeams;
-            if (searchInput) { let timer; searchInput.oninput = () => { clearTimeout(timer); timer = setTimeout(loadTeams, 300); }; }
-            
-            document.getElementById('confirmEditTeamBtn')?.addEventListener('click', async () => {
-                const newName = document.getElementById('editTeamName').value.trim();
-                if (!newName) { alert('球队名称不能为空'); return; }
-                const formData = new FormData();
-                formData.append('original_name', window.currentEditTeam);
-                formData.append('new_name', newName);
-                const logoFile = document.getElementById('editTeamLogoFile').files[0];
-                if (logoFile) formData.append('logo', logoFile);
-                try {
-                    const res = await fetch('/api/v1/admin/matches/edit-team', { method: 'POST', body: formData, credentials: 'include' });
-                    const result = await res.json();
-                    if (result.success) {
-                        alert(`✅ 球队信息已更新，影响 ${result.updated_matches} 场比赛`);
-                        document.getElementById('editTeamModal').classList.remove('show');
-                        document.getElementById('editTeamLogoFile').value = '';
-                        loadTeams();
-                    } else { alert('保存失败: ' + (result.error || '未知错误')); }
-                } catch(err) { alert('网络错误'); }
-            });
-            
-            document.getElementById('confirmUploadBtn')?.addEventListener('click', async () => {
-                const file = document.getElementById('teamLogoFile').files[0];
-                if (!file) { alert('请选择图片'); return; }
-                
-                const formData = new FormData();
-                formData.append('team_name', window.currentUploadTeam);
-                formData.append('logo', file);
-                
-                const btn = document.getElementById('confirmUploadBtn');
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
-                btn.disabled = true;
-                
-                try {
-                    const res = await fetch('/api/v1/admin/matches/upload-logo', {
-                        method: 'POST',
-                        body: formData,
-                        credentials: 'include'
-                    });
-                    const result = await res.json();
-                    
-                    if (result.success) {
-                        alert(`✅ ${window.currentUploadTeam} 队徽已更新`);
-                        document.getElementById('uploadLogoModal').classList.remove('show');
-                        document.getElementById('teamLogoFile').value = '';
-                        document.getElementById('uploadPreview').style.display = 'none';
-                        // 重新加载页面刷新列表
-                        location.reload();
-                    } else {
-                        alert('上传失败: ' + (result.error || '未知错误'));
-                    }
-                } catch(err) {
-                    console.error('上传错误:', err);
-                    alert('网络错误，请重试');
-                } finally {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }
-            });
-            
-            document.getElementById('editTeamLogoFile')?.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) { const reader = new FileReader(); reader.onload = (ev) => { document.getElementById('currentLogoImg').src = ev.target.result; }; reader.readAsDataURL(file); }
-            });
-            document.getElementById('teamLogoFile')?.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) { const reader = new FileReader(); reader.onload = (ev) => { document.getElementById('uploadPreviewImg').src = ev.target.result; document.getElementById('uploadPreview').style.display = 'block'; }; reader.readAsDataURL(file); }
-            });
-            
-            document.getElementById('closeTeamLogoModalBtn')?.addEventListener('click', () => modal.classList.remove('show'));
-            document.getElementById('closeEditTeamModalBtn')?.addEventListener('click', () => document.getElementById('editTeamModal').classList.remove('show'));
-            document.getElementById('cancelEditTeamBtn')?.addEventListener('click', () => document.getElementById('editTeamModal').classList.remove('show'));
-            document.getElementById('closeUploadModalBtn')?.addEventListener('click', () => document.getElementById('uploadLogoModal').classList.remove('show'));
-            document.getElementById('cancelUploadBtn')?.addEventListener('click', () => document.getElementById('uploadLogoModal').classList.remove('show'));
-            modal?.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('show'); });
-            document.getElementById('editTeamModal')?.addEventListener('click', (e) => { if (e.target === document.getElementById('editTeamModal')) document.getElementById('editTeamModal').classList.remove('show'); });
-            document.getElementById('uploadLogoModal')?.addEventListener('click', (e) => { if (e.target === document.getElementById('uploadLogoModal')) document.getElementById('uploadLogoModal').classList.remove('show'); });
-        })();
+        }
         
-        // 手动添加比赛表单处理
-        (function() {
-            const modal = document.getElementById('manualAddModal');
-            const addBtn = document.getElementById('manualAddBtn');
-            const closeBtn = document.getElementById('closeManualAddBtn');
-            const cancelBtn = document.getElementById('cancelManualAddBtn');
-            const form = document.getElementById('manualAddForm');
-            
-            if (!addBtn || !form) return;
-            
-            // 设置默认日期为今天+7天
-            const today = new Date();
-            const defaultDate = new Date(today);
-            defaultDate.setDate(today.getDate() + 7);
-            const dateInput = document.getElementById('manualMatchDate');
-            if (dateInput) {
-                dateInput.value = defaultDate.toISOString().split('T')[0];
-            }
-            
-            // 默认时间为20:00
-            const timeInput = document.getElementById('manualMatchTime');
-            if (timeInput) {
-                timeInput.value = '20:00';
-            }
-            
-            addBtn.onclick = () => {
-                modal.classList.add('show');
-            };
-            
-            if (closeBtn) closeBtn.onclick = () => modal.classList.remove('show');
-            if (cancelBtn) cancelBtn.onclick = () => modal.classList.remove('show');
-            modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('show'); };
-            
-            form.onsubmit = async (e) => {
+        // 在页面加载时绑定一次事件委托（放在 loadTeams 函数外面）
+        document.getElementById('teamListBody')?.addEventListener('click', function(e) {
+            // 编辑按钮
+            const editBtn = e.target.closest('.edit-team-final');
+            if (editBtn) {
                 e.preventDefault();
+                e.stopPropagation();
+                console.log('编辑球队:', editBtn.dataset.team);
                 
-                const homeTeam = document.getElementById('manualHomeTeam').value.trim();
-                const awayTeam = document.getElementById('manualAwayTeam').value.trim();
-                const league = document.getElementById('manualLeague').value.trim();
-                const matchDate = document.getElementById('manualMatchDate').value;
-                const matchTime = document.getElementById('manualMatchTime').value;
+                const editTeamNameInput = document.getElementById('editTeamName');
+                const currentLogoImg = document.getElementById('currentLogoImg');
+                const affectedCountSpan = document.getElementById('affectedCount');
+                const editTeamModal = document.getElementById('editTeamModal');
                 
-                if (!homeTeam || !awayTeam || !league || !matchDate || !matchTime) {
-                    alert('请填写所有必填项');
+                // 添加详细日志
+                console.log('editTeamNameInput:', editTeamNameInput);
+                console.log('currentLogoImg:', currentLogoImg);
+                console.log('affectedCountSpan:', affectedCountSpan);
+                console.log('editTeamModal:', editTeamModal);
+                
+                if (!editTeamNameInput || !currentLogoImg || !affectedCountSpan || !editTeamModal) {
+                    console.error('模态框元素未找到，请检查 HTML 中是否有对应的 id');
+                    alert('页面元素加载异常，请刷新页面重试');
                     return;
                 }
                 
-                // 构建比赛时间
-                const localDateTimeStr = `${matchDate}T${matchTime}:00`;
-                const localDate = new Date(localDateTimeStr);
-                if (isNaN(localDate.getTime())) {
-                    alert('日期/时间格式无效');
+                editTeamNameInput.value = editBtn.dataset.team;
+                const logoBase64 = editBtn.dataset.logoBase64;
+                if (logoBase64 && logoBase64 !== 'null' && logoBase64 !== 'undefined') {
+                    currentLogoImg.src = logoBase64;
+                } else {
+                    currentLogoImg.src = editBtn.dataset.logo || '/uploads/teams/default.png';
+                }
+                affectedCountSpan.textContent = editBtn.dataset.matches;
+                window.currentEditTeam = editBtn.dataset.team;
+                editTeamModal.classList.add('show');
+                return;
+            }
+            
+            // 上传按钮
+            const uploadBtn = e.target.closest('.upload-logo-final');
+            if (uploadBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('上传队徽:', uploadBtn.dataset.team);
+                
+                const uploadTeamNameSpan = document.getElementById('uploadTeamName');
+                const uploadTeamInfoSpan = document.getElementById('uploadTeamInfo');
+                const uploadLogoModal = document.getElementById('uploadLogoModal');
+                
+                if (!uploadTeamNameSpan || !uploadTeamInfoSpan || !uploadLogoModal) {
+                    console.error('上传模态框元素未找到');
+                    alert('页面元素加载异常，请刷新页面重试');
                     return;
                 }
                 
-                const matchDateTimeUTC = localDate.toISOString();
-                const matchDateObj = new Date(matchDateTimeUTC);
-                const cutoffDateTimeUTC = new Date(matchDateObj.getTime() - 5 * 60 * 1000).toISOString();
+                uploadTeamNameSpan.textContent = uploadBtn.dataset.team;
+                uploadTeamInfoSpan.textContent = `${uploadBtn.dataset.league} • 涉及 ${uploadBtn.dataset.matches} 场比赛`;
+                window.currentUploadTeam = uploadBtn.dataset.team;
+                uploadLogoModal.classList.add('show');
+            }
+        });
+        
+        const newBtn = manageBtn.cloneNode(true);
+        manageBtn.parentNode.replaceChild(newBtn, manageBtn);
+        newBtn.onclick = () => { modal.classList.add('show'); loadLeagues(); loadTeams(); };
+        if (refreshBtn) refreshBtn.onclick = loadTeams;
+        if (leagueFilter) leagueFilter.onchange = loadTeams;
+        if (searchInput) { let timer; searchInput.oninput = () => { clearTimeout(timer); timer = setTimeout(loadTeams, 300); }; }
+        
+        document.getElementById('confirmEditTeamBtn')?.addEventListener('click', async () => {
+            const newName = document.getElementById('editTeamName').value.trim();
+            if (!newName) { alert('球队名称不能为空'); return; }
+            const formData = new FormData();
+            formData.append('original_name', window.currentEditTeam);
+            formData.append('new_name', newName);
+            const logoFile = document.getElementById('editTeamLogoFile').files[0];
+            if (logoFile) formData.append('logo', logoFile);
+            try {
+                const res = await fetch('/api/v1/admin/matches/edit-team', { method: 'POST', body: formData, credentials: 'include' });
+                const result = await res.json();
+                if (result.success) {
+                    alert(`✅ 球队信息已更新，影响 ${result.updated_matches} 场比赛`);
+                    document.getElementById('editTeamModal').classList.remove('show');
+                    document.getElementById('editTeamLogoFile').value = '';
+                    loadTeams();
+                } else { alert('保存失败: ' + (result.error || '未知错误')); }
+            } catch(err) { alert('网络错误'); }
+        });
+        
+        document.getElementById('confirmUploadBtn')?.addEventListener('click', async () => {
+            const file = document.getElementById('teamLogoFile').files[0];
+            if (!file) { alert('请选择图片'); return; }
+            
+            const formData = new FormData();
+            formData.append('team_name', window.currentUploadTeam);
+            formData.append('logo', file);
+            
+            const btn = document.getElementById('confirmUploadBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
+            btn.disabled = true;
+            
+            try {
+                const res = await fetch('/api/v1/admin/matches/upload-logo', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                const result = await res.json();
                 
-                if (matchDateObj <= new Date()) {
-                    alert('比赛时间必须是将来的时间');
-                    return;
+                if (result.success) {
+                    alert(`✅ ${window.currentUploadTeam} 队徽已更新`);
+                    document.getElementById('uploadLogoModal').classList.remove('show');
+                    document.getElementById('teamLogoFile').value = '';
+                    document.getElementById('uploadPreview').style.display = 'none';
+                    location.reload();
+                } else {
+                    alert('上传失败: ' + (result.error || '未知错误'));
                 }
-                
-                const matchId = `manual_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-                
-                const requestData = {
-                    match_id: matchId,
-                    home_team: homeTeam,
-                    away_team: awayTeam,
-                    league: league,
-                    match_time: matchDateTimeUTC,
-                    cutoff_time: cutoffDateTimeUTC,
-                    execution_rate: parseInt(document.getElementById('manualExecRate').value) || 30,
-                    min_authorization: parseFloat(document.getElementById('manualMinAuth').value) || 100,
-                    match_limit: parseFloat(document.getElementById('manualMatchLimit').value) || 500,
-                    is_active: parseInt(document.getElementById('manualIsActive').value) || 1,
-                    source: 'manual'
-                };
-                
-                try {
-                    const response = await fetch('/api/v1/admin/matches/add', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify(requestData)
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        alert(`✅ 比赛已添加：${homeTeam} vs ${awayTeam}`);
-                        modal.classList.remove('show');
-                        form.reset();
-                        // 重置默认值
-                        if (dateInput) dateInput.value = defaultDate.toISOString().split('T')[0];
-                        if (timeInput) timeInput.value = '20:00';
-                        document.getElementById('manualExecRate').value = '30';
-                        document.getElementById('manualMinAuth').value = '100';
-                        document.getElementById('manualMatchLimit').value = '500';
-                        document.getElementById('manualIsActive').value = '1';
-                        // 刷新列表
-                        if (window.loadMatches) window.loadMatches();
-                        if (window.loadStorageStats) window.loadStorageStats();
-                    } else {
-                        alert(`添加失败：${result.error || result.message || '未知错误'}`);
-                    }
-                } catch (err) {
-                    console.error('添加比赛失败:', err);
-                    alert('网络错误，请重试');
-                }
-            };
-        })();
-    </script>
+            } catch(err) {
+                console.error('上传错误:', err);
+                alert('网络错误，请重试');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+        
+        document.getElementById('editTeamLogoFile')?.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) { const reader = new FileReader(); reader.onload = (ev) => { document.getElementById('currentLogoImg').src = ev.target.result; }; reader.readAsDataURL(file); }
+        });
+        document.getElementById('teamLogoFile')?.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) { const reader = new FileReader(); reader.onload = (ev) => { document.getElementById('uploadPreviewImg').src = ev.target.result; document.getElementById('uploadPreview').style.display = 'block'; }; reader.readAsDataURL(file); }
+        });
+        
+        document.getElementById('closeTeamLogoModalBtn')?.addEventListener('click', () => modal.classList.remove('show'));
+        document.getElementById('closeEditTeamModalBtn')?.addEventListener('click', () => document.getElementById('editTeamModal').classList.remove('show'));
+        document.getElementById('cancelEditTeamBtn')?.addEventListener('click', () => document.getElementById('editTeamModal').classList.remove('show'));
+        document.getElementById('closeUploadModalBtn')?.addEventListener('click', () => document.getElementById('uploadLogoModal').classList.remove('show'));
+        document.getElementById('cancelUploadBtn')?.addEventListener('click', () => document.getElementById('uploadLogoModal').classList.remove('show'));
+        modal?.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('show'); });
+        document.getElementById('editTeamModal')?.addEventListener('click', (e) => { if (e.target === document.getElementById('editTeamModal')) document.getElementById('editTeamModal').classList.remove('show'); });
+        document.getElementById('uploadLogoModal')?.addEventListener('click', (e) => { if (e.target === document.getElementById('uploadLogoModal')) document.getElementById('uploadLogoModal').classList.remove('show'); });
+    })();
+    
+// 手动添加比赛表单处理
+(function() {
+    const modal = document.getElementById('manualAddModal');
+    const addBtn = document.getElementById('manualAddBtn');
+    const closeBtn = document.getElementById('closeManualAddBtn');
+    const cancelBtn = document.getElementById('cancelManualAddBtn');
+    const form = document.getElementById('manualAddForm');
+    
+    if (!addBtn || !form) return;
+    
+    // 设置默认日期为今天+7天
+    const today = new Date();
+    const defaultDate = new Date(today);
+    defaultDate.setDate(today.getDate() + 7);
+    const dateInput = document.getElementById('manualMatchDate');
+    if (dateInput) {
+        dateInput.value = defaultDate.toISOString().split('T')[0];
+    }
+    
+    // 默认时间为20:00
+    const timeInput = document.getElementById('manualMatchTime');
+    if (timeInput) {
+        timeInput.value = '20:00';
+    }
+    
+    addBtn.onclick = () => {
+        if (modal) modal.classList.add('show');
+    };
+    
+    if (closeBtn) closeBtn.onclick = () => modal?.classList.remove('show');
+    if (cancelBtn) cancelBtn.onclick = () => modal?.classList.remove('show');
+    if (modal) {
+        modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('show'); };
+    }
+    
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const homeTeam = document.getElementById('manualHomeTeam').value.trim();
+        const awayTeam = document.getElementById('manualAwayTeam').value.trim();
+        const league = document.getElementById('manualLeague').value.trim();
+        const matchDate = document.getElementById('manualMatchDate').value;
+        const matchTime = document.getElementById('manualMatchTime').value;
+        
+        if (!homeTeam || !awayTeam || !league || !matchDate || !matchTime) {
+            alert('请填写所有必填项');
+            return;
+        }
+        
+        const localDateTimeStr = `${matchDate}T${matchTime}:00`;
+        const localDate = new Date(localDateTimeStr);
+        if (isNaN(localDate.getTime())) {
+            alert('日期/时间格式无效');
+            return;
+        }
+        
+        const matchDateTimeUTC = localDate.toISOString();
+        const matchDateObj = new Date(matchDateTimeUTC);
+        const cutoffDateTimeUTC = new Date(matchDateObj.getTime() - 5 * 60 * 1000).toISOString();
+        
+        if (matchDateObj <= new Date()) {
+            alert('比赛时间必须是将来的时间');
+            return;
+        }
+        
+        const matchId = `manual_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+        
+        const requestData = {
+            match_id: matchId,
+            home_team: homeTeam,
+            away_team: awayTeam,
+            league: league,
+            match_time: matchDateTimeUTC,
+            cutoff_time: cutoffDateTimeUTC,
+            execution_rate: parseInt(document.getElementById('manualExecRate').value) || 30,
+            min_authorization: parseFloat(document.getElementById('manualMinAuth').value) || 100,
+            match_limit: parseFloat(document.getElementById('manualMatchLimit').value) || 500,
+            is_active: parseInt(document.getElementById('manualIsActive').value) || 1,
+            source: 'manual'
+        };
+        
+        try {
+            const response = await fetch('/api/v1/admin/matches/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(requestData)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(`✅ 比赛已添加：${homeTeam} vs ${awayTeam}`);
+                modal?.classList.remove('show');
+                form.reset();
+                if (dateInput) dateInput.value = defaultDate.toISOString().split('T')[0];
+                if (timeInput) timeInput.value = '20:00';
+                document.getElementById('manualExecRate').value = '30';
+                document.getElementById('manualMinAuth').value = '100';
+                document.getElementById('manualMatchLimit').value = '500';
+                document.getElementById('manualIsActive').value = '1';
+                if (window.loadMatches) window.loadMatches();
+                if (window.loadStorageStats) window.loadStorageStats();
+            } else {
+                alert(`添加失败：${result.error || result.message || '未知错误'}`);
+            }
+        } catch (err) {
+            console.error('添加比赛失败:', err);
+            alert('网络错误，请重试');
+        }
+    };
+})();
+</script>
 </body>
 </html>
