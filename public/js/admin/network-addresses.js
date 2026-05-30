@@ -1,4 +1,4 @@
-// network-addresses.js - 网络地址管理页面控制器（修复版）
+// network-addresses.js - 网络地址管理页面控制器（PostgreSQL适配版）
 
 (function() {
     'use strict';
@@ -167,10 +167,13 @@
 
     // 执行保存
     async function saveConfig(address, note, status) {
+        // 注意：PostgreSQL 使用 true/false，但后端会自动转换
+        const isActive = status === 'active';
+        
         const data = {
             deposit_address: address,
             notes: note,
-            is_active: status === 'active' ? 1 : 0,
+            is_active: isActive,
             withdraw_fee: 1,
             min_withdraw: 10,
             max_withdraw: 10000
@@ -208,15 +211,12 @@
         }
     }
 
-    // 禁用网络（软删除）
+    // 禁用网络
     async function disableNetwork(network) {
         const config = allConfigs.find(c => c.network === network);
         if (!config) return;
         
-        const confirmMessage = `⚠️ 确认禁用 ${network} 网络吗？\n\n`;
-        confirmMessage += `当前地址: ${config.deposit_address}\n`;
-        confirmMessage += `禁用后，用户将无法使用此网络充值！\n\n`;
-        confirmMessage += `确认禁用？`;
+        const confirmMessage = `⚠️ 确认禁用 ${network} 网络吗？\n\n当前地址: ${config.deposit_address}\n禁用后，用户将无法使用此网络充值！\n\n确认禁用？`;
         
         if (!confirm(confirmMessage)) return;
         
@@ -228,7 +228,7 @@
                 body: JSON.stringify({
                     deposit_address: config.deposit_address,
                     notes: config.notes || '',
-                    is_active: 0,
+                    is_active: false,
                     withdraw_fee: 1,
                     min_withdraw: 10,
                     max_withdraw: 10000
@@ -241,8 +241,7 @@
                 showToast(`✅ 已禁用 ${network} 网络`, 'success');
                 await loadAllConfigs();
                 if (currentNetwork === network) {
-                    // 切换到第一个启用的网络
-                    const activeNetwork = allConfigs.find(c => c.is_active === 1);
+                    const activeNetwork = allConfigs.find(c => c.is_active === true || c.is_active === 1);
                     if (activeNetwork) {
                         const tab = document.querySelector(`.network-tab[data-network="${activeNetwork.network}"]`);
                         if (tab) tab.click();
@@ -275,7 +274,7 @@
                 body: JSON.stringify({
                     deposit_address: config.deposit_address,
                     notes: config.notes || '',
-                    is_active: 1,
+                    is_active: true,
                     withdraw_fee: 1,
                     min_withdraw: 10,
                     max_withdraw: 10000
@@ -352,7 +351,9 @@
     function fillForm(config) {
         DOM.addressInput.value = config.deposit_address || '';
         DOM.noteInput.value = config.notes || '';
-        DOM.statusSelect.value = config.is_active === 1 ? 'active' : 'inactive';
+        // 兼容 PostgreSQL 布尔值和 SQLite 整数值
+        const isActive = config.is_active === true || config.is_active === 1;
+        DOM.statusSelect.value = isActive ? 'active' : 'inactive';
         DOM.addressPreview.textContent = config.deposit_address || '地址将显示在此处';
         
         if (config.deposit_address) {
@@ -369,47 +370,48 @@
             return;
         }
         
-        let html = '';
+        let html = '<div class="config-grid">';
         configs.forEach(config => {
-            const statusClass = config.is_active === 1 ? 'status-active' : 'status-inactive';
-            const statusText = config.is_active === 1 ? '已启用' : '已禁用';
+            // 兼容 PostgreSQL 布尔值和 SQLite 整数值
+            const isActive = config.is_active === true || config.is_active === 1;
+            const statusClass = isActive ? 'status-active' : 'status-inactive';
+            const statusText = isActive ? '已启用' : '已禁用';
             const address = config.deposit_address || '未配置';
             const note = config.notes || '';
             const updatedAt = config.updated_at ? new Date(config.updated_at).toLocaleString() : '未知';
             
             html += `
-                <div class="config-item" data-network="${config.network}">
+                <div class="config-card" data-network="${config.network}">
                     <div class="config-header">
                         <span class="config-network">
                             <i class="fas fa-network-wired"></i> ${config.network}
                         </span>
-                        <div class="config-actions">
-                            <button class="config-edit-btn" onclick="window.editNetwork('${config.network}')" title="编辑">
-                                <i class="fas fa-edit"></i> 编辑
-                            </button>
-                            ${config.is_active === 1 ? 
-                                `<button class="config-disable-btn" onclick="window.disableNetwork('${config.network}')" title="禁用">
-                                    <i class="fas fa-ban"></i> 禁用
-                                </button>` :
-                                `<button class="config-enable-btn" onclick="window.enableNetwork('${config.network}')" title="启用">
-                                    <i class="fas fa-play"></i> 启用
-                                </button>`
-                            }
-                        </div>
+                        <span class="config-status ${statusClass}">${statusText}</span>
                     </div>
-                    <div class="config-status">
-                        <span class="status-badge ${statusClass}">${statusText}</span>
-                    </div>
-                    <div class="config-address">
-                        <i class="fas fa-qrcode"></i> ${escapeHtml(address)}
+                    <div class="config-address" title="${escapeHtml(address)}">
+                        <i class="fas fa-qrcode"></i> ${escapeHtml(address.substring(0, 30))}...
                     </div>
                     ${note ? `<div class="config-note"><i class="fas fa-info-circle"></i> ${escapeHtml(note)}</div>` : ''}
                     <div class="config-meta">
                         <i class="fas fa-user-clock"></i> 最后更新: ${updatedAt}
                     </div>
+                    <div class="config-actions">
+                        <button class="config-edit-btn" onclick="window.editNetwork('${config.network}')">
+                            <i class="fas fa-edit"></i> 编辑
+                        </button>
+                        ${isActive ? 
+                            `<button class="config-disable-btn" onclick="window.disableNetwork('${config.network}')">
+                                <i class="fas fa-ban"></i> 禁用
+                            </button>` :
+                            `<button class="config-enable-btn" onclick="window.enableNetwork('${config.network}')">
+                                <i class="fas fa-play"></i> 启用
+                            </button>`
+                        }
+                    </div>
                 </div>
             `;
         });
+        html += '</div>';
         
         DOM.configList.innerHTML = html;
     }
@@ -417,12 +419,10 @@
     // 编辑网络
     window.editNetwork = function(network) {
         console.log('编辑网络:', network);
-        // 切换到对应的标签页
         const tab = document.querySelector(`.network-tab[data-network="${network}"]`);
         if (tab) {
             tab.click();
         }
-        // 滚动到表单区域
         const formElement = document.querySelector('.address-form');
         if (formElement) {
             formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -465,6 +465,24 @@
             toast.remove();
         }, 3000);
     }
+
+    // 添加 CSS 动画
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .status-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10B981;
+        }
+        .status-inactive {
+            background: rgba(239, 68, 68, 0.2);
+            color: #EF4444;
+        }
+    `;
+    document.head.appendChild(style);
 
     // HTML 转义
     function escapeHtml(str) {
