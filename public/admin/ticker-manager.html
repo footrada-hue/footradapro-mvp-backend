@@ -3,21 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>动态管理 · FOOTRADAPRO 后台</title>
+    <title>动态消息管理 · FOOTRADAPRO 后台</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- 全局配置 - 保留原有引用 -->
+    <!-- 全局配置 -->
     <script src="/js/core/config.js"></script>
     <script src="/js/core/timezone.js"></script>
     <script src="/js/admin/admin_auth_guard.js"></script>
     
     <style>
-        /* ============================================
-           世界級後台管理系統 - 动态管理頁面
-           深色主題 | 玻璃態效果 | 響應式佈局
-        ============================================ */
-        
         * {
             margin: 0;
             padding: 0;
@@ -67,7 +62,6 @@
             min-height: 100vh;
         }
 
-        /* ========= 側邊欄 ========= */
         .admin-sidebar {
             width: 280px;
             background: rgba(10, 18, 32, 0.85);
@@ -95,10 +89,6 @@
             color: transparent;
             border-bottom: 1px solid var(--border-glow);
             margin-bottom: 20px;
-        }
-        .admin-sidebar-logo span {
-            color: var(--primary);
-            background: none;
         }
 
         .admin-nav {
@@ -133,18 +123,7 @@
             color: white;
             border-left: 3px solid var(--primary);
         }
-        
-        .unread-badge {
-            margin-left: auto;
-            font-size: 10px;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 20px;
-            background: var(--warning);
-            color: white;
-        }
 
-        /* ========= 主內容區域 ========= */
         .admin-main {
             flex: 1;
             display: flex;
@@ -213,7 +192,6 @@
             margin: 0 auto;
         }
 
-        /* ========= 統計卡片 ========= */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -248,9 +226,7 @@
         .stat-icon.green { background: linear-gradient(145deg, #14532D, #16A34A); }
         .stat-icon.orange { background: linear-gradient(145deg, #9A3412, #EA580C); }
         .stat-icon.purple { background: linear-gradient(145deg, #4C1D95, #8B5CF6); }
-        .stat-info {
-            flex: 1;
-        }
+        .stat-info { flex: 1; }
         .stat-label {
             font-size: 0.8rem;
             text-transform: uppercase;
@@ -266,7 +242,6 @@
             margin-top: 4px;
         }
 
-        /* ========= 編輯器卡片 ========= */
         .editor-card {
             background: var(--card-bg);
             backdrop-filter: blur(8px);
@@ -307,7 +282,6 @@
             padding: 24px;
         }
 
-        /* 參數行 */
         .param-row {
             display: flex;
             gap: 20px;
@@ -342,7 +316,6 @@
             width: 100px;
         }
 
-        /* 比賽選擇器 */
         .match-selector {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -369,7 +342,6 @@
             border-color: var(--primary);
         }
 
-        /* 按鈕 */
         .btn-primary, .btn-secondary, .btn-success {
             padding: 10px 20px;
             border-radius: 12px;
@@ -408,7 +380,6 @@
             border-color: var(--primary);
         }
 
-        /* 自動生成控制 */
         .auto-generate-control {
             background: rgba(0,0,0,0.2);
             border-radius: 14px;
@@ -420,13 +391,7 @@
             flex-wrap: wrap;
             gap: 12px;
         }
-        .auto-generate-control .status {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
 
-        /* 預覽區域 */
         .preview-section {
             background: rgba(0,0,0,0.2);
             border-radius: 14px;
@@ -456,7 +421,6 @@
             margin-bottom: 8px;
         }
 
-        /* 表格 */
         .table-wrapper {
             background: rgba(0,0,0,0.2);
             border-radius: 14px;
@@ -492,7 +456,6 @@
             background: rgba(239, 68, 68, 0.1);
         }
 
-        /* 標籤頁 */
         .tabs-container {
             display: flex;
             gap: 8px;
@@ -508,9 +471,6 @@
             cursor: pointer;
             border-bottom: 2px solid transparent;
         }
-        .tab-btn:hover {
-            color: var(--primary);
-        }
         .tab-btn.active {
             color: var(--primary);
             border-bottom-color: var(--primary);
@@ -522,7 +482,6 @@
             display: block;
         }
 
-        /* 分頁 */
         .pagination {
             display: flex;
             justify-content: center;
@@ -542,7 +501,6 @@
             color: white;
         }
 
-        /* 徽章 */
         .badge {
             background: var(--primary);
             color: white;
@@ -551,7 +509,25 @@
             font-size: 0.7rem;
         }
 
-        /* 響應式 */
+        .loading-cell {
+            text-align: center;
+            padding: 48px;
+            color: var(--text-secondary);
+        }
+        .empty-cell {
+            text-align: center;
+            padding: 48px;
+            color: var(--text-secondary);
+        }
+        .text-success {
+            color: var(--success);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
         @media (max-width: 768px) {
             .admin-layout { flex-direction: column; }
             .admin-sidebar { width: 100%; height: auto; position: relative; }
@@ -559,14 +535,6 @@
             .admin-content { padding: 20px; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
             .param-row { flex-direction: column; }
-        }
-
-        @keyframes fadeSlideUp {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .stat-card, .editor-card {
-            animation: fadeSlideUp 0.4s ease forwards;
         }
     </style>
 </head>
@@ -576,7 +544,7 @@
 
         <main class="admin-main">
             <header class="admin-header">
-                <h1><i class="fas fa-ticket-alt"></i> 动态管理</h1>
+                <h1><i class="fas fa-ticket-alt"></i> 动态消息管理</h1>
                 <div class="admin-user">
                     <span id="adminName">管理员</span>
                     <button class="icon-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i></button>
@@ -656,12 +624,12 @@
                     </div>
                 </div>
 
-                <!-- 比赛池管理 -->
+                <!-- 比赛池管理（只读展示比赛管理系统数据） -->
                 <div class="tab-pane" id="matchesTab">
                     <div class="editor-card">
-                        <div class="card-header"><div class="card-icon" style="background: rgba(249,115,22,0.2); color:#F97316;"><i class="fas fa-futbol"></i></div><div><div class="card-title">比赛数据池</div><div class="card-desc">管理本地比赛数据</div></div><button class="btn-success" id="addMatchBtn" style="margin-left: auto;"><i class="fas fa-plus"></i> 新增比赛</button></div>
+                        <div class="card-header"><div class="card-icon" style="background: rgba(249,115,22,0.2); color:#F97316;"><i class="fas fa-futbol"></i></div><div><div class="card-title">比赛数据池</div><div class="card-desc">从比赛管理系统同步（只读）</div></div><button class="btn-success" id="goToMatchesManageBtn" style="margin-left: auto;"><i class="fas fa-external-link-alt"></i> 前往比赛管理</button></div>
                         <div class="card-body">
-                            <div class="table-wrapper"><table class="data-table"><thead><tr><th>ID</th><th>联赛</th><th>主队</th><th>客队</th><th>比赛日期</th><th>开赛时间</th><th>状态</th><th>权重</th><th>操作</th></tr></thead><tbody id="matchesList"></tbody></table></div>
+                            <div class="table-wrapper"><table class="data-table"><thead><tr><th>ID</th><th>联赛</th><th>主队</th><th>客队</th><th>比赛时间</th><th>状态</th><th>执行率</th><th>前台显示</th></tr></thead><tbody id="matchesList"></tbody></table></div>
                         </div>
                     </div>
                 </div>
@@ -670,174 +638,709 @@
     </div>
 
     <script>
-        // ==================== 工具函数 ====================
-        const API_BASE = '/api/v1/admin/ticker-manager';
-        
-        const UTILS = {
-            formatNumber: (num) => Number(num || 0).toLocaleString('en-US'),
-            formatDateTime: (dateStr) => { if (!dateStr) return '-'; try { return new Date(dateStr).toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }); } catch(e) { return '-'; } },
-            escapeHtml: (str) => { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m] || m)); },
-            getToken: () => localStorage.getItem('admin_token'),
-            generateUserId: () => { const digits = Math.floor(Math.random() * 1000000000).toString().padStart(9,'0'); const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; return `U${digits}${letters[Math.floor(Math.random()*letters.length)]}`; },
-            maskUserId: (userId) => { if (!userId || userId.length<5) return userId; return userId.substring(0,2)+'***'+userId.substring(userId.length-3); },
-            showToast: (msg, type='success') => { const toast = document.createElement('div'); toast.innerHTML = `<i class="fas ${type==='success'?'fa-check-circle':'fa-exclamation-circle'}"></i> ${msg}`; toast.style.cssText = `position:fixed; bottom:24px; right:24px; padding:12px 20px; background:${type==='success'?'#10b981':'#ef4444'}; color:white; border-radius:12px; z-index:10001; display:flex; align-items:center; gap:8px; animation:slideIn 0.3s ease;`; document.body.appendChild(toast); setTimeout(()=>toast.remove(),3000); }
-        };
+        (function() {
+            'use strict';
 
-        async function apiRequest(url, options={}) {
-            const token = UTILS.getToken();
-            const response = await fetch(url, { ...options, headers: { 'Content-Type':'application/json', 'Authorization': token ? `Bearer ${token}` : '', ...options.headers } });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Request failed');
-            return data;
-        }
+            // ==================== 工具函数 ====================
+            const UTILS = {
+                formatNumber: (num) => Number(num || 0).toLocaleString('en-US'),
+                formatDateTime: (dateStr) => {
+                    if (!dateStr) return '-';
+                    try {
+                        const d = new Date(dateStr);
+                        if (isNaN(d.getTime())) return '-';
+                        return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    } catch(e) { return '-'; }
+                },
+                formatMatchTime: (dateStr) => {
+                    if (!dateStr) return '-';
+                    try {
+                        const d = new Date(dateStr);
+                        if (isNaN(d.getTime())) return '-';
+                        return d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    } catch(e) { return '-'; }
+                },
+                escapeHtml: (str) => {
+                    if (!str) return '';
+                    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+                },
+                maskUserId: (userId) => {
+                    if (!userId || userId.length < 5) return userId;
+                    return userId.substring(0, 2) + '***' + userId.substring(userId.length - 3);
+                },
+                generateUserId: () => {
+                    const digits = Math.floor(Math.random() * 1000000000).toString().padStart(9, '0');
+                    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+                    return `U${digits}${letters[Math.floor(Math.random() * letters.length)]}`;
+                },
+                showToast: (msg, type = 'success') => {
+                    const toast = document.createElement('div');
+                    toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${msg}`;
+                    toast.style.cssText = `position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; background: ${type === 'success' ? '#10b981' : '#ef4444'}; color: white; border-radius: 12px; z-index: 10001; display: flex; align-items: center; gap: 8px; animation: slideIn 0.3s ease;`;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+                }
+            };
 
-        // 加载比赛
-        async function loadMatches() {
-            try { const result = await apiRequest(`${API_BASE}/matches/pool`); return result.success ? result.data : []; } catch(err) { return []; }
-        }
-        async function renderMatchesList() {
-            const tbody = document.getElementById('matchesList');
-            const matches = await loadMatches();
-            if (matches.length === 0) { tbody.innerHTML = '<td><td colspan="9" class="empty-cell">暂无比赛数据</td></tr>'; return; }
-            let html = '';
-            matches.forEach(m => { const statusMap = { upcoming:'🟢 未开始', ongoing:'🟡 进行中', finished:'🔴 已结束' }; html += `<tr><td>${m.id}</td><td>${UTILS.escapeHtml(m.league)}</td><td>${UTILS.escapeHtml(m.home_team)}</td><td>${UTILS.escapeHtml(m.away_team)}</td><td>${m.match_date}</td><td>${m.match_time}</td><td>${statusMap[m.calculated_status||m.status]||m.status}</td><td>${m.weight}</td><td><button class="action-btn" onclick="deleteMatch(${m.id})"><i class="fas fa-trash"></i></button></td></tr>`; });
-            tbody.innerHTML = html;
-        }
-        async function deleteMatch(id) { if(!confirm('确定删除？')) return; await apiRequest(`${API_BASE}/matches/pool/${id}`,{method:'DELETE'}); UTILS.showToast('删除成功'); renderMatchesList(); loadMatchSelector(); }
-        async function loadMatchSelector() {
-            const container = document.getElementById('matchSelector');
-            const matches = await loadMatches();
-            if (matches.length === 0) { container.innerHTML = '<div class="empty-cell">暂无比赛数据</div>'; return; }
-            let html = '';
-            matches.forEach(m => { html += `<label class="match-checkbox"><input type="checkbox" class="match-checkbox-item" value="${m.id}" data-name="${UTILS.escapeHtml(m.home_team)} vs ${UTILS.escapeHtml(m.away_team)}"><span><strong>${UTILS.escapeHtml(m.home_team)}</strong> vs <strong>${UTILS.escapeHtml(m.away_team)}</strong></span><span style="margin-left:auto;">${UTILS.escapeHtml(m.league)}</span></label>`; });
-            container.innerHTML = html;
-        }
+            // ==================== 状态管理 ====================
+            let currentPreviewMessages = [];
+            let currentPage = 1;
+            let totalPages = 1;
+            let historyPage = 1;
+            let historyTotalPages = 1;
 
-        let currentPreviewMessages = [];
-        async function previewMessages() {
-            const params = { count: parseInt(document.getElementById('batchCount').value)||100, authRatio: parseInt(document.getElementById('batchAuthRatio').value)||55, authMin: parseInt(document.getElementById('batchAuthMin').value)||100, authMax: parseInt(document.getElementById('batchAuthMax').value)||50000, profitMin: parseInt(document.getElementById('batchProfitMin').value)||50, profitMax: parseInt(document.getElementById('batchProfitMax').value)||25000, profitRateMin: parseInt(document.getElementById('batchRateMin').value)||15, profitRateMax: parseInt(document.getElementById('batchRateMax').value)||350 };
-let selectedMatches = Array.from(document.querySelectorAll('#matchSelector .match-checkbox-item:checked')).map(cb => ({ id: cb.value, name: cb.dataset.name }));
+            // ==================== API 调用（对接比赛管理系统） ====================
+            
+            // 从比赛管理系统获取比赛列表
+            async function fetchMatchesFromMatchSystem() {
+                try {
+                    const response = await fetch('/api/v1/admin/matches/list?limit=500&sortBy=time', {
+                        credentials: 'include'
+                    });
+                    const result = await response.json();
+                    
+                    if (result.success && result.data) {
+                        // 转换为前端需要的格式
+                        return result.data.map(match => {
+                            const realStatus = match.calculated_status || match.status;
+                            return {
+                                id: match.id,
+                                match_id: match.match_id,
+                                home_team: match.home_team,
+                                away_team: match.away_team,
+                                league: match.league || '未分类',
+                                match_time: match.match_time,
+                                status: realStatus,
+                                calculated_status: realStatus,
+                                is_active: match.is_active === 1,
+                                execution_rate: match.execution_rate || 30,
+                                min_authorization: match.min_authorization || 100,
+                                match_limit: match.match_limit || 500
+                            };
+                        });
+                    }
+                    return [];
+                } catch (err) {
+                    console.error('获取比赛数据失败:', err);
+                    return [];
+                }
+            }
 
-// 如果没有选择任何比赛，则使用全部比赛
-if (selectedMatches.length === 0) {
-    const allCheckboxes = document.querySelectorAll('#matchSelector .match-checkbox-item');
-    selectedMatches = Array.from(allCheckboxes).map(cb => ({ id: cb.value, name: cb.dataset.name }));
-}
+            // 获取可用于生成消息的比赛（未开始 + 前台显示）
+            async function getAvailableMatchesForMessages() {
+                const allMatches = await fetchMatchesFromMatchSystem();
+                return allMatches.filter(m => {
+                    const status = m.calculated_status || m.status;
+                    return status === 'upcoming' && m.is_active === true;
+                });
+            }
 
-if (selectedMatches.length === 0) { 
-    UTILS.showToast('暂无比赛数据，请先添加比赛', 'error'); 
-    return; 
-}
-            UTILS.showToast('正在生成预览...');
-            try {
-                await saveConfig();
-                const messages = generateMockMessages(params, selectedMatches);
-                currentPreviewMessages = messages;
-                const previewContent = document.getElementById('previewContent');
+            // 生成消息的 API
+            async function callGenerateMessagesAPI(params) {
+                try {
+                    const response = await fetch('/api/v1/admin/ticker-manager/batch-generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify(params)
+                    });
+                    const result = await response.json();
+                    return result;
+                } catch (err) {
+                    console.error('生成消息API调用失败:', err);
+                    throw err;
+                }
+            }
+
+            // 获取消息列表
+            async function fetchMessages(page = 1, type = 'all', search = '') {
+                try {
+                    let url = `/api/v1/admin/ticker-manager/messages?page=${page}&limit=20`;
+                    if (type !== 'all') url += `&type=${type}`;
+                    if (search) url += `&search=${encodeURIComponent(search)}`;
+                    const response = await fetch(url, { credentials: 'include' });
+                    const result = await response.json();
+                    return result;
+                } catch (err) {
+                    console.error('获取消息列表失败:', err);
+                    return { success: false, data: [], pagination: { pages: 1 } };
+                }
+            }
+
+            // 获取生成历史
+            async function fetchGenerationHistory(page = 1) {
+                try {
+                    const response = await fetch(`/api/v1/admin/ticker-manager/generation-history?page=${page}&limit=15`, {
+                        credentials: 'include'
+                    });
+                    const result = await response.json();
+                    return result;
+                } catch (err) {
+                    console.error('获取生成历史失败:', err);
+                    return { success: false, data: [], pagination: { pages: 1 } };
+                }
+            }
+
+            // 获取统计数据
+            async function fetchStats() {
+                try {
+                    const response = await fetch('/api/v1/admin/ticker-manager/stats', {
+                        credentials: 'include'
+                    });
+                    const result = await response.json();
+                    return result;
+                } catch (err) {
+                    console.error('获取统计数据失败:', err);
+                    return { success: false, data: {} };
+                }
+            }
+
+            // 获取今日统计
+            async function fetchTodayStats() {
+                try {
+                    const response = await fetch('/api/v1/admin/ticker-manager/today-stats', {
+                        credentials: 'include'
+                    });
+                    const result = await response.json();
+                    return result;
+                } catch (err) {
+                    console.error('获取今日统计失败:', err);
+                    return { success: false, data: {} };
+                }
+            }
+
+            // 删除单条消息
+            async function deleteMessageApi(id) {
+                const response = await fetch(`/api/v1/admin/ticker-manager/message/${id}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                return response.json();
+            }
+
+            // 清空所有消息
+            async function clearAllMessagesApi() {
+                const response = await fetch('/api/v1/admin/ticker-manager/clear', {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                return response.json();
+            }
+
+            // ==================== 消息生成逻辑（使用真实比赛数据） ====================
+            
+            async function generateRealMessages(params, matches) {
+                const messages = [];
+                const totalCount = Math.min(params.count, 500);
+                const systemCount = Math.floor(totalCount * 0.1);
+                const userCount = totalCount - systemCount;
+                const authTargetCount = Math.floor(userCount * params.authRatio / 100);
+                const profitTargetCount = userCount - authTargetCount;
+                
+                const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+                const formatAmount = (num) => num.toLocaleString('en-US');
+                
+                // 系统消息模板
+                const systemTemplates = [
+                    `🎉 Total volume exceeds ${formatAmount(random(1000000, 10000000))} USDT`,
+                    `⚡ Last 24h volume ${formatAmount(random(50000, 500000))} USDT`,
+                    `💰 Yesterday profit ${formatAmount(random(10000, 100000))} USDT`,
+                    `👥 Active users ${formatAmount(random(5000, 50000))}`,
+                    `🔥 New record: ${formatAmount(random(200000, 2000000))} USDT in 24h`,
+                    `📊 Weekly report: +${random(5, 45)}% growth`,
+                    `🏆 Top trader earned ${formatAmount(random(50000, 500000))} USDT`
+                ];
+                
+                // 生成系统消息
+                for (let i = 0; i < systemCount && i < systemTemplates.length; i++) {
+                    messages.push({
+                        type: 'system',
+                        message: systemTemplates[i % systemTemplates.length]
+                    });
+                }
+                
+                // 如果没有比赛数据，补充系统消息
+                if (matches.length === 0) {
+                    for (let i = messages.length; i < totalCount; i++) {
+                        messages.push({
+                            type: 'system',
+                            message: systemTemplates[i % systemTemplates.length]
+                        });
+                    }
+                    // 打乱顺序
+                    for (let i = messages.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [messages[i], messages[j]] = [messages[j], messages[i]];
+                    }
+                    return messages;
+                }
+                
+                // 生成授权消息
+                for (let i = 0; i < authTargetCount; i++) {
+                    const match = matches[Math.floor(Math.random() * matches.length)];
+                    const authAmount = random(params.authMin, params.authMax);
+                    messages.push({
+                        type: 'auth',
+                        message: `⚡ User ${UTILS.maskUserId(UTILS.generateUserId())} authorized ${formatAmount(authAmount)} USDT on [${match.home_team} vs ${match.away_team}]`
+                    });
+                }
+                
+                // 生成收益消息
+                for (let i = 0; i < profitTargetCount; i++) {
+                    const match = matches[Math.floor(Math.random() * matches.length)];
+                    const profitAmount = random(params.profitMin, params.profitMax);
+                    const profitRate = random(params.profitRateMin, params.profitRateMax);
+                    messages.push({
+                        type: 'profit',
+                        message: `💰 User ${UTILS.maskUserId(UTILS.generateUserId())} earned ${formatAmount(profitAmount)} USDT (+${profitRate}%) from [${match.home_team} vs ${match.away_team}]`
+                    });
+                }
+                
+                // 打乱顺序
+                for (let i = messages.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [messages[i], messages[j]] = [messages[j], messages[i]];
+                }
+                
+                return messages;
+            }
+
+            // ==================== UI 渲染函数 ====================
+            
+            async function loadMatchSelector() {
+                const container = document.getElementById('matchSelector');
+                if (!container) return;
+                
+                container.innerHTML = '<div class="loading-cell"><i class="fas fa-spinner fa-spin"></i> 加载比赛数据...</div>';
+                
+                const matches = await getAvailableMatchesForMessages();
+                
+                if (matches.length === 0) {
+                    container.innerHTML = '<div class="empty-cell">暂无可用比赛（需要未开始且前台显示的比赛）<br><a href="/admin/matches.html" style="color: var(--primary);">前往比赛管理添加</a></div>';
+                    return;
+                }
+                
                 let html = '';
-                messages.forEach((msg, idx) => { html += `<div class="preview-item"><div class="preview-item-checkbox"><input type="checkbox" class="preview-checkbox" data-index="${idx}" checked></div><div class="preview-item-content">${msg.type==='auth'?'⚡':(msg.type==='profit'?'💰':'📢')} ${UTILS.escapeHtml(msg.message)}</div></div>`; });
-                previewContent.innerHTML = html;
-                document.getElementById('selectedCount').textContent = messages.length;
-                document.getElementById('previewSection').style.display = 'block';
-                document.querySelectorAll('.preview-checkbox').forEach(cb => cb.addEventListener('change', updateSelectedCount));
-            } catch(err) { UTILS.showToast('预览失败: '+err.message, 'error'); }
-        }
-        function generateMockMessages(params, matches) {
-            const messages = []; const totalCount = Math.min(params.count,500); const systemCount = Math.floor(totalCount*0.1); const userCount = totalCount-systemCount; const authTargetCount = Math.floor(userCount*params.authRatio/100); const profitTargetCount = userCount-authTargetCount;
-            const random = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
-            const formatAmount = (num) => num.toLocaleString('en-US');
-            const systemTemplates = [`🎉 Total volume exceeds ${formatAmount(random(1000000,10000000))} USDT`, `⚡ Last 24h volume ${formatAmount(random(50000,500000))} USDT`, `💰 Yesterday profit ${formatAmount(random(10000,100000))} USDT`, `👥 Active users ${formatAmount(random(5000,50000))}`];
-            for(let i=0;i<systemCount;i++) messages.push({ type:'system', message: systemTemplates[i%4] });
-            for(let i=0;i<authTargetCount;i++) { const match=matches[Math.floor(Math.random()*matches.length)]; messages.push({ type:'auth', message: `⚡ User ${UTILS.maskUserId(UTILS.generateUserId())} authorized ${formatAmount(random(params.authMin,params.authMax))} USDT on [${match.name}]` }); }
-            for(let i=0;i<profitTargetCount;i++) { const match=matches[Math.floor(Math.random()*matches.length)]; messages.push({ type:'profit', message: `💰 User ${UTILS.maskUserId(UTILS.generateUserId())} earned ${formatAmount(random(params.profitMin,params.profitMax))} USDT (+${random(params.profitRateMin,params.profitRateMax)}%) from [${match.name}]` }); }
-            for(let i=messages.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [messages[i],messages[j]]=[messages[j],messages[i]]; }
-            return messages;
-        }
-        function updateSelectedCount() { document.getElementById('selectedCount').textContent = document.querySelectorAll('.preview-checkbox:checked').length; }
-        function selectAllPreview() { document.querySelectorAll('.preview-checkbox').forEach(cb=>cb.checked=true); updateSelectedCount(); }
-        function deselectAllPreview() { document.querySelectorAll('.preview-checkbox').forEach(cb=>cb.checked=false); updateSelectedCount(); }
-        async function publishMessages() {
-            const checkboxes = document.querySelectorAll('.preview-checkbox:checked');
-            if(checkboxes.length===0) { UTILS.showToast('请至少选择一条消息', 'error'); return; }
-            UTILS.showToast('正在发布...');
-            try {
-                const params = { count: checkboxes.length, authRatio: parseInt(document.getElementById('batchAuthRatio').value)||55, authMin: parseInt(document.getElementById('batchAuthMin').value)||100, authMax: parseInt(document.getElementById('batchAuthMax').value)||50000, profitMin: parseInt(document.getElementById('batchProfitMin').value)||50, profitMax: parseInt(document.getElementById('batchProfitMax').value)||25000, profitRateMin: parseInt(document.getElementById('batchRateMin').value)||15, profitRateMax: parseInt(document.getElementById('batchRateMax').value)||350 };
-                const result = await apiRequest(`${API_BASE}/batch-generate`, { method:'POST', body: JSON.stringify(params) });
-                if(result.success) { UTILS.showToast(`成功发布 ${result.data.total} 条消息`); document.getElementById('previewSection').style.display='none'; loadAllMessages(); loadGenerationHistory(); updateStats(); }
-                else UTILS.showToast('发布失败: '+result.message, 'error');
-            } catch(err) { UTILS.showToast('发布失败: '+err.message, 'error'); }
-        }
+                matches.forEach(m => {
+                    html += `<label class="match-checkbox">
+                        <input type="checkbox" class="match-checkbox-item" value="${m.id}" data-name="${UTILS.escapeHtml(m.home_team)} vs ${UTILS.escapeHtml(m.away_team)}">
+                        <span><strong>${UTILS.escapeHtml(m.home_team)}</strong> vs <strong>${UTILS.escapeHtml(m.away_team)}</strong></span>
+                        <span style="margin-left: auto; font-size: 0.7rem; color: var(--text-muted);">${UTILS.escapeHtml(m.league)}</span>
+                    </label>`;
+                });
+                container.innerHTML = html;
+            }
 
-        let currentPage=1, totalPages=1, historyPage=1, historyTotalPages=1;
-        async function loadAllMessages() {
-            const type = document.getElementById('filterType').value;
-            const search = document.getElementById('searchMessage').value;
-            try {
-                const result = await apiRequest(`${API_BASE}/messages?page=${currentPage}&limit=20&type=${type !== 'all' ? type : ''}&search=${encodeURIComponent(search)}`);
-                if(result.success) {
-                    const messages = result.data; totalPages = result.pagination.pages;
-                    const tbody = document.getElementById('allMessagesList');
-                    if(messages.length===0) tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">暂无消息</td</tr>';
-                    else {
-                        let html = '';
-                        messages.forEach(msg => { html += `<tr><td>${msg.type==='auth'?'⚡ 授权':(msg.type==='profit'?'💰 收益':'📢 系统')}</td><td>${UTILS.escapeHtml(msg.message)}</td><td>${msg.weight||100}</td><td>${UTILS.formatDateTime(msg.created_at)}</td><td><button class="action-btn" onclick="deleteMessage(${msg.id})"><i class="fas fa-trash"></i></button></td>`; });
-                        tbody.innerHTML = html;
-                    }
-                    renderPagination();
+            async function renderMatchesList() {
+                const tbody = document.getElementById('matchesList');
+                if (!tbody) return;
+                
+                tbody.innerHTML = '<tr><td colspan="8" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> 加载中...</td></tr>';
+                
+                const matches = await fetchMatchesFromMatchSystem();
+                
+                if (matches.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="empty-cell">暂无比赛数据</td></tr>';
+                    return;
                 }
-            } catch(err) { console.error(err); }
-        }
-        async function loadGenerationHistory() {
-            try {
-                const result = await apiRequest(`${API_BASE}/generation-history?page=${historyPage}&limit=15`);
-                if(result.success) {
-                    const history = result.data; historyTotalPages = result.pagination.pages;
-                    const tbody = document.getElementById('historyList');
-                    if(history.length===0) tbody.innerHTML = '<tr><td colspan="6" class="empty-cell">暂无生成历史</td</tr>';
-                    else {
-                        let html = '';
-                        history.forEach(item => { html += `<tr><td>${UTILS.formatDateTime(item.created_at)}</td><td>${UTILS.escapeHtml(item.admin_name||'Admin')}</td><td class="text-success">${item.generated_count}</td><td>${item.auth_count||0}</td><td>${item.profit_count||0}</td><td>${item.system_count||0}</td>`; });
-                        tbody.innerHTML = html;
-                    }
-                    renderHistoryPagination();
-                }
-            } catch(err) { console.error(err); }
-        }
-        async function updateStats() {
-            try {
-                const result = await apiRequest(`${API_BASE}/stats`);
-                if(result.success) { document.getElementById('totalCount').textContent = result.data.total||0; document.getElementById('authCount').textContent = result.data.auth_count||0; document.getElementById('profitCount').textContent = result.data.profit_count||0; }
-                const todayResult = await apiRequest(`${API_BASE}/today-stats`);
-                if(todayResult.success) { const total = todayResult.data.total_generated||0; document.getElementById('todayGeneratedCount').textContent = total; document.getElementById('todayGeneratedBadge').textContent = `今日: ${total}`; }
-            } catch(err) {}
-        }
-        async function deleteMessage(id) { if(!confirm('确定删除？')) return; await apiRequest(`${API_BASE}/message/${id}`,{method:'DELETE'}); UTILS.showToast('删除成功'); loadAllMessages(); updateStats(); }
-        async function clearAllMessages() { if(!confirm('⚠️ 确定清空所有消息？不可恢复！')) return; await apiRequest(`${API_BASE}/clear`,{method:'DELETE'}); UTILS.showToast('已清空'); loadAllMessages(); updateStats(); }
-        function renderPagination() { const div = document.getElementById('allMessagesPagination'); if(totalPages<=1) { div.innerHTML=''; return; } let html = `<button class="page-btn" onclick="changePage(${currentPage-1})" ${currentPage===1?'disabled':''}><i class="fas fa-chevron-left"></i></button>`; for(let i=1;i<=Math.min(totalPages,5);i++) html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="changePage(${i})">${i}</button>`; if(totalPages>5) html += `<button class="page-btn" disabled>...</button>`; html += `<button class="page-btn" onclick="changePage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}><i class="fas fa-chevron-right"></i></button>`; div.innerHTML = html; }
-        function renderHistoryPagination() { const div = document.getElementById('historyPagination'); if(historyTotalPages<=1) { div.innerHTML=''; return; } let html = `<button class="page-btn" onclick="changeHistoryPage(${historyPage-1})" ${historyPage===1?'disabled':''}><i class="fas fa-chevron-left"></i></button>`; for(let i=1;i<=Math.min(historyTotalPages,5);i++) html += `<button class="page-btn ${i===historyPage?'active':''}" onclick="changeHistoryPage(${i})">${i}</button>`; if(historyTotalPages>5) html += `<button class="page-btn" disabled>...</button>`; html += `<button class="page-btn" onclick="changeHistoryPage(${historyPage+1})" ${historyPage===historyTotalPages?'disabled':''}><i class="fas fa-chevron-right"></i></button>`; div.innerHTML = html; }
-        function changePage(page) { currentPage = page; loadAllMessages(); }
-        function changeHistoryPage(page) { historyPage = page; loadGenerationHistory(); }
-        async function saveConfig() { try { await apiRequest(`${API_BASE}/config`, { method:'POST', body: JSON.stringify({}) }); } catch(err) {} }
+                
+                const statusMap = {
+                    upcoming: '<span class="badge" style="background: #3B82F6;">未开始</span>',
+                    ongoing: '<span class="badge" style="background: #F59E0B;">进行中</span>',
+                    live: '<span class="badge" style="background: #F59E0B;">进行中</span>',
+                    finished: '<span class="badge" style="background: #64748B;">已结束</span>'
+                };
+                
+                let html = '';
+                matches.forEach(m => {
+                    const statusText = statusMap[m.calculated_status || m.status] || statusMap.upcoming;
+                    const activeBadge = m.is_active ? '<span style="color: #10B981;">✓ 显示</span>' : '<span style="color: #EF4444;">✗ 隐藏</span>';
+                    html += `<tr>
+                        <td>${m.id}</td>
+                        <td>${UTILS.escapeHtml(m.league)}</td>
+                        <td><strong>${UTILS.escapeHtml(m.home_team)}</strong></td>
+                        <td><strong>${UTILS.escapeHtml(m.away_team)}</strong></td>
+                        <td>${UTILS.formatMatchTime(m.match_time)}</td>
+                        <td>${statusText}</td>
+                        <td>${m.execution_rate}%</td>
+                        <td>${activeBadge}</td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            }
 
-        // 初始化
-        async function init() {
-            fetch('/admin/components/sidebar.html').then(res=>res.text()).then(html=>{ document.getElementById('sidebar-container').innerHTML=html; }).catch(err=>console.error(err));
-            const storedAdmin = localStorage.getItem('admin_name'); if(storedAdmin) document.getElementById('adminName').textContent = storedAdmin;
-            await loadMatchSelector(); await renderMatchesList(); await loadAllMessages(); await loadGenerationHistory(); await updateStats();
-            document.getElementById('previewBtn').addEventListener('click', previewMessages);
-            document.getElementById('publishBtn').addEventListener('click', publishMessages);
-            document.getElementById('selectAllBtn').addEventListener('click', selectAllPreview);
-            document.getElementById('deselectAllBtn').addEventListener('click', deselectAllPreview);
-            document.getElementById('clearAllBtn').addEventListener('click', clearAllMessages);
-            document.getElementById('refreshMessagesBtn').addEventListener('click', () => { currentPage=1; loadAllMessages(); });
-            document.getElementById('addMatchBtn').addEventListener('click', () => window.location.href='/admin/matches.html');
-            document.getElementById('filterType').addEventListener('change', () => { currentPage=1; loadAllMessages(); });
-            document.getElementById('searchMessage').addEventListener('input', () => { currentPage=1; loadAllMessages(); });
-            document.querySelectorAll('.tab-btn').forEach(btn => { btn.addEventListener('click', function() { const tab=this.dataset.tab; document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active')); this.classList.add('active'); document.getElementById(tab+'Tab').classList.add('active'); if(tab==='all') loadAllMessages(); if(tab==='history') loadGenerationHistory(); if(tab==='matches') renderMatchesList(); }); });
-            document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.removeItem('admin_token'); localStorage.removeItem('admin_name'); window.location.href='/admin/index.html'; });
-        }
-        if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init); else init();
-        window.deleteMessage = deleteMessage; window.deleteMatch = deleteMatch; window.changePage = changePage; window.changeHistoryPage = changeHistoryPage;
+            async function loadAllMessages() {
+                const type = document.getElementById('filterType')?.value || 'all';
+                const search = document.getElementById('searchMessage')?.value || '';
+                
+                try {
+                    const result = await fetchMessages(currentPage, type, search);
+                    if (result.success) {
+                        const messages = result.data || [];
+                        totalPages = result.pagination?.pages || 1;
+                        
+                        const tbody = document.getElementById('allMessagesList');
+                        if (!tbody) return;
+                        
+                        if (messages.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">暂无消息</td></tr>';
+                        } else {
+                            let html = '';
+                            messages.forEach(msg => {
+                                const typeIcon = msg.type === 'auth' ? '⚡ 授权' : (msg.type === 'profit' ? '💰 收益' : '📢 系统');
+                                html += `<tr>
+                                    <td>${typeIcon}</td>
+                                    <td>${UTILS.escapeHtml(msg.message)}</td>
+                                    <td>${msg.weight || 100}</td>
+                                    <td>${UTILS.formatDateTime(msg.created_at)}</td>
+                                    <td><button class="action-btn" onclick="window.deleteMessage(${msg.id})"><i class="fas fa-trash"></i></button></td>
+                                </tr>`;
+                            });
+                            tbody.innerHTML = html;
+                        }
+                        renderPagination();
+                    }
+                } catch (err) {
+                    console.error('加载消息失败:', err);
+                }
+            }
+
+            async function loadGenerationHistory() {
+                try {
+                    const result = await fetchGenerationHistory(historyPage);
+                    if (result.success) {
+                        const history = result.data || [];
+                        historyTotalPages = result.pagination?.pages || 1;
+                        
+                        const tbody = document.getElementById('historyList');
+                        if (!tbody) return;
+                        
+                        if (history.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="6" class="empty-cell">暂无生成历史</td></tr>';
+                        } else {
+                            let html = '';
+                            history.forEach(item => {
+                                html += `<tr>
+                                    <td>${UTILS.formatDateTime(item.created_at)}</td>
+                                    <td>${UTILS.escapeHtml(item.admin_name || 'Admin')}</td>
+                                    <td class="text-success">${item.generated_count || 0}</td>
+                                    <td>${item.auth_count || 0}</td>
+                                    <td>${item.profit_count || 0}</td>
+                                    <td>${item.system_count || 0}</td>
+                                </tr>`;
+                            });
+                            tbody.innerHTML = html;
+                        }
+                        renderHistoryPagination();
+                    }
+                } catch (err) {
+                    console.error('加载生成历史失败:', err);
+                }
+            }
+
+            async function updateStats() {
+                try {
+                    const statsResult = await fetchStats();
+                    if (statsResult.success) {
+                        document.getElementById('totalCount').textContent = statsResult.data?.total || 0;
+                        document.getElementById('authCount').textContent = statsResult.data?.auth_count || 0;
+                        document.getElementById('profitCount').textContent = statsResult.data?.profit_count || 0;
+                    }
+                    
+                    const todayResult = await fetchTodayStats();
+                    if (todayResult.success) {
+                        const total = todayResult.data?.total_generated || 0;
+                        document.getElementById('todayGeneratedCount').textContent = total;
+                        document.getElementById('todayGeneratedBadge').textContent = `今日: ${total}`;
+                    }
+                } catch (err) {
+                    console.error('更新统计失败:', err);
+                }
+            }
+
+            function renderPagination() {
+                const div = document.getElementById('allMessagesPagination');
+                if (!div) return;
+                if (totalPages <= 1) {
+                    div.innerHTML = '';
+                    return;
+                }
+                let html = `<button class="page-btn" onclick="window.changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
+                for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="window.changePage(${i})">${i}</button>`;
+                }
+                if (totalPages > 5) html += `<button class="page-btn" disabled>...</button>`;
+                html += `<button class="page-btn" onclick="window.changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
+                div.innerHTML = html;
+            }
+
+            function renderHistoryPagination() {
+                const div = document.getElementById('historyPagination');
+                if (!div) return;
+                if (historyTotalPages <= 1) {
+                    div.innerHTML = '';
+                    return;
+                }
+                let html = `<button class="page-btn" onclick="window.changeHistoryPage(${historyPage - 1})" ${historyPage === 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
+                for (let i = 1; i <= Math.min(historyTotalPages, 5); i++) {
+                    html += `<button class="page-btn ${i === historyPage ? 'active' : ''}" onclick="window.changeHistoryPage(${i})">${i}</button>`;
+                }
+                if (historyTotalPages > 5) html += `<button class="page-btn" disabled>...</button>`;
+                html += `<button class="page-btn" onclick="window.changeHistoryPage(${historyPage + 1})" ${historyPage === historyTotalPages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
+                div.innerHTML = html;
+            }
+
+            // ==================== 预览和发布 ====================
+            
+            async function previewMessages() {
+                const params = {
+                    count: parseInt(document.getElementById('batchCount')?.value || 100),
+                    authRatio: parseInt(document.getElementById('batchAuthRatio')?.value || 55),
+                    authMin: parseInt(document.getElementById('batchAuthMin')?.value || 100),
+                    authMax: parseInt(document.getElementById('batchAuthMax')?.value || 50000),
+                    profitMin: parseInt(document.getElementById('batchProfitMin')?.value || 50),
+                    profitMax: parseInt(document.getElementById('batchProfitMax')?.value || 25000),
+                    profitRateMin: parseInt(document.getElementById('batchRateMin')?.value || 15),
+                    profitRateMax: parseInt(document.getElementById('batchRateMax')?.value || 350)
+                };
+                
+                // 获取选中的比赛
+                let selectedMatches = Array.from(document.querySelectorAll('#matchSelector .match-checkbox-item:checked')).map(cb => ({
+                    id: cb.value,
+                    name: cb.dataset.name,
+                    home_team: cb.dataset.name?.split(' vs ')[0],
+                    away_team: cb.dataset.name?.split(' vs ')[1]
+                }));
+                
+                // 如果没有选择任何比赛，则使用全部可用比赛
+                if (selectedMatches.length === 0) {
+                    const allMatches = await getAvailableMatchesForMessages();
+                    selectedMatches = allMatches.map(m => ({
+                        id: m.id,
+                        name: `${m.home_team} vs ${m.away_team}`,
+                        home_team: m.home_team,
+                        away_team: m.away_team
+                    }));
+                }
+                
+                if (selectedMatches.length === 0) {
+                    UTILS.showToast('暂无可用比赛数据，请先在比赛管理系统中添加并启用比赛', 'error');
+                    return;
+                }
+                
+                UTILS.showToast('正在生成预览...');
+                
+                try {
+                    const messages = await generateRealMessages(params, selectedMatches);
+                    currentPreviewMessages = messages;
+                    
+                    const previewContent = document.getElementById('previewContent');
+                    if (!previewContent) return;
+                    
+                    let html = '';
+                    messages.forEach((msg, idx) => {
+                        const icon = msg.type === 'auth' ? '⚡' : (msg.type === 'profit' ? '💰' : '📢');
+                        html += `<div class="preview-item">
+                            <div><input type="checkbox" class="preview-checkbox" data-index="${idx}" checked></div>
+                            <div>${icon} ${UTILS.escapeHtml(msg.message)}</div>
+                        </div>`;
+                    });
+                    previewContent.innerHTML = html;
+                    document.getElementById('selectedCount').textContent = messages.length;
+                    document.getElementById('previewSection').style.display = 'block';
+                    
+                    // 绑定复选框事件
+                    document.querySelectorAll('.preview-checkbox').forEach(cb => {
+                        cb.addEventListener('change', updatePreviewSelectedCount);
+                    });
+                } catch (err) {
+                    UTILS.showToast('预览失败: ' + err.message, 'error');
+                }
+            }
+            
+            function updatePreviewSelectedCount() {
+                const count = document.querySelectorAll('.preview-checkbox:checked').length;
+                document.getElementById('selectedCount').textContent = count;
+            }
+            
+            function selectAllPreview() {
+                document.querySelectorAll('.preview-checkbox').forEach(cb => cb.checked = true);
+                updatePreviewSelectedCount();
+            }
+            
+            function deselectAllPreview() {
+                document.querySelectorAll('.preview-checkbox').forEach(cb => cb.checked = false);
+                updatePreviewSelectedCount();
+            }
+            
+            async function publishMessages() {
+                const checkboxes = document.querySelectorAll('.preview-checkbox:checked');
+                if (checkboxes.length === 0) {
+                    UTILS.showToast('请至少选择一条消息', 'error');
+                    return;
+                }
+                
+                // 获取选中的消息内容
+                const selectedMessages = [];
+                checkboxes.forEach(cb => {
+                    const idx = parseInt(cb.dataset.index);
+                    if (currentPreviewMessages[idx]) {
+                        selectedMessages.push(currentPreviewMessages[idx]);
+                    }
+                });
+                
+                if (selectedMessages.length === 0) {
+                    UTILS.showToast('没有有效的消息', 'error');
+                    return;
+                }
+                
+                UTILS.showToast('正在发布...');
+                
+                try {
+                    const params = {
+                        messages: selectedMessages,
+                        total: selectedMessages.length,
+                        auth_count: selectedMessages.filter(m => m.type === 'auth').length,
+                        profit_count: selectedMessages.filter(m => m.type === 'profit').length,
+                        system_count: selectedMessages.filter(m => m.type === 'system').length
+                    };
+                    
+                    const result = await callGenerateMessagesAPI(params);
+                    if (result.success) {
+                        UTILS.showToast(`成功发布 ${result.data?.total || selectedMessages.length} 条消息`);
+                        document.getElementById('previewSection').style.display = 'none';
+                        await loadAllMessages();
+                        await loadGenerationHistory();
+                        await updateStats();
+                    } else {
+                        UTILS.showToast('发布失败: ' + (result.message || '未知错误'), 'error');
+                    }
+                } catch (err) {
+                    UTILS.showToast('发布失败: ' + err.message, 'error');
+                }
+            }
+
+            // ==================== 删除和清空 ====================
+            
+            window.deleteMessage = async function(id) {
+                if (!confirm('确定要删除这条消息吗？')) return;
+                try {
+                    const result = await deleteMessageApi(id);
+                    if (result.success) {
+                        UTILS.showToast('删除成功');
+                        await loadAllMessages();
+                        await updateStats();
+                    } else {
+                        UTILS.showToast('删除失败', 'error');
+                    }
+                } catch (err) {
+                    UTILS.showToast('删除失败', 'error');
+                }
+            };
+            
+            async function handleClearAllMessages() {
+                if (!confirm('⚠️ 确定要清空所有消息吗？此操作不可恢复！')) return;
+                try {
+                    const result = await clearAllMessagesApi();
+                    if (result.success) {
+                        UTILS.showToast('已清空所有消息');
+                        await loadAllMessages();
+                        await updateStats();
+                    } else {
+                        UTILS.showToast('清空失败', 'error');
+                    }
+                } catch (err) {
+                    UTILS.showToast('清空失败', 'error');
+                }
+            }
+
+            // ==================== 页面切换 ====================
+            
+            window.changePage = function(page) {
+                if (page < 1 || page > totalPages) return;
+                currentPage = page;
+                loadAllMessages();
+            };
+            
+            window.changeHistoryPage = function(page) {
+                if (page < 1 || page > historyTotalPages) return;
+                historyPage = page;
+                loadGenerationHistory();
+            };
+
+            // ==================== 初始化 ====================
+            
+            async function init() {
+                // 加载侧边栏
+                try {
+                    const res = await fetch('/admin/components/sidebar.html');
+                    const html = await res.text();
+                    document.getElementById('sidebar-container').innerHTML = html;
+                } catch (err) {
+                    console.error('加载侧边栏失败:', err);
+                }
+                
+                // 设置管理员名称
+                const storedAdmin = localStorage.getItem('admin_name');
+                if (storedAdmin) document.getElementById('adminName').textContent = storedAdmin;
+                
+                // 加载数据
+                await loadMatchSelector();
+                await renderMatchesList();
+                await loadAllMessages();
+                await loadGenerationHistory();
+                await updateStats();
+                
+                // 绑定事件
+                document.getElementById('previewBtn')?.addEventListener('click', previewMessages);
+                document.getElementById('publishBtn')?.addEventListener('click', publishMessages);
+                document.getElementById('selectAllBtn')?.addEventListener('click', selectAllPreview);
+                document.getElementById('deselectAllBtn')?.addEventListener('click', deselectAllPreview);
+                document.getElementById('clearAllBtn')?.addEventListener('click', handleClearAllMessages);
+                document.getElementById('refreshMessagesBtn')?.addEventListener('click', () => {
+                    currentPage = 1;
+                    loadAllMessages();
+                });
+                document.getElementById('goToMatchesManageBtn')?.addEventListener('click', () => {
+                    window.location.href = '/admin/matches.html';
+                });
+                document.getElementById('filterType')?.addEventListener('change', () => {
+                    currentPage = 1;
+                    loadAllMessages();
+                });
+                document.getElementById('searchMessage')?.addEventListener('input', () => {
+                    currentPage = 1;
+                    loadAllMessages();
+                });
+                
+                // 标签页切换
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const tab = this.dataset.tab;
+                        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                        this.classList.add('active');
+                        document.getElementById(tab + 'Tab').classList.add('active');
+                        if (tab === 'all') loadAllMessages();
+                        if (tab === 'history') loadGenerationHistory();
+                        if (tab === 'matches') renderMatchesList();
+                    });
+                });
+                
+                // 退出登录
+                document.getElementById('logoutBtn')?.addEventListener('click', () => {
+                    localStorage.removeItem('admin_token');
+                    localStorage.removeItem('admin_name');
+                    window.location.href = '/admin/index.html';
+                });
+            }
+            
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
     </script>
 </body>
 </html>
