@@ -1219,30 +1219,59 @@
                             });
                             tbody.innerHTML = html;
                             
-                            // 重新绑定编辑按钮事件
-                            document.querySelectorAll('.edit-team-final').forEach(btn => {
-                                btn.onclick = () => {
-                                    document.getElementById('editTeamName').value = btn.dataset.team;
-                                    const logoBase64 = btn.dataset.logoBase64;
-                                    if (logoBase64) {
-                                        document.getElementById('currentLogoImg').src = logoBase64;
-                                    } else {
-                                        document.getElementById('currentLogoImg').src = btn.dataset.logo || '/uploads/teams/default.png';
+                            // 使用事件委托监听编辑按钮
+                            document.getElementById('teamListBody').addEventListener('click', function(e) {
+                                const editBtn = e.target.closest('.edit-team-final');
+                                if (editBtn) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('编辑球队:', editBtn.dataset.team);
+                                    
+                                    const editTeamNameInput = document.getElementById('editTeamName');
+                                    const currentLogoImg = document.getElementById('currentLogoImg');
+                                    const affectedCountSpan = document.getElementById('affectedCount');
+                                    const editTeamModal = document.getElementById('editTeamModal');
+                                    
+                                    if (!editTeamNameInput || !currentLogoImg || !affectedCountSpan || !editTeamModal) {
+                                        console.error('模态框元素未找到');
+                                        return;
                                     }
-                                    document.getElementById('affectedCount').textContent = btn.dataset.matches;
-                                    window.currentEditTeam = btn.dataset.team;
-                                    document.getElementById('editTeamModal').classList.add('show');
-                                };
+                                    
+                                    editTeamNameInput.value = editBtn.dataset.team;
+                                    const logoBase64 = editBtn.dataset.logoBase64;
+                                    if (logoBase64 && logoBase64 !== 'null' && logoBase64 !== 'undefined') {
+                                        currentLogoImg.src = logoBase64;
+                                    } else {
+                                        currentLogoImg.src = editBtn.dataset.logo || '/uploads/teams/default.png';
+                                    }
+                                    affectedCountSpan.textContent = editBtn.dataset.matches;
+                                    window.currentEditTeam = editBtn.dataset.team;
+                                    editTeamModal.classList.add('show');
+                                }
                             });
                             
-                            // 重新绑定上传按钮事件
-                            document.querySelectorAll('.upload-logo-final').forEach(btn => {
-                                btn.onclick = () => {
-                                    document.getElementById('uploadTeamName').textContent = btn.dataset.team;
-                                    document.getElementById('uploadTeamInfo').textContent = `${btn.dataset.league} • 涉及 ${btn.dataset.matches} 场比赛`;
-                                    window.currentUploadTeam = btn.dataset.team;
-                                    document.getElementById('uploadLogoModal').classList.add('show');
-                                };
+                            // 使用事件委托监听上传按钮
+                            document.getElementById('teamListBody').addEventListener('click', function(e) {
+                                const uploadBtn = e.target.closest('.upload-logo-final');
+                                if (uploadBtn) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('上传队徽:', uploadBtn.dataset.team);
+                                    
+                                    const uploadTeamNameSpan = document.getElementById('uploadTeamName');
+                                    const uploadTeamInfoSpan = document.getElementById('uploadTeamInfo');
+                                    const uploadLogoModal = document.getElementById('uploadLogoModal');
+                                    
+                                    if (!uploadTeamNameSpan || !uploadTeamInfoSpan || !uploadLogoModal) {
+                                        console.error('上传模态框元素未找到');
+                                        return;
+                                    }
+                                    
+                                    uploadTeamNameSpan.textContent = uploadBtn.dataset.team;
+                                    uploadTeamInfoSpan.textContent = `${uploadBtn.dataset.league} • 涉及 ${uploadBtn.dataset.matches} 场比赛`;
+                                    window.currentUploadTeam = uploadBtn.dataset.team;
+                                    uploadLogoModal.classList.add('show');
+                                }
                             });
                         }
                     } else {
@@ -1280,41 +1309,7 @@
                     } else { alert('保存失败: ' + (result.error || '未知错误')); }
                 } catch(err) { alert('网络错误'); }
             });
-            // 使用事件委托监听编辑按钮（在 loadTeams 函数外面添加）
-document.getElementById('teamListBody')?.addEventListener('click', (e) => {
-    const editBtn = e.target.closest('.edit-team-final');
-    if (editBtn) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('编辑球队:', editBtn.dataset.team);
-        
-        document.getElementById('editTeamName').value = editBtn.dataset.team;
-        const logoBase64 = editBtn.dataset.logoBase64;
-        if (logoBase64 && logoBase64 !== 'null' && logoBase64 !== 'undefined') {
-            document.getElementById('currentLogoImg').src = logoBase64;
-        } else {
-            document.getElementById('currentLogoImg').src = editBtn.dataset.logo || '/uploads/teams/default.png';
-        }
-        document.getElementById('affectedCount').textContent = editBtn.dataset.matches;
-        window.currentEditTeam = editBtn.dataset.team;
-        document.getElementById('editTeamModal').classList.add('show');
-    }
-});
-
-// 使用事件委托监听上传按钮
-document.getElementById('teamListBody')?.addEventListener('click', (e) => {
-    const uploadBtn = e.target.closest('.upload-logo-final');
-    if (uploadBtn) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('上传队徽:', uploadBtn.dataset.team);
-        
-        document.getElementById('uploadTeamName').textContent = uploadBtn.dataset.team;
-        document.getElementById('uploadTeamInfo').textContent = `${uploadBtn.dataset.league} • 涉及 ${uploadBtn.dataset.matches} 场比赛`;
-        window.currentUploadTeam = uploadBtn.dataset.team;
-        document.getElementById('uploadLogoModal').classList.add('show');
-    }
-});
+            
             document.getElementById('confirmUploadBtn')?.addEventListener('click', async () => {
                 const file = document.getElementById('teamLogoFile').files[0];
                 if (!file) { alert('请选择图片'); return; }
