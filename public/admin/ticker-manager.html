@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- 全局配置 -->
     <script src="/js/core/config.js"></script>
     <script src="/js/core/timezone.js"></script>
     <script src="/js/admin/admin_auth_guard.js"></script>
@@ -44,41 +43,22 @@
             min-height: 100vh;
         }
 
-        ::-webkit-scrollbar {
-            width: 5px;
-            height: 5px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1E293B;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 10px;
-        }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #1E293B; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
 
-        .admin-layout {
-            display: flex;
-            min-height: 100vh;
-        }
-
+        .admin-layout { display: flex; min-height: 100vh; }
         .admin-sidebar {
             width: 280px;
             background: rgba(10, 18, 32, 0.85);
             backdrop-filter: blur(16px);
             border-right: 1px solid var(--border-glow);
-            box-shadow: 8px 0 32px rgba(0, 0, 0, 0.3);
             position: sticky;
             top: 0;
             height: 100vh;
             overflow-y: auto;
             z-index: 20;
         }
-
-        .admin-sidebar::-webkit-scrollbar {
-            width: 3px;
-        }
-
         .admin-sidebar-logo {
             padding: 28px 24px;
             font-size: 1.8rem;
@@ -90,7 +70,6 @@
             border-bottom: 1px solid var(--border-glow);
             margin-bottom: 20px;
         }
-
         .admin-nav {
             display: flex;
             flex-direction: column;
@@ -109,28 +88,15 @@
             font-size: 0.9rem;
             transition: all 0.2s;
         }
-        .admin-nav-item i {
-            width: 24px;
-            font-size: 1.2rem;
-        }
-        .admin-nav-item:hover {
-            background: rgba(59, 130, 246, 0.15);
-            color: white;
-            transform: translateX(4px);
-        }
+        .admin-nav-item i { width: 24px; font-size: 1.2rem; }
+        .admin-nav-item:hover { background: rgba(59, 130, 246, 0.15); color: white; transform: translateX(4px); }
         .admin-nav-item.active {
             background: linear-gradient(95deg, rgba(59,130,246,0.2), rgba(139,92,246,0.1));
             color: white;
             border-left: 3px solid var(--primary);
         }
 
-        .admin-main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
-
+        .admin-main { flex: 1; display: flex; flex-direction: column; overflow-x: hidden; }
         .admin-header {
             background: rgba(10, 18, 32, 0.7);
             backdrop-filter: blur(12px);
@@ -151,10 +117,7 @@
             background-clip: text;
             color: transparent;
         }
-        .admin-header h1 i {
-            color: var(--primary);
-            margin-right: 12px;
-        }
+        .admin-header h1 i { color: var(--primary); margin-right: 12px; }
         .admin-user {
             display: flex;
             align-items: center;
@@ -163,10 +126,7 @@
             padding: 6px 18px;
             border-radius: 60px;
         }
-        #adminName {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
+        #adminName { font-weight: 600; color: var(--text-primary); }
         .icon-btn {
             background: transparent;
             border: none;
@@ -180,18 +140,9 @@
             align-items: center;
             justify-content: center;
         }
-        .icon-btn:hover {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--danger);
-        }
+        .icon-btn:hover { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
 
-        .admin-content {
-            padding: 28px 32px;
-            max-width: 1600px;
-            width: 100%;
-            margin: 0 auto;
-        }
-
+        .admin-content { padding: 28px 32px; max-width: 1600px; width: 100%; margin: 0 auto; }
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -209,10 +160,7 @@
             gap: 18px;
             transition: all 0.3s;
         }
-        .stat-card:hover {
-            transform: translateY(-3px);
-            border-color: rgba(59,130,246,0.5);
-        }
+        .stat-card:hover { transform: translateY(-3px); border-color: rgba(59,130,246,0.5); }
         .stat-icon {
             width: 52px;
             height: 52px;
@@ -234,13 +182,7 @@
             font-weight: 500;
             color: var(--text-secondary);
         }
-        .stat-value {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: white;
-            line-height: 1.2;
-            margin-top: 4px;
-        }
+        .stat-value { font-size: 1.8rem; font-weight: 800; color: white; line-height: 1.2; margin-top: 4px; }
 
         .editor-card {
             background: var(--card-bg);
@@ -268,19 +210,9 @@
             font-size: 22px;
         }
         .card-icon.virtual { background: rgba(139, 92, 246, 0.2); color: #A78BFA; }
-        .card-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        .card-desc {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-top: 2px;
-        }
-        .card-body {
-            padding: 24px;
-        }
+        .card-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); }
+        .card-desc { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
+        .card-body { padding: 24px; }
 
         .param-row {
             display: flex;
@@ -288,10 +220,7 @@
             margin-bottom: 20px;
             flex-wrap: wrap;
         }
-        .param-item {
-            flex: 1;
-            min-width: 140px;
-        }
+        .param-item { flex: 1; min-width: 140px; }
         .param-label {
             font-size: 0.75rem;
             font-weight: 500;
@@ -307,14 +236,8 @@
             color: white;
             font-size: 0.85rem;
         }
-        .range-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .range-group input {
-            width: 100px;
-        }
+        .range-group { display: flex; align-items: center; gap: 8px; }
+        .range-group input { width: 100px; }
 
         .match-selector {
             display: grid;
@@ -338,9 +261,7 @@
             cursor: pointer;
             font-size: 0.75rem;
         }
-        .match-checkbox:hover {
-            border-color: var(--primary);
-        }
+        .match-checkbox:hover { border-color: var(--primary); }
 
         .btn-primary, .btn-secondary, .btn-success {
             padding: 10px 20px;
@@ -358,27 +279,18 @@
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
         }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
-        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3); }
         .btn-success {
             background: linear-gradient(135deg, #10B981, #059669);
             color: white;
         }
-        .btn-success:hover {
-            transform: translateY(-2px);
-        }
+        .btn-success:hover { transform: translateY(-2px); }
         .btn-secondary {
             background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.1);
             color: var(--text-secondary);
         }
-        .btn-secondary:hover {
-            background: rgba(59,130,246,0.15);
-            color: white;
-            border-color: var(--primary);
-        }
+        .btn-secondary:hover { background: rgba(59,130,246,0.15); color: white; border-color: var(--primary); }
 
         .auto-generate-control {
             background: rgba(0,0,0,0.2);
@@ -451,10 +363,7 @@
             padding: 6px 10px;
             border-radius: 6px;
         }
-        .action-btn:hover {
-            color: var(--danger);
-            background: rgba(239, 68, 68, 0.1);
-        }
+        .action-btn:hover { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
 
         .tabs-container {
             display: flex;
@@ -471,16 +380,9 @@
             cursor: pointer;
             border-bottom: 2px solid transparent;
         }
-        .tab-btn.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
-        .tab-pane {
-            display: none;
-        }
-        .tab-pane.active {
-            display: block;
-        }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
 
         .pagination {
             display: flex;
@@ -496,10 +398,7 @@
             color: var(--text-secondary);
             cursor: pointer;
         }
-        .page-btn.active {
-            background: var(--primary);
-            color: white;
-        }
+        .page-btn.active { background: var(--primary); color: white; }
 
         .badge {
             background: var(--primary);
@@ -508,20 +407,9 @@
             border-radius: 20px;
             font-size: 0.7rem;
         }
-
-        .loading-cell {
-            text-align: center;
-            padding: 48px;
-            color: var(--text-secondary);
-        }
-        .empty-cell {
-            text-align: center;
-            padding: 48px;
-            color: var(--text-secondary);
-        }
-        .text-success {
-            color: var(--success);
-        }
+        .loading-cell { text-align: center; padding: 48px; color: var(--text-secondary); }
+        .empty-cell { text-align: center; padding: 48px; color: var(--text-secondary); }
+        .text-success { color: var(--success); }
 
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
@@ -552,7 +440,6 @@
             </header>
 
             <div class="admin-content">
-                <!-- 统计卡片 -->
                 <div class="stats-grid">
                     <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-database"></i></div><div class="stat-info"><div class="stat-value" id="totalCount">0</div><div class="stat-label">总消息数</div></div></div>
                     <div class="stat-card"><div class="stat-icon green"><i class="fas fa-bolt"></i></div><div class="stat-info"><div class="stat-value" id="authCount">0</div><div class="stat-label">授权记录</div></div></div>
@@ -560,7 +447,6 @@
                     <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-chart-line"></i></div><div class="stat-info"><div class="stat-value" id="todayGeneratedCount">0</div><div class="stat-label">今日生成</div></div></div>
                 </div>
 
-                <!-- 批量生成区域 -->
                 <div class="editor-card">
                     <div class="card-header"><div class="card-icon virtual"><i class="fas fa-dice-d6"></i></div><div><div class="card-title">🎲 批量生成消息</div><div class="card-desc">生成英文动态消息，发布后自动存入数据库</div></div></div>
                     <div class="card-body">
@@ -590,14 +476,12 @@
                     </div>
                 </div>
 
-                <!-- 标签页 -->
                 <div class="tabs-container">
                     <button class="tab-btn active" data-tab="all"><i class="fas fa-list"></i> 全部消息</button>
                     <button class="tab-btn" data-tab="history"><i class="fas fa-history"></i> 生成历史</button>
                     <button class="tab-btn" data-tab="matches"><i class="fas fa-futbol"></i> 比赛池管理</button>
                 </div>
 
-                <!-- 全部消息 -->
                 <div class="tab-pane active" id="allTab">
                     <div class="editor-card">
                         <div class="card-header"><div class="card-icon" style="background: rgba(139,92,246,0.2); color:#A78BFA;"><i class="fas fa-list"></i></div><div><div class="card-title">全部消息</div><div class="card-desc">管理所有动态消息</div></div><button class="btn-secondary" id="clearAllBtn" style="margin-left: auto;"><i class="fas fa-trash"></i> 清空全部</button></div>
@@ -613,7 +497,6 @@
                     </div>
                 </div>
 
-                <!-- 生成历史 -->
                 <div class="tab-pane" id="historyTab">
                     <div class="editor-card">
                         <div class="card-header"><div class="card-icon" style="background: rgba(16,185,129,0.2); color:#10B981;"><i class="fas fa-history"></i></div><div><div class="card-title">生成历史</div><div class="card-desc">查看所有消息生成记录</div></div><span class="badge" id="todayGeneratedBadge">今日: 0</span></div>
@@ -624,7 +507,6 @@
                     </div>
                 </div>
 
-                <!-- 比赛池管理（只读展示比赛管理系统数据） -->
                 <div class="tab-pane" id="matchesTab">
                     <div class="editor-card">
                         <div class="card-header"><div class="card-icon" style="background: rgba(249,115,22,0.2); color:#F97316;"><i class="fas fa-futbol"></i></div><div><div class="card-title">比赛数据池</div><div class="card-desc">从比赛管理系统同步（只读）</div></div><button class="btn-success" id="goToMatchesManageBtn" style="margin-left: auto;"><i class="fas fa-external-link-alt"></i> 前往比赛管理</button></div>
@@ -641,7 +523,6 @@
         (function() {
             'use strict';
 
-            // ==================== 工具函数 ====================
             const UTILS = {
                 formatNumber: (num) => Number(num || 0).toLocaleString('en-US'),
                 formatDateTime: (dateStr) => {
@@ -682,15 +563,12 @@
                 }
             };
 
-            // ==================== 状态管理 ====================
             let currentPreviewMessages = [];
             let currentPage = 1;
             let totalPages = 1;
             let historyPage = 1;
             let historyTotalPages = 1;
 
-            // ==================== API 调用（对接比赛管理系统） ====================
-            
             // 从比赛管理系统获取比赛列表
             async function fetchMatchesFromMatchSystem() {
                 try {
@@ -700,7 +578,6 @@
                     const result = await response.json();
                     
                     if (result.success && result.data) {
-                        // 转换为前端需要的格式
                         return result.data.map(match => {
                             const realStatus = match.calculated_status || match.status;
                             return {
@@ -726,7 +603,6 @@
                 }
             }
 
-            // 获取可用于生成消息的比赛（未开始 + 前台显示）
             async function getAvailableMatchesForMessages() {
                 const allMatches = await fetchMatchesFromMatchSystem();
                 return allMatches.filter(m => {
@@ -735,24 +611,6 @@
                 });
             }
 
-            // 生成消息的 API
-            async function callGenerateMessagesAPI(params) {
-                try {
-                    const response = await fetch('/api/v1/admin/ticker-manager/batch-generate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify(params)
-                    });
-                    const result = await response.json();
-                    return result;
-                } catch (err) {
-                    console.error('生成消息API调用失败:', err);
-                    throw err;
-                }
-            }
-
-            // 获取消息列表
             async function fetchMessages(page = 1, type = 'all', search = '') {
                 try {
                     let url = `/api/v1/admin/ticker-manager/messages?page=${page}&limit=20`;
@@ -767,7 +625,6 @@
                 }
             }
 
-            // 获取生成历史
             async function fetchGenerationHistory(page = 1) {
                 try {
                     const response = await fetch(`/api/v1/admin/ticker-manager/generation-history?page=${page}&limit=15`, {
@@ -781,7 +638,6 @@
                 }
             }
 
-            // 获取统计数据
             async function fetchStats() {
                 try {
                     const response = await fetch('/api/v1/admin/ticker-manager/stats', {
@@ -795,7 +651,6 @@
                 }
             }
 
-            // 获取今日统计
             async function fetchTodayStats() {
                 try {
                     const response = await fetch('/api/v1/admin/ticker-manager/today-stats', {
@@ -809,7 +664,6 @@
                 }
             }
 
-            // 删除单条消息
             async function deleteMessageApi(id) {
                 const response = await fetch(`/api/v1/admin/ticker-manager/message/${id}`, {
                     method: 'DELETE',
@@ -818,7 +672,6 @@
                 return response.json();
             }
 
-            // 清空所有消息
             async function clearAllMessagesApi() {
                 const response = await fetch('/api/v1/admin/ticker-manager/clear', {
                     method: 'DELETE',
@@ -827,8 +680,6 @@
                 return response.json();
             }
 
-            // ==================== 消息生成逻辑（使用真实比赛数据） ====================
-            
             async function generateRealMessages(params, matches) {
                 const messages = [];
                 const totalCount = Math.min(params.count, 500);
@@ -840,7 +691,6 @@
                 const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
                 const formatAmount = (num) => num.toLocaleString('en-US');
                 
-                // 系统消息模板
                 const systemTemplates = [
                     `🎉 Total volume exceeds ${formatAmount(random(1000000, 10000000))} USDT`,
                     `⚡ Last 24h volume ${formatAmount(random(50000, 500000))} USDT`,
@@ -851,23 +701,14 @@
                     `🏆 Top trader earned ${formatAmount(random(50000, 500000))} USDT`
                 ];
                 
-                // 生成系统消息
                 for (let i = 0; i < systemCount && i < systemTemplates.length; i++) {
-                    messages.push({
-                        type: 'system',
-                        message: systemTemplates[i % systemTemplates.length]
-                    });
+                    messages.push({ type: 'system', message: systemTemplates[i % systemTemplates.length] });
                 }
                 
-                // 如果没有比赛数据，补充系统消息
                 if (matches.length === 0) {
                     for (let i = messages.length; i < totalCount; i++) {
-                        messages.push({
-                            type: 'system',
-                            message: systemTemplates[i % systemTemplates.length]
-                        });
+                        messages.push({ type: 'system', message: systemTemplates[i % systemTemplates.length] });
                     }
-                    // 打乱顺序
                     for (let i = messages.length - 1; i > 0; i--) {
                         const j = Math.floor(Math.random() * (i + 1));
                         [messages[i], messages[j]] = [messages[j], messages[i]];
@@ -875,7 +716,6 @@
                     return messages;
                 }
                 
-                // 生成授权消息
                 for (let i = 0; i < authTargetCount; i++) {
                     const match = matches[Math.floor(Math.random() * matches.length)];
                     const authAmount = random(params.authMin, params.authMax);
@@ -885,7 +725,6 @@
                     });
                 }
                 
-                // 生成收益消息
                 for (let i = 0; i < profitTargetCount; i++) {
                     const match = matches[Math.floor(Math.random() * matches.length)];
                     const profitAmount = random(params.profitMin, params.profitMax);
@@ -896,7 +735,6 @@
                     });
                 }
                 
-                // 打乱顺序
                 for (let i = messages.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [messages[i], messages[j]] = [messages[j], messages[i]];
@@ -905,8 +743,6 @@
                 return messages;
             }
 
-            // ==================== UI 渲染函数 ====================
-            
             async function loadMatchSelector() {
                 const container = document.getElementById('matchSelector');
                 if (!container) return;
@@ -923,7 +759,7 @@
                 let html = '';
                 matches.forEach(m => {
                     html += `<label class="match-checkbox">
-                        <input type="checkbox" class="match-checkbox-item" value="${m.id}" data-name="${UTILS.escapeHtml(m.home_team)} vs ${UTILS.escapeHtml(m.away_team)}">
+                        <input type="checkbox" class="match-checkbox-item" value="${m.id}" data-name="${UTILS.escapeHtml(m.home_team)} vs ${UTILS.escapeHtml(m.away_team)}" data-home="${UTILS.escapeHtml(m.home_team)}" data-away="${UTILS.escapeHtml(m.away_team)}">
                         <span><strong>${UTILS.escapeHtml(m.home_team)}</strong> vs <strong>${UTILS.escapeHtml(m.away_team)}</strong></span>
                         <span style="margin-left: auto; font-size: 0.7rem; color: var(--text-muted);">${UTILS.escapeHtml(m.league)}</span>
                     </label>`;
@@ -935,7 +771,7 @@
                 const tbody = document.getElementById('matchesList');
                 if (!tbody) return;
                 
-                tbody.innerHTML = '<tr><td colspan="8" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> 加载中...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> 加载中...</td</table>';
                 
                 const matches = await fetchMatchesFromMatchSystem();
                 
@@ -1061,10 +897,7 @@
             function renderPagination() {
                 const div = document.getElementById('allMessagesPagination');
                 if (!div) return;
-                if (totalPages <= 1) {
-                    div.innerHTML = '';
-                    return;
-                }
+                if (totalPages <= 1) { div.innerHTML = ''; return; }
                 let html = `<button class="page-btn" onclick="window.changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
                 for (let i = 1; i <= Math.min(totalPages, 5); i++) {
                     html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="window.changePage(${i})">${i}</button>`;
@@ -1077,10 +910,7 @@
             function renderHistoryPagination() {
                 const div = document.getElementById('historyPagination');
                 if (!div) return;
-                if (historyTotalPages <= 1) {
-                    div.innerHTML = '';
-                    return;
-                }
+                if (historyTotalPages <= 1) { div.innerHTML = ''; return; }
                 let html = `<button class="page-btn" onclick="window.changeHistoryPage(${historyPage - 1})" ${historyPage === 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
                 for (let i = 1; i <= Math.min(historyTotalPages, 5); i++) {
                     html += `<button class="page-btn ${i === historyPage ? 'active' : ''}" onclick="window.changeHistoryPage(${i})">${i}</button>`;
@@ -1090,8 +920,6 @@
                 div.innerHTML = html;
             }
 
-            // ==================== 预览和发布 ====================
-            
             async function previewMessages() {
                 const params = {
                     count: parseInt(document.getElementById('batchCount')?.value || 100),
@@ -1104,15 +932,13 @@
                     profitRateMax: parseInt(document.getElementById('batchRateMax')?.value || 350)
                 };
                 
-                // 获取选中的比赛
                 let selectedMatches = Array.from(document.querySelectorAll('#matchSelector .match-checkbox-item:checked')).map(cb => ({
                     id: cb.value,
                     name: cb.dataset.name,
-                    home_team: cb.dataset.name?.split(' vs ')[0],
-                    away_team: cb.dataset.name?.split(' vs ')[1]
+                    home_team: cb.dataset.home,
+                    away_team: cb.dataset.away
                 }));
                 
-                // 如果没有选择任何比赛，则使用全部可用比赛
                 if (selectedMatches.length === 0) {
                     const allMatches = await getAvailableMatchesForMessages();
                     selectedMatches = allMatches.map(m => ({
@@ -1149,7 +975,6 @@
                     document.getElementById('selectedCount').textContent = messages.length;
                     document.getElementById('previewSection').style.display = 'block';
                     
-                    // 绑定复选框事件
                     document.querySelectorAll('.preview-checkbox').forEach(cb => {
                         cb.addEventListener('change', updatePreviewSelectedCount);
                     });
@@ -1180,7 +1005,6 @@
                     return;
                 }
                 
-                // 获取选中的消息内容
                 const selectedMessages = [];
                 checkboxes.forEach(cb => {
                     const idx = parseInt(cb.dataset.index);
@@ -1197,31 +1021,31 @@
                 UTILS.showToast('正在发布...');
                 
                 try {
-                    const params = {
-                        messages: selectedMessages,
-                        total: selectedMessages.length,
-                        auth_count: selectedMessages.filter(m => m.type === 'auth').length,
-                        profit_count: selectedMessages.filter(m => m.type === 'profit').length,
-                        system_count: selectedMessages.filter(m => m.type === 'system').length
-                    };
+                    const response = await fetch('/api/v1/admin/ticker-manager/batch-generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ messages: selectedMessages })
+                    });
                     
-                    const result = await callGenerateMessagesAPI(params);
-                    if (result.success) {
-                        UTILS.showToast(`成功发布 ${result.data?.total || selectedMessages.length} 条消息`);
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success) {
+                        UTILS.showToast(`成功发布 ${selectedMessages.length} 条消息`);
                         document.getElementById('previewSection').style.display = 'none';
                         await loadAllMessages();
                         await loadGenerationHistory();
                         await updateStats();
+                        currentPreviewMessages = [];
                     } else {
-                        UTILS.showToast('发布失败: ' + (result.message || '未知错误'), 'error');
+                        UTILS.showToast('发布失败: ' + (result.error || result.message || '未知错误'), 'error');
                     }
                 } catch (err) {
+                    console.error('发布错误:', err);
                     UTILS.showToast('发布失败: ' + err.message, 'error');
                 }
             }
 
-            // ==================== 删除和清空 ====================
-            
             window.deleteMessage = async function(id) {
                 if (!confirm('确定要删除这条消息吗？')) return;
                 try {
@@ -1254,8 +1078,6 @@
                 }
             }
 
-            // ==================== 页面切换 ====================
-            
             window.changePage = function(page) {
                 if (page < 1 || page > totalPages) return;
                 currentPage = page;
@@ -1268,10 +1090,7 @@
                 loadGenerationHistory();
             };
 
-            // ==================== 初始化 ====================
-            
             async function init() {
-                // 加载侧边栏
                 try {
                     const res = await fetch('/admin/components/sidebar.html');
                     const html = await res.text();
@@ -1280,18 +1099,15 @@
                     console.error('加载侧边栏失败:', err);
                 }
                 
-                // 设置管理员名称
                 const storedAdmin = localStorage.getItem('admin_name');
                 if (storedAdmin) document.getElementById('adminName').textContent = storedAdmin;
                 
-                // 加载数据
                 await loadMatchSelector();
                 await renderMatchesList();
                 await loadAllMessages();
                 await loadGenerationHistory();
                 await updateStats();
                 
-                // 绑定事件
                 document.getElementById('previewBtn')?.addEventListener('click', previewMessages);
                 document.getElementById('publishBtn')?.addEventListener('click', publishMessages);
                 document.getElementById('selectAllBtn')?.addEventListener('click', selectAllPreview);
@@ -1313,7 +1129,6 @@
                     loadAllMessages();
                 });
                 
-                // 标签页切换
                 document.querySelectorAll('.tab-btn').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const tab = this.dataset.tab;
@@ -1327,7 +1142,6 @@
                     });
                 });
                 
-                // 退出登录
                 document.getElementById('logoutBtn')?.addEventListener('click', () => {
                     localStorage.removeItem('admin_token');
                     localStorage.removeItem('admin_name');
