@@ -1100,7 +1100,7 @@
                 </div>
                 <div style="margin-bottom: 20px;">
                     <label><i class="fas fa-image"></i> 队徽图片</label>
-                    <div style="text-align: center; margin-bottom: 16px;"><img id="currentLogoImg" src="" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;"></div>
+                    <div style="text-align: center; margin-bottom: 16px;"><img id="currentLogoImg" src="" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;" onerror="if(!this.hasAttribute('data-error')){this.setAttribute('data-error','true');this.src='/uploads/teams/default.png';}else{this.style.display='none';this.parentElement.innerHTML='<i class=\'fas fa-futbol\' style=\'font-size:48px;color:var(--primary);\'></i>';}"></div>
                     <input type="file" id="editTeamLogoFile" accept="image/png,image/jpeg,image/jpg" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white;">
                 </div>
                 <div style="background: rgba(59,130,246,0.1); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px;">
@@ -1199,7 +1199,8 @@
                                     <td style="padding:12px;"><strong>${escapeHtml(team.team_name)}</strong></td>
                                     <td style="padding:12px;">${escapeHtml(team.league || '-')}</td>
                                     <td style="padding:12px; text-align:center;">${team.involved_matches} 场</td>
-                                    <td style="padding:12px; text-align:center;"><img src="${logoUrl}" style="width:40px;height:40px;border-radius:50%;" onerror="this.src='/uploads/teams/default.png'"></td>
+                                    <td style="padding:12px; text-align:center;"><img src="${logoUrl}" style="width:40px;height:40px;border-radius:50%;" onerror="if(!this.hasAttribute('data-error')){this.setAttribute('data-error','true');this.src='/uploads/teams/default.png';}else{this.style.display='none';this.parentElement.innerHTML='<i class=\'fas fa-futbol\' style=\'font-size:24px;color:var(--primary);\'></i>';}">
+                                        </td>
                                     <td style="padding:12px;">
                                         <div style="display: flex; gap: 8px; justify-content: center;">
                                             <button class="edit-team-final" data-team="${escapeHtml(team.team_name)}" data-league="${escapeHtml(team.league || '')}" data-matches="${team.involved_matches}" data-logo="${logoUrl}" style="padding: 5px 12px; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); border-radius: 6px; color: var(--primary-light); cursor: pointer;"><i class="fas fa-edit"></i> 编辑</button>
