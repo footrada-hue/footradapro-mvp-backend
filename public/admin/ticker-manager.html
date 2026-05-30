@@ -998,54 +998,76 @@
                 updatePreviewSelectedCount();
             }
             
-            async function publishMessages() {
-                const checkboxes = document.querySelectorAll('.preview-checkbox:checked');
-                if (checkboxes.length === 0) {
-                    UTILS.showToast('请至少选择一条消息', 'error');
-                    return;
-                }
-                
-                const selectedMessages = [];
-                checkboxes.forEach(cb => {
-                    const idx = parseInt(cb.dataset.index);
-                    if (currentPreviewMessages[idx]) {
-                        selectedMessages.push(currentPreviewMessages[idx]);
-                    }
-                });
-                
-                if (selectedMessages.length === 0) {
-                    UTILS.showToast('没有有效的消息', 'error');
-                    return;
-                }
-                
-                UTILS.showToast('正在发布...');
-                
-                try {
-                    const response = await fetch('/api/v1/admin/ticker-manager/batch-generate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({ messages: selectedMessages })
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (response.ok && result.success) {
-                        UTILS.showToast(`成功发布 ${selectedMessages.length} 条消息`);
-                        document.getElementById('previewSection').style.display = 'none';
-                        await loadAllMessages();
-                        await loadGenerationHistory();
-                        await updateStats();
-                        currentPreviewMessages = [];
-                    } else {
-                        UTILS.showToast('发布失败: ' + (result.error || result.message || '未知错误'), 'error');
-                    }
-                } catch (err) {
-                    console.error('发布错误:', err);
-                    UTILS.showToast('发布失败: ' + err.message, 'error');
-                }
+async function publishMessages() {
+    const checkboxes = document.querySelectorAll('.preview-checkbox:checked');
+    if (checkboxes.length === 0) {
+        UTILS.showToast('请至少选择一条消息', 'error');
+        return;
+    }
+    
+    const selectedMessages = [];
+    checkboxes.forEach(cb => {
+        const idx = parseInt(cb.dataset.index);
+        if (currentPreviewMessages[idx]) {
+            selectedMessages.push(currentPreviewMessages[idx]);
+        }
+    });
+    
+    if (selectedMessages.length === 0) {
+        UTILS.showToast('没有有效的消息', 'error');
+        return;
+    }
+    
+    UTILS.showToast(`正在发布 ${selectedMessages.length} 条消息...`);
+    
+    let successCount = 0;
+    let failCount = 0;
+    
+    // 逐条发布消息（绕过 batch-generate 接口问题）
+    for (let i = 0; i < selectedMessages.length; i++) {
+        const msg = selectedMessages[i];
+        try {
+            // 尝试调用单个消息保存接口
+            const response = await fetch('/api/v1/admin/ticker-manager/message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    type: msg.type,
+                    message: msg.message,
+                    weight: msg.weight || 100
+                })
+            });
+            
+            const result = await response.json();
+            if (response.ok && result.success) {
+                successCount++;
+            } else {
+                failCount++;
+                console.error('发布失败:', result);
             }
-
+        } catch (err) {
+            failCount++;
+            console.error('发布错误:', err);
+        }
+        
+        // 更新进度提示
+        if ((i + 1) % 10 === 0 || i === selectedMessages.length - 1) {
+            UTILS.showToast(`进度: ${i + 1}/${selectedMessages.length} (成功: ${successCount}, 失败: ${failCount})`);
+        }
+    }
+    
+    if (successCount > 0) {
+        UTILS.showToast(`成功发布 ${successCount} 条消息，失败 ${failCount} 条`);
+        document.getElementById('previewSection').style.display = 'none';
+        await loadAllMessages();
+        await loadGenerationHistory();
+        await updateStats();
+        currentPreviewMessages = [];
+    } else {
+        UTILS.showToast('发布失败，请检查网络或联系管理员', 'error');
+    }
+}
             window.deleteMessage = async function(id) {
                 if (!confirm('确定要删除这条消息吗？')) return;
                 try {
