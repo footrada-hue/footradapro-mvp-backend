@@ -1,15 +1,16 @@
 /**
  * FOOTRADAPRO - 動態消息管理路由 V2
  * @description 管理跑馬燈動態消息的生成、編輯和刪除 (全英文版本，含生成歷史記錄)
- * @version 2.0 - 新增本地比賽池、批量生成、系統配置
+ * @version 2.1.0 - 支持 PostgreSQL 和 SQLite
  */
 
 import express from 'express';
-import { getDb } from '../../../database/connection.js';
+import { query, getDb } from '../../../database/connection.js';
 import { adminAuth } from '../../../middlewares/admin.middleware.js';
 import logger from '../../../utils/logger.js';
 
 const router = express.Router();
+const isProduction = process.env.NODE_ENV === 'production';
 
 // 所有路由需要管理員認證
 router.use(adminAuth);
@@ -33,7 +34,6 @@ const formatAmount = (amount) => {
 
 /**
  * 生成用戶ID（U型）
- * 格式：U + 9位數字 + 1位大寫字母（排除O、I）
  */
 const generateUserId = () => {
     const digits = Math.floor(Math.random() * 1000000000).toString().padStart(9, '0');
@@ -44,7 +44,6 @@ const generateUserId = () => {
 
 /**
  * 掩碼用戶ID（顯示用）
- * 格式：前2位 + *** + 後3位
  */
 const maskUserId = (userId) => {
     if (!userId || userId.length < 5) return userId;
@@ -60,27 +59,59 @@ const safeInt = (value, defaultValue) => {
 };
 
 // ==================== 確保表存在 ====================
-const ensureTables = (db) => {
-    // 生成記錄表
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS ticker_generation_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            admin_id INTEGER,
-            admin_name TEXT,
-            generated_count INTEGER,
-            auth_count INTEGER DEFAULT 0,
-            profit_count INTEGER DEFAULT 0,
-            system_count INTEGER DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (admin_id) REFERENCES admins(id)
-        )
-    `);
-    
-    db.exec(`
-        CREATE INDEX IF NOT EXISTS idx_generation_log_created 
-        ON ticker_generation_log(created_at DESC)
-    `);
+const ensureTables = async () => {
+    try {
+        if (isProduction) {
+            await query(`
+                CREATE TABLE IF NOT EXISTS ticker_generation_log (
+                    id SERIAL PRIMARY KEY,
+                    admin_id INTEGER,
+                    admin_name TEXT,
+                    generated_count INTEGER,
+                    auth_count INTEGER DEFAULT 0,
+                    profit_count INTEGER DEFAULT 0,
+                    system_count INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+            await query(`
+                CREATE INDEX IF NOT EXISTS idx_generation_log_created 
+                ON ticker_generation_log(created_at DESC)
+            `);
+        } else {
+            const db = getDb();
+            db.exec(`
+                CREATE TABLE IF NOT EXISTS ticker_generation_log (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    admin_id INTEGER,
+                    admin_name TEXT,
+                    generated_count INTEGER,
+                    auth_count INTEGER DEFAULT 0,
+                    profit_count INTEGER DEFAULT 0,
+                    system_count INTEGER DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+            db.exec(`
+                CREATE INDEX IF NOT EXISTS idx_generation_log_created 
+                ON ticker_generation_log(created_at DESC)
+            `);
+        }
+    } catch (err) {
+        console.log('确保表存在时出错:', err.message);
+    }
 };
+
+// ==================== 比赛实时状态计算 ====================
+function calculateMatchStatus(matchDateTime) {
+    const now = new Date();
+    const matchTime = new Date(matchDateTime);
+    const endTime = new Date(matchTime.getTime() + 110 * 60 * 1000);
+    
+    if (now < matchTime) return 'upcoming';
+    if (now >= matchTime && now < endTime) return 'ongoing';
+    return 'finished';
+}
 
 // ==================== 比賽池管理接口 ====================
 
@@ -88,46 +119,50 @@ const ensureTables = (db) => {
  * 獲取比賽池列表
  * GET /admin/ticker-manager/matches/pool
  */
-// 计算比赛实时状态（基于 UTC 时间，110分钟规则）
-function calculateMatchStatus(matchDateTime) {
-    const now = new Date();
-    const matchTime = new Date(matchDateTime);
-    const endTime = new Date(matchTime.getTime() + 110 * 60 * 1000); // 110分钟
-    
-    if (now < matchTime) return 'upcoming';
-    if (now >= matchTime && now < endTime) return 'ongoing';
-    return 'finished';
-}
-
-router.get('/matches/pool', (req, res) => {
-    const db = getDb();
-    
+router.get('/matches/pool', async (req, res) => {
     try {
         const { status, date } = req.query;
-        let query = 'SELECT * FROM match_pool WHERE 1=1';
-        const params = [];
+        let matches = [];
         
-        if (status) {
-            query += ' AND status = ?';
-            params.push(status);
+        if (isProduction) {
+            let sql = 'SELECT * FROM match_pool WHERE 1=1';
+            const params = [];
+            
+            if (status) {
+                sql += ' AND status = $' + (params.length + 1);
+                params.push(status);
+            }
+            if (date) {
+                sql += ' AND match_date = $' + (params.length + 1);
+                params.push(date);
+            }
+            sql += ' ORDER BY match_datetime ASC';
+            
+            const result = await query(sql, params);
+            matches = result || [];
+        } else {
+            const db = getDb();
+            let sql = 'SELECT * FROM match_pool WHERE 1=1';
+            const params = [];
+            
+            if (status) {
+                sql += ' AND status = ?';
+                params.push(status);
+            }
+            if (date) {
+                sql += ' AND match_date = ?';
+                params.push(date);
+            }
+            sql += ' ORDER BY match_datetime ASC';
+            
+            matches = db.prepare(sql).all(...params);
         }
         
-        if (date) {
-            query += ' AND match_date = ?';
-            params.push(date);
-        }
-        
-        query += ' ORDER BY match_datetime ASC';
-        
-        const matches = db.prepare(query).all(...params);
-        
-        // 为每场比赛计算实时状态
         const matchesWithStatus = matches.map(match => ({
             ...match,
             calculated_status: calculateMatchStatus(match.match_datetime),
-            // 同时返回可读的时间字段
             match_time_utc: match.match_datetime,
-            is_authorizable: new Date() < new Date(match.match_datetime) // 是否可授权
+            is_authorizable: new Date() < new Date(match.match_datetime)
         }));
         
         res.json({
@@ -144,8 +179,7 @@ router.get('/matches/pool', (req, res) => {
  * 新增比賽
  * POST /admin/ticker-manager/matches/pool
  */
-router.post('/matches/pool', (req, res) => {
-    const db = getDb();
+router.post('/matches/pool', async (req, res) => {
     const { league, home_team, away_team, match_date, match_time, weight } = req.body;
     
     if (!league || !home_team || !away_team || !match_date || !match_time) {
@@ -154,15 +188,27 @@ router.post('/matches/pool', (req, res) => {
     
     try {
         const match_datetime = `${match_date} ${match_time}`;
-        const stmt = db.prepare(`
-            INSERT INTO match_pool (league, home_team, away_team, match_date, match_time, match_datetime, weight)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        `);
+        let newId = null;
         
-        const result = stmt.run(league, home_team, away_team, match_date, match_time, match_datetime, weight || 100);
+        if (isProduction) {
+            const result = await query(`
+                INSERT INTO match_pool (league, home_team, away_team, match_date, match_time, match_datetime, weight)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                RETURNING id
+            `, [league, home_team, away_team, match_date, match_time, match_datetime, weight || 100]);
+            newId = result?.[0]?.id;
+        } else {
+            const db = getDb();
+            const stmt = db.prepare(`
+                INSERT INTO match_pool (league, home_team, away_team, match_date, match_time, match_datetime, weight)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `);
+            const result = stmt.run(league, home_team, away_team, match_date, match_time, match_datetime, weight || 100);
+            newId = result.lastInsertRowid;
+        }
         
         logger.info(`Admin ${req.session?.adminId} added match: ${home_team} vs ${away_team}`);
-        res.json({ success: true, data: { id: result.lastInsertRowid } });
+        res.json({ success: true, data: { id: newId } });
     } catch (error) {
         logger.error('Failed to add match:', error);
         res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
@@ -173,33 +219,41 @@ router.post('/matches/pool', (req, res) => {
  * 更新比賽
  * PUT /admin/ticker-manager/matches/pool/:id
  */
-router.put('/matches/pool/:id', (req, res) => {
-    const db = getDb();
+router.put('/matches/pool/:id', async (req, res) => {
     const { id } = req.params;
     const { league, home_team, away_team, match_date, match_time, status, weight } = req.body;
     
     try {
         const match_datetime = match_date && match_time ? `${match_date} ${match_time}` : undefined;
-        let query = 'UPDATE match_pool SET updated_at = CURRENT_TIMESTAMP';
-        const params = [];
+        const updates = [];
+        const values = [];
         
-        if (league) { query += ', league = ?'; params.push(league); }
-        if (home_team) { query += ', home_team = ?'; params.push(home_team); }
-        if (away_team) { query += ', away_team = ?'; params.push(away_team); }
-        if (match_date) { query += ', match_date = ?'; params.push(match_date); }
-        if (match_time) { query += ', match_time = ?'; params.push(match_time); }
-        if (match_datetime) { query += ', match_datetime = ?'; params.push(match_datetime); }
-        if (status) { query += ', status = ?'; params.push(status); }
-        if (weight) { query += ', weight = ?'; params.push(weight); }
+        if (league !== undefined) { updates.push('league = ?'); values.push(league); }
+        if (home_team !== undefined) { updates.push('home_team = ?'); values.push(home_team); }
+        if (away_team !== undefined) { updates.push('away_team = ?'); values.push(away_team); }
+        if (match_date !== undefined) { updates.push('match_date = ?'); values.push(match_date); }
+        if (match_time !== undefined) { updates.push('match_time = ?'); values.push(match_time); }
+        if (match_datetime !== undefined) { updates.push('match_datetime = ?'); values.push(match_datetime); }
+        if (status !== undefined) { updates.push('status = ?'); values.push(status); }
+        if (weight !== undefined) { updates.push('weight = ?'); values.push(weight); }
         
-        query += ' WHERE id = ?';
-        params.push(id);
+        if (updates.length === 0) {
+            return res.status(400).json({ success: false, error: 'NO_FIELDS_TO_UPDATE' });
+        }
         
-        const stmt = db.prepare(query);
-        const result = stmt.run(...params);
+        values.push(id);
         
-        if (result.changes === 0) {
-            return res.status(404).json({ success: false, error: 'MATCH_NOT_FOUND' });
+        if (isProduction) {
+            const placeholders = updates.map((_, i) => `${updates[i].replace('?', `$${i + 1}`)}`).join(', ');
+            await query(`UPDATE match_pool SET ${placeholders}, updated_at = NOW() WHERE id = $${values.length}`, values);
+        } else {
+            const db = getDb();
+            const stmt = db.prepare(`UPDATE match_pool SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`);
+            const result = stmt.run(...values);
+            
+            if (result.changes === 0) {
+                return res.status(404).json({ success: false, error: 'MATCH_NOT_FOUND' });
+            }
         }
         
         logger.info(`Admin ${req.session?.adminId} updated match ${id}`);
@@ -214,15 +268,22 @@ router.put('/matches/pool/:id', (req, res) => {
  * 刪除比賽
  * DELETE /admin/ticker-manager/matches/pool/:id
  */
-router.delete('/matches/pool/:id', (req, res) => {
-    const db = getDb();
+router.delete('/matches/pool/:id', async (req, res) => {
     const { id } = req.params;
     
     try {
-        const stmt = db.prepare('DELETE FROM match_pool WHERE id = ?');
-        const result = stmt.run(id);
+        let changes = 0;
         
-        if (result.changes === 0) {
+        if (isProduction) {
+            const result = await query('DELETE FROM match_pool WHERE id = $1', [id]);
+            changes = result?.rowCount || 0;
+        } else {
+            const db = getDb();
+            const result = db.prepare('DELETE FROM match_pool WHERE id = ?').run(id);
+            changes = result.changes;
+        }
+        
+        if (changes === 0) {
             return res.status(404).json({ success: false, error: 'MATCH_NOT_FOUND' });
         }
         
@@ -240,11 +301,18 @@ router.delete('/matches/pool/:id', (req, res) => {
  * 獲取系統配置
  * GET /admin/ticker-manager/config
  */
-router.get('/config', (req, res) => {
-    const db = getDb();
-    
+router.get('/config', async (req, res) => {
     try {
-        const configs = db.prepare('SELECT config_key, config_value FROM ticker_config').all();
+        let configs = [];
+        
+        if (isProduction) {
+            const result = await query('SELECT config_key, config_value FROM ticker_config');
+            configs = result || [];
+        } else {
+            const db = getDb();
+            configs = db.prepare('SELECT config_key, config_value FROM ticker_config').all();
+        }
+        
         const result = {};
         configs.forEach(c => { result[c.config_key] = c.config_value; });
         
@@ -259,20 +327,51 @@ router.get('/config', (req, res) => {
  * 更新系統配置
  * PUT /admin/ticker-manager/config
  */
-router.put('/config', (req, res) => {
-    const db = getDb();
+router.put('/config', async (req, res) => {
     const { total_volume, daily_auth, yesterday_profit, active_users } = req.body;
     
     try {
-        const stmt = db.prepare(`
-            INSERT OR REPLACE INTO ticker_config (config_key, config_value, updated_at)
-            VALUES (?, ?, CURRENT_TIMESTAMP)
-        `);
-        
-        if (total_volume !== undefined) stmt.run('total_volume', String(total_volume));
-        if (daily_auth !== undefined) stmt.run('daily_auth', String(daily_auth));
-        if (yesterday_profit !== undefined) stmt.run('yesterday_profit', String(yesterday_profit));
-        if (active_users !== undefined) stmt.run('active_users', String(active_users));
+        if (isProduction) {
+            if (total_volume !== undefined) {
+                await query(`
+                    INSERT INTO ticker_config (config_key, config_value, updated_at)
+                    VALUES ('total_volume', $1, NOW())
+                    ON CONFLICT (config_key) DO UPDATE SET config_value = $1, updated_at = NOW()
+                `, [String(total_volume)]);
+            }
+            if (daily_auth !== undefined) {
+                await query(`
+                    INSERT INTO ticker_config (config_key, config_value, updated_at)
+                    VALUES ('daily_auth', $1, NOW())
+                    ON CONFLICT (config_key) DO UPDATE SET config_value = $1, updated_at = NOW()
+                `, [String(daily_auth)]);
+            }
+            if (yesterday_profit !== undefined) {
+                await query(`
+                    INSERT INTO ticker_config (config_key, config_value, updated_at)
+                    VALUES ('yesterday_profit', $1, NOW())
+                    ON CONFLICT (config_key) DO UPDATE SET config_value = $1, updated_at = NOW()
+                `, [String(yesterday_profit)]);
+            }
+            if (active_users !== undefined) {
+                await query(`
+                    INSERT INTO ticker_config (config_key, config_value, updated_at)
+                    VALUES ('active_users', $1, NOW())
+                    ON CONFLICT (config_key) DO UPDATE SET config_value = $1, updated_at = NOW()
+                `, [String(active_users)]);
+            }
+        } else {
+            const db = getDb();
+            const stmt = db.prepare(`
+                INSERT OR REPLACE INTO ticker_config (config_key, config_value, updated_at)
+                VALUES (?, ?, CURRENT_TIMESTAMP)
+            `);
+            
+            if (total_volume !== undefined) stmt.run('total_volume', String(total_volume));
+            if (daily_auth !== undefined) stmt.run('daily_auth', String(daily_auth));
+            if (yesterday_profit !== undefined) stmt.run('yesterday_profit', String(yesterday_profit));
+            if (active_users !== undefined) stmt.run('active_users', String(active_users));
+        }
         
         logger.info(`Admin ${req.session?.adminId} updated ticker config`);
         res.json({ success: true });
@@ -282,26 +381,8 @@ router.put('/config', (req, res) => {
     }
 });
 
-// ==================== 批量生成消息（核心新功能）====================
-
-/**
- * 批量生成消息
- * POST /admin/ticker-manager/batch-generate
- * 
- * Body:
- * {
- *   count: 100,           // 生成数量
- *   authRatio: 55,        // 授权比例 (%)
- *   authMin: 100,         // 授权最小金额
- *   authMax: 50000,       // 授权最大金额
- *   profitMin: 50,        // 收益最小金额
- *   profitMax: 25000,     // 收益最大金额
- *   profitRateMin: 15,    // 最小收益率
- *   profitRateMax: 350    // 最大收益率
- * }
- */
-router.post('/batch-generate', (req, res) => {
-    const db = getDb();
+// ==================== 批量生成消息 ====================
+router.post('/batch-generate', async (req, res) => {
     const adminId = req.session?.adminId;
     const adminName = req.session?.adminName || 'Admin';
     
@@ -316,7 +397,6 @@ router.post('/batch-generate', (req, res) => {
         profitRateMax = 350
     } = req.body;
     
-    // 參數驗證
     const genCount = Math.min(Math.max(safeInt(count, 100), 1), 5000);
     const authPercent = safeInt(authRatio, 55);
     const authMinVal = safeInt(authMin, 100);
@@ -327,13 +407,23 @@ router.post('/batch-generate', (req, res) => {
     const rateMaxVal = Math.max(safeInt(profitRateMax, 350), rateMinVal);
     
     try {
-        // 獲取可用比賽（狀態為 upcoming 或 ongoing）
-        const now = getUTCNow();
-        const matches = db.prepare(`
-            SELECT * FROM match_pool 
-            WHERE status IN ('upcoming', 'ongoing')
-            ORDER BY weight DESC
-        `).all();
+        let matches = [];
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT * FROM match_pool 
+                WHERE status IN ('upcoming', 'ongoing')
+                ORDER BY weight DESC
+            `);
+            matches = result || [];
+        } else {
+            const db = getDb();
+            matches = db.prepare(`
+                SELECT * FROM match_pool 
+                WHERE status IN ('upcoming', 'ongoing')
+                ORDER BY weight DESC
+            `).all();
+        }
         
         if (matches.length === 0) {
             return res.status(400).json({ 
@@ -343,8 +433,15 @@ router.post('/batch-generate', (req, res) => {
             });
         }
         
-        // 獲取系統配置
-        const configs = db.prepare('SELECT config_key, config_value FROM ticker_config').all();
+        let configs = [];
+        if (isProduction) {
+            const result = await query('SELECT config_key, config_value FROM ticker_config');
+            configs = result || [];
+        } else {
+            const db = getDb();
+            configs = db.prepare('SELECT config_key, config_value FROM ticker_config').all();
+        }
+        
         const sysConfig = {};
         configs.forEach(c => { sysConfig[c.config_key] = c.config_value; });
         
@@ -353,68 +450,51 @@ router.post('/batch-generate', (req, res) => {
         let profitCount = 0;
         let systemCount = 0;
         
-        // ==================== 随机生成系统消息数值 ====================
-function generateRandomSystemStats() {
-    // 总授权量：100万 - 1000万
-    const totalVolume = Math.floor(Math.random() * (10000000 - 1000000) + 1000000);
-    
-    // 24h授权量：总授权量的 3% - 15%
-    const dailyAuth = Math.floor(totalVolume * (Math.random() * 0.12 + 0.03));
-    
-    // 昨日收益：24h授权量的 20% - 50%
-    const yesterdayProfit = Math.floor(dailyAuth * (Math.random() * 0.3 + 0.2));
-    
-    // 活跃用户：5000 - 100000
-    const activeUsers = Math.floor(Math.random() * (100000 - 5000) + 5000);
-    
-    return { totalVolume, dailyAuth, yesterdayProfit, activeUsers };
-}
-
-// 生成系統消息（固定比例 10%）
-const systemMessageCount = Math.floor(genCount * 0.1);
-
-// 为每条系统消息独立生成随机数值，让消息看起来更真实
-for (let i = 0; i < systemMessageCount; i++) {
-    // 每次循环都生成新的随机数值
-    const stats = generateRandomSystemStats();
-    
-    // 轮流使用不同的模板
-    const templateIndex = i % 4;
-    let message = '';
-    
-    switch (templateIndex) {
-        case 0:
-            message = `🎉 Total authorization volume exceeds ${formatAmount(stats.totalVolume)} USDT`;
-            break;
-        case 1:
-            message = `⚡ Last 24h authorization volume ${formatAmount(stats.dailyAuth)} USDT`;
-            break;
-        case 2:
-            message = `💰 Yesterday user profit ${formatAmount(stats.yesterdayProfit)} USDT`;
-            break;
-        case 3:
-            message = `👥 Active users exceed ${formatAmount(stats.activeUsers)}`;
-            break;
-    }
-    
-    messages.push({
-        type: 'system',
-        message: message,
-        weight: 80,
-        created_at: new Date().toISOString()
-    });
-    systemCount++;
-}
+        const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
         
-        // 生成用戶消息
+        const generateRandomSystemStats = () => {
+            const totalVolume = Math.floor(Math.random() * (10000000 - 1000000) + 1000000);
+            const dailyAuth = Math.floor(totalVolume * (Math.random() * 0.12 + 0.03));
+            const yesterdayProfit = Math.floor(dailyAuth * (Math.random() * 0.3 + 0.2));
+            const activeUsers = Math.floor(Math.random() * (100000 - 5000) + 5000);
+            return { totalVolume, dailyAuth, yesterdayProfit, activeUsers };
+        };
+        
+        const systemMessageCount = Math.floor(genCount * 0.1);
+        
+        for (let i = 0; i < systemMessageCount; i++) {
+            const stats = generateRandomSystemStats();
+            const templateIndex = i % 4;
+            let message = '';
+            
+            switch (templateIndex) {
+                case 0:
+                    message = `🎉 Total authorization volume exceeds ${formatAmount(stats.totalVolume)} USDT`;
+                    break;
+                case 1:
+                    message = `⚡ Last 24h authorization volume ${formatAmount(stats.dailyAuth)} USDT`;
+                    break;
+                case 2:
+                    message = `💰 Yesterday user profit ${formatAmount(stats.yesterdayProfit)} USDT`;
+                    break;
+                case 3:
+                    message = `👥 Active users exceed ${formatAmount(stats.activeUsers)}`;
+                    break;
+            }
+            
+            messages.push({
+                type: 'system',
+                message: message,
+                weight: 80,
+                created_at: new Date().toISOString()
+            });
+            systemCount++;
+        }
+        
         const userMessageCount = genCount - systemMessageCount;
         const authTargetCount = Math.floor(userMessageCount * authPercent / 100);
         const profitTargetCount = userMessageCount - authTargetCount;
         
-        // 隨機函數
-        const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-        
-        // 生成授權消息
         for (let i = 0; i < authTargetCount; i++) {
             const match = matches[Math.floor(Math.random() * matches.length)];
             const userId = generateUserId();
@@ -436,7 +516,6 @@ for (let i = 0; i < systemMessageCount; i++) {
             authCount++;
         }
         
-        // 生成收益消息
         for (let i = 0; i < profitTargetCount; i++) {
             const match = matches[Math.floor(Math.random() * matches.length)];
             const userId = generateUserId();
@@ -460,35 +539,50 @@ for (let i = 0; i < systemMessageCount; i++) {
             profitCount++;
         }
         
-        // 打亂消息順序
         for (let i = messages.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [messages[i], messages[j]] = [messages[j], messages[i]];
         }
         
-        // 存入數據庫
-        const insertStmt = db.prepare(`
-            INSERT INTO ticker_messages (type, message, weight, created_by, created_at)
-            VALUES (?, ?, ?, ?, ?)
-        `);
-        
-        const insertMany = db.transaction((msgs) => {
-            for (const msg of msgs) {
-                insertStmt.run(msg.type, msg.message, msg.weight, adminId, msg.created_at);
+        if (isProduction) {
+            for (const msg of messages) {
+                await query(`
+                    INSERT INTO ticker_messages (type, message, weight, created_by, created_at)
+                    VALUES ($1, $2, $3, $4, $5)
+                `, [msg.type, msg.message, msg.weight, adminId, msg.created_at]);
             }
-        });
+        } else {
+            const db = getDb();
+            const insertStmt = db.prepare(`
+                INSERT INTO ticker_messages (type, message, weight, created_by, created_at)
+                VALUES (?, ?, ?, ?, ?)
+            `);
+            
+            const insertMany = db.transaction((msgs) => {
+                for (const msg of msgs) {
+                    insertStmt.run(msg.type, msg.message, msg.weight, adminId, msg.created_at);
+                }
+            });
+            insertMany(messages);
+        }
         
-        insertMany(messages);
+        await ensureTables();
         
-        // 記錄生成歷史
-        ensureTables(db);
-        const historyStmt = db.prepare(`
-            INSERT INTO ticker_generation_log (admin_id, admin_name, generated_count, auth_count, profit_count, system_count)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `);
-        historyStmt.run(adminId, adminName, messages.length, authCount, profitCount, systemCount);
+        if (isProduction) {
+            await query(`
+                INSERT INTO ticker_generation_log (admin_id, admin_name, generated_count, auth_count, profit_count, system_count)
+                VALUES ($1, $2, $3, $4, $5, $6)
+            `, [adminId, adminName, messages.length, authCount, profitCount, systemCount]);
+        } else {
+            const db = getDb();
+            const historyStmt = db.prepare(`
+                INSERT INTO ticker_generation_log (admin_id, admin_name, generated_count, auth_count, profit_count, system_count)
+                VALUES (?, ?, ?, ?, ?, ?)
+            `);
+            historyStmt.run(adminId, adminName, messages.length, authCount, profitCount, systemCount);
+        }
         
-        logger.info(`Admin ${adminName} batch generated ${messages.length} messages (Auth:${authCount}, Profit:${profitCount}, System:${systemCount})`);
+        logger.info(`Admin ${adminName} batch generated ${messages.length} messages`);
         
         res.json({
             success: true,
@@ -497,7 +591,7 @@ for (let i = 0; i < systemMessageCount; i++) {
                 auth_count: authCount,
                 profit_count: profitCount,
                 system_count: systemCount,
-                messages: messages.slice(0, 50) // 返回前50條用於預覽
+                messages: messages.slice(0, 50)
             }
         });
         
@@ -507,22 +601,33 @@ for (let i = 0; i < systemMessageCount; i++) {
     }
 });
 
-// ==================== 以下為原有接口（保持兼容）====================
-
-// 獲取統計數據
-router.get('/stats', (req, res) => {
-    const db = getDb();
-    
+// ==================== 獲取統計數據 ====================
+router.get('/stats', async (req, res) => {
     try {
-        const stats = db.prepare(`
-            SELECT 
-                COUNT(*) as total,
-                SUM(CASE WHEN type = 'auth' THEN 1 ELSE 0 END) as auth_count,
-                SUM(CASE WHEN type = 'profit' THEN 1 ELSE 0 END) as profit_count,
-                SUM(CASE WHEN type = 'system' THEN 1 ELSE 0 END) as system_count
-            FROM ticker_messages
-        `).get();
-
+        let stats = {};
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN type = 'auth' THEN 1 ELSE 0 END) as auth_count,
+                    SUM(CASE WHEN type = 'profit' THEN 1 ELSE 0 END) as profit_count,
+                    SUM(CASE WHEN type = 'system' THEN 1 ELSE 0 END) as system_count
+                FROM ticker_messages
+            `);
+            stats = result?.[0] || {};
+        } else {
+            const db = getDb();
+            stats = db.prepare(`
+                SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN type = 'auth' THEN 1 ELSE 0 END) as auth_count,
+                    SUM(CASE WHEN type = 'profit' THEN 1 ELSE 0 END) as profit_count,
+                    SUM(CASE WHEN type = 'system' THEN 1 ELSE 0 END) as system_count
+                FROM ticker_messages
+            `).get();
+        }
+        
         res.json({
             success: true,
             data: {
@@ -538,53 +643,67 @@ router.get('/stats', (req, res) => {
     }
 });
 
-// 獲取實時統計數據
-router.get('/live-stats', (req, res) => {
-    const db = getDb();
-    
+// ==================== 獲取實時統計數據 ====================
+router.get('/live-stats', async (req, res) => {
     try {
-        const totalVolume = db.prepare(`
-            SELECT COALESCE(SUM(amount), 0) as total 
-            FROM authorizations 
-            WHERE status = 'settled'
-        `).get();
+        let totalVolume = 0, dailyAuth = 0, yesterdayProfit = 0, activeUsers = 0, hotMatch = null;
         
-        const dailyAuth = db.prepare(`
-            SELECT COALESCE(SUM(amount), 0) as total 
-            FROM authorizations 
-            WHERE created_at > datetime('now', '-1 day')
-        `).get();
-        
-        const yesterdayProfit = db.prepare(`
-            SELECT COALESCE(SUM(profit), 0) as total 
-            FROM authorizations 
-            WHERE status = 'settled' 
-            AND settled_at > date('now', '-1 day')
-        `).get();
-        
-        const activeUsers = db.prepare(`
-            SELECT COUNT(DISTINCT user_id) as count 
-            FROM authorizations 
-            WHERE created_at > datetime('now', '-7 days')
-        `).get();
-        
-        const hotMatch = db.prepare(`
-            SELECT m.home_team || ' vs ' || m.away_team as match_name
-            FROM authorizations a
-            JOIN matches m ON a.match_id = m.match_id
-            WHERE a.created_at > datetime('now', '-3 days')
-            GROUP BY a.match_id
-            ORDER BY COUNT(*) DESC
-            LIMIT 1
-        `).get();
+        if (isProduction) {
+            const totalVolumeRes = await query(`SELECT COALESCE(SUM(amount), 0) as total FROM authorizations WHERE status = 'settled'`);
+            totalVolume = parseFloat(totalVolumeRes?.[0]?.total || 0);
+            
+            const dailyAuthRes = await query(`SELECT COALESCE(SUM(amount), 0) as total FROM authorizations WHERE created_at > NOW() - INTERVAL '1 day'`);
+            dailyAuth = parseFloat(dailyAuthRes?.[0]?.total || 0);
+            
+            const yesterdayProfitRes = await query(`SELECT COALESCE(SUM(profit), 0) as total FROM authorizations WHERE status = 'settled' AND settled_at > NOW() - INTERVAL '1 day'`);
+            yesterdayProfit = parseFloat(yesterdayProfitRes?.[0]?.total || 0);
+            
+            const activeUsersRes = await query(`SELECT COUNT(DISTINCT user_id) as count FROM authorizations WHERE created_at > NOW() - INTERVAL '7 days'`);
+            activeUsers = parseInt(activeUsersRes?.[0]?.count || 0);
+            
+            const hotMatchRes = await query(`
+                SELECT m.home_team || ' vs ' || m.away_team as match_name
+                FROM authorizations a
+                JOIN matches m ON a.match_id = m.match_id
+                WHERE a.created_at > NOW() - INTERVAL '3 days'
+                GROUP BY a.match_id
+                ORDER BY COUNT(*) DESC
+                LIMIT 1
+            `);
+            hotMatch = hotMatchRes?.[0];
+        } else {
+            const db = getDb();
+            const totalVolumeRes = db.prepare(`SELECT COALESCE(SUM(amount), 0) as total FROM authorizations WHERE status = 'settled'`).get();
+            totalVolume = totalVolumeRes.total || 0;
+            
+            const dailyAuthRes = db.prepare(`SELECT COALESCE(SUM(amount), 0) as total FROM authorizations WHERE created_at > datetime('now', '-1 day')`).get();
+            dailyAuth = dailyAuthRes.total || 0;
+            
+            const yesterdayProfitRes = db.prepare(`SELECT COALESCE(SUM(profit), 0) as total FROM authorizations WHERE status = 'settled' AND settled_at > date('now', '-1 day')`).get();
+            yesterdayProfit = yesterdayProfitRes.total || 0;
+            
+            const activeUsersRes = db.prepare(`SELECT COUNT(DISTINCT user_id) as count FROM authorizations WHERE created_at > datetime('now', '-7 days')`).get();
+            activeUsers = activeUsersRes.count || 0;
+            
+            const hotMatchRes = db.prepare(`
+                SELECT m.home_team || ' vs ' || m.away_team as match_name
+                FROM authorizations a
+                JOIN matches m ON a.match_id = m.match_id
+                WHERE a.created_at > datetime('now', '-3 days')
+                GROUP BY a.match_id
+                ORDER BY COUNT(*) DESC
+                LIMIT 1
+            `).get();
+            hotMatch = hotMatchRes;
+        }
         
         res.json({
             success: true,
             data: {
-                totalVolume: totalVolume.total || 0,
-                dailyAuth: dailyAuth.total || 0,
-                yesterdayProfit: yesterdayProfit.total || 0,
-                activeUsers: activeUsers.count || 0,
+                totalVolume: totalVolume,
+                dailyAuth: dailyAuth,
+                yesterdayProfit: yesterdayProfit,
+                activeUsers: activeUsers,
                 hotMatch: hotMatch ? hotMatch.match_name : 'None'
             }
         });
@@ -594,31 +713,59 @@ router.get('/live-stats', (req, res) => {
     }
 });
 
-// 獲取智能推薦
-router.get('/recommendations', (req, res) => {
-    const db = getDb();
-    
+// ==================== 獲取智能推薦 ====================
+router.get('/recommendations', async (req, res) => {
     try {
+        let stats = {};
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT 
+                    COALESCE(SUM(amount), 0) as total_volume,
+                    COALESCE(SUM(CASE WHEN created_at > NOW() - INTERVAL '1 day' THEN amount ELSE 0 END), 0) as daily_auth,
+                    COALESCE(SUM(CASE WHEN status = 'settled' AND settled_at > NOW() - INTERVAL '1 day' THEN profit ELSE 0 END), 0) as daily_profit,
+                    COUNT(DISTINCT CASE WHEN created_at > NOW() - INTERVAL '7 days' THEN user_id END) as weekly_active
+                FROM authorizations
+            `);
+            stats = result?.[0] || {};
+        } else {
+            const db = getDb();
+            stats = db.prepare(`
+                SELECT 
+                    COALESCE(SUM(amount), 0) as total_volume,
+                    COALESCE(SUM(CASE WHEN created_at > datetime('now', '-1 day') THEN amount ELSE 0 END), 0) as daily_auth,
+                    COALESCE(SUM(CASE WHEN status = 'settled' AND settled_at > date('now', '-1 day') THEN profit ELSE 0 END), 0) as daily_profit,
+                    COUNT(DISTINCT CASE WHEN created_at > datetime('now', '-7 days') THEN user_id END) as weekly_active
+                FROM authorizations
+            `).get();
+        }
+        
+        let hotMatches = [];
+        if (isProduction) {
+            const result = await query(`
+                SELECT m.home_team, m.away_team, COUNT(*) as auth_count
+                FROM authorizations a
+                JOIN matches m ON a.match_id = m.match_id
+                WHERE a.created_at > NOW() - INTERVAL '3 days'
+                GROUP BY a.match_id
+                ORDER BY auth_count DESC
+                LIMIT 3
+            `);
+            hotMatches = result || [];
+        } else {
+            const db = getDb();
+            hotMatches = db.prepare(`
+                SELECT m.home_team, m.away_team, COUNT(*) as auth_count
+                FROM authorizations a
+                JOIN matches m ON a.match_id = m.match_id
+                WHERE a.created_at > datetime('now', '-3 days')
+                GROUP BY a.match_id
+                ORDER BY auth_count DESC
+                LIMIT 3
+            `).all();
+        }
+        
         const recommendations = [];
-        
-        const stats = db.prepare(`
-            SELECT 
-                COALESCE(SUM(amount), 0) as total_volume,
-                COALESCE(SUM(CASE WHEN created_at > datetime('now', '-1 day') THEN amount ELSE 0 END), 0) as daily_auth,
-                COALESCE(SUM(CASE WHEN status = 'settled' AND settled_at > date('now', '-1 day') THEN profit ELSE 0 END), 0) as daily_profit,
-                COUNT(DISTINCT CASE WHEN created_at > datetime('now', '-7 days') THEN user_id END) as weekly_active
-            FROM authorizations
-        `).get();
-        
-        const hotMatches = db.prepare(`
-            SELECT m.home_team, m.away_team, COUNT(*) as auth_count
-            FROM authorizations a
-            JOIN matches m ON a.match_id = m.match_id
-            WHERE a.created_at > datetime('now', '-3 days')
-            GROUP BY a.match_id
-            ORDER BY auth_count DESC
-            LIMIT 3
-        `).all();
         
         if (stats.total_volume > 1000) {
             recommendations.push({
@@ -626,21 +773,18 @@ router.get('/recommendations', (req, res) => {
                 message: `🎉 Total platform volume exceeds ${stats.total_volume.toLocaleString()} USDT`
             });
         }
-        
         if (stats.daily_auth > 100) {
             recommendations.push({
                 type: 'system',
                 message: `⚡ Last 24h authorization volume ${stats.daily_auth.toLocaleString()} USDT`
             });
         }
-        
         if (stats.daily_profit > 50) {
             recommendations.push({
                 type: 'system',
                 message: `💰 Yesterday user profit ${stats.daily_profit.toLocaleString()} USDT`
             });
         }
-        
         if (stats.weekly_active > 10) {
             recommendations.push({
                 type: 'system',
@@ -665,33 +809,53 @@ router.get('/recommendations', (req, res) => {
     }
 });
 
-// 獲取生成歷史記錄
-router.get('/generation-history', (req, res) => {
-    const db = getDb();
+// ==================== 獲取生成歷史記錄 ====================
+router.get('/generation-history', async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
     
     try {
-        ensureTables(db);
+        await ensureTables();
         
-        const totalCount = db.prepare(`
-            SELECT COUNT(*) as count FROM ticker_generation_log
-        `).get();
+        let totalCount = { count: 0 };
+        let history = [];
         
-        const history = db.prepare(`
-            SELECT 
-                id,
-                admin_name,
-                generated_count,
-                auth_count,
-                profit_count,
-                system_count,
-                datetime(created_at, 'localtime') as created_at
-            FROM ticker_generation_log
-            ORDER BY created_at DESC
-            LIMIT ? OFFSET ?
-        `).all(limit, offset);
+        if (isProduction) {
+            const totalResult = await query('SELECT COUNT(*) as count FROM ticker_generation_log');
+            totalCount = totalResult?.[0] || { count: 0 };
+            
+            const result = await query(`
+                SELECT 
+                    id,
+                    admin_name,
+                    generated_count,
+                    auth_count,
+                    profit_count,
+                    system_count,
+                    created_at
+                FROM ticker_generation_log
+                ORDER BY created_at DESC
+                LIMIT $1 OFFSET $2
+            `, [limit, offset]);
+            history = result || [];
+        } else {
+            const db = getDb();
+            totalCount = db.prepare('SELECT COUNT(*) as count FROM ticker_generation_log').get();
+            history = db.prepare(`
+                SELECT 
+                    id,
+                    admin_name,
+                    generated_count,
+                    auth_count,
+                    profit_count,
+                    system_count,
+                    created_at
+                FROM ticker_generation_log
+                ORDER BY created_at DESC
+                LIMIT ? OFFSET ?
+            `).all(limit, offset);
+        }
         
         res.json({
             success: true,
@@ -709,23 +873,38 @@ router.get('/generation-history', (req, res) => {
     }
 });
 
-// 獲取今日生成統計
-router.get('/today-stats', (req, res) => {
-    const db = getDb();
-    
+// ==================== 獲取今日生成統計 ====================
+router.get('/today-stats', async (req, res) => {
     try {
-        ensureTables(db);
+        await ensureTables();
         
-        const stats = db.prepare(`
-            SELECT 
-                COUNT(*) as generation_count,
-                COALESCE(SUM(generated_count), 0) as total_generated,
-                COALESCE(SUM(auth_count), 0) as total_auth,
-                COALESCE(SUM(profit_count), 0) as total_profit,
-                COALESCE(SUM(system_count), 0) as total_system
-            FROM ticker_generation_log
-            WHERE date(created_at) = date('now')
-        `).get();
+        let stats = {};
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT 
+                    COUNT(*) as generation_count,
+                    COALESCE(SUM(generated_count), 0) as total_generated,
+                    COALESCE(SUM(auth_count), 0) as total_auth,
+                    COALESCE(SUM(profit_count), 0) as total_profit,
+                    COALESCE(SUM(system_count), 0) as total_system
+                FROM ticker_generation_log
+                WHERE DATE(created_at) = CURRENT_DATE
+            `);
+            stats = result?.[0] || {};
+        } else {
+            const db = getDb();
+            stats = db.prepare(`
+                SELECT 
+                    COUNT(*) as generation_count,
+                    COALESCE(SUM(generated_count), 0) as total_generated,
+                    COALESCE(SUM(auth_count), 0) as total_auth,
+                    COALESCE(SUM(profit_count), 0) as total_profit,
+                    COALESCE(SUM(system_count), 0) as total_system
+                FROM ticker_generation_log
+                WHERE date(created_at) = date('now')
+            `).get();
+        }
         
         res.json({
             success: true,
@@ -743,128 +922,8 @@ router.get('/today-stats', (req, res) => {
     }
 });
 
-// 生成推薦動態（修改為使用本地比賽池）
-router.post('/generate-recommended', (req, res) => {
-    const db = getDb();
-    const adminId = req.session?.adminId;
-    const adminName = req.session?.adminName || 'Admin';
-    
-    try {
-        ensureTables(db);
-        
-        // 獲取本地比賽池
-        const matches = db.prepare(`
-            SELECT * FROM match_pool 
-            WHERE status IN ('upcoming', 'ongoing')
-            LIMIT 5
-        `).all();
-        
-        // 獲取系統配置
-        const configs = db.prepare('SELECT config_key, config_value FROM ticker_config').all();
-        const sysConfig = {};
-        configs.forEach(c => { sysConfig[c.config_key] = c.config_value; });
-        
-        let generated = 0;
-        let authCount = 0;
-        let profitCount = 0;
-        let systemCount = 0;
-        
-        // 生成系統消息
-        if (sysConfig.total_volume) {
-            db.prepare(`
-                INSERT INTO ticker_messages (type, message, weight, created_by, created_at)
-                VALUES (?, ?, ?, ?, datetime('now'))
-            `).run(
-                'system',
-                `🎉 Total authorization volume exceeds ${formatAmount(parseInt(sysConfig.total_volume))} USDT`,
-                80,
-                adminId
-            );
-            generated++;
-            systemCount++;
-        }
-        
-        if (sysConfig.daily_auth) {
-            db.prepare(`
-                INSERT INTO ticker_messages (type, message, weight, created_by, created_at)
-                VALUES (?, ?, ?, ?, datetime('now'))
-            `).run(
-                'system',
-                `⚡ Last 24h authorization volume ${formatAmount(parseInt(sysConfig.daily_auth))} USDT`,
-                90,
-                adminId
-            );
-            generated++;
-            systemCount++;
-        }
-        
-        if (sysConfig.yesterday_profit) {
-            db.prepare(`
-                INSERT INTO ticker_messages (type, message, weight, created_by, created_at)
-                VALUES (?, ?, ?, ?, datetime('now'))
-            `).run(
-                'system',
-                `💰 Yesterday user profit ${formatAmount(parseInt(sysConfig.yesterday_profit))} USDT`,
-                85,
-                adminId
-            );
-            generated++;
-            systemCount++;
-        }
-        
-        if (sysConfig.active_users) {
-            db.prepare(`
-                INSERT INTO ticker_messages (type, message, weight, created_by, created_at)
-                VALUES (?, ?, ?, ?, datetime('now'))
-            `).run(
-                'system',
-                `👥 Active users exceed ${sysConfig.active_users}`,
-                70,
-                adminId
-            );
-            generated++;
-            systemCount++;
-        }
-        
-        // 生成比賽相關消息
-        matches.forEach(match => {
-            const userId = generateUserId();
-            const maskedUserId = maskUserId(userId);
-            const amount = Math.floor(Math.random() * 50000) + 100;
-            const matchName = `${match.home_team} vs ${match.away_team}`;
-            
-            db.prepare(`
-                INSERT INTO ticker_messages (type, message, weight, created_by, created_at)
-                VALUES (?, ?, ?, ?, datetime('now'))
-            `).run(
-                'auth',
-                `⚡ User ${maskedUserId} authorized ${formatAmount(amount)} USDT on [${matchName}]`,
-                100,
-                adminId
-            );
-            generated++;
-            authCount++;
-        });
-        
-        // 記錄生成歷史
-        db.prepare(`
-            INSERT INTO ticker_generation_log (
-                admin_id, admin_name, generated_count, auth_count, profit_count, system_count
-            ) VALUES (?, ?, ?, ?, ?, ?)
-        `).run(adminId, adminName, generated, authCount, profitCount, systemCount);
-        
-        logger.info(`Admin ${adminName} generated ${generated} recommended messages`);
-        res.json({ success: true, data: { generated } });
-        
-    } catch (error) {
-        logger.error('Failed to generate recommendations:', error);
-        res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
-    }
-});
-
-// 獲取所有動態（分頁）
-router.get('/messages', (req, res) => {
-    const db = getDb();
+// ==================== 獲取所有動態（分頁）====================
+router.get('/messages', async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
@@ -872,31 +931,56 @@ router.get('/messages', (req, res) => {
     const search = req.query.search;
     
     try {
-        let query = 'SELECT * FROM ticker_messages';
-        let countQuery = 'SELECT COUNT(*) as total FROM ticker_messages';
-        const params = [];
-        const conditions = [];
+        let messages = [];
+        let totalCount = { count: 0 };
         
-        if (type && type !== 'all') {
-            conditions.push('type = ?');
-            params.push(type);
+        if (isProduction) {
+            let sql = 'SELECT * FROM ticker_messages';
+            let countSql = 'SELECT COUNT(*) as total FROM ticker_messages';
+            const params = [];
+            
+            if (type && type !== 'all') {
+                sql += ' WHERE type = $1';
+                countSql += ' WHERE type = $1';
+                params.push(type);
+            }
+            if (search) {
+                const condition = params.length > 0 ? ' AND' : ' WHERE';
+                sql += `${condition} message LIKE $${params.length + 1}`;
+                countSql += `${condition} message LIKE $${params.length + 1}`;
+                params.push(`%${search}%`);
+            }
+            
+            sql += ' ORDER BY created_at DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
+            
+            const totalResult = await query(countSql, params);
+            totalCount = totalResult?.[0] || { count: 0 };
+            
+            const result = await query(sql, [...params, limit, offset]);
+            messages = result || [];
+        } else {
+            const db = getDb();
+            let sql = 'SELECT * FROM ticker_messages';
+            let countSql = 'SELECT COUNT(*) as total FROM ticker_messages';
+            const params = [];
+            
+            if (type && type !== 'all') {
+                sql += ' WHERE type = ?';
+                countSql += ' WHERE type = ?';
+                params.push(type);
+            }
+            if (search) {
+                const condition = params.length > 0 ? ' AND' : ' WHERE';
+                sql += `${condition} message LIKE ?`;
+                countSql += `${condition} message LIKE ?`;
+                params.push(`%${search}%`);
+            }
+            
+            sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+            
+            totalCount = db.prepare(countSql).get(...params);
+            messages = db.prepare(sql).all(...params, limit, offset);
         }
-        
-        if (search) {
-            conditions.push('message LIKE ?');
-            params.push(`%${search}%`);
-        }
-        
-        if (conditions.length > 0) {
-            const whereClause = ' WHERE ' + conditions.join(' AND ');
-            query += whereClause;
-            countQuery += whereClause;
-        }
-        
-        query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-        
-        const { total } = db.prepare(countQuery).get(...params);
-        const messages = db.prepare(query).all(...params, limit, offset);
         
         res.json({
             success: true,
@@ -904,8 +988,8 @@ router.get('/messages', (req, res) => {
             pagination: {
                 page,
                 limit,
-                total,
-                pages: Math.ceil(total / limit)
+                total: totalCount.count,
+                pages: Math.ceil(totalCount.count / limit)
             }
         });
     } catch (error) {
@@ -914,18 +998,26 @@ router.get('/messages', (req, res) => {
     }
 });
 
-// 更新單條動態
-router.put('/message/:id', (req, res) => {
+// ==================== 更新單條動態 ====================
+router.put('/message/:id', async (req, res) => {
     const { id } = req.params;
     const { message, weight } = req.body;
-    const db = getDb();
     
     try {
-        db.prepare(`
-            UPDATE ticker_messages 
-            SET message = ?, weight = ?, updated_at = datetime('now')
-            WHERE id = ?
-        `).run(message, weight, id);
+        if (isProduction) {
+            await query(`
+                UPDATE ticker_messages 
+                SET message = $1, weight = $2, updated_at = NOW()
+                WHERE id = $3
+            `, [message, weight, id]);
+        } else {
+            const db = getDb();
+            db.prepare(`
+                UPDATE ticker_messages 
+                SET message = ?, weight = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            `).run(message, weight, id);
+        }
         
         logger.info(`Admin ${req.session?.adminId} updated message ${id}`);
         res.json({ success: true });
@@ -935,13 +1027,18 @@ router.put('/message/:id', (req, res) => {
     }
 });
 
-// 刪除單條動態
-router.delete('/message/:id', (req, res) => {
+// ==================== 刪除單條動態 ====================
+router.delete('/message/:id', async (req, res) => {
     const { id } = req.params;
-    const db = getDb();
     
     try {
-        db.prepare('DELETE FROM ticker_messages WHERE id = ?').run(id);
+        if (isProduction) {
+            await query('DELETE FROM ticker_messages WHERE id = $1', [id]);
+        } else {
+            const db = getDb();
+            db.prepare('DELETE FROM ticker_messages WHERE id = ?').run(id);
+        }
+        
         logger.info(`Admin ${req.session?.adminId} deleted message ${id}`);
         res.json({ success: true });
     } catch (error) {
@@ -950,14 +1047,22 @@ router.delete('/message/:id', (req, res) => {
     }
 });
 
-// 清空所有動態
-router.delete('/clear', (req, res) => {
-    const db = getDb();
-    
+// ==================== 清空所有動態 ====================
+router.delete('/clear', async (req, res) => {
     try {
-        const result = db.prepare('DELETE FROM ticker_messages').run();
-        logger.info(`Admin ${req.session?.adminId} cleared ${result.changes} messages`);
-        res.json({ success: true, data: { deleted: result.changes } });
+        let changes = 0;
+        
+        if (isProduction) {
+            const result = await query('DELETE FROM ticker_messages');
+            changes = result?.rowCount || 0;
+        } else {
+            const db = getDb();
+            const result = db.prepare('DELETE FROM ticker_messages').run();
+            changes = result.changes;
+        }
+        
+        logger.info(`Admin ${req.session?.adminId} cleared ${changes} messages`);
+        res.json({ success: true, data: { deleted: changes } });
     } catch (error) {
         logger.error('Failed to clear messages:', error);
         res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
