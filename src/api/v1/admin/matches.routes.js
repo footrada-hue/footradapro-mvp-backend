@@ -1,6 +1,6 @@
 /**
  * FOOTRADAPRO MVP - Admin Match Management Routes
- * @version 2.1.0 - 支持 PostgreSQL 和 SQLite，增强队徽上传功能
+ * @version 2.2.0 - 支持 PostgreSQL 和 SQLite，队徽 Base64 存储
  */
 
 import express from 'express';
@@ -203,17 +203,19 @@ router.get('/all-teams-from-matches', async (req, res) => {
         const results = [];
         for (const team of teams) {
             let logoUrl = null;
+            let logoBase64 = null;
             let league = null;
             
             try {
                 if (isProduction) {
-                    const logoResult = await query(`
-                        SELECT home_logo as logo_url FROM matches WHERE home_team = $1 AND home_logo IS NOT NULL AND home_logo != ''
-                        UNION ALL
-                        SELECT away_logo as logo_url FROM matches WHERE away_team = $1 AND away_logo IS NOT NULL AND away_logo != ''
-                        LIMIT 1
+                    // 从 team_logos 表获取 Base64 队徽
+                    const teamLogoResult = await query(`
+                        SELECT logo_base64, logo_url FROM team_logos WHERE team_name = $1
                     `, [team.team_name]);
-                    if (logoResult && logoResult.length > 0) logoUrl = logoResult[0].logo_url;
+                    if (teamLogoResult && teamLogoResult.length > 0) {
+                        logoBase64 = teamLogoResult[0].logo_base64;
+                        logoUrl = teamLogoResult[0].logo_url;
+                    }
                     
                     const leagueResult = await query(`
                         SELECT league FROM matches WHERE home_team = $1 OR away_team = $1 LIMIT 1
@@ -221,26 +223,29 @@ router.get('/all-teams-from-matches', async (req, res) => {
                     if (leagueResult && leagueResult.length > 0) league = leagueResult[0].league;
                 } else {
                     const db = getDb();
-                    const logoResult = db.prepare(`
-                        SELECT home_logo as logo_url FROM matches WHERE home_team = ? AND home_logo IS NOT NULL AND home_logo != ''
-                        UNION ALL
-                        SELECT away_logo as logo_url FROM matches WHERE away_team = ? AND away_logo IS NOT NULL AND away_logo != ''
-                        LIMIT 1
-                    `).get(team.team_name, team.team_name);
-                    if (logoResult) logoUrl = logoResult.logo_url;
+                    const teamLogoResult = db.prepare(`
+                        SELECT logo_base64, logo_url FROM team_logos WHERE team_name = ?
+                    `).get(team.team_name);
+                    if (teamLogoResult) {
+                        logoBase64 = teamLogoResult.logo_base64;
+                        logoUrl = teamLogoResult.logo_url;
+                    }
                     
                     const leagueResult = db.prepare(`
                         SELECT league FROM matches WHERE home_team = ? OR away_team = ? LIMIT 1
                     `).get(team.team_name, team.team_name);
                     if (leagueResult) league = leagueResult.league;
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error('Error fetching team logo:', e);
+            }
             
             results.push({
                 team_name: team.team_name,
                 league: league || 'Unknown',
                 involved_matches: team.involved_matches,
-                logo_url: logoUrl || null
+                logo_url: logoUrl || null,
+                logo_base64: logoBase64 || null
             });
         }
         
@@ -574,7 +579,7 @@ router.post('/batch-toggle', async (req, res) => {
     }
 });
 
-// ==================== 上传球队队徽（增强版）====================
+// ==================== 上传球队队徽（Base64 存储版）====================
 const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'teams');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
@@ -627,7 +632,12 @@ router.post('/upload-logo', (req, res) => {
             mimetype: req.file.mimetype
         });
         
-        const logoUrl = `/uploads/teams/${req.file.filename}`;
+        // 读取文件并转换为 Base64
+        const imagePath = req.file.path;
+        const imageBuffer = fs.readFileSync(imagePath);
+        const base64Image = imageBuffer.toString('base64');
+        const mimeType = req.file.mimetype;
+        const logoBase64 = `data:${mimeType};base64,${base64Image}`;
         
         try {
             // 检查 team_logos 表是否有记录，没有则插入
@@ -635,27 +645,21 @@ router.post('/upload-logo', (req, res) => {
                 const existing = await query('SELECT id FROM team_logos WHERE team_name = $1', [team_name]);
                 
                 if (existing && existing.length > 0) {
-                    await query(`UPDATE team_logos SET logo_url = $1, logo_status = 'ok', last_updated = NOW() WHERE team_name = $2`, [logoUrl, team_name]);
+                    await query(`UPDATE team_logos SET logo_base64 = $1, logo_status = 'ok', last_updated = NOW() WHERE team_name = $2`, [logoBase64, team_name]);
                 } else {
-                    await query(`INSERT INTO team_logos (team_name, logo_url, logo_status, involved_matches, last_updated) VALUES ($1, $2, 'ok', 0, NOW())`, [team_name, logoUrl]);
+                    await query(`INSERT INTO team_logos (team_name, logo_base64, logo_status, involved_matches, last_updated) VALUES ($1, $2, 'ok', 0, NOW())`, [team_name, logoBase64]);
                 }
-                
-                // 更新 matches 表中的队徽
-                await query(`UPDATE matches SET home_logo = $1 WHERE home_team = $2`, [logoUrl, team_name]);
-                await query(`UPDATE matches SET away_logo = $1 WHERE away_team = $2`, [logoUrl, team_name]);
             } else {
                 const db = getDb();
                 db.prepare('BEGIN TRANSACTION').run();
                 
                 const existing = db.prepare('SELECT id FROM team_logos WHERE team_name = ?').get(team_name);
                 if (existing) {
-                    db.prepare(`UPDATE team_logos SET logo_url = ?, logo_status = 'ok', last_updated = CURRENT_TIMESTAMP WHERE team_name = ?`).run(logoUrl, team_name);
+                    db.prepare(`UPDATE team_logos SET logo_base64 = ?, logo_status = 'ok', last_updated = CURRENT_TIMESTAMP WHERE team_name = ?`).run(logoBase64, team_name);
                 } else {
-                    db.prepare(`INSERT INTO team_logos (team_name, logo_url, logo_status, involved_matches, last_updated) VALUES (?, ?, 'ok', 0, CURRENT_TIMESTAMP)`).run(team_name, logoUrl);
+                    db.prepare(`INSERT INTO team_logos (team_name, logo_base64, logo_status, involved_matches, last_updated) VALUES (?, ?, 'ok', 0, CURRENT_TIMESTAMP)`).run(team_name, logoBase64);
                 }
                 
-                db.prepare(`UPDATE matches SET home_logo = ? WHERE home_team = ?`).run(logoUrl, team_name);
-                db.prepare(`UPDATE matches SET away_logo = ? WHERE away_team = ?`).run(logoUrl, team_name);
                 db.prepare('COMMIT').run();
             }
             
@@ -670,13 +674,20 @@ router.post('/upload-logo', (req, res) => {
                 count = result.count;
             }
             
-            console.log(`✅ 队徽上传成功: ${team_name}, 影响 ${count} 场比赛`);
+            console.log(`✅ 队徽上传成功（Base64）: ${team_name}, 影响 ${count} 场比赛`);
+            
+            // 删除临时文件
+            try {
+                fs.unlinkSync(imagePath);
+            } catch (e) {
+                console.log('Temp file cleanup error:', e);
+            }
             
             res.json({ 
                 success: true, 
                 message: '队徽上传成功',
                 updated_matches: count,
-                logo_url: logoUrl
+                logo_base64: logoBase64
             });
             
         } catch (error) {
@@ -767,14 +778,26 @@ router.post('/edit-team', (req, res) => {
                 }
             }
             
-            let logoUrl = null;
+            let logoBase64 = null;
             if (req.file) {
-                logoUrl = `/uploads/teams/${req.file.filename}`;
+                // 读取文件并转换为 Base64
+                const imageBuffer = fs.readFileSync(req.file.path);
+                const base64Image = imageBuffer.toString('base64');
+                const mimeType = req.file.mimetype;
+                logoBase64 = `data:${mimeType};base64,${base64Image}`;
+                
                 if (isProduction) {
-                    await query(`UPDATE team_logos SET team_name = $1, logo_url = $2, logo_status = 'ok', last_updated = NOW() WHERE team_name = $3`, [finalNewName, logoUrl, original_name]);
+                    await query(`UPDATE team_logos SET team_name = $1, logo_base64 = $2, logo_status = 'ok', last_updated = NOW() WHERE team_name = $3`, [finalNewName, logoBase64, original_name]);
                 } else {
                     const db = getDb();
-                    db.prepare(`UPDATE team_logos SET team_name = ?, logo_url = ?, logo_status = 'ok', last_updated = CURRENT_TIMESTAMP WHERE team_name = ?`).run(finalNewName, logoUrl, original_name);
+                    db.prepare(`UPDATE team_logos SET team_name = ?, logo_base64 = ?, logo_status = 'ok', last_updated = CURRENT_TIMESTAMP WHERE team_name = ?`).run(finalNewName, logoBase64, original_name);
+                }
+                
+                // 删除临时文件
+                try {
+                    fs.unlinkSync(req.file.path);
+                } catch (e) {
+                    console.log('Temp file cleanup error:', e);
                 }
             } else {
                 if (isProduction) {
@@ -799,7 +822,7 @@ router.post('/edit-team', (req, res) => {
                 data: {
                     original_name,
                     new_name: finalNewName,
-                    logo_url: logoUrl
+                    logo_base64: logoBase64
                 }
             });
             
