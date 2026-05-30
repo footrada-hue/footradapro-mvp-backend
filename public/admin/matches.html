@@ -1264,24 +1264,45 @@
                 } catch(err) { alert('网络错误'); }
             });
             
-            document.getElementById('confirmUploadBtn')?.addEventListener('click', async () => {
-                const file = document.getElementById('teamLogoFile').files[0];
-                if (!file) { alert('请选择图片'); return; }
-                const formData = new FormData();
-                formData.append('team_name', window.currentUploadTeam);
-                formData.append('logo', file);
-                try {
-                    const res = await fetch('/api/v1/admin/matches/upload-logo', { method: 'POST', body: formData, credentials: 'include' });
-                    const result = await res.json();
-                    if (result.success) {
-                        alert(`✅ ${window.currentUploadTeam} 队徽已更新，影响 ${result.updated_matches} 场比赛`);
-                        document.getElementById('uploadLogoModal').classList.remove('show');
-                        document.getElementById('teamLogoFile').value = '';
-                        document.getElementById('uploadPreview').style.display = 'none';
-                        loadTeams();
-                    } else { alert('上传失败: ' + (result.error || '未知错误')); }
-                } catch(err) { alert('网络错误'); }
-            });
+document.getElementById('confirmUploadBtn')?.addEventListener('click', async () => {
+    const file = document.getElementById('teamLogoFile').files[0];
+    if (!file) { alert('请选择图片'); return; }
+    
+    const formData = new FormData();
+    formData.append('team_name', window.currentUploadTeam);
+    formData.append('logo', file);
+    
+    const btn = document.getElementById('confirmUploadBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
+    btn.disabled = true;
+    
+    try {
+        const res = await fetch('/api/v1/admin/matches/upload-logo', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+            alert(`✅ ${window.currentUploadTeam} 队徽已更新`);
+            document.getElementById('uploadLogoModal').classList.remove('show');
+            document.getElementById('teamLogoFile').value = '';
+            document.getElementById('uploadPreview').style.display = 'none';
+            // 重新加载页面刷新列表
+            location.reload();
+        } else {
+            alert('上传失败: ' + (result.error || '未知错误'));
+        }
+    } catch(err) {
+        console.error('上传错误:', err);
+        alert('网络错误，请重试');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+});
             
             document.getElementById('editTeamLogoFile')?.addEventListener('change', (e) => {
                 const file = e.target.files[0];
