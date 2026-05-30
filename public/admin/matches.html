@@ -1078,12 +1078,12 @@
                         <thead>
                             <tr><th style="width:40px; padding:12px;">#</th><th style="padding:12px; text-align:left;">球队名称</th><th style="padding:12px; text-align:left;">联赛</th><th style="padding:12px;">涉及比赛</th><th style="padding:12px;">队徽</th><th style="width:180px; padding:12px;">操作</th></tr>
                         </thead>
-                        <tbody id="teamListBody"><tr><td colspan="6" style="text-align:center; padding:48px;"><i class="fas fa-spinner fa-spin"></i> 加载中...<\/td><\/tr><\/tbody>
-                    <\/table>
-                <\/div>
-            <\/div>
-        <\/div>
-    <\/div>
+                        <tbody id="teamListBody"><tr><td colspan="6" style="text-align:center; padding:48px;"><i class="fas fa-spinner fa-spin"></i> 加载中...</td></tr><\/tbody>
+                    </table>
+                </div>
+            </div>
+       </div>
+   </div>
 
     <!-- 编辑球队模态框 -->
     <div class="modal-overlay" id="editTeamModal">
@@ -1179,7 +1179,7 @@
         
         async function loadTeams() {
             if (!tbody) return;
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:48px;"><i class="fas fa-spinner fa-spin"></i> 加载中...<\/td><\/tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:48px;"><i class="fas fa-spinner fa-spin"></i> 加载中...</td></tr>';
             try {
                 const league = leagueFilter ? leagueFilter.value : 'all';
                 const search = searchInput ? searchInput.value.trim() : '';
@@ -1189,7 +1189,7 @@
                 const result = await res.json();
                 if (result.success && result.data) {
                     if (result.data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:48px;">暂无球队数据<\/td><\/tr>';
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:48px;">暂无球队数据</td></tr>';
                     } else {
                         let html = '';
                         result.data.forEach((team, index) => {
@@ -1203,17 +1203,17 @@
                             }
                             
                             html += `<tr>
-                                <td style="padding:12px; text-align:center;">${index + 1}<\/td>
-                                <td style="padding:12px;"><strong>${escapeHtml(team.team_name)}<\/strong><\/td>
-                                <td style="padding:12px;">${escapeHtml(team.league || '-')}<\/td>
-                                <td style="padding:12px; text-align:center;">${team.involved_matches} 场<\/td>
-                                <td style="padding:12px; text-align:center;">${logoDisplay}<\/td>
+                                <td style="padding:12px; text-align:center;">${index + 1}</td>
+                                <td style="padding:12px;"><strong>${escapeHtml(team.team_name)}<\/strong></td>
+                                <td style="padding:12px;">${escapeHtml(team.league || '-')}</td>
+                                <td style="padding:12px; text-align:center;">${team.involved_matches} 场</td>
+                                <td style="padding:12px; text-align:center;">${logoDisplay}</td>
                                 <td style="padding:12px;">
                                     <div style="display: flex; gap: 8px; justify-content: center;">
                                         <button class="edit-team-final" data-team="${escapeHtml(team.team_name)}" data-league="${escapeHtml(team.league || '')}" data-matches="${team.involved_matches}" data-logo="${team.logo_url || ''}" data-logo-base64="${team.logo_base64 || ''}" style="padding: 5px 12px; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); border-radius: 6px; color: var(--primary-light); cursor: pointer;"><i class="fas fa-edit"></i> 编辑</button>
                                         <button class="upload-logo-final" data-team="${escapeHtml(team.team_name)}" data-league="${escapeHtml(team.league || '')}" data-matches="${team.involved_matches}" style="padding: 5px 12px; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; color: #10B981; cursor: pointer;"><i class="fas fa-upload"></i> 上传</button>
                                     </div>
-                                <\/td>
+                                </td>
                             </tr>`;
                         });
                         tbody.innerHTML = html;
@@ -1285,11 +1285,11 @@ setTimeout(() => {
 }, 100);
                     }
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:48px;">加载失败<\/td><\/tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:48px;">加载失败</td></tr>';
                 }
             } catch(err) {
                 console.error(err);
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:48px;">加载失败<\/td><\/tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:48px;">加载失败</td></tr>';
             }
         }
         
