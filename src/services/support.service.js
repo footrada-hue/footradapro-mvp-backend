@@ -690,11 +690,11 @@ class SupportService {
         }
     }
 
- async getAdminUnreadStats() {
+async getAdminUnreadStats() {
     try {
+        let conversations = [];
         if (isProduction) {
-            // PostgreSQL - 修复列名问题
-            const result = await this.query(`
+            conversations = await this.query(`
                 SELECT 
                     c.id as conv_id,
                     c.user_id,
@@ -708,10 +708,9 @@ class SupportService {
                 HAVING COUNT(m.id) > 0
                 ORDER BY MAX(m.created_at) DESC
             `);
-            return result || [];
         } else {
             const db = await this.getDb();
-            return db.prepare(`
+            conversations = db.prepare(`
                 SELECT 
                     c.id as conv_id,
                     c.user_id,
@@ -726,9 +725,16 @@ class SupportService {
                 ORDER BY MAX(m.created_at) DESC
             `).all();
         }
+        
+        const total_unread = conversations.reduce((sum, item) => sum + (parseInt(item.unread_count) || 0), 0);
+        
+        return {
+            conversations: conversations || [],
+            total_unread: total_unread
+        };
     } catch (error) {
         logger.error('[SupportService] getAdminUnreadStats error:', error);
-        return [];
+        return { conversations: [], total_unread: 0 };
     }
 }
     async getAdminTotalUnread() {
