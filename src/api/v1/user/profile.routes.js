@@ -7,7 +7,7 @@
 
 import express from 'express';
 import bcrypt from 'bcrypt';
-import { getDb } from '../../../database/connection.js';
+import { query, getDb } from '../../../database/connection.js';
 import { auth } from '../../../middlewares/auth.middleware.js';
 import logger from '../../../utils/logger.js';
 import { sendVerificationEmail } from '../../../services/emailservice.js';
@@ -19,6 +19,7 @@ import {
 } from '../../../services/verification.service.js';
 
 const router = express.Router();
+const isProduction = process.env.NODE_ENV === 'production';
 
 // All routes require authentication
 router.use(auth);
@@ -27,39 +28,58 @@ router.use(auth);
 // GET /api/v1/user/profile
 // Get user profile information
 // ====================================================
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     const userId = req.session?.userId;
-    const db = getDb();
 
     if (!userId) {
         return res.status(401).json({ 
             success: false, 
             error: 'UNAUTHORIZED',
-            message: 'User not authenticated' // i18n: "error.unauthorized"
+            message: 'User not authenticated'
         });
     }
 
     try {
-        const user = db.prepare(`
-            SELECT 
-                id, 
-                username, 
-                uid, 
-                balance, 
-                vip_level, 
-                is_test_mode, 
-                created_at,
-                has_paypassword
-            FROM users 
-            WHERE id = ?
-        `).get(userId);
+        let user = null;
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT 
+                    id, 
+                    username, 
+                    uid, 
+                    balance, 
+                    vip_level, 
+                    is_test_mode, 
+                    created_at,
+                    has_paypassword
+                FROM users 
+                WHERE id = $1
+            `, [userId]);
+            user = result?.[0] || null;
+        } else {
+            const db = getDb();
+            user = db.prepare(`
+                SELECT 
+                    id, 
+                    username, 
+                    uid, 
+                    balance, 
+                    vip_level, 
+                    is_test_mode, 
+                    created_at,
+                    has_paypassword
+                FROM users 
+                WHERE id = ?
+            `).get(userId);
+        }
 
         if (!user) {
             logger.warn(`Profile fetch failed: User not found - ID: ${userId}`);
             return res.status(404).json({ 
                 success: false, 
                 error: 'USER_NOT_FOUND',
-                message: 'User does not exist' // i18n: "error.user_not_found"
+                message: 'User does not exist'
             });
         }
 
@@ -69,13 +89,13 @@ router.get('/', (req, res) => {
             uid: user.uid,
             balance: parseFloat(user.balance || 0).toFixed(2),
             vip_level: user.vip_level || 0,
-            is_test_mode: user.is_test_mode === 1,
-            has_paypassword: user.is_test_mode === 1 ? false : (user.has_paypassword === 1),
+            is_test_mode: user.is_test_mode === 1 || user.is_test_mode === true,
+            has_paypassword: user.is_test_mode === 1 || user.is_test_mode === true ? false : (user.has_paypassword === 1 || user.has_paypassword === true),
             created_at: user.created_at,
             vip_level_text: getVipLevelText(user.vip_level)
         };
 
-        logger.info(`Profile fetched successfully - User: ${user.username} (${user.is_test_mode ? 'TEST' : 'REAL'})`);
+        logger.info(`Profile fetched successfully - User: ${user.username} (${userData.is_test_mode ? 'TEST' : 'REAL'})`);
 
         res.json({
             success: true,
@@ -86,7 +106,7 @@ router.get('/', (req, res) => {
         res.status(500).json({ 
             success: false, 
             error: 'INTERNAL_ERROR',
-            message: 'Failed to fetch user profile' // i18n: "error.profile_fetch_failed"
+            message: 'Failed to fetch user profile'
         });
     }
 });
@@ -95,9 +115,8 @@ router.get('/', (req, res) => {
 // GET /api/v1/user/profile/paypassword/status
 // Check payment password status
 // ====================================================
-router.get('/paypassword/status', (req, res) => {
+router.get('/paypassword/status', async (req, res) => {
     const userId = req.session?.userId;
-    const db = getDb();
 
     if (!userId) {
         return res.status(401).json({ 
@@ -107,14 +126,29 @@ router.get('/paypassword/status', (req, res) => {
     }
 
     try {
-        const user = db.prepare(`
-            SELECT 
-                id,
-                is_test_mode,
-                has_paypassword
-            FROM users 
-            WHERE id = ?
-        `).get(userId);
+        let user = null;
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT 
+                    id,
+                    is_test_mode,
+                    has_paypassword
+                FROM users 
+                WHERE id = $1
+            `, [userId]);
+            user = result?.[0] || null;
+        } else {
+            const db = getDb();
+            user = db.prepare(`
+                SELECT 
+                    id,
+                    is_test_mode,
+                    has_paypassword
+                FROM users 
+                WHERE id = ?
+            `).get(userId);
+        }
 
         if (!user) {
             return res.status(404).json({ 
@@ -123,17 +157,20 @@ router.get('/paypassword/status', (req, res) => {
             });
         }
 
+        const isTestMode = user.is_test_mode === 1 || user.is_test_mode === true;
+        const hasPaypassword = user.has_paypassword === 1 || user.has_paypassword === true;
+
         const responseData = {
             success: true,
             data: {
-                has_paypassword: user.is_test_mode ? false : (user.has_paypassword === 1),
-                is_test_mode: user.is_test_mode === 1,
-                can_set_paypassword: !user.is_test_mode,
-                need_paypassword: !user.is_test_mode
+                has_paypassword: isTestMode ? false : hasPaypassword,
+                is_test_mode: isTestMode,
+                can_set_paypassword: !isTestMode,
+                need_paypassword: !isTestMode
             }
         };
 
-        logger.debug(`PayPassword status checked - User: ${userId}, TestMode: ${user.is_test_mode}, HasPassword: ${responseData.data.has_paypassword}`);
+        logger.debug(`PayPassword status checked - User: ${userId}, TestMode: ${isTestMode}, HasPassword: ${responseData.data.has_paypassword}`);
         res.json(responseData);
         
     } catch (error) {
@@ -153,7 +190,6 @@ router.get('/paypassword/status', (req, res) => {
 router.post('/paypassword/set', async (req, res) => {
     const userId = req.session?.userId;
     const { password, confirm_password } = req.body;
-    const db = getDb();
 
     if (!userId) {
         return res.status(401).json({ 
@@ -166,7 +202,7 @@ router.post('/paypassword/set', async (req, res) => {
         return res.status(400).json({ 
             success: false, 
             error: 'MISSING_FIELDS',
-            message: 'Password and confirm password are required' // i18n: "error.paypassword.fields_required"
+            message: 'Password and confirm password are required'
         });
     }
 
@@ -174,7 +210,7 @@ router.post('/paypassword/set', async (req, res) => {
         return res.status(400).json({ 
             success: false, 
             error: 'PASSWORD_MISMATCH',
-            message: 'Passwords do not match' // i18n: "error.paypassword.mismatch"
+            message: 'Passwords do not match'
         });
     }
 
@@ -182,43 +218,53 @@ router.post('/paypassword/set', async (req, res) => {
         return res.status(400).json({ 
             success: false, 
             error: 'INVALID_PASSWORD_FORMAT',
-            message: 'Payment password must be 6 digits' // i18n: "error.paypassword.invalid_format"
+            message: 'Payment password must be 6 digits'
         });
     }
 
     try {
-        db.exec('BEGIN TRANSACTION');
-
-        const user = db.prepare(`
-            SELECT id, is_test_mode, has_paypassword 
-            FROM users 
-            WHERE id = ?
-        `).get(userId);
+        let user = null;
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT id, is_test_mode, has_paypassword 
+                FROM users 
+                WHERE id = $1
+            `, [userId]);
+            user = result?.[0] || null;
+        } else {
+            const db = getDb();
+            user = db.prepare(`
+                SELECT id, is_test_mode, has_paypassword 
+                FROM users 
+                WHERE id = ?
+            `).get(userId);
+        }
 
         if (!user) {
-            db.exec('ROLLBACK');
             return res.status(404).json({ 
                 success: false, 
                 error: 'USER_NOT_FOUND' 
             });
         }
 
-        if (user.is_test_mode) {
-            db.exec('ROLLBACK');
+        const isTestMode = user.is_test_mode === 1 || user.is_test_mode === true;
+        const hasPaypassword = user.has_paypassword === 1 || user.has_paypassword === true;
+
+        if (isTestMode) {
             logger.warn(`Test user attempted to set paypassword - User: ${userId}`);
             return res.status(403).json({ 
                 success: false, 
                 error: 'TEST_MODE_USER',
-                message: 'Test mode users cannot set payment password' // i18n: "error.paypassword.test_mode_disabled"
+                message: 'Test mode users cannot set payment password'
             });
         }
 
-        if (user.has_paypassword) {
-            db.exec('ROLLBACK');
+        if (hasPaypassword) {
             return res.status(400).json({ 
                 success: false, 
                 error: 'ALREADY_SET',
-                message: 'Payment password already set' // i18n: "error.paypassword.already_set"
+                message: 'Payment password already set'
             });
         }
 
@@ -226,35 +272,45 @@ router.post('/paypassword/set', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, saltRounds);
         const now = new Date().toISOString();
 
-        db.prepare(`
-            UPDATE users 
-            SET 
-                has_paypassword = 1,
-                paypassword_hash = ?,
-                paypassword_set_at = ?,
-                paypassword_updated_at = ?
-            WHERE id = ?
-        `).run(hashedPassword, now, now, userId);
-
-        db.exec('COMMIT');
+        if (isProduction) {
+            await query(`
+                UPDATE users 
+                SET 
+                    has_paypassword = true,
+                    paypassword_hash = $1,
+                    paypassword_set_at = $2,
+                    paypassword_updated_at = $2
+                WHERE id = $3
+            `, [hashedPassword, now, userId]);
+        } else {
+            const db = getDb();
+            db.prepare(`
+                UPDATE users 
+                SET 
+                    has_paypassword = 1,
+                    paypassword_hash = ?,
+                    paypassword_set_at = ?,
+                    paypassword_updated_at = ?
+                WHERE id = ?
+            `).run(hashedPassword, now, now, userId);
+        }
 
         logger.info(`PayPassword set successfully - User: ${userId}`);
 
         res.json({
             success: true,
-            message: 'Payment password set successfully', // i18n: "success.paypassword.set"
+            message: 'Payment password set successfully',
             data: {
                 set_at: now
             }
         });
 
     } catch (error) {
-        db.exec('ROLLBACK');
         logger.error('Failed to set payment password:', error);
         res.status(500).json({ 
             success: false, 
             error: 'INTERNAL_ERROR',
-            message: 'Failed to set payment password' // i18n: "error.paypassword.set_failed"
+            message: 'Failed to set payment password'
         });
     }
 });
@@ -267,7 +323,6 @@ router.post('/paypassword/set', async (req, res) => {
 router.post('/paypassword/verify', async (req, res) => {
     const userId = req.session?.userId;
     const { password } = req.body;
-    const db = getDb();
 
     if (!userId) {
         return res.status(401).json({ 
@@ -280,16 +335,28 @@ router.post('/paypassword/verify', async (req, res) => {
         return res.status(400).json({ 
             success: false, 
             error: 'PASSWORD_REQUIRED',
-            message: 'Password is required' // i18n: "error.paypassword.password_required"
+            message: 'Password is required'
         });
     }
 
     try {
-        const user = db.prepare(`
-            SELECT is_test_mode, has_paypassword, paypassword_hash 
-            FROM users 
-            WHERE id = ?
-        `).get(userId);
+        let user = null;
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT is_test_mode, has_paypassword, paypassword_hash 
+                FROM users 
+                WHERE id = $1
+            `, [userId]);
+            user = result?.[0] || null;
+        } else {
+            const db = getDb();
+            user = db.prepare(`
+                SELECT is_test_mode, has_paypassword, paypassword_hash 
+                FROM users 
+                WHERE id = ?
+            `).get(userId);
+        }
 
         if (!user) {
             return res.status(404).json({ 
@@ -298,7 +365,10 @@ router.post('/paypassword/verify', async (req, res) => {
             });
         }
 
-        if (user.is_test_mode) {
+        const isTestMode = user.is_test_mode === 1 || user.is_test_mode === true;
+        const hasPaypassword = user.has_paypassword === 1 || user.has_paypassword === true;
+
+        if (isTestMode) {
             logger.debug(`Test user paypassword verification skipped - User: ${userId}`);
             return res.json({
                 success: true,
@@ -310,11 +380,11 @@ router.post('/paypassword/verify', async (req, res) => {
             });
         }
 
-        if (!user.has_paypassword) {
+        if (!hasPaypassword) {
             return res.status(400).json({ 
                 success: false, 
                 error: 'PAYPASSWORD_NOT_SET',
-                message: 'Payment password not set' // i18n: "error.paypassword.not_set"
+                message: 'Payment password not set'
             });
         }
 
@@ -333,7 +403,7 @@ router.post('/paypassword/verify', async (req, res) => {
             res.status(401).json({ 
                 success: false, 
                 error: 'INVALID_PASSWORD',
-                message: 'Invalid payment password' // i18n: "error.paypassword.invalid"
+                message: 'Invalid payment password'
             });
         }
 
@@ -354,7 +424,6 @@ router.post('/paypassword/verify', async (req, res) => {
 router.post('/paypassword/change', async (req, res) => {
     const userId = req.session?.userId;
     const { old_password, new_password, confirm_password } = req.body;
-    const db = getDb();
 
     if (!userId) {
         return res.status(401).json({ 
@@ -367,7 +436,7 @@ router.post('/paypassword/change', async (req, res) => {
         return res.status(400).json({ 
             success: false, 
             error: 'MISSING_FIELDS',
-            message: 'All fields are required' // i18n: "error.paypassword.all_fields_required"
+            message: 'All fields are required'
         });
     }
 
@@ -375,7 +444,7 @@ router.post('/paypassword/change', async (req, res) => {
         return res.status(400).json({ 
             success: false, 
             error: 'PASSWORD_MISMATCH',
-            message: 'New passwords do not match' // i18n: "error.paypassword.new_mismatch"
+            message: 'New passwords do not match'
         });
     }
 
@@ -383,54 +452,63 @@ router.post('/paypassword/change', async (req, res) => {
         return res.status(400).json({ 
             success: false, 
             error: 'INVALID_PASSWORD_FORMAT',
-            message: 'Payment password must be 6 digits' // i18n: "error.paypassword.invalid_format"
+            message: 'Payment password must be 6 digits'
         });
     }
 
     try {
-        db.exec('BEGIN TRANSACTION');
-
-        const user = db.prepare(`
-            SELECT is_test_mode, has_paypassword, paypassword_hash 
-            FROM users 
-            WHERE id = ?
-        `).get(userId);
+        let user = null;
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT is_test_mode, has_paypassword, paypassword_hash 
+                FROM users 
+                WHERE id = $1
+            `, [userId]);
+            user = result?.[0] || null;
+        } else {
+            const db = getDb();
+            user = db.prepare(`
+                SELECT is_test_mode, has_paypassword, paypassword_hash 
+                FROM users 
+                WHERE id = ?
+            `).get(userId);
+        }
 
         if (!user) {
-            db.exec('ROLLBACK');
             return res.status(404).json({ 
                 success: false, 
                 error: 'USER_NOT_FOUND' 
             });
         }
 
-        if (user.is_test_mode) {
-            db.exec('ROLLBACK');
+        const isTestMode = user.is_test_mode === 1 || user.is_test_mode === true;
+        const hasPaypassword = user.has_paypassword === 1 || user.has_paypassword === true;
+
+        if (isTestMode) {
             return res.status(403).json({ 
                 success: false, 
                 error: 'TEST_MODE_USER',
-                message: 'Test mode users cannot change payment password' // i18n: "error.paypassword.test_mode_change_disabled"
+                message: 'Test mode users cannot change payment password'
             });
         }
 
-        if (!user.has_paypassword) {
-            db.exec('ROLLBACK');
+        if (!hasPaypassword) {
             return res.status(400).json({ 
                 success: false, 
                 error: 'NOT_SET',
-                message: 'Payment password not set' // i18n: "error.paypassword.not_set"
+                message: 'Payment password not set'
             });
         }
 
         const isValid = await bcrypt.compare(old_password, user.paypassword_hash);
 
         if (!isValid) {
-            db.exec('ROLLBACK');
             logger.warn(`PayPassword change failed - Invalid old password - User: ${userId}`);
             return res.status(401).json({ 
                 success: false, 
                 error: 'INVALID_OLD_PASSWORD',
-                message: 'Current password is incorrect' // i18n: "error.paypassword.invalid_old"
+                message: 'Current password is incorrect'
             });
         }
 
@@ -438,28 +516,36 @@ router.post('/paypassword/change', async (req, res) => {
         const hashedPassword = await bcrypt.hash(new_password, saltRounds);
         const now = new Date().toISOString();
 
-        db.prepare(`
-            UPDATE users 
-            SET 
-                paypassword_hash = ?,
-                paypassword_updated_at = ?
-            WHERE id = ?
-        `).run(hashedPassword, now, userId);
-
-        db.exec('COMMIT');
+        if (isProduction) {
+            await query(`
+                UPDATE users 
+                SET 
+                    paypassword_hash = $1,
+                    paypassword_updated_at = $2
+                WHERE id = $3
+            `, [hashedPassword, now, userId]);
+        } else {
+            const db = getDb();
+            db.prepare(`
+                UPDATE users 
+                SET 
+                    paypassword_hash = ?,
+                    paypassword_updated_at = ?
+                WHERE id = ?
+            `).run(hashedPassword, now, userId);
+        }
 
         logger.info(`PayPassword changed successfully - User: ${userId}`);
 
         res.json({
             success: true,
-            message: 'Payment password changed successfully', // i18n: "success.paypassword.changed"
+            message: 'Payment password changed successfully',
             data: {
                 updated_at: now
             }
         });
 
     } catch (error) {
-        db.exec('ROLLBACK');
         logger.error('Failed to change payment password:', error);
         res.status(500).json({ 
             success: false, 
@@ -476,7 +562,6 @@ router.post('/paypassword/change', async (req, res) => {
 router.post('/paypassword/reset', async (req, res) => {
     const userId = req.session?.userId;
     const { verification_code, new_password, confirm_password } = req.body;
-    const db = getDb();
 
     if (!userId) {
         return res.status(401).json({ 
@@ -489,7 +574,7 @@ router.post('/paypassword/reset', async (req, res) => {
         return res.status(400).json({ 
             success: false, 
             error: 'MISSING_FIELDS',
-            message: 'Verification code and new password are required' // i18n: "error.paypassword.reset_fields_required"
+            message: 'Verification code and new password are required'
         });
     }
 
@@ -497,7 +582,7 @@ router.post('/paypassword/reset', async (req, res) => {
         return res.status(400).json({ 
             success: false, 
             error: 'PASSWORD_MISMATCH',
-            message: 'New passwords do not match' // i18n: "error.paypassword.new_mismatch"
+            message: 'New passwords do not match'
         });
     }
 
@@ -505,22 +590,35 @@ router.post('/paypassword/reset', async (req, res) => {
         return res.status(400).json({ 
             success: false, 
             error: 'INVALID_PASSWORD_FORMAT',
-            message: 'Payment password must be 6 digits' // i18n: "error.paypassword.invalid_format"
+            message: 'Payment password must be 6 digits'
         });
     }
 
     try {
-        const user = db.prepare(`
-            SELECT is_test_mode 
-            FROM users 
-            WHERE id = ?
-        `).get(userId);
+        let isTestMode = false;
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT is_test_mode 
+                FROM users 
+                WHERE id = $1
+            `, [userId]);
+            isTestMode = result?.[0]?.is_test_mode === true;
+        } else {
+            const db = getDb();
+            const user = db.prepare(`
+                SELECT is_test_mode 
+                FROM users 
+                WHERE id = ?
+            `).get(userId);
+            isTestMode = user?.is_test_mode === 1;
+        }
 
-        if (user.is_test_mode) {
+        if (isTestMode) {
             return res.status(403).json({ 
                 success: false, 
                 error: 'TEST_MODE_USER',
-                message: 'Test mode users cannot reset payment password' // i18n: "error.paypassword.test_mode_reset_disabled"
+                message: 'Test mode users cannot reset payment password'
             });
         }
 
@@ -531,7 +629,7 @@ router.post('/paypassword/reset', async (req, res) => {
             return res.status(400).json({ 
                 success: false, 
                 error: 'INVALID_CODE',
-                message: 'Invalid or expired verification code' // i18n: "error.paypassword.invalid_code"
+                message: 'Invalid or expired verification code'
             });
         }
 
@@ -539,20 +637,32 @@ router.post('/paypassword/reset', async (req, res) => {
         const hashedPassword = await bcrypt.hash(new_password, saltRounds);
         const now = new Date().toISOString();
 
-        db.prepare(`
-            UPDATE users 
-            SET 
-                has_paypassword = 1,
-                paypassword_hash = ?,
-                paypassword_updated_at = ?
-            WHERE id = ?
-        `).run(hashedPassword, now, userId);
+        if (isProduction) {
+            await query(`
+                UPDATE users 
+                SET 
+                    has_paypassword = true,
+                    paypassword_hash = $1,
+                    paypassword_updated_at = $2
+                WHERE id = $3
+            `, [hashedPassword, now, userId]);
+        } else {
+            const db = getDb();
+            db.prepare(`
+                UPDATE users 
+                SET 
+                    has_paypassword = 1,
+                    paypassword_hash = ?,
+                    paypassword_updated_at = ?
+                WHERE id = ?
+            `).run(hashedPassword, now, userId);
+        }
 
         logger.info(`PayPassword reset successfully - User: ${userId} (with verification code)`);
 
         res.json({
             success: true,
-            message: 'Payment password reset successfully' // i18n: "success.paypassword.reset"
+            message: 'Payment password reset successfully'
         });
 
     } catch (error) {
@@ -572,7 +682,6 @@ router.post('/paypassword/reset', async (req, res) => {
 router.post('/paypassword/send-code', async (req, res) => {
     const userId = req.session?.userId;
     const { email } = req.body;
-    const db = getDb();
 
     if (!userId) {
         return res.status(401).json({ 
@@ -588,14 +697,21 @@ router.post('/paypassword/send-code', async (req, res) => {
             return res.status(429).json({ 
                 success: false, 
                 error: 'RATE_LIMIT',
-                message: `Please wait ${rateLimit.remainingSeconds} seconds before requesting another code` // i18n: "error.rate_limit"
+                message: `Please wait ${rateLimit.remainingSeconds} seconds before requesting another code`
             });
         }
 
         // 2. Get user email
         let userEmail = email;
         if (!userEmail) {
-            const userInfo = db.prepare('SELECT username FROM users WHERE id = ?').get(userId);
+            let userInfo = null;
+            if (isProduction) {
+                const result = await query('SELECT username FROM users WHERE id = $1', [userId]);
+                userInfo = result?.[0] || null;
+            } else {
+                const db = getDb();
+                userInfo = db.prepare('SELECT username FROM users WHERE id = ?').get(userId);
+            }
             if (!userInfo) {
                 return res.status(404).json({ 
                     success: false, 
@@ -611,17 +727,26 @@ router.post('/paypassword/send-code', async (req, res) => {
             return res.status(400).json({ 
                 success: false, 
                 error: 'INVALID_EMAIL',
-                message: 'Please set a valid email address first' // i18n: "error.invalid_email"
+                message: 'Please set a valid email address first'
             });
         }
 
         // 4. Check test mode (test users don't need password reset)
-        const userMode = db.prepare('SELECT is_test_mode FROM users WHERE id = ?').get(userId);
-        if (userMode?.is_test_mode) {
+        let isTestMode = false;
+        if (isProduction) {
+            const result = await query('SELECT is_test_mode FROM users WHERE id = $1', [userId]);
+            isTestMode = result?.[0]?.is_test_mode === true;
+        } else {
+            const db = getDb();
+            const userMode = db.prepare('SELECT is_test_mode FROM users WHERE id = ?').get(userId);
+            isTestMode = userMode?.is_test_mode === 1;
+        }
+        
+        if (isTestMode) {
             return res.status(403).json({ 
                 success: false, 
                 error: 'TEST_MODE_USER',
-                message: 'Test mode users do not need password reset' // i18n: "error.paypassword.test_mode_reset_disabled"
+                message: 'Test mode users do not need password reset'
             });
         }
 
@@ -638,9 +763,8 @@ router.post('/paypassword/send-code', async (req, res) => {
             logger.info(`Password reset code sent to user ${userId} (${userEmail})`);
             res.json({
                 success: true,
-                message: 'Verification code sent to your email', // i18n: "success.paypassword.code_sent"
+                message: 'Verification code sent to your email',
                 data: {
-                    // Development only: return code for testing
                     code: process.env.NODE_ENV === 'development' ? code : undefined
                 }
             });
@@ -649,7 +773,7 @@ router.post('/paypassword/send-code', async (req, res) => {
             res.status(500).json({
                 success: false,
                 error: 'EMAIL_SEND_FAILED',
-                message: 'Failed to send verification email. Please try again later.' // i18n: "error.email_send_failed"
+                message: 'Failed to send verification email. Please try again later.'
             });
         }
     } catch (error) {
@@ -666,11 +790,11 @@ router.post('/paypassword/send-code', async (req, res) => {
 // ====================================================
 function getVipLevelText(level) {
     const levelMap = {
-        0: 'Regular',    // i18n: "vip.regular"
-        1: 'Bronze',     // i18n: "vip.bronze"
-        2: 'Silver',     // i18n: "vip.silver"
-        3: 'Gold',       // i18n: "vip.gold"
-        4: 'Platinum'    // i18n: "vip.platinum"
+        0: 'Regular',
+        1: 'Bronze',
+        2: 'Silver',
+        3: 'Gold',
+        4: 'Platinum'
     };
     return levelMap[level] || 'Regular';
 }
