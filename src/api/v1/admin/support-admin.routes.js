@@ -1,3 +1,4 @@
+// src/api/v1/admin/support-admin.routes.js
 import express from 'express';
 import { adminAuth } from '../../../middlewares/admin.middleware.js';
 import supportService from '../../../services/support.service.js';
@@ -11,9 +12,9 @@ router.use(adminAuth);
  * GET /api/v1/admin/support/stats
  * Get support statistics
  */
-router.get('/stats', (req, res) => {
+router.get('/stats', async (req, res) => {
     try {
-        const stats = supportService.getStats();
+        const stats = await supportService.getStats();
         res.json({ success: true, data: stats });
     } catch (error) {
         logger.error(`[Admin API] Get stats error: ${error.message}`);
@@ -25,7 +26,7 @@ router.get('/stats', (req, res) => {
  * GET /api/v1/admin/support/conversations
  * Get all conversations
  */
-router.get('/conversations', (req, res) => {
+router.get('/conversations', async (req, res) => {
     try {
         const { status, user_id, limit = 100, offset = 0 } = req.query;
         
@@ -36,7 +37,7 @@ router.get('/conversations', (req, res) => {
         const parsedLimit = Math.min(parseInt(limit) || 100, 500);
         const parsedOffset = parseInt(offset) || 0;
         
-        const result = supportService.getAllConversations(filters, parsedLimit, parsedOffset);
+        const result = await supportService.getAllConversations(filters, parsedLimit, parsedOffset);
         
         res.json({ success: true, data: result });
     } catch (error) {
@@ -49,9 +50,9 @@ router.get('/conversations', (req, res) => {
  * POST /api/v1/admin/support/reply
  * Admin reply to conversation
  */
-router.post('/reply', (req, res) => {
+router.post('/reply', async (req, res) => {
     try {
-        const adminId = req.admin.id;
+        const adminId = req.admin?.id || req.session?.adminId;
         const { convId, content } = req.body;
         
         if (!convId || !content || !content.trim()) {
@@ -64,7 +65,7 @@ router.post('/reply', (req, res) => {
         
         logger.info(`[Admin API] Admin ${adminId} replying to conversation ${convId}`);
         
-        const message = supportService.addAdminMessage(convId, adminId, content.trim());
+        const message = await supportService.addAdminMessage(convId, adminId, content.trim());
         
         res.json({
             success: true,
@@ -84,16 +85,16 @@ router.post('/reply', (req, res) => {
  * POST /api/v1/admin/support/status
  * Update conversation status
  */
-router.post('/status', (req, res) => {
+router.post('/status', async (req, res) => {
     try {
-        const adminId = req.admin.id;
+        const adminId = req.admin?.id || req.session?.adminId;
         const { convId, status } = req.body;
         
         if (!convId || !status || !['open', 'closed', 'resolved'].includes(status)) {
             return res.status(400).json({ success: false, error: 'Invalid parameters' });
         }
         
-        supportService.updateConversationStatus(convId, status, adminId);
+        await supportService.updateConversationStatus(convId, status, adminId);
         
         const statusMessages = {
             open: 'Conversation status updated to Open',
@@ -112,7 +113,7 @@ router.post('/status', (req, res) => {
  * GET /api/v1/admin/support/messages
  * Get conversation messages
  */
-router.get('/messages', (req, res) => {
+router.get('/messages', async (req, res) => {
     try {
         const { convId, limit = 100 } = req.query;
         
@@ -121,11 +122,12 @@ router.get('/messages', (req, res) => {
         }
         
         const parsedLimit = Math.min(parseInt(limit) || 100, 500);
-        const messages = supportService.getMessages(convId, parsedLimit);
+        const messages = await supportService.getMessages(convId, parsedLimit);
         
-        setImmediate(() => {
+        // 异步标记为已读
+        setImmediate(async () => {
             try {
-                supportService.markMessagesAsRead(convId, null, 'admin');
+                await supportService.markMessagesAsRead(convId, null, 'admin');
             } catch (err) {
                 logger.error(`[Admin API] Mark read error: ${err.message}`);
             }
@@ -142,10 +144,10 @@ router.get('/messages', (req, res) => {
  * GET /api/v1/admin/support/templates
  * Get quick reply templates
  */
-router.get('/templates', (req, res) => {
+router.get('/templates', async (req, res) => {
     try {
         const { category } = req.query;
-        const templates = supportService.getTemplates(category);
+        const templates = await supportService.getTemplates(category);
         res.json({ success: true, data: templates });
     } catch (error) {
         logger.error(`[Admin API] Get templates error: ${error.message}`);
@@ -157,16 +159,22 @@ router.get('/templates', (req, res) => {
  * GET /api/v1/admin/support/unread/stats
  * Get admin unread statistics
  */
-router.get('/unread/stats', (req, res) => {
+router.get('/unread/stats', async (req, res) => {
     try {
-        const totalUnread = supportService.getAdminTotalUnread();
-        const conversationStats = supportService.getAdminUnreadStats();
+        const totalUnread = await supportService.getAdminTotalUnread();
+        const conversationStats = await supportService.getAdminUnreadStats();
+        
+        // conversationStats 现在返回 { conversations: [], total_unread: 0 }
+        const conversations = conversationStats.conversations || conversationStats || [];
+        const totalUnreadValue = conversationStats.total_unread !== undefined 
+            ? conversationStats.total_unread 
+            : totalUnread;
         
         res.json({
             success: true,
             data: {
-                total_unread: totalUnread,
-                conversations: conversationStats
+                total_unread: totalUnreadValue,
+                conversations: conversations
             }
         });
     } catch (error) {
@@ -182,9 +190,9 @@ router.get('/unread/stats', (req, res) => {
  * POST /api/v1/admin/support/conversations/read
  * Mark conversation messages as read
  */
-router.post('/conversations/read', (req, res) => {
+router.post('/conversations/read', async (req, res) => {
     try {
-        const adminId = req.admin.id;
+        const adminId = req.admin?.id || req.session?.adminId;
         const { convId } = req.body;
         
         if (!convId) {
@@ -194,7 +202,7 @@ router.post('/conversations/read', (req, res) => {
             });
         }
         
-        const markedCount = supportService.markConversationMessagesRead(convId, adminId);
+        const markedCount = await supportService.markConversationMessagesRead(convId, adminId);
         
         res.json({
             success: true,
@@ -214,10 +222,10 @@ router.post('/conversations/read', (req, res) => {
  * GET /api/v1/admin/support/status
  * Get admin status (online/away/busy)
  */
-router.get('/status', (req, res) => {
+router.get('/status', async (req, res) => {
     try {
-        const adminId = req.admin.id;
-        const status = supportService.getAdminStatus(adminId);
+        const adminId = req.admin?.id || req.session?.adminId;
+        const status = await supportService.getAdminStatus(adminId);
         res.json({ success: true, data: status });
     } catch (error) {
         logger.error(`[Admin API] Get status error: ${error.message}`);
@@ -229,9 +237,9 @@ router.get('/status', (req, res) => {
  * POST /api/v1/admin/support/status
  * Update admin status
  */
-router.post('/status', (req, res) => {
+router.post('/status', async (req, res) => {
     try {
-        const adminId = req.admin.id;
+        const adminId = req.admin?.id || req.session?.adminId;
         const { status } = req.body;
         
         if (!status || !['online', 'away', 'busy'].includes(status)) {
@@ -242,7 +250,7 @@ router.post('/status', (req, res) => {
         }
         
         const isOnline = status === 'online';
-        supportService.updateAdminStatus(adminId, isOnline, status);
+        await supportService.updateAdminStatus(adminId, isOnline, status);
         
         res.json({ success: true, message: `Status updated to ${status}` });
     } catch (error) {
@@ -255,19 +263,15 @@ router.post('/status', (req, res) => {
  * POST /api/v1/admin/support/heartbeat
  * Heartbeat to keep online status
  */
-router.post('/heartbeat', (req, res) => {
+router.post('/heartbeat', async (req, res) => {
     try {
-        const adminId = req.admin.id;
-        const db = supportService.getDb();
-        const now = supportService.getCurrentTimestamp();
+        const adminId = req.admin?.id || req.session?.adminId;
         
-        db.prepare(`
-            UPDATE support_admins 
-            SET last_active_at = ?
-            WHERE admin_id = ?
-        `).run(now, adminId);
+        if (adminId) {
+            await supportService.updateAdminStatus(adminId, true, 'online');
+        }
         
-        res.json({ success: true });
+        res.json({ success: true, data: { timestamp: new Date().toISOString() } });
     } catch (error) {
         logger.error(`[Admin API] Heartbeat error: ${error.message}`);
         res.status(500).json({ success: false, error: error.message });
