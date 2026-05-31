@@ -488,65 +488,64 @@ class SupportService {
         }
     }
     
-    async getStats() {
-        try {
-            const today = new Date().toISOString().split('T')[0];
+  async getStats() {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        if (isProduction) {
+            const result = await this.query(`
+                SELECT 
+                    (SELECT COUNT(*) FROM support_conversations) as total_conversations,
+                    (SELECT COUNT(*) FROM support_conversations WHERE status = 'open') as open_conversations,
+                    (SELECT COUNT(*) FROM support_conversations WHERE status = 'resolved') as resolved_conversations,
+                    (SELECT COUNT(*) FROM support_conversations WHERE status = 'closed') as closed_conversations,
+                    (SELECT COUNT(*) FROM support_messages) as total_messages,
+                    COALESCE((SELECT ROUND(AVG(score), 1) FROM support_ratings), 0) as avg_rating,
+                    (SELECT COUNT(*) FROM support_messages WHERE DATE(created_at) = $1) as today_messages,
+                    (SELECT COUNT(*) FROM support_conversations WHERE DATE(created_at) = $1) as today_conversations
+            `, [today]);
+            const stats = result?.[0] || {};
             
-            if (isProduction) {
-                const result = await this.query(`
-                    SELECT 
-                        (SELECT COUNT(*) FROM support_conversations) as total_conversations,
-                        (SELECT COUNT(*) FROM support_conversations WHERE status = 'open') as open_conversations,
-                        (SELECT COUNT(*) FROM support_conversations WHERE status = 'resolved') as resolved_conversations,
-                        (SELECT COUNT(*) FROM support_conversations WHERE status = 'closed') as closed_conversations,
-                        (SELECT COUNT(*) FROM support_messages) as total_messages,
-                        (SELECT ROUND(AVG(score), 1) FROM support_ratings) as avg_rating,
-                        (SELECT COUNT(*) FROM support_messages WHERE DATE(created_at) = $1) as today_messages,
-                        (SELECT COUNT(*) FROM support_conversations WHERE DATE(created_at) = $1) as today_conversations
-                `, [today]);
-                const stats = result?.[0] || {};
-                
-                return {
-                    total_conversations: stats.total_conversations || 0,
-                    open_conversations: stats.open_conversations || 0,
-                    resolved_conversations: stats.resolved_conversations || 0,
-                    closed_conversations: stats.closed_conversations || 0,
-                    total_messages: stats.total_messages || 0,
-                    avg_rating: stats.avg_rating || 0,
-                    today_messages: stats.today_messages || 0,
-                    today_conversations: stats.today_conversations || 0
-                };
-            } else {
-                const db = await this.getDb();
-                const stats = db.prepare(`
-                    SELECT 
-                        (SELECT COUNT(*) FROM support_conversations) as total_conversations,
-                        (SELECT COUNT(*) FROM support_conversations WHERE status = 'open') as open_conversations,
-                        (SELECT COUNT(*) FROM support_conversations WHERE status = 'resolved') as resolved_conversations,
-                        (SELECT COUNT(*) FROM support_conversations WHERE status = 'closed') as closed_conversations,
-                        (SELECT COUNT(*) FROM support_messages) as total_messages,
-                        (SELECT ROUND(AVG(score), 1) FROM support_ratings) as avg_rating,
-                        (SELECT COUNT(*) FROM support_messages WHERE date(created_at) = ?) as today_messages,
-                        (SELECT COUNT(*) FROM support_conversations WHERE date(created_at) = ?) as today_conversations
-                `).get(today, today);
-                
-                return {
-                    total_conversations: stats.total_conversations || 0,
-                    open_conversations: stats.open_conversations || 0,
-                    resolved_conversations: stats.resolved_conversations || 0,
-                    closed_conversations: stats.closed_conversations || 0,
-                    total_messages: stats.total_messages || 0,
-                    avg_rating: stats.avg_rating || 0,
-                    today_messages: stats.today_messages || 0,
-                    today_conversations: stats.today_conversations || 0
-                };
-            }
-        } catch (error) {
-            logger.error('[SupportService] getStats error:', error);
-            throw error;
+            return {
+                total_conversations: parseInt(stats.total_conversations) || 0,
+                open_conversations: parseInt(stats.open_conversations) || 0,
+                resolved_conversations: parseInt(stats.resolved_conversations) || 0,
+                closed_conversations: parseInt(stats.closed_conversations) || 0,
+                total_messages: parseInt(stats.total_messages) || 0,
+                avg_rating: parseFloat(stats.avg_rating) || 0,
+                today_messages: parseInt(stats.today_messages) || 0,
+                today_conversations: parseInt(stats.today_conversations) || 0
+            };
+        } else {
+            const db = await this.getDb();
+            const stats = db.prepare(`
+                SELECT 
+                    (SELECT COUNT(*) FROM support_conversations) as total_conversations,
+                    (SELECT COUNT(*) FROM support_conversations WHERE status = 'open') as open_conversations,
+                    (SELECT COUNT(*) FROM support_conversations WHERE status = 'resolved') as resolved_conversations,
+                    (SELECT COUNT(*) FROM support_conversations WHERE status = 'closed') as closed_conversations,
+                    (SELECT COUNT(*) FROM support_messages) as total_messages,
+                    COALESCE((SELECT ROUND(AVG(score), 1) FROM support_ratings), 0) as avg_rating,
+                    (SELECT COUNT(*) FROM support_messages WHERE date(created_at) = ?) as today_messages,
+                    (SELECT COUNT(*) FROM support_conversations WHERE date(created_at) = ?) as today_conversations
+            `).get(today, today);
+            
+            return {
+                total_conversations: stats.total_conversations || 0,
+                open_conversations: stats.open_conversations || 0,
+                resolved_conversations: stats.resolved_conversations || 0,
+                closed_conversations: stats.closed_conversations || 0,
+                total_messages: stats.total_messages || 0,
+                avg_rating: stats.avg_rating || 0,
+                today_messages: stats.today_messages || 0,
+                today_conversations: stats.today_conversations || 0
+            };
         }
+    } catch (error) {
+        logger.error('[SupportService] getStats error:', error);
+        throw error;
     }
-    
+}
     async markMessagesAsRead(convId, userId, senderType = 'user') {
         try {
             const now = this.getCurrentTimestamp();
@@ -691,46 +690,47 @@ class SupportService {
         }
     }
 
-    async getAdminUnreadStats() {
-        try {
-            if (isProduction) {
-                return await this.query(`
-                    SELECT 
-                        c.id as conv_id,
-                        c.user_id,
-                        COUNT(m.id) as unread_count
-                    FROM support_conversations c
-                    LEFT JOIN support_messages m ON m.conv_id = c.id 
-                        AND m.sender_type = 'user' 
-                        AND m.is_read = false
-                    WHERE c.status = 'open'
-                    GROUP BY c.id
-                    HAVING unread_count > 0
-                    ORDER BY MAX(m.created_at) DESC
-                `);
-            } else {
-                const db = await this.getDb();
-                return db.prepare(`
-                    SELECT 
-                        c.id as conv_id,
-                        c.user_id,
-                        COUNT(m.id) as unread_count
-                    FROM support_conversations c
-                    LEFT JOIN support_messages m ON m.conv_id = c.id 
-                        AND m.sender_type = 'user' 
-                        AND m.is_read = 0
-                    WHERE c.status = 'open'
-                    GROUP BY c.id
-                    HAVING unread_count > 0
-                    ORDER BY MAX(m.created_at) DESC
-                `).all();
-            }
-        } catch (error) {
-            logger.error('[SupportService] getAdminUnreadStats error:', error);
-            return [];
+ async getAdminUnreadStats() {
+    try {
+        if (isProduction) {
+            // PostgreSQL - 修复列名问题
+            const result = await this.query(`
+                SELECT 
+                    c.id as conv_id,
+                    c.user_id,
+                    COUNT(m.id) as unread_count
+                FROM support_conversations c
+                LEFT JOIN support_messages m ON m.conv_id = c.id 
+                    AND m.sender_type = 'user' 
+                    AND m.is_read = false
+                WHERE c.status = 'open'
+                GROUP BY c.id, c.user_id
+                HAVING COUNT(m.id) > 0
+                ORDER BY MAX(m.created_at) DESC
+            `);
+            return result || [];
+        } else {
+            const db = await this.getDb();
+            return db.prepare(`
+                SELECT 
+                    c.id as conv_id,
+                    c.user_id,
+                    COUNT(m.id) as unread_count
+                FROM support_conversations c
+                LEFT JOIN support_messages m ON m.conv_id = c.id 
+                    AND m.sender_type = 'user' 
+                    AND m.is_read = 0
+                WHERE c.status = 'open'
+                GROUP BY c.id, c.user_id
+                HAVING COUNT(m.id) > 0
+                ORDER BY MAX(m.created_at) DESC
+            `).all();
         }
+    } catch (error) {
+        logger.error('[SupportService] getAdminUnreadStats error:', error);
+        return [];
     }
-
+}
     async getAdminTotalUnread() {
         try {
             if (isProduction) {
