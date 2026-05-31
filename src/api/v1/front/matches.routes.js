@@ -1,8 +1,10 @@
+// src/api/v1/front/matches.routes.js
 import express from 'express';
-import { getDb } from '../../../database/connection.js';
+import { query, getDb } from '../../../database/connection.js';
 import logger from '../../../utils/logger.js';
 
 const router = express.Router();
+const isProduction = process.env.NODE_ENV === 'production';
 
 /**
  * 获取球队队徽显示URL（降级逻辑）
@@ -14,57 +16,90 @@ function getLogoUrl(logoUrl) {
     return logoUrl;
 }
 
-// ==================== 获取比赛列表（只返回已啟用的比賽）====================
-router.get('/', (req, res) => {
+// ==================== 获取比赛列表（只返回已启用的比赛）====================
+router.get('/', async (req, res) => {
     console.log('=== GET /api/v1/matches called ===');
     
     try {
-        const db = getDb();
+        let matches = [];
         
-        const tableInfo = db.prepare("PRAGMA table_info(matches)").all();
-        const hasHomeLogo = tableInfo.some(col => col.name === 'home_logo');
-        const hasAwayLogo = tableInfo.some(col => col.name === 'away_logo');
-        const hasIsActive = tableInfo.some(col => col.name === 'is_active');
-        
-        let query = `
-            SELECT 
-                id,
-                match_id,
-                home_team,
-                away_team,
-                league,
-                match_time,
-                execution_rate,
-                min_authorization,
-                match_limit,
-                status,
-                CASE 
-                    WHEN datetime(match_time) > datetime('now') THEN 1 
-                    ELSE 0 
-                END as is_open
-        `;
-        
-        if (hasHomeLogo) {
-            query += `, home_logo`;
+        if (isProduction) {
+            // PostgreSQL 查询
+            const result = await query(`
+                SELECT 
+                    id,
+                    match_id,
+                    home_team,
+                    away_team,
+                    league,
+                    match_time,
+                    execution_rate,
+                    min_authorization,
+                    match_limit,
+                    status,
+                    home_logo,
+                    away_logo,
+                    CASE 
+                        WHEN match_time > NOW() THEN 1 
+                        ELSE 0 
+                    END as is_open
+                FROM matches 
+                WHERE is_active = true 
+                    AND (status = 'upcoming' OR status = 'pending') 
+                    AND match_time > NOW()
+                ORDER BY match_time ASC 
+                LIMIT 200
+            `);
+            matches = result || [];
         } else {
-            query += `, NULL as home_logo`;
+            // SQLite 查询
+            const db = getDb();
+            
+            const tableInfo = db.prepare("PRAGMA table_info(matches)").all();
+            const hasHomeLogo = tableInfo.some(col => col.name === 'home_logo');
+            const hasAwayLogo = tableInfo.some(col => col.name === 'away_logo');
+            const hasIsActive = tableInfo.some(col => col.name === 'is_active');
+            
+            let sql = `
+                SELECT 
+                    id,
+                    match_id,
+                    home_team,
+                    away_team,
+                    league,
+                    match_time,
+                    execution_rate,
+                    min_authorization,
+                    match_limit,
+                    status,
+                    CASE 
+                        WHEN datetime(match_time) > datetime('now') THEN 1 
+                        ELSE 0 
+                    END as is_open
+            `;
+            
+            if (hasHomeLogo) {
+                sql += `, home_logo`;
+            } else {
+                sql += `, NULL as home_logo`;
+            }
+            
+            if (hasAwayLogo) {
+                sql += `, away_logo`;
+            } else {
+                sql += `, NULL as away_logo`;
+            }
+            
+            if (hasIsActive) {
+                sql += ` FROM matches WHERE is_active = 1 AND (status = 'upcoming' OR status = 'pending') AND datetime(match_time) > datetime('now')`;
+            } else {
+                sql += ` FROM matches WHERE (status = 'upcoming' OR status = 'pending') AND datetime(match_time) > datetime('now')`;
+            }
+            
+            sql += ` ORDER BY match_time ASC LIMIT 200`;
+            
+            matches = db.prepare(sql).all();
         }
-        
-        if (hasAwayLogo) {
-            query += `, away_logo`;
-        } else {
-            query += `, NULL as away_logo`;
-        }
-        
-        if (hasIsActive) {
-            query += ` FROM matches WHERE is_active = 1 AND (status = 'upcoming' OR status = 'pending') AND datetime(match_time) > datetime('now')`;
-        } else {
-            query += ` FROM matches WHERE (status = 'upcoming' OR status = 'pending') AND datetime(match_time) > datetime('now')`;
-        }
-        
-        query += ` ORDER BY match_time ASC LIMIT 200`;
-        
-        const matches = db.prepare(query).all();
         
         // 处理队徽降级
         const processedMatches = matches.map(match => ({
@@ -93,51 +128,76 @@ router.get('/', (req, res) => {
 });
 
 // ==================== 获取单场比赛详情 ====================
-router.get('/:matchId', (req, res) => {
+router.get('/:matchId', async (req, res) => {
     const { matchId } = req.params;
     console.log(`=== GET /api/v1/matches/${matchId} called ===`);
     
     try {
-        const db = getDb();
+        let match = null;
         
-        const tableInfo = db.prepare("PRAGMA table_info(matches)").all();
-        const hasHomeLogo = tableInfo.some(col => col.name === 'home_logo');
-        const hasAwayLogo = tableInfo.some(col => col.name === 'away_logo');
-        const hasIsActive = tableInfo.some(col => col.name === 'is_active');
-        
-        let query = `
-            SELECT 
-                id,
-                match_id,
-                home_team,
-                away_team,
-                league,
-                match_time,
-                execution_rate,
-                min_authorization,
-                match_limit,
-                status
-        `;
-        
-        if (hasHomeLogo) {
-            query += `, home_logo`;
+        if (isProduction) {
+            // PostgreSQL 查询
+            const result = await query(`
+                SELECT 
+                    id,
+                    match_id,
+                    home_team,
+                    away_team,
+                    league,
+                    match_time,
+                    execution_rate,
+                    min_authorization,
+                    match_limit,
+                    status,
+                    home_logo,
+                    away_logo
+                FROM matches 
+                WHERE (match_id = $1 OR id = $1::INTEGER) AND is_active = true
+            `, [matchId]);
+            match = result?.[0] || null;
         } else {
-            query += `, NULL as home_logo`;
+            // SQLite 查询
+            const db = getDb();
+            
+            const tableInfo = db.prepare("PRAGMA table_info(matches)").all();
+            const hasHomeLogo = tableInfo.some(col => col.name === 'home_logo');
+            const hasAwayLogo = tableInfo.some(col => col.name === 'away_logo');
+            const hasIsActive = tableInfo.some(col => col.name === 'is_active');
+            
+            let sql = `
+                SELECT 
+                    id,
+                    match_id,
+                    home_team,
+                    away_team,
+                    league,
+                    match_time,
+                    execution_rate,
+                    min_authorization,
+                    match_limit,
+                    status
+            `;
+            
+            if (hasHomeLogo) {
+                sql += `, home_logo`;
+            } else {
+                sql += `, NULL as home_logo`;
+            }
+            
+            if (hasAwayLogo) {
+                sql += `, away_logo`;
+            } else {
+                sql += `, NULL as away_logo`;
+            }
+            
+            if (hasIsActive) {
+                sql += ` FROM matches WHERE (match_id = ? OR id = ?) AND is_active = 1`;
+            } else {
+                sql += ` FROM matches WHERE match_id = ? OR id = ?`;
+            }
+            
+            match = db.prepare(sql).get(matchId, matchId);
         }
-        
-        if (hasAwayLogo) {
-            query += `, away_logo`;
-        } else {
-            query += `, NULL as away_logo`;
-        }
-        
-        if (hasIsActive) {
-            query += ` FROM matches WHERE (match_id = ? OR id = ?) AND is_active = 1`;
-        } else {
-            query += ` FROM matches WHERE match_id = ? OR id = ?`;
-        }
-        
-        const match = db.prepare(query).get(matchId, matchId);
         
         if (!match) {
             return res.status(404).json({ 
@@ -170,82 +230,127 @@ router.get('/:matchId', (req, res) => {
 });
 
 // ==================== 按聯賽分組獲取比賽（用於前台展示）====================
-router.get('/grouped/by-league', (req, res) => {
+router.get('/grouped/by-league', async (req, res) => {
     console.log('=== GET /api/v1/matches/grouped/by-league called ===');
     
     try {
-        const db = getDb();
+        let groupedMatches = [];
         
-        const tableInfo = db.prepare("PRAGMA table_info(matches)").all();
-        const hasHomeLogo = tableInfo.some(col => col.name === 'home_logo');
-        const hasAwayLogo = tableInfo.some(col => col.name === 'away_logo');
-        const hasIsActive = tableInfo.some(col => col.name === 'is_active');
-        
-        let selectFields = `
-            m.league,
-            COUNT(*) as count,
-            json_group_array(
-                json_object(
-                    'id', m.id,
-                    'match_id', m.match_id,
-                    'home_team', m.home_team,
-                    'away_team', m.away_team,
-                    'match_time', m.match_time
-        `;
-        
-        if (hasHomeLogo) {
-            selectFields += `, 'home_logo', m.home_logo`;
-        }
-        
-        if (hasAwayLogo) {
-            selectFields += `, 'away_logo', m.away_logo`;
-        }
-        
-        selectFields += `)) as matches`;
-        
-        let whereClause = '';
-        if (hasIsActive) {
-            whereClause = 'WHERE m.is_active = 1 AND (m.status = "upcoming" OR m.status = "pending") AND datetime(m.match_time) > datetime("now")';
+        if (isProduction) {
+            // PostgreSQL 查询 - 使用 json_agg
+            const result = await query(`
+                SELECT 
+                    league,
+                    COUNT(*) as count,
+                    json_agg(
+                        json_build_object(
+                            'id', id,
+                            'match_id', match_id,
+                            'home_team', home_team,
+                            'away_team', away_team,
+                            'match_time', match_time,
+                            'home_logo', home_logo,
+                            'away_logo', away_logo
+                        )
+                    ) as matches
+                FROM matches 
+                WHERE is_active = true 
+                    AND (status = 'upcoming' OR status = 'pending') 
+                    AND match_time > NOW()
+                GROUP BY league
+                ORDER BY 
+                    CASE league
+                        WHEN 'Premier League' THEN 1
+                        WHEN 'La Liga' THEN 2
+                        WHEN 'Serie A' THEN 3
+                        WHEN 'Bundesliga' THEN 4
+                        WHEN 'Ligue 1' THEN 5
+                        WHEN 'Champions League' THEN 6
+                        ELSE 7
+                    END
+            `);
+            
+            groupedMatches = (result || []).map(row => ({
+                league: row.league,
+                count: parseInt(row.count),
+                matches: row.matches || []
+            }));
         } else {
-            whereClause = 'WHERE (m.status = "upcoming" OR m.status = "pending") AND datetime(m.match_time) > datetime("now")';
+            // SQLite 查询
+            const db = getDb();
+            
+            const tableInfo = db.prepare("PRAGMA table_info(matches)").all();
+            const hasHomeLogo = tableInfo.some(col => col.name === 'home_logo');
+            const hasAwayLogo = tableInfo.some(col => col.name === 'away_logo');
+            const hasIsActive = tableInfo.some(col => col.name === 'is_active');
+            
+            let selectFields = `
+                m.league,
+                COUNT(*) as count,
+                json_group_array(
+                    json_object(
+                        'id', m.id,
+                        'match_id', m.match_id,
+                        'home_team', m.home_team,
+                        'away_team', m.away_team,
+                        'match_time', m.match_time
+            `;
+            
+            if (hasHomeLogo) {
+                selectFields += `, 'home_logo', m.home_logo`;
+            }
+            
+            if (hasAwayLogo) {
+                selectFields += `, 'away_logo', m.away_logo`;
+            }
+            
+            selectFields += `)) as matches`;
+            
+            let whereClause = '';
+            if (hasIsActive) {
+                whereClause = 'WHERE m.is_active = 1 AND (m.status = "upcoming" OR m.status = "pending") AND datetime(m.match_time) > datetime("now")';
+            } else {
+                whereClause = 'WHERE (m.status = "upcoming" OR m.status = "pending") AND datetime(m.match_time) > datetime("now")';
+            }
+            
+            const querySql = `
+                SELECT ${selectFields}
+                FROM matches m
+                ${whereClause}
+                GROUP BY m.league
+                ORDER BY 
+                    CASE m.league
+                        WHEN 'Premier League' THEN 1
+                        WHEN 'La Liga' THEN 2
+                        WHEN 'Serie A' THEN 3
+                        WHEN 'Bundesliga' THEN 4
+                        WHEN 'Ligue 1' THEN 5
+                        WHEN 'Champions League' THEN 6
+                        ELSE 7
+                    END
+            `;
+            
+            const results = db.prepare(querySql).all();
+            
+            groupedMatches = results.map(row => ({
+                ...row,
+                matches: JSON.parse(row.matches)
+            }));
         }
         
-        const query = `
-            SELECT ${selectFields}
-            FROM matches m
-            ${whereClause}
-            GROUP BY m.league
-            ORDER BY 
-                CASE m.league
-                    WHEN 'Premier League' THEN 1
-                    WHEN 'La Liga' THEN 2
-                    WHEN 'Serie A' THEN 3
-                    WHEN 'Bundesliga' THEN 4
-                    WHEN 'Ligue 1' THEN 5
-                    WHEN 'Champions League' THEN 6
-                    ELSE 7
-                END
-        `;
-        
-        const results = db.prepare(query).all();
-        
-        // 解析 JSON 并处理队徽降级
-        const groupedMatches = results.map(row => {
-            const matches = JSON.parse(row.matches);
-            const processedMatches = matches.map(match => ({
+        // 处理队徽降级
+        const processedMatches = groupedMatches.map(group => ({
+            ...group,
+            matches: group.matches.map(match => ({
                 ...match,
                 home_logo: getLogoUrl(match.home_logo),
                 away_logo: getLogoUrl(match.away_logo)
-            }));
-            return {
-                ...row,
-                matches: processedMatches
-            };
-        });
+            }))
+        }));
         
         res.json({
             success: true,
-            data: groupedMatches
+            data: processedMatches
         });
         
     } catch (error) {
@@ -260,32 +365,49 @@ router.get('/grouped/by-league', (req, res) => {
 });
 
 // ==================== 檢查比賽是否可授權 ====================
-router.get('/:matchId/check-availability', (req, res) => {
+router.get('/:matchId/check-availability', async (req, res) => {
     const { matchId } = req.params;
     
     try {
-        const db = getDb();
+        let match = null;
         
-        const tableInfo = db.prepare("PRAGMA table_info(matches)").all();
-        const hasIsActive = tableInfo.some(col => col.name === 'is_active');
-        
-        let query = `
-            SELECT 
-                id,
-                match_time,
-                status,
-                execution_rate,
-                min_authorization,
-                match_limit
-        `;
-        
-        if (hasIsActive) {
-            query += ` FROM matches WHERE (match_id = ? OR id = ?) AND is_active = 1`;
+        if (isProduction) {
+            const result = await query(`
+                SELECT 
+                    id,
+                    match_time,
+                    status,
+                    execution_rate,
+                    min_authorization,
+                    match_limit
+                FROM matches 
+                WHERE (match_id = $1 OR id = $1::INTEGER) AND is_active = true
+            `, [matchId]);
+            match = result?.[0] || null;
         } else {
-            query += ` FROM matches WHERE match_id = ? OR id = ?`;
+            const db = getDb();
+            
+            const tableInfo = db.prepare("PRAGMA table_info(matches)").all();
+            const hasIsActive = tableInfo.some(col => col.name === 'is_active');
+            
+            let querySql = `
+                SELECT 
+                    id,
+                    match_time,
+                    status,
+                    execution_rate,
+                    min_authorization,
+                    match_limit
+            `;
+            
+            if (hasIsActive) {
+                querySql += ` FROM matches WHERE (match_id = ? OR id = ?) AND is_active = 1`;
+            } else {
+                querySql += ` FROM matches WHERE match_id = ? OR id = ?`;
+            }
+            
+            match = db.prepare(querySql).get(matchId, matchId);
         }
-        
-        const match = db.prepare(query).get(matchId, matchId);
         
         if (!match) {
             return res.json({
