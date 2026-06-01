@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
         let matches = [];
         
         if (isProduction) {
-            // PostgreSQL 查询
+            // PostgreSQL 查询 - 使用 is_active = 1 而不是 true
             const result = await query(`
                 SELECT 
                     id,
@@ -44,7 +44,7 @@ router.get('/', async (req, res) => {
                         ELSE 0 
                     END as is_open
                 FROM matches 
-                WHERE is_active = true 
+                WHERE is_active = 1
                     AND (status = 'upcoming' OR status = 'pending') 
                     AND match_time > NOW()
                 ORDER BY match_time ASC 
@@ -136,7 +136,7 @@ router.get('/:matchId', async (req, res) => {
         let match = null;
         
         if (isProduction) {
-            // PostgreSQL 查询
+            // PostgreSQL 查询 - 使用 is_active = 1
             const result = await query(`
                 SELECT 
                     id,
@@ -152,7 +152,7 @@ router.get('/:matchId', async (req, res) => {
                     home_logo,
                     away_logo
                 FROM matches 
-                WHERE (match_id = $1 OR id = $1::INTEGER) AND is_active = true
+                WHERE (match_id = $1 OR id = $1::INTEGER) AND is_active = 1
             `, [matchId]);
             match = result?.[0] || null;
         } else {
@@ -237,24 +237,27 @@ router.get('/grouped/by-league', async (req, res) => {
         let groupedMatches = [];
         
         if (isProduction) {
-            // PostgreSQL 查询 - 使用 json_agg
+            // PostgreSQL 查询 - 使用 is_active = 1
             const result = await query(`
                 SELECT 
                     league,
                     COUNT(*) as count,
-                    json_agg(
-                        json_build_object(
-                            'id', id,
-                            'match_id', match_id,
-                            'home_team', home_team,
-                            'away_team', away_team,
-                            'match_time', match_time,
-                            'home_logo', home_logo,
-                            'away_logo', away_logo
-                        )
+                    COALESCE(
+                        json_agg(
+                            json_build_object(
+                                'id', id,
+                                'match_id', match_id,
+                                'home_team', home_team,
+                                'away_team', away_team,
+                                'match_time', match_time,
+                                'home_logo', home_logo,
+                                'away_logo', away_logo
+                            )
+                        ) FILTER (WHERE id IS NOT NULL),
+                        '[]'::json
                     ) as matches
                 FROM matches 
-                WHERE is_active = true 
+                WHERE is_active = 1
                     AND (status = 'upcoming' OR status = 'pending') 
                     AND match_time > NOW()
                 GROUP BY league
@@ -341,7 +344,7 @@ router.get('/grouped/by-league', async (req, res) => {
         // 处理队徽降级
         const processedMatches = groupedMatches.map(group => ({
             ...group,
-            matches: group.matches.map(match => ({
+            matches: (group.matches || []).map(match => ({
                 ...match,
                 home_logo: getLogoUrl(match.home_logo),
                 away_logo: getLogoUrl(match.away_logo)
@@ -372,6 +375,7 @@ router.get('/:matchId/check-availability', async (req, res) => {
         let match = null;
         
         if (isProduction) {
+            // PostgreSQL 查询 - 使用 is_active = 1
             const result = await query(`
                 SELECT 
                     id,
@@ -381,7 +385,7 @@ router.get('/:matchId/check-availability', async (req, res) => {
                     min_authorization,
                     match_limit
                 FROM matches 
-                WHERE (match_id = $1 OR id = $1::INTEGER) AND is_active = true
+                WHERE (match_id = $1 OR id = $1::INTEGER) AND is_active = 1
             `, [matchId]);
             match = result?.[0] || null;
         } else {
@@ -431,7 +435,7 @@ router.get('/:matchId/check-availability', async (req, res) => {
                 match_limit: match.match_limit,
                 match_time: match.match_time
             },
-            reason: isAvailable ? null : 'MATCH_STARTED_OR_ENDED'
+            reason: isAvailable ? null : (now >= matchTime ? 'MATCH_STARTED' : 'MATCH_NOT_AVAILABLE')
         });
         
     } catch (error) {
