@@ -514,92 +514,132 @@
     }
 
     // ==================== 事件绑定 ====================
-    function bindEvents() {
-        // 金额预设按钮
-        document.querySelectorAll('.preset-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const amount = e.currentTarget.dataset.amount;
-                handlePresetAmount(amount);
-            });
+function bindEvents() {
+    // 金额预设按钮 - 确保正确绑定
+    const presetBtns = document.querySelectorAll('.preset-btn');
+    console.log('找到预设按钮数量:', presetBtns.length);
+    
+    presetBtns.forEach(btn => {
+        // 移除旧事件避免重复
+        btn.removeEventListener('click', handlePresetClick);
+        btn.addEventListener('click', handlePresetClick);
+    });
+    
+    // 金额输入框
+    if (DOM.amountInput) {
+        DOM.amountInput.removeEventListener('input', handleAmountInput);
+        DOM.amountInput.addEventListener('input', handleAmountInput);
+        DOM.amountInput.addEventListener('blur', () => {
+            setAmount(parseInt(DOM.amountInput.value) || AppState.minAmount);
         });
-        
-        // 金额输入框
-        if (DOM.amountInput) {
-            DOM.amountInput.addEventListener('input', handleAmountInput);
-            DOM.amountInput.addEventListener('blur', () => {
-                setAmount(parseInt(DOM.amountInput.value) || AppState.minAmount);
-            });
-        }
-        
-        // 金额滑块
-        if (DOM.amountSlider) {
-            DOM.amountSlider.addEventListener('input', handleAmountSlider);
-        }
-        
-        // 授权按钮
-        if (DOM.authorizeBtn) {
-            DOM.authorizeBtn.addEventListener('click', submitAuthorization);
-        }
-        
-        // 模态框按钮
-        if (DOM.viewDetailsBtn) {
-            DOM.viewDetailsBtn.addEventListener('click', () => {
-                const authId = localStorage.getItem('lastAuthId');
-                window.location.href = authId ? `/shell.html?page=transaction-detail&authId=${authId}` : '/shell.html?page=records';
-            });
-        }
-        if (DOM.continueBtn) {
-            DOM.continueBtn.addEventListener('click', () => {
-                window.location.href = '/shell.html?page=home';
-            });
-        }
-        
-        // 主题切换
-        if (DOM.themeToggle) {
-            DOM.themeToggle.addEventListener('click', () => ThemeManager.toggleTheme());
-        }
-        
-        // 语言切换
-        if (DOM.langToggle) {
-            DOM.langToggle.addEventListener('click', () => {
-                currentLanguage = currentLanguage === 'zh' ? 'en' : 'zh';
-                localStorage.setItem('language', currentLanguage);
-                localStorage.setItem('footradapro_language', currentLanguage);
-                window.dispatchEvent(new CustomEvent('languagechange', { detail: { language: currentLanguage } }));
-                if (DOM.langToggle) DOM.langToggle.textContent = currentLanguage === 'zh' ? '中' : 'EN';
-                updateModeUI();
-                if (AppState.match) renderMatchDetails();
-                updateAmountDisplay();
-            });
-        }
-        
-        // 监听语言变化
-        window.addEventListener('languagechange', (e) => {
-            if (e.detail?.language) {
-                currentLanguage = e.detail.language;
-                updateModeUI();
-                if (AppState.match) renderMatchDetails();
-                updateAmountDisplay();
-            }
-        });
-        
-        // 监听主题变化
-        window.addEventListener('themechange', (e) => {
-            if (DOM.themeToggle) {
-                DOM.themeToggle.className = e.detail.isDarkMode ? 'fa-regular fa-sun' : 'fa-regular fa-moon';
-            }
-        });
-        
-        // 监听模式变化
-        if (ThemeManager.addListener) {
-            ThemeManager.addListener((state) => {
-                AppState.isTestMode = state.isTestMode;
-                updateModeUI();
-                updateAmountLimits();
-                loadUserBalance();
-            });
-        }
     }
+    
+    // 金额滑块
+    if (DOM.amountSlider) {
+        DOM.amountSlider.removeEventListener('input', handleAmountSlider);
+        DOM.amountSlider.addEventListener('input', handleAmountSlider);
+    }
+    
+    // 授权按钮
+    if (DOM.authorizeBtn) {
+        DOM.authorizeBtn.removeEventListener('click', submitAuthorization);
+        DOM.authorizeBtn.addEventListener('click', submitAuthorization);
+    }
+    
+    // 模态框按钮
+    if (DOM.viewDetailsBtn) {
+        DOM.viewDetailsBtn.removeEventListener('click', () => {
+            const authId = localStorage.getItem('lastAuthId');
+            window.location.href = authId ? `/shell.html?page=transaction-detail&authId=${authId}` : '/shell.html?page=records';
+        });
+        DOM.viewDetailsBtn.addEventListener('click', () => {
+            const authId = localStorage.getItem('lastAuthId');
+            window.location.href = authId ? `/shell.html?page=transaction-detail&authId=${authId}` : '/shell.html?page=records';
+        });
+    }
+    
+    if (DOM.continueBtn) {
+        DOM.continueBtn.removeEventListener('click', () => {
+            window.location.href = '/shell.html?page=home';
+        });
+        DOM.continueBtn.addEventListener('click', () => {
+            window.location.href = '/shell.html?page=home';
+        });
+    }
+    
+    // 主题切换
+    if (DOM.themeToggle) {
+        DOM.themeToggle.removeEventListener('click', () => ThemeManager.toggleTheme());
+        DOM.themeToggle.addEventListener('click', () => ThemeManager.toggleTheme());
+    }
+    
+    // 语言切换
+    if (DOM.langToggle) {
+        DOM.langToggle.removeEventListener('click', switchLanguage);
+        DOM.langToggle.addEventListener('click', switchLanguage);
+    }
+    
+    // 监听语言变化
+    window.removeEventListener('languagechange', handleLanguageChange);
+    window.addEventListener('languagechange', handleLanguageChange);
+    
+    // 监听主题变化
+    window.removeEventListener('themechange', handleThemeChange);
+    window.addEventListener('themechange', handleThemeChange);
+    
+    // 监听模式变化
+    if (ThemeManager.addListener) {
+        ThemeManager.removeListener?.(handleModeChange);
+        ThemeManager.addListener(handleModeChange);
+    }
+}
+
+// 提取事件处理函数
+function handlePresetClick(e) {
+    e.preventDefault();
+    let value = e.currentTarget.dataset.amount;
+    if (value === 'max') {
+        value = AppState.maxAmount;
+    } else {
+        value = parseInt(value);
+    }
+    setAmount(value);
+}
+
+function handleAmountInput(e) {
+    let value = parseInt(e.target.value);
+    if (isNaN(value)) value = AppState.minAmount;
+    setAmount(value);
+}
+
+function handleAmountSlider(e) {
+    let value = parseInt(e.target.value);
+    if (isNaN(value)) value = AppState.minAmount;
+    setAmount(value);
+}
+
+function handleLanguageChange(e) {
+    if (e.detail?.language) {
+        currentLanguage = e.detail.language;
+        updateModeUI();
+        if (AppState.match) renderMatchDetails();
+        updateAmountDisplay();
+        if (DOM.langToggle) DOM.langToggle.textContent = currentLanguage === 'zh' ? '中' : 'EN';
+    }
+}
+
+function handleThemeChange(e) {
+    if (DOM.themeToggle) {
+        DOM.themeToggle.className = e.detail.isDarkMode ? 'fa-regular fa-sun' : 'fa-regular fa-moon';
+    }
+}
+
+function handleModeChange(state) {
+    AppState.isTestMode = state.isTestMode;
+    updateModeUI();
+    updateAmountLimits();
+    loadUserBalance();
+}
 
     // ==================== 清理定时器 ====================
     window.addEventListener('beforeunload', () => {
