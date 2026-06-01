@@ -1,7 +1,7 @@
 /**
  * FOOTRADAPRO - Authorize Controller
- * @version 3.0.0
- * 與首頁和比賽超市頁面完全統一
+ * @version 3.1.0
+ * 修复金额输入逻辑
  */
 
 (function() {
@@ -27,6 +27,8 @@
             'error.match_started': '比赛已开始，无法授权',
             'error.insufficient_balance': '余额不足',
             'error.auth_failed': '授权失败，请重试',
+            'error.amount_too_low': '授权金额不能低于 {min} {currency}',
+            'error.amount_too_high': '授权金额不能超过 {max} {currency}',
             'toast.success': '授权提交成功'
         },
         en: {
@@ -47,15 +49,21 @@
             'error.match_started': 'Match has already started',
             'error.insufficient_balance': 'Insufficient balance',
             'error.auth_failed': 'Authorization failed, please try again',
+            'error.amount_too_low': 'Authorization amount cannot be less than {min} {currency}',
+            'error.amount_too_high': 'Authorization amount cannot exceed {max} {currency}',
             'toast.success': 'Authorization submitted successfully'
         }
     };
 
     let currentLanguage = localStorage.getItem('language') || 'en';
 
-    function t(key) {
+    function t(key, params = {}) {
         const locale = LOCALES[currentLanguage] || LOCALES.en;
-        return locale[key] || key;
+        let text = locale[key] || key;
+        Object.keys(params).forEach(k => {
+            text = text.replace(`{${k}}`, params[k]);
+        });
+        return text;
     }
 
     // ==================== URL 参数 ====================
@@ -83,12 +91,10 @@
         matchContent: document.getElementById('matchContent'),
         errorMessage: document.getElementById('errorMessage'),
         
-        // Match Info
         matchTeams: document.getElementById('matchTeams'),
         matchLeague: document.getElementById('matchLeague'),
         matchTime: document.getElementById('matchTime'),
         
-        // Team Logos
         homeLogo: document.getElementById('homeLogo'),
         awayLogo: document.getElementById('awayLogo'),
         homeLogoContainer: document.getElementById('homeLogoContainer'),
@@ -96,24 +102,24 @@
         homeTeamAbbr: document.getElementById('homeTeamAbbr'),
         awayTeamAbbr: document.getElementById('awayTeamAbbr'),
         
-        // Balance
         userBalance: document.getElementById('userBalance'),
         balanceCurrency: document.getElementById('balanceCurrency'),
         currencyUnit: document.getElementById('currencyUnit'),
         
-        // Authorization
         amountInput: document.getElementById('amount'),
+        amountSlider: document.getElementById('amountSlider'),
+        minAmountLabel: document.getElementById('minAmountLabel'),
+        maxAmountLabel: document.getElementById('maxAmountLabel'),
+        currentAmountDisplay: document.getElementById('currentAmountDisplay'),
         authorizeBtn: document.getElementById('authorizeBtn'),
         countdownDisplay: document.getElementById('countdownDisplay'),
         
-        // Modal
         successModal: document.getElementById('successModal'),
         successTeams: document.getElementById('successTeams'),
         successAmount: document.getElementById('successAmount'),
         viewDetailsBtn: document.getElementById('viewDetailsBtn'),
         continueBtn: document.getElementById('continueBtn'),
         
-        // Theme & Language
         themeToggle: document.getElementById('themeToggle'),
         langToggle: document.getElementById('langToggle'),
         currentModeText: document.getElementById('currentModeText'),
@@ -189,7 +195,6 @@
             DOM.matchTime.textContent = formatMatchTime(match.match_time);
         }
         
-        // 更新队徽
         const homeLogoUrl = getTeamLogoUrl(match.home_logo);
         const awayLogoUrl = getTeamLogoUrl(match.away_logo);
         
@@ -223,6 +228,119 @@
         if (DOM.awayTeamAbbr) DOM.awayTeamAbbr.textContent = getTeamAbbr(match.away_team);
         
         AppState.executionRate = match.execution_rate || 30;
+    }
+
+    // ==================== 金额验证和更新 ====================
+    function updateAmountLimits() {
+        const currentBalance = AppState.isTestMode ? AppState.testBalance : AppState.userBalance;
+        
+        // 比赛限额和余额取最小值
+        let maxAllowed = Math.min(AppState.maxAmount, currentBalance);
+        
+        // 确保不低于最小金额
+        if (maxAllowed < AppState.minAmount) {
+            maxAllowed = AppState.minAmount;
+        }
+        
+        AppState.maxAmount = maxAllowed;
+        
+        // 更新 UI 显示
+        if (DOM.minAmountLabel) {
+            DOM.minAmountLabel.textContent = `${AppState.minAmount}`;
+        }
+        if (DOM.maxAmountLabel) {
+            DOM.maxAmountLabel.textContent = `${AppState.maxAmount}`;
+        }
+        
+        // 如果当前金额超出范围，调整
+        if (AppState.amount < AppState.minAmount) {
+            AppState.amount = AppState.minAmount;
+        }
+        if (AppState.amount > AppState.maxAmount) {
+            AppState.amount = AppState.maxAmount;
+        }
+        
+        // 更新输入框
+        if (DOM.amountInput) {
+            DOM.amountInput.min = AppState.minAmount;
+            DOM.amountInput.max = AppState.maxAmount;
+            DOM.amountInput.value = AppState.amount;
+        }
+        
+        // 更新滑块
+        if (DOM.amountSlider) {
+            DOM.amountSlider.min = AppState.minAmount;
+            DOM.amountSlider.max = AppState.maxAmount;
+            DOM.amountSlider.value = AppState.amount;
+        }
+        
+        // 更新显示
+        updateAmountDisplay();
+    }
+    
+    function updateAmountDisplay() {
+        const currency = AppState.isTestMode ? 'tUSDT' : 'USDT';
+        if (DOM.currentAmountDisplay) {
+            DOM.currentAmountDisplay.textContent = `${AppState.amount} ${currency}`;
+        }
+    }
+    
+    function validateAmount(amount) {
+        const currency = AppState.isTestMode ? 'tUSDT' : 'USDT';
+        
+        if (amount < AppState.minAmount) {
+            showToast(t('error.amount_too_low', { min: AppState.minAmount, currency }), 'error');
+            return false;
+        }
+        
+        if (amount > AppState.maxAmount) {
+            showToast(t('error.amount_too_high', { max: AppState.maxAmount, currency }), 'error');
+            return false;
+        }
+        
+        const currentBalance = AppState.isTestMode ? AppState.testBalance : AppState.userBalance;
+        if (amount > currentBalance) {
+            showToast(t('error.insufficient_balance'), 'error');
+            return false;
+        }
+        
+        return true;
+    }
+    
+    function setAmount(value) {
+        let newAmount = parseInt(value);
+        if (isNaN(newAmount)) newAmount = AppState.minAmount;
+        
+        // 限制范围
+        newAmount = Math.max(AppState.minAmount, Math.min(AppState.maxAmount, newAmount));
+        
+        AppState.amount = newAmount;
+        
+        // 更新输入框
+        if (DOM.amountInput) DOM.amountInput.value = newAmount;
+        if (DOM.amountSlider) DOM.amountSlider.value = newAmount;
+        
+        updateAmountDisplay();
+    }
+    
+    function handleAmountInput(e) {
+        let value = parseInt(e.target.value);
+        if (isNaN(value)) value = AppState.minAmount;
+        setAmount(value);
+    }
+    
+    function handleAmountSlider(e) {
+        let value = parseInt(e.target.value);
+        if (isNaN(value)) value = AppState.minAmount;
+        setAmount(value);
+    }
+    
+    function handlePresetAmount(amount) {
+        if (amount === 'max') {
+            setAmount(AppState.maxAmount);
+        } else {
+            setAmount(parseInt(amount));
+        }
     }
 
     // ==================== 倒计时 ====================
@@ -286,15 +404,9 @@
                 
                 // 更新金额限制
                 AppState.minAmount = AppState.match.min_authorization || 100;
-                AppState.maxAmount = Math.min(AppState.match.match_limit || 500, 
-                    AppState.isTestMode ? AppState.testBalance : AppState.userBalance);
+                AppState.maxAmount = AppState.match.match_limit || 500;
                 
-                if (DOM.amountInput) {
-                    DOM.amountInput.min = AppState.minAmount;
-                    DOM.amountInput.max = AppState.maxAmount;
-                    DOM.amountInput.value = Math.min(AppState.minAmount, AppState.maxAmount);
-                    AppState.amount = Math.min(AppState.minAmount, AppState.maxAmount);
-                }
+                updateAmountLimits();
                 
                 if (DOM.loadingState) DOM.loadingState.style.display = 'none';
                 if (DOM.matchContent) DOM.matchContent.style.display = 'block';
@@ -330,16 +442,7 @@
                 }
                 
                 updateModeUI();
-                
-                const currentBalance = AppState.isTestMode ? AppState.testBalance : AppState.userBalance;
-                AppState.maxAmount = Math.min(AppState.maxAmount, currentBalance);
-                if (DOM.amountInput) {
-                    DOM.amountInput.max = AppState.maxAmount;
-                    if (AppState.amount > AppState.maxAmount) {
-                        AppState.amount = AppState.maxAmount;
-                        DOM.amountInput.value = AppState.maxAmount;
-                    }
-                }
+                updateAmountLimits();
             }
         } catch (error) {
             console.error('Failed to load balance:', error);
@@ -356,9 +459,8 @@
             return;
         }
         
-        const currentBalance = AppState.isTestMode ? AppState.testBalance : AppState.userBalance;
-        if (AppState.amount > currentBalance) {
-            showToast(t('error.insufficient_balance'), 'error');
+        // 验证金额
+        if (!validateAmount(AppState.amount)) {
             return;
         }
         
@@ -417,26 +519,21 @@
         document.querySelectorAll('.preset-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const amount = e.currentTarget.dataset.amount;
-                if (amount === 'max') {
-                    AppState.amount = AppState.maxAmount;
-                } else {
-                    AppState.amount = parseInt(amount);
-                }
-                if (AppState.amount > AppState.maxAmount) AppState.amount = AppState.maxAmount;
-                if (AppState.amount < AppState.minAmount) AppState.amount = AppState.minAmount;
-                if (DOM.amountInput) DOM.amountInput.value = AppState.amount;
+                handlePresetAmount(amount);
             });
         });
         
-        // 金额输入
+        // 金额输入框
         if (DOM.amountInput) {
-            DOM.amountInput.addEventListener('input', (e) => {
-                let value = parseInt(e.target.value) || AppState.minAmount;
-                if (value < AppState.minAmount) value = AppState.minAmount;
-                if (value > AppState.maxAmount) value = AppState.maxAmount;
-                DOM.amountInput.value = value;
-                AppState.amount = value;
+            DOM.amountInput.addEventListener('input', handleAmountInput);
+            DOM.amountInput.addEventListener('blur', () => {
+                setAmount(parseInt(DOM.amountInput.value) || AppState.minAmount);
             });
+        }
+        
+        // 金额滑块
+        if (DOM.amountSlider) {
+            DOM.amountSlider.addEventListener('input', handleAmountSlider);
         }
         
         // 授权按钮
@@ -444,20 +541,18 @@
             DOM.authorizeBtn.addEventListener('click', submitAuthorization);
         }
         
-// 模态框按钮
-if (DOM.viewDetailsBtn) {
-    DOM.viewDetailsBtn.addEventListener('click', () => {
-        const authId = localStorage.getItem('lastAuthId');
-        // ✅ 修改为 SPA 架构的跳转
-        window.location.href = authId ? `/shell.html?page=transaction-detail&authId=${authId}` : '/shell.html?page=records';
-    });
-}
-if (DOM.continueBtn) {
-    DOM.continueBtn.addEventListener('click', () => {
-        // ✅ 修改为 SPA 架构的首页
-        window.location.href = '/shell.html?page=home';
-    });
-}
+        // 模态框按钮
+        if (DOM.viewDetailsBtn) {
+            DOM.viewDetailsBtn.addEventListener('click', () => {
+                const authId = localStorage.getItem('lastAuthId');
+                window.location.href = authId ? `/shell.html?page=transaction-detail&authId=${authId}` : '/shell.html?page=records';
+            });
+        }
+        if (DOM.continueBtn) {
+            DOM.continueBtn.addEventListener('click', () => {
+                window.location.href = '/shell.html?page=home';
+            });
+        }
         
         // 主题切换
         if (DOM.themeToggle) {
@@ -474,6 +569,7 @@ if (DOM.continueBtn) {
                 if (DOM.langToggle) DOM.langToggle.textContent = currentLanguage === 'zh' ? '中' : 'EN';
                 updateModeUI();
                 if (AppState.match) renderMatchDetails();
+                updateAmountDisplay();
             });
         }
         
@@ -483,6 +579,7 @@ if (DOM.continueBtn) {
                 currentLanguage = e.detail.language;
                 updateModeUI();
                 if (AppState.match) renderMatchDetails();
+                updateAmountDisplay();
             }
         });
         
@@ -498,6 +595,7 @@ if (DOM.continueBtn) {
             ThemeManager.addListener((state) => {
                 AppState.isTestMode = state.isTestMode;
                 updateModeUI();
+                updateAmountLimits();
                 loadUserBalance();
             });
         }
