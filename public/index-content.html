@@ -733,26 +733,29 @@
     return 'Completed';
   };
   
-  const animateNumber = (element, start, end, duration = 500) => {
-    if (!element) return;
-    const startTime = performance.now();
-    function update(currentTime) {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(1, elapsed / duration);
-      const easeOut = 1 - Math.pow(1 - progress, 3);
-      const current = start + (end - start) * easeOut;
-      element.innerText = current.toFixed(2);
-      if (progress < 1) {
-        requestAnimationFrame(update);
-      } else {
-        element.innerText = end.toFixed(2);
-        element.classList.add('amount-flash');
-        setTimeout(() => element.classList.remove('amount-flash'), 300);
-      }
-    }
-    requestAnimationFrame(update);
-  };
+const animateNumber = (element, start, end, duration = 500) => {
+  if (!element) return;
+  // 确保 start 和 end 是数字
+  const startNum = Number(start) || 0;
+  const endNum = Number(end) || 0;
+  const startTime = performance.now();
   
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(1, elapsed / duration);
+    const easeOut = 1 - Math.pow(1 - progress, 3);
+    const current = startNum + (endNum - startNum) * easeOut;
+    element.innerText = current.toFixed(2);
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    } else {
+      element.innerText = endNum.toFixed(2);
+      element.classList.add('amount-flash');
+      setTimeout(() => element.classList.remove('amount-flash'), 300);
+    }
+  }
+  requestAnimationFrame(update);
+};
   // ========== API 调用 ==========
   const fetchUserBalance = async () => {
     try {
@@ -882,60 +885,66 @@
   };
   
   // ========== UI 更新 ==========
-  const updateBalanceUI = async (skipAnimation = false) => {
-    if (!ThemeManager) return;
-    
-    const isSandbox = ThemeManager.isTestMode;
-    const currency = isSandbox ? 'tUSDT' : 'USDT';
-    
-    const availableBalance = await fetchUserBalance();
-    const lockedAmount = await fetchLockedFunds();
-    const totalAssets = availableBalance + lockedAmount;
-    
-    if (dom.totalAssets) {
-      const currentTotal = parseFloat(dom.totalAssets.innerText) || 0;
-      if (skipAnimation || dom.totalAssets.innerText === '--') {
-        dom.totalAssets.innerText = totalAssets.toFixed(2);
-      } else {
-        animateNumber(dom.totalAssets, currentTotal, totalAssets);
-      }
-    }
-    
-    if (dom.available) {
-      const currentAvail = parseFloat(dom.available.innerText) || 0;
-      if (skipAnimation || dom.available.innerText === '--') {
-        dom.available.innerText = `${availableBalance.toFixed(2)} ${currency}`;
-      } else {
-        animateNumber(dom.available, currentAvail, availableBalance);
-        setTimeout(() => {
-          if (!dom.available.innerText.includes(currency)) {
-            dom.available.innerText = `${availableBalance.toFixed(2)} ${currency}`;
-          }
-        }, 50);
-      }
-    }
-    
-    if (dom.lockedDisplay) {
-      const currentLocked = parseFloat(dom.lockedDisplay.innerText) || 0;
-      if (skipAnimation || dom.lockedDisplay.innerText === '0.00 tUSDT' || dom.lockedDisplay.innerText === '0.00 USDT') {
-        dom.lockedDisplay.innerText = `${lockedAmount.toFixed(2)} ${currency}`;
-      } else {
-        animateNumber(dom.lockedDisplay, currentLocked, lockedAmount);
-        setTimeout(() => {
-          if (!dom.lockedDisplay.innerText.includes(currency)) {
-            dom.lockedDisplay.innerText = `${lockedAmount.toFixed(2)} ${currency}`;
-          }
-        }, 50);
-      }
-    }
-    
-    if (dom.modeNote) {
-      dom.modeNote.innerHTML = isSandbox 
-        ? '<i class="fa-regular fa-circle-info"></i> Sandbox uses virtual funds (tUSDT) — no real asset risk.' 
-        : '<i class="fa-regular fa-circle-info"></i> Live mode uses real funds (USDT). Please ensure sufficient balance.';
-    }
-  };
+// ========== UI 更新 ==========
+const updateBalanceUI = async (skipAnimation = false) => {
+  if (!ThemeManager) return;
   
+  const isSandbox = ThemeManager.isTestMode;
+  const currency = isSandbox ? 'tUSDT' : 'USDT';
+  
+  const availableBalance = await fetchUserBalance();
+  const lockedAmount = await fetchLockedFunds();
+  const totalAssetsNum = (typeof availableBalance === 'number' ? availableBalance : 0) + (typeof lockedAmount === 'number' ? lockedAmount : 0);
+  
+  console.log(`💰 余额计算: 可用=${availableBalance}, 锁定=${lockedAmount}, 总资产=${totalAssetsNum}`);
+  
+  // 更新总资产
+  if (dom.totalAssets) {
+    const currentTotal = parseFloat(dom.totalAssets.innerText) || 0;
+    if (skipAnimation || dom.totalAssets.innerText === '--' || isNaN(currentTotal)) {
+      dom.totalAssets.innerText = totalAssetsNum.toFixed(2);
+    } else {
+      animateNumber(dom.totalAssets, currentTotal, totalAssetsNum);
+    }
+  }
+  
+  // 更新可用余额
+  if (dom.available) {
+    const currentAvail = parseFloat(dom.available.innerText) || 0;
+    if (skipAnimation || dom.available.innerText === '--' || isNaN(currentAvail)) {
+      dom.available.innerText = `${availableBalance.toFixed(2)} ${currency}`;
+    } else {
+      animateNumber(dom.available, currentAvail, availableBalance);
+      setTimeout(() => {
+        if (!dom.available.innerText.includes(currency)) {
+          dom.available.innerText = `${availableBalance.toFixed(2)} ${currency}`;
+        }
+      }, 50);
+    }
+  }
+  
+  // 更新锁定资金
+  if (dom.lockedDisplay) {
+    const currentLocked = parseFloat(dom.lockedDisplay.innerText) || 0;
+    if (skipAnimation || dom.lockedDisplay.innerText === '0.00 tUSDT' || dom.lockedDisplay.innerText === '0.00 USDT' || isNaN(currentLocked)) {
+      dom.lockedDisplay.innerText = `${lockedAmount.toFixed(2)} ${currency}`;
+    } else {
+      animateNumber(dom.lockedDisplay, currentLocked, lockedAmount);
+      setTimeout(() => {
+        if (!dom.lockedDisplay.innerText.includes(currency)) {
+          dom.lockedDisplay.innerText = `${lockedAmount.toFixed(2)} ${currency}`;
+        }
+      }, 50);
+    }
+  }
+  
+  // 更新模式提示
+  if (dom.modeNote) {
+    dom.modeNote.innerHTML = isSandbox 
+      ? '<i class="fa-regular fa-circle-info"></i> Sandbox uses virtual funds (tUSDT) — no real asset risk.' 
+      : '<i class="fa-regular fa-circle-info"></i> Live mode uses real funds (USDT). Please ensure sufficient balance.';
+  }
+};
   // ========== 图表 ==========
   const initChart = (labels, authData, profitData) => {
     if (!dom.chartCanvas) return;
