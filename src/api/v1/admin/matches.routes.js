@@ -208,7 +208,6 @@ router.get('/all-teams-from-matches', async (req, res) => {
             
             try {
                 if (isProduction) {
-                    // 从 team_logos 表获取 Base64 队徽
                     const teamLogoResult = await query(`
                         SELECT logo_base64, logo_url FROM team_logos WHERE team_name = $1
                     `, [team.team_name]);
@@ -608,7 +607,6 @@ const uploadLogo = multer({
 
 router.post('/upload-logo', (req, res) => {
     uploadLogo(req, res, async (err) => {
-        // 处理 multer 错误
         if (err) {
             console.error('Upload error:', err);
             return res.status(400).json({ success: false, error: err.message });
@@ -616,7 +614,6 @@ router.post('/upload-logo', (req, res) => {
         
         const { team_name } = req.body;
         
-        // 验证参数
         if (!team_name) {
             return res.status(400).json({ success: false, error: '缺少球队名称' });
         }
@@ -632,7 +629,6 @@ router.post('/upload-logo', (req, res) => {
             mimetype: req.file.mimetype
         });
         
-        // 读取文件并转换为 Base64
         const imagePath = req.file.path;
         const imageBuffer = fs.readFileSync(imagePath);
         const base64Image = imageBuffer.toString('base64');
@@ -640,7 +636,7 @@ router.post('/upload-logo', (req, res) => {
         const logoBase64 = `data:${mimeType};base64,${base64Image}`;
         
         try {
-            // 检查 team_logos 表是否有记录，没有则插入
+            // 保存到 team_logos 表
             if (isProduction) {
                 const existing = await query('SELECT id FROM team_logos WHERE team_name = $1', [team_name]);
                 
@@ -649,6 +645,11 @@ router.post('/upload-logo', (req, res) => {
                 } else {
                     await query(`INSERT INTO team_logos (team_name, logo_base64, logo_status, involved_matches, last_updated) VALUES ($1, $2, 'ok', 0, NOW())`, [team_name, logoBase64]);
                 }
+                
+                // 【关键修复】同时更新 matches 表中该球队所有比赛的队徽
+                await query(`UPDATE matches SET home_logo = $1 WHERE home_team = $2`, [logoBase64, team_name]);
+                await query(`UPDATE matches SET away_logo = $1 WHERE away_team = $2`, [logoBase64, team_name]);
+                
             } else {
                 const db = getDb();
                 db.prepare('BEGIN TRANSACTION').run();
@@ -659,6 +660,10 @@ router.post('/upload-logo', (req, res) => {
                 } else {
                     db.prepare(`INSERT INTO team_logos (team_name, logo_base64, logo_status, involved_matches, last_updated) VALUES (?, ?, 'ok', 0, CURRENT_TIMESTAMP)`).run(team_name, logoBase64);
                 }
+                
+                // 【关键修复】同时更新 matches 表
+                db.prepare(`UPDATE matches SET home_logo = ? WHERE home_team = ?`).run(logoBase64, team_name);
+                db.prepare(`UPDATE matches SET away_logo = ? WHERE away_team = ?`).run(logoBase64, team_name);
                 
                 db.prepare('COMMIT').run();
             }
@@ -754,7 +759,6 @@ router.post('/edit-team', (req, res) => {
                 const awayResult = await query(`UPDATE matches SET away_team = $1 WHERE away_team = $2`, [finalNewName, original_name]);
                 updatedMatches += awayResult?.rowCount || 0;
                 
-                // 更新 match_pool 表（如果存在）
                 try {
                     await query(`UPDATE match_pool SET home_team = $1 WHERE home_team = $2`, [finalNewName, original_name]);
                     await query(`UPDATE match_pool SET away_team = $1 WHERE away_team = $2`, [finalNewName, original_name]);
@@ -769,7 +773,6 @@ router.post('/edit-team', (req, res) => {
                 const awayResult = db.prepare(`UPDATE matches SET away_team = ? WHERE away_team = ?`).run(finalNewName, original_name);
                 updatedMatches += awayResult.changes;
                 
-                // 更新 match_pool 表（如果存在）
                 try {
                     db.prepare(`UPDATE match_pool SET home_team = ? WHERE home_team = ?`).run(finalNewName, original_name);
                     db.prepare(`UPDATE match_pool SET away_team = ? WHERE away_team = ?`).run(finalNewName, original_name);
@@ -780,7 +783,6 @@ router.post('/edit-team', (req, res) => {
             
             let logoBase64 = null;
             if (req.file) {
-                // 读取文件并转换为 Base64
                 const imageBuffer = fs.readFileSync(req.file.path);
                 const base64Image = imageBuffer.toString('base64');
                 const mimeType = req.file.mimetype;
@@ -793,7 +795,6 @@ router.post('/edit-team', (req, res) => {
                     db.prepare(`UPDATE team_logos SET team_name = ?, logo_base64 = ?, logo_status = 'ok', last_updated = CURRENT_TIMESTAMP WHERE team_name = ?`).run(finalNewName, logoBase64, original_name);
                 }
                 
-                // 删除临时文件
                 try {
                     fs.unlinkSync(req.file.path);
                 } catch (e) {
