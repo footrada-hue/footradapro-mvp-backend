@@ -1,19 +1,30 @@
 // src/api/v1/user/mode.routes.js
 import express from 'express';
-import { getDb } from '../../../database/connection.js';
+import { query, getDb } from '../../../database/connection.js';
 import { auth } from '../../../middlewares/auth.middleware.js';
 import { updateLastActive } from '../../../middlewares/updateActivity.middleware.js';
 
 const router = express.Router();
+const isProduction = process.env.NODE_ENV === 'production';
+
 router.use(auth);
 
 // 获取用户模式
-router.get('/', updateLastActive, (req, res) => {
+router.get('/', updateLastActive, async (req, res) => {
     const userId = req.session.userId;
-    const db = getDb();
 
     try {
-        const user = db.prepare('SELECT is_test_mode, account_status FROM users WHERE id = ?').get(userId);
+        let user = null;
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT is_test_mode, account_status FROM users WHERE id = $1
+            `, [userId]);
+            user = result?.[0] || null;
+        } else {
+            const db = getDb();
+            user = db.prepare('SELECT is_test_mode, account_status FROM users WHERE id = ?').get(userId);
+        }
 
         if (!user) {
             return res.status(404).json({
@@ -25,7 +36,7 @@ router.get('/', updateLastActive, (req, res) => {
         res.json({
             success: true,
             data: {
-                is_test_mode: user.is_test_mode === 1,
+                is_test_mode: user.is_test_mode === 1 || user.is_test_mode === true,
                 account_status: user.account_status
             }
         });
@@ -40,12 +51,21 @@ router.get('/', updateLastActive, (req, res) => {
 });
 
 // 获取用户模式状态（包括锁定状态）- 新增
-router.get('/status', updateLastActive, (req, res) => {
+router.get('/status', updateLastActive, async (req, res) => {
     const userId = req.session.userId;
-    const db = getDb();
 
     try {
-        const user = db.prepare('SELECT is_test_mode, account_status, is_mode_locked FROM users WHERE id = ?').get(userId);
+        let user = null;
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT is_test_mode, account_status, is_mode_locked FROM users WHERE id = $1
+            `, [userId]);
+            user = result?.[0] || null;
+        } else {
+            const db = getDb();
+            user = db.prepare('SELECT is_test_mode, account_status, is_mode_locked FROM users WHERE id = ?').get(userId);
+        }
 
         if (!user) {
             return res.status(404).json({
@@ -55,12 +75,12 @@ router.get('/status', updateLastActive, (req, res) => {
         }
 
         // account_status 为 'live' 表示管理员已锁定模式
-        const modeLocked = user.account_status === 'live' || user.is_mode_locked === 1;
+        const modeLocked = user.account_status === 'live' || (user.is_mode_locked === 1 || user.is_mode_locked === true);
 
         res.json({
             success: true,
             data: {
-                is_test_mode: user.is_test_mode === 1,
+                is_test_mode: user.is_test_mode === 1 || user.is_test_mode === true,
                 account_status: user.account_status,
                 mode_locked: modeLocked,
                 can_switch: !modeLocked
@@ -77,10 +97,9 @@ router.get('/status', updateLastActive, (req, res) => {
 });
 
 // 切换模式
-router.post('/toggle', updateLastActive, (req, res) => {
+router.post('/toggle', updateLastActive, async (req, res) => {
     const userId = req.session.userId;
     const { is_test_mode } = req.body;
-    const db = getDb();
 
     if (typeof is_test_mode !== 'boolean') {
         return res.status(400).json({
@@ -90,7 +109,17 @@ router.post('/toggle', updateLastActive, (req, res) => {
     }
 
     try {
-        const currentUser = db.prepare('SELECT is_test_mode, account_status FROM users WHERE id = ?').get(userId);
+        let currentUser = null;
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT is_test_mode, account_status FROM users WHERE id = $1
+            `, [userId]);
+            currentUser = result?.[0] || null;
+        } else {
+            const db = getDb();
+            currentUser = db.prepare('SELECT is_test_mode, account_status FROM users WHERE id = ?').get(userId);
+        }
         
         if (!currentUser) {
             return res.status(404).json({
@@ -108,7 +137,9 @@ router.post('/toggle', updateLastActive, (req, res) => {
             });
         }
 
-        if (currentUser.is_test_mode === (is_test_mode ? 1 : 0)) {
+        const currentIsTestMode = currentUser.is_test_mode === 1 || currentUser.is_test_mode === true;
+        
+        if (currentIsTestMode === is_test_mode) {
             return res.json({
                 success: true,
                 data: { is_test_mode }
@@ -116,7 +147,14 @@ router.post('/toggle', updateLastActive, (req, res) => {
         }
 
         // 用户切换时只更新 is_test_mode，不改变 account_status
-        db.prepare('UPDATE users SET is_test_mode = ? WHERE id = ?').run(is_test_mode ? 1 : 0, userId);
+        if (isProduction) {
+            await query(`
+                UPDATE users SET is_test_mode = $1 WHERE id = $2
+            `, [is_test_mode, userId]);
+        } else {
+            const db = getDb();
+            db.prepare('UPDATE users SET is_test_mode = ? WHERE id = ?').run(is_test_mode ? 1 : 0, userId);
+        }
 
         res.json({
             success: true,
