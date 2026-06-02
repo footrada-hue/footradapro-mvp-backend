@@ -543,17 +543,21 @@ function bindEvents() {
    ===================================================== */
 function animateNumber(element, start, end, duration = 500) {
     if (!element) return;
+    // 确保 start 和 end 是数字
+    const startNum = Number(start) || 0;
+    const endNum = Number(end) || 0;
     const startTime = performance.now();
+    
     function update(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(1, elapsed / duration);
         const easeOut = 1 - Math.pow(1 - progress, 3);
-        const current = start + (end - start) * easeOut;
+        const current = startNum + (endNum - startNum) * easeOut;
         element.innerText = current.toFixed(2);
         if (progress < 1) {
             requestAnimationFrame(update);
         } else {
-            element.innerText = end.toFixed(2);
+            element.innerText = endNum.toFixed(2);
             element.classList.add('amount-flash');
             setTimeout(() => element.classList.remove('amount-flash'), 300);
         }
@@ -563,17 +567,20 @@ function animateNumber(element, start, end, duration = 500) {
 
 function animateInteger(element, start, end, duration = 500) {
     if (!element) return;
+    const startNum = Number(start) || 0;
+    const endNum = Number(end) || 0;
     const startTime = performance.now();
+    
     function update(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(1, elapsed / duration);
         const easeOut = 1 - Math.pow(1 - progress, 3);
-        const current = Math.round(start + (end - start) * easeOut);
+        const current = Math.round(startNum + (endNum - startNum) * easeOut);
         element.innerText = current;
         if (progress < 1) {
             requestAnimationFrame(update);
         } else {
-            element.innerText = end;
+            element.innerText = endNum;
             element.classList.add('amount-flash');
             setTimeout(() => element.classList.remove('amount-flash'), 300);
         }
@@ -629,7 +636,7 @@ async function loadUserProfile() {
         }
         
         if (balanceData.success && balanceData.data) {
-            const balance = balanceData.data.balance || 0;
+            const balance = Number(balanceData.data.balance) || 0;
             console.log('💰 当前余额:', balance);
             
             const totalEl = document.getElementById('totalAssets');
