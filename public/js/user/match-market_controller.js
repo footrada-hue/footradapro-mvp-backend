@@ -121,13 +121,17 @@
     /**
      * 获取球队队徽 URL（直接使用数据库路径）
      */
-    function getTeamLogoUrl(logoUrl) {
-        // 直接使用数据库中的路径，只添加时间戳防缓存
-        if (logoUrl && logoUrl !== '/uploads/teams/default.png' && logoUrl !== 'NULL') {
-            return logoUrl + '?t=' + Date.now();
+function getTeamLogoUrl(logoUrl) {
+    // 如果有队徽数据（URL 或 Base64），直接返回
+    if (logoUrl && logoUrl !== '/uploads/teams/default.png' && logoUrl !== 'NULL') {
+        // 如果是 Base64 格式（以 data:image 开头），不添加时间戳
+        if (logoUrl.startsWith('data:image')) {
+            return logoUrl;
         }
-        return '/uploads/teams/default.png';
+        return logoUrl + '?t=' + Date.now();
     }
+    return '/uploads/teams/default.png';
+}
 
     // ==================== 筛选逻辑 ====================
     function filterByTime(match) {
