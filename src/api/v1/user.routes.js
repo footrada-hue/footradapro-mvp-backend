@@ -3,6 +3,7 @@ import { getDb } from '../../database/connection.js';
 import { auth, filterByMode, requireTestMode } from '../../middlewares/auth.middleware.js';
 // ✅ 正確導入：從 user/ 目錄下導入
 import profileRoutes from './user/profile.routes.js';
+import supportRoutes from './user/support.routes.js';
 
 const router = express.Router();
 // ==================== 临时调试接口 ====================
@@ -44,6 +45,8 @@ router.use(filterByMode);
 // ==================== 掛載子路由 ====================
 // 掛載 profile 相關路由（包含支付密碼API）
 router.use('/profile', profileRoutes);
+// 掛載客服路由
+router.use('/support', supportRoutes);
 
 // ==================== 獲取用戶狀態 ====================
 router.get('/status', (req, res) => {
