@@ -1,3 +1,4 @@
+// src/api/v1/user/support.routes.js
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import { auth } from '../../../middlewares/auth.middleware.js';
@@ -8,38 +9,21 @@ import telegramService from '../../../services/telegram.service.js';
 
 const router = express.Router();
 
-// 注意：router.use(auth) 会在路由之前执行，但我们仍然需要自己的 userId 获取逻辑
- router.use(auth); // 暂时注释掉，避免干扰
+// 使用 auth 中间件进行认证
+router.use(auth);
 
-// 辅助函数：从请求中获取用户ID
+// 辅助函数：从请求中获取用户ID（auth 中间件已经设置了 req.user）
 function getUserIdFromRequest(req) {
-    console.log('🔍 getUserIdFromRequest 被调用');
-    
-    // 方法1: 从 Cookie 中的 JWT token 解码（最可靠）
-    if (req.cookies && req.cookies.footradapro_token) {
-        try {
-            const JWT_SECRET = process.env.JWT_SECRET || 'footradapro-jwt-secret-key-2024';
-            const decoded = jwt.verify(req.cookies.footradapro_token, JWT_SECRET);
-            console.log('✅ JWT 解码成功:', decoded);
-            if (decoded && decoded.id) {
-                console.log('✅ 从 JWT token 获取 userId:', decoded.id);
-                return decoded.id;
-            }
-        } catch (err) {
-            console.error('JWT 解码失败:', err.message);
-        }
-    }
-    
-    // 方法2: 从 session
-    if (req.session && req.session.userId) {
-        console.log('✅ 从 session 获取 userId:', req.session.userId);
-        return req.session.userId;
-    }
-    
-    // 方法3: 从 req.user（auth 中间件设置）
+    // auth 中间件已经设置了 req.user
     if (req.user && req.user.id) {
         console.log('✅ 从 req.user.id 获取 userId:', req.user.id);
         return req.user.id;
+    }
+    
+    // 备选：从 session 获取
+    if (req.session && req.session.userId) {
+        console.log('✅ 从 session 获取 userId:', req.session.userId);
+        return req.session.userId;
     }
     
     console.log('❌ 无法获取 userId');
@@ -48,26 +32,11 @@ function getUserIdFromRequest(req) {
 
 /**
  * POST /api/v1/user/support/init
+ * 初始化客服会话
  */
 router.post('/init', async (req, res) => {
     try {
-        // 先获取 userId
-        let userId = null;
-        
-        // 从 Cookie 获取
-        if (req.cookies && req.cookies.footradapro_token) {
-            try {
-                const JWT_SECRET = process.env.JWT_SECRET || 'footradapro-jwt-secret-key-2024';
-                const decoded = jwt.verify(req.cookies.footradapro_token, JWT_SECRET);
-                if (decoded && decoded.id) {
-                    userId = decoded.id;
-                }
-            } catch (err) {}
-        }
-        
-        if (!userId && req.session && req.session.userId) {
-            userId = req.session.userId;
-        }
+        const userId = getUserIdFromRequest(req);
         
         if (!userId) {
             return res.status(401).json({ success: false, error: 'UNAUTHORIZED' });
@@ -79,12 +48,12 @@ router.post('/init', async (req, res) => {
         
         logger.info(`[API] Support init - User: ${userId}, IP: ${clientIP}, Country: ${geoLocation.country_name}`);
         
-        const conversation = supportService.getOrCreateConversation(userId, {
+        const conversation = await supportService.getOrCreateConversation(userId, {
             name: name || 'User',
             email: email || ''
         }, clientIP, geoLocation);
         
-        const messages = supportService.getMessages(conversation.id, 50);
+        const messages = await supportService.getMessages(conversation.id, 50);
         
         res.json({
             success: true,
@@ -111,47 +80,13 @@ router.post('/init', async (req, res) => {
 
 /**
  * POST /api/v1/user/support/message
+ * 发送客服消息
  */
 router.post('/message', async (req, res) => {
     try {
-        // 获取 userId
-        let userId = null;
-        
-        console.log('========== 开始获取 userId ==========');
-        
-        // 从 Cookie 获取
-        if (req.cookies && req.cookies.footradapro_token) {
-            console.log('找到 Cookie token');
-            try {
-                const JWT_SECRET = process.env.JWT_SECRET || 'footradapro-jwt-secret-key-2024';
-                const decoded = jwt.verify(req.cookies.footradapro_token, JWT_SECRET);
-                console.log('JWT 解码结果:', decoded);
-                if (decoded && decoded.id) {
-                    userId = decoded.id;
-                    console.log('✅ 从 JWT token 获取 userId:', userId);
-                }
-            } catch (err) {
-                console.error('JWT 解码失败:', err.message);
-            }
-        } else {
-            console.log('没有找到 Cookie token');
-        }
-        
-        if (!userId && req.session && req.session.userId) {
-            userId = req.session.userId;
-            console.log('✅ 从 session 获取 userId:', userId);
-        }
-        
-        if (!userId && req.user && req.user.id) {
-            userId = req.user.id;
-            console.log('✅ 从 req.user.id 获取 userId:', userId);
-        }
-        
-        console.log('最终 userId:', userId);
-        console.log('====================================');
+        const userId = getUserIdFromRequest(req);
         
         if (!userId) {
-            logger.error('[API] Send message failed: userId not found');
             return res.status(401).json({
                 success: false,
                 error: 'UNAUTHORIZED',
@@ -177,12 +112,12 @@ router.post('/message', async (req, res) => {
         
         logger.info(`[API] Send message - User: ${userId}, Conv: ${convId}`);
         
-        const message = supportService.addUserMessage(convId, userId, content.trim());
+        const message = await supportService.addUserMessage(convId, userId, content.trim());
         
         // 异步发送 Telegram 通知
         setImmediate(async () => {
             try {
-                const onlineCount = supportService.getOnlineAdminCount();
+                const onlineCount = await supportService.getOnlineAdminCount();
                 
                 if (onlineCount === 0) {
                     const db = supportService.getDb();
@@ -195,7 +130,7 @@ router.post('/message', async (req, res) => {
                         displayName = user.email.split('@')[0];
                     }
                     
-                    const conversation = supportService.getConversationById(convId);
+                    const conversation = await supportService.getConversationById(convId);
                     
                     await telegramService.notifyNewMessage(
                         { username: displayName, email: user?.email },
@@ -227,19 +162,11 @@ router.post('/message', async (req, res) => {
 
 /**
  * GET /api/v1/user/support/messages
+ * 获取会话消息列表
  */
-router.get('/messages', (req, res) => {
+router.get('/messages', async (req, res) => {
     try {
-        let userId = null;
-        if (req.cookies && req.cookies.footradapro_token) {
-            try {
-                const JWT_SECRET = process.env.JWT_SECRET || 'footradapro-jwt-secret-key-2024';
-                const decoded = jwt.verify(req.cookies.footradapro_token, JWT_SECRET);
-                if (decoded && decoded.id) userId = decoded.id;
-            } catch (err) {}
-        }
-        if (!userId && req.session?.userId) userId = req.session.userId;
-        if (!userId && req.user?.id) userId = req.user.id;
+        const userId = getUserIdFromRequest(req);
         
         if (!userId) {
             return res.status(401).json({ success: false, error: 'UNAUTHORIZED' });
@@ -251,7 +178,7 @@ router.get('/messages', (req, res) => {
         }
         
         const parsedLimit = Math.min(parseInt(limit) || 100, 500);
-        const messages = supportService.getMessages(convId, parsedLimit);
+        const messages = await supportService.getMessages(convId, parsedLimit);
         
         res.json({ success: true, data: messages });
     } catch (error) {
@@ -262,19 +189,11 @@ router.get('/messages', (req, res) => {
 
 /**
  * GET /api/v1/user/support/conversations
+ * 获取用户会话列表
  */
-router.get('/conversations', (req, res) => {
+router.get('/conversations', async (req, res) => {
     try {
-        let userId = null;
-        if (req.cookies && req.cookies.footradapro_token) {
-            try {
-                const JWT_SECRET = process.env.JWT_SECRET || 'footradapro-jwt-secret-key-2024';
-                const decoded = jwt.verify(req.cookies.footradapro_token, JWT_SECRET);
-                if (decoded && decoded.id) userId = decoded.id;
-            } catch (err) {}
-        }
-        if (!userId && req.session?.userId) userId = req.session.userId;
-        if (!userId && req.user?.id) userId = req.user.id;
+        const userId = getUserIdFromRequest(req);
         
         if (!userId) {
             return res.status(401).json({ success: false, error: 'UNAUTHORIZED' });
@@ -282,11 +201,46 @@ router.get('/conversations', (req, res) => {
         
         const { limit = 50 } = req.query;
         const parsedLimit = Math.min(parseInt(limit) || 50, 200);
-        const conversations = supportService.getUserConversations(userId, parsedLimit);
+        const conversations = await supportService.getUserConversations(userId, parsedLimit);
         
         res.json({ success: true, data: conversations });
     } catch (error) {
         logger.error(`[API] Get conversations error: ${error.message}`);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/v1/user/support/rate
+ * 评价客服会话
+ */
+router.post('/rate', async (req, res) => {
+    try {
+        const userId = getUserIdFromRequest(req);
+        
+        if (!userId) {
+            return res.status(401).json({ success: false, error: 'UNAUTHORIZED' });
+        }
+        
+        const { convId, score, comment } = req.body;
+        
+        if (!convId || !score || score < 1 || score > 5) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid parameters'
+            });
+        }
+        
+        await supportService.submitRating(convId, userId, score, comment || '');
+        
+        logger.info(`[API] User ${userId} rated conversation ${convId} with score ${score}`);
+        
+        res.json({
+            success: true,
+            message: 'Rating submitted successfully'
+        });
+    } catch (error) {
+        logger.error(`[API] Rate error: ${error.message}`);
         res.status(500).json({ success: false, error: error.message });
     }
 });
