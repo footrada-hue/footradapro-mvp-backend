@@ -952,66 +952,17 @@
     }
   };
   
-  const renderSpotlightMatches = (matches) => {
-    if (!dom.spotlightGrid) return;
-    
-    if (!matches || matches.length === 0) {
-      dom.spotlightGrid.innerHTML = '<div class="empty-state" style="text-align:center;padding:40px;"><i class="fas fa-futbol"></i><p>No upcoming matches</p></div>';
-      return;
-    }
-    
-    function getTeamLogoUrl(logoUrl) {
-        if (logoUrl && logoUrl !== '/uploads/teams/default.png' && logoUrl !== 'NULL') {
-            return logoUrl + '?t=' + Date.now();
+function getTeamLogoUrl(logoUrl) {
+    // 如果有队徽数据（URL 或 Base64），直接返回
+    if (logoUrl && logoUrl !== '/uploads/teams/default.png' && logoUrl !== 'NULL') {
+        // 如果是 Base64 格式（以 data:image 开头），不添加时间戳
+        if (logoUrl.startsWith('data:image')) {
+            return logoUrl;
         }
-        return '/uploads/teams/default.png';
+        return logoUrl + '?t=' + Date.now();
     }
-    
-    dom.spotlightGrid.innerHTML = matches.map(match => {
-      const time = formatMatchTime(match.match_time);
-      const relativeTime = getRelativeTime(match.match_time);
-      const leagueName = match.league || 'Unknown';
-      const confidence = match.confidence || 85;
-      const homeLogo = getTeamLogoUrl(match.home_logo);
-      const awayLogo = getTeamLogoUrl(match.away_logo);
-      
-      return `
-        <div class="match-card" data-match-id="${match.id}">
-          <div class="status-badge status-upcoming">Upcoming</div>
-          <div class="match-logos-wrapper">
-            <div class="match-logo-item">
-              <img class="match-logo" src="${homeLogo}" alt="${escapeHtml(match.home_team)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'logo-fallback\\'><i class=\\'fas fa-futbol\\'></i></div><div class=\\'match-team-name\\'>${escapeHtml(match.home_team)}</div>'">
-              <div class="match-team-name">${escapeHtml(match.home_team)}</div>
-            </div>
-            <div class="match-vs-badge">VS</div>
-            <div class="match-logo-item">
-              <img class="match-logo" src="${awayLogo}" alt="${escapeHtml(match.away_team)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'logo-fallback\\'><i class=\\'fas fa-futbol\\'></i></div><div class=\\'match-team-name\\'>${escapeHtml(match.away_team)}</div>'">
-              <div class="match-team-name">${escapeHtml(match.away_team)}</div>
-            </div>
-          </div>
-          <div class="match-info">
-            <div class="match-league-time">
-              <span class="league-badge">${escapeHtml(leagueName)}</span>
-              <span>${time} (${relativeTime})</span>
-            </div>
-            <div class="confidence-bar">
-              <div class="confidence-label">
-                <span>AI Confidence</span>
-                <span>${confidence}%</span>
-              </div>
-              <div class="confidence-progress">
-                <div class="confidence-fill" style="width: ${confidence}%"></div>
-              </div>
-            </div>
-          </div>
-          <button class="authorize-btn" onclick="window.location.href='/shell.html?page=authorize&matchId=${match.id}'">
-            Authorize <i class="fas fa-arrow-right"></i>
-          </button>
-        </div>
-      `;
-    }).join('');
-  };
-  
+    return '/uploads/teams/default.png';
+}
   const waitForMatchesData = () => {
     return new Promise((resolve) => {
       if (window.AppState && window.AppState.filteredMatches && window.AppState.filteredMatches.length > 0) {
