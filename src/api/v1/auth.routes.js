@@ -1,3 +1,4 @@
+// src/api/v1/auth.routes.js
 import express from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
@@ -249,7 +250,7 @@ router.post('/verify-code',
     }
 );
 
-// ==================== 注册 ====================
+// ==================== 注册（已修复 account_status 默认值）====================
 router.post('/register', registerValidation, async (req, res) => {
     console.log('=== /register called ===');
     console.log('Request body:', req.body);
@@ -310,23 +311,23 @@ router.post('/register', registerValidation, async (req, res) => {
         console.log('Generated UID:', uid);
 
         if (isProduction) {
-            // PostgreSQL 版本 - 只使用存在的字段
-await query(`
-    INSERT INTO users (
-        uid, username, password, balance, role, status,
-        is_new_user, has_claimed_bonus, completed_steps,
-        created_at, updated_at, last_login_at
-    ) VALUES ($1, $2, $3, 0, 'user', 'active', true, false, 0, NOW(), NOW(), NOW())
-`, [uid, username, hashedPassword]);
+            // PostgreSQL 版本 - account_status 默认为 'active'
+            await query(`
+                INSERT INTO users (
+                    uid, username, password, balance, role, status, account_status,
+                    is_new_user, has_claimed_bonus, completed_steps,
+                    created_at, updated_at, last_login_at
+                ) VALUES ($1, $2, $3, 0, 'user', 'active', 'active', true, false, 0, NOW(), NOW(), NOW())
+            `, [uid, username, hashedPassword]);
         } else {
-            // SQLite 版本
+            // SQLite 版本 - account_status 默认为 'active'
             const db = getDb();
             const stmt = db.prepare(`
                 INSERT INTO users (
-                    uid, username, password, balance, role, status,
+                    uid, username, password, balance, role, status, account_status,
                     is_new_user, has_claimed_bonus, completed_steps,
                     created_at, updated_at, last_login_at
-                ) VALUES (?, ?, ?, 0, 'user', 'active', 1, 0, 0, datetime('now'), datetime('now'), datetime('now'))
+                ) VALUES (?, ?, ?, 0, 'user', 'active', 'active', 1, 0, 0, datetime('now'), datetime('now'), datetime('now'))
             `);
             stmt.run(uid, username, hashedPassword);
         }
