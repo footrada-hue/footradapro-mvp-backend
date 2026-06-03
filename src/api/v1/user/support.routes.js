@@ -80,7 +80,7 @@ router.post('/init', async (req, res) => {
 
 /**
  * POST /api/v1/user/support/message
- * 发送客服消息
+ * 发送客服消息 - 强制发送 Telegram 通知
  */
 router.post('/message', async (req, res) => {
     try {
@@ -114,33 +114,29 @@ router.post('/message', async (req, res) => {
         
         const message = await supportService.addUserMessage(convId, userId, content.trim());
         
-        // 异步发送 Telegram 通知
+        // 异步发送 Telegram 通知 - 强制发送，不检查管理员在线状态
         setImmediate(async () => {
             try {
-                const onlineCount = await supportService.getOnlineAdminCount();
+                const db = supportService.getDb();
+                const user = db.prepare('SELECT id, username, email FROM users WHERE id = ?').get(userId);
                 
-                if (onlineCount === 0) {
-                    const db = supportService.getDb();
-                    const user = db.prepare('SELECT id, username, email FROM users WHERE id = ?').get(userId);
-                    
-                    let displayName = 'User';
-                    if (user?.username && user.username !== '') {
-                        displayName = user.username;
-                    } else if (user?.email && user.email !== '') {
-                        displayName = user.email.split('@')[0];
-                    }
-                    
-                    const conversation = await supportService.getConversationById(convId);
-                    
-                    await telegramService.notifyNewMessage(
-                        { username: displayName, email: user?.email },
-                        content,
-                        convId,
-                        conversation?.country_name
-                    );
-                    
-                    logger.info(`[API] Sent Telegram notification for conversation ${convId}, user: ${displayName}`);
+                let displayName = 'User';
+                if (user?.username && user.username !== '') {
+                    displayName = user.username;
+                } else if (user?.email && user.email !== '') {
+                    displayName = user.email.split('@')[0];
                 }
+                
+                const conversation = await supportService.getConversationById(convId);
+                
+                await telegramService.notifyNewMessage(
+                    { username: displayName, email: user?.email },
+                    content,
+                    convId,
+                    conversation?.country_name
+                );
+                
+                logger.info(`[API] Sent Telegram notification for conversation ${convId}, user: ${displayName}`);
             } catch (telegramError) {
                 logger.error('[API] Telegram notification failed:', telegramError);
             }
