@@ -1,6 +1,6 @@
 <!-- 
   support-chat-content.html - 在线聊天内容
-  修复版：图片附件正确显示预览
+  版本：3.0 - 生产标准 WebSocket 实时通信
 -->
 
 <!DOCTYPE html>
@@ -8,25 +8,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>Live Chat</title>
+  <title>Live Support · FootRadaPro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --space-1: 4px;
       --space-2: 8px;
       --space-3: 12px;
       --space-4: 16px;
       --space-5: 20px;
       --space-6: 24px;
-      --space-7: 32px;
+      --space-10: 48px;
       
       --font-xs: 0.75rem;
       --font-sm: 0.875rem;
       --font-base: 1rem;
       --font-md: 1.125rem;
-      --font-lg: 1.25rem;
       
       --radius-sm: 8px;
       --radius-md: 12px;
@@ -71,41 +70,38 @@
       --admin-message-text: #F1F5F9;
     }
 
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      height: 100vh;
+      overflow: hidden;
+    }
+
     .chat-container {
       display: flex;
       flex-direction: column;
       height: 100vh;
+      max-width: 1000px;
+      margin: 0 auto;
       background: var(--bg-primary);
     }
 
-    @media (min-width: 900px) {
-      .chat-container {
-        height: calc(100vh - 120px);
-      }
-    }
-
-    @media (max-width: 899px) {
-      .chat-container {
-        height: calc(100vh - 180px);
-      }
-    }
-
+    /* 头部 */
     .chat-header {
       background: var(--bg-primary);
       border-bottom: 1px solid var(--border-light);
-      padding: 16px 20px;
+      padding: var(--space-4) var(--space-6);
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-shrink: 0;
     }
-
     .header-info {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: var(--space-3);
     }
-
     .support-avatar {
       width: 44px;
       height: 44px;
@@ -115,164 +111,154 @@
       align-items: center;
       justify-content: center;
     }
-
     .support-avatar i { font-size: 22px; color: white; }
-
-    .header-text h2 { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
-
+    .header-text h2 { font-size: var(--font-md); font-weight: 600; margin-bottom: 2px; }
     .status-badge {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 12px;
+      gap: var(--space-2);
+      font-size: var(--font-xs);
     }
-
     .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--success);
+      width: 8px; height: 8px; border-radius: 50%; background: var(--success);
     }
-
     .status-offline .status-dot { background: var(--text-muted); }
-
-    .header-actions { display: flex; gap: 16px; }
-    .header-actions i { font-size: 20px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+    .header-actions { display: flex; gap: var(--space-4); }
+    .header-actions i { font-size: 20px; color: var(--text-muted); cursor: pointer; transition: all var(--duration-fast); }
     .header-actions i:hover { color: var(--accent); }
 
+    /* 消息区域 */
     .messages-area {
       flex: 1;
       overflow-y: auto;
-      padding: 20px;
+      padding: var(--space-5) var(--space-6);
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      min-height: 0;
+      gap: var(--space-3);
     }
-
     .messages-area::-webkit-scrollbar { width: 5px; }
-    .messages-area::-webkit-scrollbar-track { background: var(--border-light); border-radius: 9999px; }
-    .messages-area::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 9999px; }
+    .messages-area::-webkit-scrollbar-track { background: var(--border-light); border-radius: var(--radius-full); }
+    .messages-area::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: var(--radius-full); }
 
+    /* 消息气泡 */
     .message {
       display: flex;
       animation: messageIn 0.2s ease;
     }
-
     @keyframes messageIn {
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
     .user-message { justify-content: flex-end; }
     .admin-message { justify-content: flex-start; }
     .system-message { justify-content: center; }
-
     .message-bubble {
       max-width: 75%;
-      padding: 10px 16px;
-      border-radius: 20px;
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-xl);
       position: relative;
     }
-
     .user-message .message-bubble {
       background: var(--user-message-bg);
       color: var(--user-message-text);
-      border-bottom-right-radius: 8px;
+      border-bottom-right-radius: var(--radius-sm);
     }
-
     .admin-message .message-bubble {
       background: var(--admin-message-bg);
       color: var(--admin-message-text);
-      border-bottom-left-radius: 8px;
+      border-bottom-left-radius: var(--radius-sm);
     }
-
     .system-message .message-bubble {
       background: var(--bg-tertiary);
       color: var(--text-muted);
-      font-size: 12px;
-      padding: 6px 16px;
+      font-size: var(--font-xs);
+      padding: var(--space-2) var(--space-4);
     }
-
     .message-time {
       font-size: 10px;
       opacity: 0.6;
-      margin-top: 4px;
+      margin-top: var(--space-1);
       text-align: right;
     }
-
     .admin-message .message-time { text-align: left; }
 
+    /* 图片附件 */
+    .image-attachment {
+      margin-top: var(--space-2);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      cursor: pointer;
+      display: inline-block;
+    }
+    .image-attachment img {
+      max-width: 200px;
+      max-height: 150px;
+      object-fit: cover;
+      transition: transform var(--duration-fast);
+    }
+    .image-attachment img:hover { transform: scale(1.02); }
+    .file-attachment {
+      margin-top: var(--space-2);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      background: rgba(0,0,0,0.05);
+      border-radius: var(--radius-md);
+    }
+    .file-link { color: inherit; text-decoration: none; font-size: var(--font-sm); }
+    .file-link:hover { text-decoration: underline; }
+
+    /* 空状态 */
     .empty-message {
       text-align: center;
-      padding: 48px 20px;
+      padding: var(--space-10);
       color: var(--text-muted);
     }
+    .empty-icon { font-size: 48px; display: block; margin-bottom: var(--space-4); }
 
-    .empty-icon { font-size: 48px; display: block; margin-bottom: 16px; }
-
+    /* 输入区域 */
     .input-area {
       background: var(--bg-primary);
       border-top: 1px solid var(--border-light);
-      padding: 16px 20px;
+      padding: var(--space-4) var(--space-6);
       flex-shrink: 0;
     }
-
     .input-wrapper {
       display: flex;
-      align-items: center;
-      gap: 8px;
+      align-items: flex-end;
+      gap: var(--space-3);
       background: var(--bg-secondary);
-      border-radius: 40px;
-      padding: 6px 12px;
+      border-radius: var(--radius-2xl);
+      padding: var(--space-2) var(--space-3);
       border: 1px solid var(--border-light);
-      transition: all 0.15s;
+      transition: all var(--duration-fast);
     }
-
-    .input-wrapper:focus-within {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
-    }
-
+    .input-wrapper:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
     .input-actions {
       display: flex;
-      gap: 4px;
+      gap: var(--space-2);
       align-items: center;
     }
-
     .action-btn {
-      background: transparent;
-      border: none;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      cursor: pointer;
-      color: var(--text-muted);
-      transition: all 0.15s;
-      font-size: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background: none; border: none; width: 36px; height: 36px;
+      border-radius: 50%; cursor: pointer; color: var(--text-muted);
+      transition: all var(--duration-fast); font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
     }
-
-    .action-btn:hover {
-      background: var(--bg-tertiary);
-      color: var(--accent);
-    }
-
+    .action-btn:hover { background: var(--bg-tertiary); color: var(--accent); }
     .message-input {
       flex: 1;
       background: none;
       border: none;
-      padding: 10px 0;
+      padding: var(--space-2) 0;
       color: var(--text-primary);
-      font-size: 14px;
+      font-size: var(--font-sm);
       font-family: inherit;
       resize: none;
       outline: none;
       max-height: 100px;
     }
-
     .send-btn {
       background: var(--accent-gradient);
       border: none;
@@ -281,151 +267,57 @@
       border-radius: 50%;
       cursor: pointer;
       color: white;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      transition: all var(--duration-fast);
+      display: flex; align-items: center; justify-content: center;
     }
+    .send-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px var(--accent-glow); }
+    .send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-    .send-btn:hover {
-      transform: scale(1.05);
-      box-shadow: 0 4px 12px var(--accent-glow);
-    }
-
-    .send-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-    }
-
+    /* 打字指示器 */
     .typing-indicator {
-      padding: 8px 20px;
-      font-size: 12px;
+      padding: var(--space-2) var(--space-4);
+      background: var(--admin-message-bg);
+      border-radius: var(--radius-xl);
+      width: fit-content;
+      font-size: var(--font-xs);
       color: var(--text-muted);
-      font-style: italic;
+      margin-bottom: var(--space-2);
     }
-
-    .typing-dots {
-      display: inline-flex;
-      gap: 4px;
-      margin-left: 6px;
-    }
-
+    .typing-dots { display: inline-flex; gap: 4px; margin-left: 6px; }
     .typing-dots span {
-      width: 6px;
-      height: 6px;
-      background: var(--accent);
-      border-radius: 50%;
-      animation: typingDot 1.4s infinite;
+      width: 6px; height: 6px; background: var(--accent);
+      border-radius: 50%; animation: typingDot 1.4s infinite;
     }
-
     .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
     .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingDot { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
 
-    @keyframes typingDot {
-      0%, 60%, 100% { transform: translateY(0); }
-      30% { transform: translateY(-4px); }
-    }
-
+    /* Emoji 选择器 */
     .emoji-picker {
       position: absolute;
-      bottom: 80px;
-      left: 20px;
+      bottom: 70px;
+      right: 20px;
       background: var(--bg-primary);
       border: 1px solid var(--border-light);
-      border-radius: 16px;
+      border-radius: var(--radius-xl);
       box-shadow: 0 10px 25px rgba(0,0,0,0.15);
       width: 280px;
-      max-height: 320px;
+      max-height: 300px;
       overflow-y: auto;
-      z-index: 1000;
+      z-index: 100;
       display: none;
     }
-
-    .emoji-picker.show {
-      display: block;
-    }
-
-    .emoji-category {
-      padding: 12px;
-      border-bottom: 1px solid var(--border-light);
-    }
-
-    .emoji-category:last-child {
-      border-bottom: none;
-    }
-
-    .emoji-category-title {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-bottom: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .emoji-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
+    .emoji-category-title { font-size: var(--font-xs); font-weight: 600; padding: var(--space-2) var(--space-3); color: var(--text-muted); }
+    .emoji-list { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-2) var(--space-3); }
     .emoji-item {
-      font-size: 24px;
-      cursor: pointer;
-      padding: 6px;
-      border-radius: 10px;
-      transition: all 0.15s;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      font-size: 24px; cursor: pointer; padding: var(--space-1); border-radius: var(--radius-sm);
+      transition: all var(--duration-fast);
+      width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
       background: var(--bg-secondary);
     }
+    .emoji-item:hover { background: var(--bg-tertiary); transform: scale(1.1); }
 
-    .emoji-item:hover {
-      background: var(--bg-tertiary);
-      transform: scale(1.1);
-    }
-
-    /* 图片附件样式 */
-    .image-attachment {
-      margin-top: 8px;
-      border-radius: 12px;
-      overflow: hidden;
-      cursor: pointer;
-      display: inline-block;
-    }
-
-    .image-attachment img {
-      max-width: 200px;
-      max-height: 150px;
-      object-fit: cover;
-      border-radius: 12px;
-      transition: transform 0.2s;
-    }
-
-    .image-attachment img:hover {
-      transform: scale(1.02);
-    }
-
-    .file-attachment {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      background: rgba(0,0,0,0.05);
-      border-radius: 8px;
-      margin-top: 8px;
-    }
-
-    .file-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 12px;
-    }
-
+    /* Toast 提示 */
     .toast {
       position: fixed;
       bottom: 80px;
@@ -439,23 +331,29 @@
       z-index: 2000;
       animation: fadeInUp 0.3s ease;
     }
-
+    .toast-success {
+      background: #10b981;
+    }
     @keyframes fadeInUp {
       from { opacity: 0; transform: translate(-50%, 20px); }
       to { opacity: 1; transform: translate(-50%, 0); }
     }
 
     @media (max-width: 768px) {
+      .chat-header { padding: var(--space-3) var(--space-4); }
+      .messages-area { padding: var(--space-3) var(--space-4); }
+      .input-area { padding: var(--space-3) var(--space-4); }
       .message-bubble { max-width: 85%; }
-      .emoji-picker { width: 260px; left: 10px; bottom: 70px; }
+      .image-attachment img { max-width: 150px; }
+      .emoji-picker { width: 260px; right: 10px; bottom: 60px; }
       .emoji-item { width: 36px; height: 36px; font-size: 20px; }
       .action-btn, .send-btn { width: 32px; height: 32px; font-size: 16px; }
-      .image-attachment img { max-width: 120px; max-height: 100px; }
     }
   </style>
 </head>
 <body>
 <div class="chat-container">
+  <!-- 头部 -->
   <div class="chat-header">
     <div class="header-info">
       <div class="support-avatar"><i class="fas fa-headset"></i></div>
@@ -473,6 +371,7 @@
     </div>
   </div>
 
+  <!-- 消息区域 -->
   <div class="messages-area" id="messagesContainer">
     <div class="empty-message">
       <span class="empty-icon">💬</span>
@@ -480,11 +379,13 @@
     </div>
   </div>
 
-  <div id="typingIndicator" class="typing-indicator" style="display: none;">
+  <!-- 打字指示器 -->
+  <div id="typingIndicator" class="typing-indicator" style="display: none; margin: 0 var(--space-6);">
     <span>Support is typing</span>
     <div class="typing-dots"><span></span><span></span><span></span></div>
   </div>
 
+  <!-- 输入区域 -->
   <div class="input-area">
     <div class="input-wrapper">
       <div class="input-actions">
@@ -519,6 +420,9 @@
       this.socket = null;
       this.isConnected = false;
       this.isSending = false;
+      this.pendingFile = null;
+      this.reconnectAttempts = 0;
+      this.maxReconnectAttempts = 5;
 
       this.messagesContainer = document.getElementById('messagesContainer');
       this.messageInput = document.getElementById('messageInput');
@@ -561,53 +465,72 @@
       }
     }
 
-connectWebSocket() {
-  // 检查 Socket.IO 是否已加载
-  if (typeof io === 'undefined') {
-    console.log('[Chat] Socket.IO not loaded, retrying in 500ms...');
-    setTimeout(() => this.connectWebSocket(), 500);
-    return;
-  }
-  
-  // 检查 userId 是否已设置
-  if (!this.userId) {
-    console.log('[Chat] Waiting for userId...');
-    setTimeout(() => this.connectWebSocket(), 500);
-    return;
-  }
-  
-  console.log('[Chat] 连接 WebSocket...');
-  this.socket = io();
+    connectWebSocket() {
+      if (typeof io === 'undefined') {
+        console.log('[Chat] Socket.IO not loaded, retrying...');
+        setTimeout(() => this.connectWebSocket(), 500);
+        return;
+      }
+      
+      if (!this.userId) {
+        console.log('[Chat] Waiting for userId...');
+        setTimeout(() => this.connectWebSocket(), 500);
+        return;
+      }
+      
+      console.log('[Chat] 连接 WebSocket...');
+      this.socket = io({
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: this.maxReconnectAttempts,
+        reconnectionDelay: 1000
+      });
 
-  this.socket.on('connect', () => {
-    console.log('[Socket] 已连接');
-    this.isConnected = true;
-    this.updateStatus(true);
-this.socket.emit('join', { 
-  roomId: this.convId || `user_${this.userId}`,
-  userId: this.userId,
-  role: 'user'
-});
-  });
+      this.socket.on('connect', () => {
+        console.log('[Socket] 已连接');
+        this.isConnected = true;
+        this.reconnectAttempts = 0;
+        this.updateStatus(true);
+        this.socket.emit('join', { 
+          roomId: this.convId || `user_${this.userId}`,
+          userId: this.userId,
+          role: 'user'
+        });
+      });
 
-  this.socket.on('disconnect', () => {
-    console.log('[Socket] 断开');
-    this.isConnected = false;
-    this.updateStatus(false);
-  });
+      this.socket.on('disconnect', () => {
+        console.log('[Socket] 断开');
+        this.isConnected = false;
+        this.updateStatus(false);
+      });
 
-  this.socket.on('new-message', (message) => {
-    console.log('[Socket] 收到消息:', message);
-    if (message.sender_type === 'user') return;
-    this.addMessage(message);
-  });
-}
+      this.socket.on('connect_error', (error) => {
+        console.error('[Socket] 连接错误:', error);
+        this.reconnectAttempts++;
+        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+          this.updateStatus(false);
+          this.showError('连接失败，请刷新页面重试');
+        }
+      });
+
+      this.socket.on('new-message', (message) => {
+        console.log('[Socket] 收到消息:', message);
+        if (message.sender_type === 'user') return;
+        this.addMessage(message);
+      });
+    }
+
     updateStatus(online) {
       const el = document.getElementById('connectionStatus');
       if (el) {
         el.innerHTML = online
           ? '<span class="status-dot"></span><span>Online</span>'
           : '<span class="status-dot"></span><span>Offline</span>';
+        if (!online) {
+          el.classList.add('status-offline');
+        } else {
+          el.classList.remove('status-offline');
+        }
       }
     }
 
@@ -623,11 +546,13 @@ this.socket.emit('join', {
 
     formatMessage(msg) {
       const isUser = msg.sender_type === 'user';
+      const isSystem = msg.sender_type === 'system';
       const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const senderClass = isUser ? 'user-message' : 'admin-message';
-      const msgId = msg.id || msg.auth_id || ('msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6));
+      let senderClass = 'admin-message';
+      if (isUser) senderClass = 'user-message';
+      if (isSystem) senderClass = 'system-message';
+      const msgId = msg.id || ('msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6));
       
-      // 处理附件显示
       let attachmentsHtml = '';
       if (msg.attachments) {
         try {
@@ -688,7 +613,6 @@ this.socket.emit('join', {
       this.isSending = true;
       this.sendBtn.disabled = true;
 
-      // 如果有待发送的文件
       if (this.pendingFile) {
         await this.uploadAndSendFile(this.pendingFile);
         this.pendingFile = null;
@@ -696,19 +620,6 @@ this.socket.emit('join', {
         this.sendBtn.disabled = false;
         return;
       }
-
-      // 发送文本消息
-      const messageData = {
-        convId: this.convId,
-        content: content,
-        type: 'text',
-        sender_type: 'user',
-        created_at: new Date().toISOString()
-      };
-
-      console.log('[Chat] 发送:', content);
-      this.messageInput.value = '';
-      this.autoResizeTextarea();
 
       const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
       const tempMessage = {
@@ -718,15 +629,16 @@ this.socket.emit('join', {
         created_at: new Date().toISOString()
       };
       this.addMessage(tempMessage);
+      this.messageInput.value = '';
+      this.autoResizeTextarea();
 
       if (this.isConnected && this.socket) {
-this.socket.emit('send-message', {
-  convId: this.convId,
-  content: content
-}, (response) => {
+        this.socket.emit('send-message', {
+          convId: this.convId,
+          content: content
+        }, (response) => {
           this.isSending = false;
           this.sendBtn.disabled = false;
-
           if (response && response.success) {
             console.log('[Chat] 发送成功');
             const tempMsg = document.querySelector(`.message[data-message-id="${tempId}"]`);
@@ -737,26 +649,18 @@ this.socket.emit('send-message', {
           } else {
             console.error('[Chat] 发送失败');
             const tempMsg = document.querySelector(`.message[data-message-id="${tempId}"]`);
-            if (tempMsg) {
-              tempMsg.querySelector('.message-content').innerHTML = '❌ 发送失败';
-              tempMsg.style.opacity = '0.6';
-              setTimeout(() => {
-                if (tempMsg) tempMsg.remove();
-                this.messageInput.value = content;
-                this.showError('发送失败，请重试');
-              }, 2000);
-            }
+            if (tempMsg) tempMsg.remove();
+            this.messageInput.value = content;
+            this.showError('发送失败，请重试');
           }
         });
       } else {
         this.isSending = false;
         this.sendBtn.disabled = false;
         this.showError('未连接到服务器');
-        setTimeout(() => {
-          const tempMsg = document.querySelector(`.message[data-message-id="${tempId}"]`);
-          if (tempMsg) tempMsg.remove();
-          this.messageInput.value = content;
-        }, 1000);
+        const tempMsg = document.querySelector(`.message[data-message-id="${tempId}"]`);
+        if (tempMsg) tempMsg.remove();
+        this.messageInput.value = content;
       }
     }
 
@@ -791,7 +695,6 @@ this.socket.emit('send-message', {
             }]
           };
           
-          // 显示临时消息
           const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
           const tempMessage = {
             id: tempId,
@@ -819,8 +722,6 @@ this.socket.emit('send-message', {
               }
             });
           } else {
-           
-            // HTTP 降级
             const httpResponse = await fetch('/api/v1/user/support/message', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -869,11 +770,12 @@ this.socket.emit('send-message', {
       const items = event.clipboardData.items;
       for (const item of items) {
         if (item.type.indexOf('image') !== -1) {
+          event.preventDefault();
           const file = item.getAsFile();
-          if (file.size <= 10 * 1024 * 1024) {
+          if (file && file.size <= 10 * 1024 * 1024) {
             this.pendingFile = file;
             this.sendMessage();
-          } else {
+          } else if (file) {
             this.showError('图片太大，不能超过 10MB');
           }
           break;
@@ -903,14 +805,13 @@ this.socket.emit('send-message', {
       toast.className = 'toast';
       toast.textContent = msg;
       document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 2000);
+      setTimeout(() => toast.remove(), 3000);
     }
 
     showTemporarySuccess(msg) {
       const toast = document.createElement('div');
-      toast.className = 'toast';
+      toast.className = 'toast toast-success';
       toast.textContent = msg;
-      toast.style.background = '#10b981';
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 1500);
     }
@@ -920,11 +821,8 @@ this.socket.emit('send-message', {
 
       let isVisible = false;
       const emojis = [
-        '😊', '😂', '🥰', '😍', '😎', '🤔', '😭', '😡', '👍', '❤️',
-        '🎉', '🔥', '✨', '⭐', '🙏', '🤝', '💪', '👋', '✅', '❌',
-        '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😇', '🙂', '🙃',
-        '😉', '😌', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜',
-        '🤪', '🤨', '🧐', '🤓', '🤩', '🥳', '🥺', '😢', '😤', '😴'
+        '😊', '😂', '🥰', '😍', '😎', '🤔', '😭', '👍', '❤️', '🎉',
+        '🔥', '✨', '⭐', '🙏', '🤝', '💪', '👋', '✅', '❌', '💬'
       ];
 
       this.emojiPicker.innerHTML = `
@@ -981,7 +879,6 @@ this.socket.emit('send-message', {
           this.sendMessage();
         }
       });
-
       this.attachBtn.onclick = () => this.fileInput.click();
       this.fileInput.onchange = (e) => this.handleFileSelect(e);
       this.messageInput.addEventListener('paste', (e) => this.handlePaste(e));
@@ -989,7 +886,12 @@ this.socket.emit('send-message', {
 
     escapeHtml(str) {
       if (!str) return '';
-      return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+      return str.replace(/[&<>]/g, m => {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+      });
     }
   }
 
