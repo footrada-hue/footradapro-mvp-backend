@@ -43,6 +43,7 @@
     const adjustType = document.getElementById('adjustType');
     const adjustAmount = document.getElementById('adjustAmount');
     const adjustReason = document.getElementById('adjustReason');
+    const balanceMode = document.getElementById('balanceMode');
     const userListDiv = document.getElementById('userList');
     const userSearchInput = document.getElementById('userSearchInput');
 
@@ -67,6 +68,10 @@
     const depositTableBody = document.getElementById('depositTableBody');
     const depositSearchInput = document.getElementById('depositSearchInput');
     const depositStatusFilter = document.getElementById('depositStatusFilter');
+
+    // 存储当前用户的测试/真实余额
+    let currentUserTestBalance = 0;
+    let currentUserRealBalance = 0;
 
     // API请求
     async function adminRequest(endpoint, options = {}) {
@@ -114,7 +119,7 @@
         if (!withdrawTableBody) return;
         
         try {
-            withdrawTableBody.innerHTML = '<tr><td colspan="10" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr>';
+            withdrawTableBody.innerHTML = '<tr><td colspan="11" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr>';
             
             const statsRes = await adminRequest('/admin/withdraw/stats');
             if (statsRes.success) {
@@ -140,7 +145,7 @@
             }
         } catch (err) {
             console.error('加载提现数据失败:', err);
-            withdrawTableBody.innerHTML = '<tr><td colspan="10" class="loading" style="color: #ef4444;">加载失败，请刷新重试</td></tr>';
+            withdrawTableBody.innerHTML = '<tr><td colspan="11" class="loading" style="color: #ef4444;">加载失败，请刷新重试</td></tr>';
         }
     }
 
@@ -168,7 +173,7 @@
         if (!withdrawTableBody) return;
         
         if (filteredWithdrawals.length === 0) {
-            withdrawTableBody.innerHTML = '<tr><td colspan="10" class="loading">暂无记录</td></tr>';
+            withdrawTableBody.innerHTML = '<tr><td colspan="11" class="loading">暂无记录</td></tr>';
             return;
         }
 
@@ -193,8 +198,8 @@
                 <td>${UTILS.formatAmount(netAmount)} USDT</td>
                 <td>${w.network || '-'}</td>
                 <td><span class="address-truncate" title="${w.to_address || ''}">${w.to_address || '-'}</span></td>
-                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td><small style="color: #8e95a3;">${modeText}</small></td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td>
                     <div class="action-group">
                         ${w.status === 'pending' ? 
@@ -212,7 +217,7 @@
         if (!depositTableBody) return;
         
         try {
-            depositTableBody.innerHTML = '<tr><td colspan="9" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr>';
+            depositTableBody.innerHTML = '<tr><td colspan="10" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr>';
             
             const statsRes = await adminRequest('/admin/deposit/stats');
             if (statsRes.success) {
@@ -238,7 +243,7 @@
             }
         } catch (err) {
             console.error('加载充值数据失败:', err);
-            depositTableBody.innerHTML = '<tr><td colspan="9" class="loading" style="color: #ef4444;">加载失败，请刷新重试</td></tr>';
+            depositTableBody.innerHTML = '<tr><td colspan="10" class="loading" style="color: #ef4444;">加载失败，请刷新重试</td></tr>';
         }
     }
 
@@ -266,7 +271,7 @@
         if (!depositTableBody) return;
         
         if (filteredDeposits.length === 0) {
-            depositTableBody.innerHTML = '<tr><td colspan="9" class="loading">暂无记录</td></tr>';
+            depositTableBody.innerHTML = '<tr><td colspan="10" class="loading">暂无记录</td></tr>';
             return;
         }
 
@@ -322,7 +327,6 @@
                 if (todayWithdrawEl) todayWithdrawEl.textContent = Number(statsRes.data.todayWithdraw || 0).toFixed(2) + ' USDT';
                 if (totalRevenueEl) totalRevenueEl.textContent = Number(statsRes.data.totalRevenue || 0).toFixed(2) + ' USDT';
                 
-                // 显示双余额
                 if (testBalanceEl) testBalanceEl.textContent = Number(statsRes.data.testBalance || 0).toFixed(2) + ' USDT';
                 if (realBalanceEl) realBalanceEl.textContent = Number(statsRes.data.realBalance || 0).toFixed(2) + ' USDT';
             }
@@ -352,7 +356,7 @@
         }
     }
 
-    // 渲染用户列表（支持双余额显示）
+    // 渲染用户列表
     function renderUserList() {
         if (!userListDiv) return;
         
@@ -415,7 +419,7 @@
         renderTable();
     }
 
-    // 渲染表格（添加模式列）
+    // 渲染表格
     function renderTable() {
         if (!tbody) return;
         
@@ -533,40 +537,43 @@
         if (userSelectModal) userSelectModal.classList.remove('show');
     };
 
-    // 选择用户（支持双余额）
+    // 更新当前余额显示
+    function updateCurrentBalanceDisplay() {
+        const selectedMode = balanceMode?.value || 'real';
+        const currentBal = selectedMode === 'test' ? currentUserTestBalance : currentUserRealBalance;
+        
+        if (adjustCurrentBalance) {
+            adjustCurrentBalance.textContent = currentBal.toFixed(2);
+        }
+    }
+
+    // 监听余额类型切换
+    if (balanceMode) {
+        balanceMode.addEventListener('change', function() {
+            updateCurrentBalanceDisplay();
+        });
+    }
+
+    // 选择用户
     window.selectUser = function(userId, username, testBalance, realBalance) {
         closeUserSelectModal();
         if (adjustUserId) adjustUserId.value = userId;
         if (adjustUsername) adjustUsername.textContent = escapeHtml(username);
         
-        // 存储双余额到 data 属性
-        adjustModal.setAttribute('data-test-balance', testBalance || 0);
-        adjustModal.setAttribute('data-real-balance', realBalance || 0);
+        currentUserTestBalance = testBalance || 0;
+        currentUserRealBalance = realBalance || 0;
         
-        // 显示当前余额信息（根据选择的模式）
         updateCurrentBalanceDisplay();
         
         if (adjustAmount) adjustAmount.value = '';
         if (adjustReason) adjustReason.value = '';
         if (adjustType) adjustType.value = 'add';
+        if (balanceMode) balanceMode.value = 'real';
+        
         if (adjustModal) adjustModal.classList.add('show');
     };
-    
-    // 更新当前余额显示
-    function updateCurrentBalanceDisplay() {
-        const selectedMode = document.getElementById('balanceMode')?.value || 'real';
-        const testBalance = Number(adjustModal?.getAttribute('data-test-balance') || 0);
-        const realBalance = Number(adjustModal?.getAttribute('data-real-balance') || 0);
-        
-        if (adjustCurrentBalance) {
-            const currentBal = selectedMode === 'test' ? testBalance : realBalance;
-            adjustCurrentBalance.textContent = currentBal.toFixed(2);
-            adjustCurrentBalance.parentElement.innerHTML = `<div><strong>用户:</strong> <span id="adjustUsername">${adjustUsername?.textContent || ''}</span></div>
-                <div><strong>当前余额 (${selectedMode === 'test' ? '🧪 测试模式' : '💰 真实模式'}):</strong> <span id="adjustCurrentBalanceValue">${currentBal.toFixed(2)}</span> USDT</div>`;
-        }
-    }
 
-    // 打开调整余额模态框（支持双余额）
+    // 打开调整余额模态框
     window.adjustBalance = async function(userId, username) {
         try {
             const result = await adminRequest(`/admin/finance/users/${userId}`);
@@ -574,17 +581,16 @@
                 if (adjustUserId) adjustUserId.value = userId;
                 if (adjustUsername) adjustUsername.textContent = escapeHtml(username);
                 
-                const testBalance = Number(result.data.user.test_balance) || 0;
-                const realBalance = Number(result.data.user.real_balance) || 0;
-                
-                adjustModal.setAttribute('data-test-balance', testBalance);
-                adjustModal.setAttribute('data-real-balance', realBalance);
+                currentUserTestBalance = Number(result.data.user.test_balance) || 0;
+                currentUserRealBalance = Number(result.data.user.real_balance) || 0;
                 
                 updateCurrentBalanceDisplay();
                 
                 if (adjustAmount) adjustAmount.value = '';
                 if (adjustReason) adjustReason.value = '';
                 if (adjustType) adjustType.value = 'add';
+                if (balanceMode) balanceMode.value = 'real';
+                
                 if (adjustModal) adjustModal.classList.add('show');
             }
         } catch (err) {
@@ -597,7 +603,7 @@
         if (adjustModal) adjustModal.classList.remove('show');
     };
 
-    // 提交调整（支持双余额模式）
+    // 提交调整
     window.submitAdjustBalance = async function() {
         const userId = adjustUserId?.value;
         const type = adjustType?.value;
@@ -605,7 +611,7 @@
         const reason = adjustReason?.value || 
             (type === 'add' ? '管理员增加' : 
              type === 'deduct' ? '管理员扣除' : '管理员设置');
-        const mode = document.getElementById('balanceMode')?.value || 'real';
+        const mode = balanceMode?.value || 'real';
         
         if (!amount || amount <= 0) {
             alert('请输入有效的金额');
@@ -636,7 +642,6 @@
                 alert('余额调整成功！');
                 closeAdjustModal();
                 loadFinanceData();
-                // 刷新提现和充值列表
                 loadWithdrawals();
                 loadDeposits();
             } else {
