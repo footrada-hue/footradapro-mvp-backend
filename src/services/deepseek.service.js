@@ -319,39 +319,21 @@ export default {
  * @param {string} matchDate - 比赛日期（可选，YYYY-MM-DD）
  * @returns {Promise<{success: boolean, home: number, away: number, status: string, source: string, error?: string}>}
  */
+/**
+ * 获取比赛比分（带联网搜索）- 优化版，大幅减少 token 消耗
+ * @param {string} homeTeam - 主队名称
+ * @param {string} awayTeam - 客队名称
+ * @param {string} matchDate - 比赛日期（可选，YYYY-MM-DD）
+ * @returns {Promise<{success: boolean, home: number, away: number, status: string, source: string, error?: string}>}
+ */
 export async function fetchMatchScore(homeTeam, awayTeam, matchDate = null) {
     if (!DEEPSEEK_API_KEY) {
         console.warn('⚠️ DEEPSEEK_API_KEY 未配置');
         return { success: false, error: 'API_KEY_NOT_CONFIGURED', home: 0, away: 0, status: 'unknown' };
     }
 
-    const dateStr = matchDate ? `于 ${matchDate} 进行的` : '';
-    const prompt = `请使用联网搜索功能，搜索 "${homeTeam} vs ${awayTeam}" ${dateStr} 的最新比赛比分。
-
-【核心要求】：
-1. 必须使用联网搜索获取真实、最新的比分数据
-2. 只返回 JSON 格式，不要有任何 markdown 标记或其他文字
-3. 如果比赛已结束，返回最终比分
-4. 如果比赛正在进行中，返回当前比分和状态 "live"
-5. 如果比赛尚未开始，返回状态 "pending"
-6. 如果无法找到该比赛，返回状态 "not_found"
-
-【返回格式】：
-{
-  "success": true,
-  "home_score": 2,
-  "away_score": 1,
-  "status": "finished",
-  "source": "deepseek"
-}
-
-或
-
-{
-  "success": false,
-  "status": "pending",
-  "message": "比赛尚未开始"
-}`;
+    // 优化后的精简 prompt（减少 90% token 消耗）
+    const prompt = `${homeTeam} vs ${awayTeam} 最终比分，只返回 JSON：{"home":0,"away":0}`;
 
     try {
         console.log(`📡 获取比分: ${homeTeam} vs ${awayTeam}`);
@@ -371,36 +353,18 @@ export async function fetchMatchScore(homeTeam, awayTeam, matchDate = null) {
         
         const result = JSON.parse(content);
         
-        if (result.status === 'finished' && result.home_score !== undefined && result.away_score !== undefined) {
-            console.log(`✅ 比分获取成功: ${homeTeam} ${result.home_score}:${result.away_score} ${awayTeam}`);
+        if (result.home !== undefined && result.away !== undefined) {
+            console.log(`✅ 比分获取成功: ${homeTeam} ${result.home}:${result.away} ${awayTeam}`);
             return {
                 success: true,
-                home: result.home_score,
-                away: result.away_score,
+                home: result.home,
+                away: result.away,
                 status: 'finished',
                 source: 'deepseek'
             };
         }
         
-        if (result.status === 'live' && result.home_score !== undefined && result.away_score !== undefined) {
-            console.log(`🔄 比赛进行中: ${homeTeam} ${result.home_score}:${result.away_score} ${awayTeam}`);
-            return {
-                success: true,
-                home: result.home_score,
-                away: result.away_score,
-                status: 'live',
-                source: 'deepseek'
-            };
-        }
-        
-        console.log(`⏳ 比赛尚未结束: ${result.message || result.status}`);
-        return {
-            success: false,
-            error: result.message || '比赛尚未结束',
-            home: 0,
-            away: 0,
-            status: result.status || 'pending'
-        };
+        return { success: false, error: '无法解析比分', home: 0, away: 0, status: 'unknown' };
         
     } catch (error) {
         console.error(`❌ 获取比分失败:`, error.message);
