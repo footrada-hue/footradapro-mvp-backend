@@ -1,15 +1,17 @@
 /**
  * Match Auto-Fetch Service
  * @description 自动获取比赛数据并录入到数据库
- * @version 6.1.0
- * @since 2026-04-12
+ * @version 7.0.0 - PostgreSQL 兼容版
+ * @since 2026-06-07
  */
 
-import { getDb } from '../database/connection.js';
+import { query, getDb } from '../database/connection.js';
 import { fetchUpcomingMatches } from './deepseek.service.js';
 import logger from '../utils/logger.js';
 
-// ==================== 球隊名稱標準化映射 ====================
+const isProduction = process.env.NODE_ENV === 'production';
+
+// ==================== 球隊名稱標準化映射（保持不变）====================
 const TEAM_NAME_NORMALIZE = {
     // 西甲
     'FC Barcelona': 'Barcelona',
@@ -174,7 +176,6 @@ const TEAM_NAME_NORMALIZE = {
     'Rennes': 'Rennes',
     'RC Lens': 'Lens',
     'Lens': 'Lens',
-    'Olympique Lyonnais': 'Lyon',
     'FC Nantes': 'Nantes',
     'Nantes': 'Nantes',
     'Montpellier HSC': 'Montpellier',
@@ -248,108 +249,7 @@ const TEAM_NAME_NORMALIZE = {
     'Colombia National Team': 'Colombia'
 };
 
-/**
- * 标准化球队名称 - 增强版
- * 处理 FC、AFC、Football Club 等各种变体
- */
-function normalizeTeamName(teamName) {
-    if (!teamName || typeof teamName !== 'string') return teamName;
-    
-    let normalized = teamName.trim();
-    
-    // 1. 直接映射（精确匹配）
-    if (TEAM_NAME_NORMALIZE[normalized]) {
-        return TEAM_NAME_NORMALIZE[normalized];
-    }
-    
-    // 2. 不区分大小写匹配
-    const lowerName = normalized.toLowerCase();
-    for (const [key, value] of Object.entries(TEAM_NAME_NORMALIZE)) {
-        if (key.toLowerCase() === lowerName) {
-            return value;
-        }
-    }
-    
-    // 3. 移除常见前缀（带空格）
-    normalized = normalized
-        .replace(/^(FC|AFC|SC|SSV|VfB|VfL|SV|TSV|1\.\s*FC|1\.\s*FFC|AC|AS|US|SS|CD|SD|CF)\s+/i, '')
-        .replace(/^(Football Club\s+)/i, '')
-        .replace(/^(Club\s+)/i, '')
-        .replace(/^(Real\s+)/i, 'Real ')  // 保留 Real
-        .replace(/^(Atlético\s+)/i, 'Atletico ')
-        .replace(/^(Athletic\s+)/i, 'Athletic ');
-    
-    // 4. 移除常见后缀
-    normalized = normalized
-        .replace(/\s+(FC|AFC|SC|SSV|SV|CF|AC|AS|US|SS|CD|SD|Club|Football Club|F\.C\.|C\.F\.|A\.F\.C\.|National Team)$/i, '')
-        .replace(/\s+\([^)]+\)$/, '')  // 移除括号备注
-        .replace(/\s+-\s+.+$/, '');     // 移除破折号后的内容
-    
-    // 5. 处理特殊格式
-    normalized = normalized
-        .replace(/^(Bayer\s+)/i, 'Bayer ')  // 保留 Bayer Leverkusen
-        .replace(/^(Borussia\s+)/i, 'Borussia ')  // 保留 Borussia Dortmund
-        .replace(/^(Paris\s+)/i, 'Paris ')  // 保留 Paris Saint-Germain
-        .replace(/^(Olympique\s+)/i, 'Olympique ');  // 保留 Olympique Lyon/Marseille
-    
-    // 6. 标准化空格和标点
-    normalized = normalized
-        .replace(/\s+/g, ' ')
-        .replace(/[^\w\s\-]/g, '')
-        .trim();
-    
-    // 7. 再次检查映射表（清理后可能匹配）
-    if (TEAM_NAME_NORMALIZE[normalized]) {
-        return TEAM_NAME_NORMALIZE[normalized];
-    }
-    
-    // 8. 再次不区分大小写匹配清理后的名称
-    const lowerCleaned = normalized.toLowerCase();
-    for (const [key, value] of Object.entries(TEAM_NAME_NORMALIZE)) {
-        if (key.toLowerCase() === lowerCleaned) {
-            return value;
-        }
-    }
-    
-    // 9. 常见球队名称简化
-    const commonSimplifications = {
-        'manchester utd': 'Manchester United',
-        'man utd': 'Manchester United',
-        'man united': 'Manchester United',
-        'man city': 'Manchester City',
-        'tottenham': 'Tottenham Hotspur',
-        'newcastle': 'Newcastle United',
-        'leicester': 'Leicester City',
-        'west ham': 'West Ham United',
-        'wolves': 'Wolverhampton Wanderers',
-        'brighton': 'Brighton',
-        'bayern': 'Bayern Munich',
-        'dortmund': 'Borussia Dortmund',
-        'leipzig': 'RB Leipzig',
-        'frankfurt': 'Eintracht Frankfurt',
-        'inter': 'Inter Milan',
-        'milan': 'AC Milan',
-        'juventus': 'Juventus',
-        'napoli': 'Napoli',
-        'roma': 'Roma',
-        'lazio': 'Lazio',
-        'psg': 'Paris Saint-Germain',
-        'marseille': 'Marseille',
-        'lyon': 'Lyon',
-        'monaco': 'Monaco',
-        'ajax': 'Ajax',
-        'porto': 'Porto',
-        'benfica': 'Benfica'
-    };
-    
-    if (commonSimplifications[lowerCleaned]) {
-        return commonSimplifications[lowerCleaned];
-    }
-    
-    return normalized;
-}
-
-// 本地队徽映射（优先使用本地文件）
+// 本地队徽映射（保持不变）
 const TEAM_LOGO_MAP = {
     "ac milan": "/uploads/teams/ac-milan.png",
     "alaves": "/uploads/teams/alaves.png",
@@ -465,23 +365,104 @@ const TEAM_LOGO_MAP = {
     "yokohama f marinos": "/uploads/teams/yokohama-f-marinos.png",
 };
 
-/**
- * 获取球队队徽 URL
- */
+function normalizeTeamName(teamName) {
+    if (!teamName || typeof teamName !== 'string') return teamName;
+    
+    let normalized = teamName.trim();
+    
+    if (TEAM_NAME_NORMALIZE[normalized]) {
+        return TEAM_NAME_NORMALIZE[normalized];
+    }
+    
+    const lowerName = normalized.toLowerCase();
+    for (const [key, value] of Object.entries(TEAM_NAME_NORMALIZE)) {
+        if (key.toLowerCase() === lowerName) {
+            return value;
+        }
+    }
+    
+    normalized = normalized
+        .replace(/^(FC|AFC|SC|SSV|VfB|VfL|SV|TSV|1\.\s*FC|1\.\s*FFC|AC|AS|US|SS|CD|SD|CF)\s+/i, '')
+        .replace(/^(Football Club\s+)/i, '')
+        .replace(/^(Club\s+)/i, '')
+        .replace(/^(Real\s+)/i, 'Real ')
+        .replace(/^(Atlético\s+)/i, 'Atletico ')
+        .replace(/^(Athletic\s+)/i, 'Athletic ');
+    
+    normalized = normalized
+        .replace(/\s+(FC|AFC|SC|SSV|SV|CF|AC|AS|US|SS|CD|SD|Club|Football Club|F\.C\.|C\.F\.|A\.F\.C\.|National Team)$/i, '')
+        .replace(/\s+\([^)]+\)$/, '')
+        .replace(/\s+-\s+.+$/, '');
+    
+    normalized = normalized
+        .replace(/^(Bayer\s+)/i, 'Bayer ')
+        .replace(/^(Borussia\s+)/i, 'Borussia ')
+        .replace(/^(Paris\s+)/i, 'Paris ')
+        .replace(/^(Olympique\s+)/i, 'Olympique ');
+    
+    normalized = normalized
+        .replace(/\s+/g, ' ')
+        .replace(/[^\w\s\-]/g, '')
+        .trim();
+    
+    if (TEAM_NAME_NORMALIZE[normalized]) {
+        return TEAM_NAME_NORMALIZE[normalized];
+    }
+    
+    const lowerCleaned = normalized.toLowerCase();
+    for (const [key, value] of Object.entries(TEAM_NAME_NORMALIZE)) {
+        if (key.toLowerCase() === lowerCleaned) {
+            return value;
+        }
+    }
+    
+    const commonSimplifications = {
+        'manchester utd': 'Manchester United',
+        'man utd': 'Manchester United',
+        'man united': 'Manchester United',
+        'man city': 'Manchester City',
+        'tottenham': 'Tottenham Hotspur',
+        'newcastle': 'Newcastle United',
+        'leicester': 'Leicester City',
+        'west ham': 'West Ham United',
+        'wolves': 'Wolverhampton Wanderers',
+        'brighton': 'Brighton',
+        'bayern': 'Bayern Munich',
+        'dortmund': 'Borussia Dortmund',
+        'leipzig': 'RB Leipzig',
+        'frankfurt': 'Eintracht Frankfurt',
+        'inter': 'Inter Milan',
+        'milan': 'AC Milan',
+        'juventus': 'Juventus',
+        'napoli': 'Napoli',
+        'roma': 'Roma',
+        'lazio': 'Lazio',
+        'psg': 'Paris Saint-Germain',
+        'marseille': 'Marseille',
+        'lyon': 'Lyon',
+        'monaco': 'Monaco',
+        'ajax': 'Ajax',
+        'porto': 'Porto',
+        'benfica': 'Benfica'
+    };
+    
+    if (commonSimplifications[lowerCleaned]) {
+        return commonSimplifications[lowerCleaned];
+    }
+    
+    return normalized;
+}
+
 function getTeamLogo(teamName) {
     if (!teamName) return '/uploads/teams/default.png';
     
-    // 先标准化名称
     const normalizedName = normalizeTeamName(teamName);
-    
-    // 转换为小写进行匹配
     const lowerName = normalizedName.toLowerCase();
     
     if (TEAM_LOGO_MAP[lowerName]) {
         return TEAM_LOGO_MAP[lowerName];
     }
     
-    // 尝试去掉常见后缀
     const cleanName = lowerName.replace(/ fc$/, '').replace(/ afc$/, '').replace(/ football club$/, '').trim();
     if (TEAM_LOGO_MAP[cleanName]) {
         return TEAM_LOGO_MAP[cleanName];
@@ -490,156 +471,141 @@ function getTeamLogo(teamName) {
     return '/uploads/teams/default.png';
 }
 
-/**
- * 将时间字符串转换为 UTC ISO 8601 格式
- */
 function toUTCISOString(timeStr) {
     if (!timeStr) return null;
     
     timeStr = timeStr.trim();
     
-    // 已经是 ISO 格式
     if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(timeStr)) return timeStr;
     if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(timeStr)) return timeStr + '.000Z';
     
-    // YYYY-MM-DD HH:MM:SS 格式
     const match = timeStr.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
     if (match) {
         const [, date, hour, minute, second] = match;
         return `${date}T${hour}:${minute}:${second}.000Z`;
     }
     
-    // 尝试 JavaScript Date 解析
     try {
         const date = new Date(timeStr);
         if (!isNaN(date.getTime())) return date.toISOString();
-    } catch (e) {
-        // 忽略解析错误
-    }
+    } catch (e) {}
     
     logger.warn(`无效的时间格式: ${timeStr}`);
     return null;
 }
 
-/**
- * 检查比赛是否已存在（使用标准化名称）
- */
-function isMatchExists(db, match) {
+async function isMatchExists(match) {
     const homeTeam = normalizeTeamName(match.home_team);
     const awayTeam = normalizeTeamName(match.away_team);
     const isoTime = toUTCISOString(match.match_time_utc);
     
     if (!isoTime) return false;
     
-    // 使用标准化名称进行精确查重
-    const existing = db.prepare(`
-        SELECT id FROM match_pool 
-        WHERE home_team = ? AND away_team = ? AND match_datetime = ?
-    `).get(homeTeam, awayTeam, isoTime);
-    
-    return !!existing;
+    if (isProduction) {
+        const result = await query(`
+            SELECT id FROM matches 
+            WHERE home_team = $1 AND away_team = $2 AND DATE(match_time) = DATE($3)
+            LIMIT 1
+        `, [homeTeam, awayTeam, isoTime]);
+        return result && result.length > 0;
+    } else {
+        const db = getDb();
+        const existing = db.prepare(`
+            SELECT id FROM matches 
+            WHERE home_team = ? AND away_team = ? AND date(match_time) = date(?)
+        `).get(homeTeam, awayTeam, isoTime);
+        return !!existing;
+    }
 }
 
-/**
- * 插入比赛到 match_pool 表（跑马灯专用）
- */
-function insertIntoMatchPool(db, match) {
-    // 标准化球队名称
+async function insertIntoMatchPool(match) {
     const homeTeam = normalizeTeamName(match.home_team);
     const awayTeam = normalizeTeamName(match.away_team);
     const isoTime = toUTCISOString(match.match_time_utc);
     
-    if (!isoTime) {
-        logger.error(`时间格式无效: ${match.match_time_utc}`);
-        return false;
-    }
+    if (!isoTime) return false;
     
     const matchDate = isoTime.split('T')[0];
     const matchTime = isoTime.split('T')[1]?.replace('.000Z', '') || '00:00:00';
     
     try {
-        const result = db.prepare(`
-            INSERT OR IGNORE INTO match_pool 
-            (league, home_team, away_team, match_date, match_time, match_datetime, status, weight) 
-            VALUES (?, ?, ?, ?, ?, ?, 'upcoming', 100)
-        `).run(
-            match.league || 'Unknown', 
-            homeTeam, 
-            awayTeam, 
-            matchDate, 
-            matchTime, 
-            isoTime
-        );
-        
-        return result.changes > 0;
+        if (isProduction) {
+            const existing = await query(`
+                SELECT id FROM match_pool 
+                WHERE home_team = $1 AND away_team = $2 AND DATE(match_datetime) = DATE($3)
+                LIMIT 1
+            `, [homeTeam, awayTeam, isoTime]);
+            
+            if (existing && existing.length > 0) return false;
+            
+            await query(`
+                INSERT INTO match_pool 
+                (league, home_team, away_team, match_date, match_time, match_datetime, status, weight) 
+                VALUES ($1, $2, $3, $4, $5, $6, 'upcoming', 100)
+            `, [match.league || 'Unknown', homeTeam, awayTeam, matchDate, matchTime, isoTime]);
+            return true;
+        } else {
+            const db = getDb();
+            const existing = db.prepare(`
+                SELECT id FROM match_pool 
+                WHERE home_team = ? AND away_team = ? AND date(match_datetime) = date(?)
+            `).get(homeTeam, awayTeam, isoTime);
+            
+            if (existing) return false;
+            
+            const result = db.prepare(`
+                INSERT INTO match_pool 
+                (league, home_team, away_team, match_date, match_time, match_datetime, status, weight) 
+                VALUES (?, ?, ?, ?, ?, ?, 'upcoming', 100)
+            `).run(match.league || 'Unknown', homeTeam, awayTeam, matchDate, matchTime, isoTime);
+            return result.changes > 0;
+        }
     } catch (err) {
         logger.error(`插入 match_pool 失败: ${homeTeam} vs ${awayTeam}`, err.message);
-        throw err;
+        return false;
     }
 }
 
-/**
- * 插入比赛到 matches 表
- */
-function insertIntoMatches(db, match) {
-    // 标准化球队名称
+async function insertIntoMatches(match) {
     const homeTeam = normalizeTeamName(match.home_team);
     const awayTeam = normalizeTeamName(match.away_team);
     const isoTime = toUTCISOString(match.match_time_utc);
     
-    if (!isoTime) {
-        logger.error(`时间格式无效: ${match.match_time_utc}`);
-        return false;
-    }
+    if (!isoTime) return false;
     
-    // 检查是否已存在（使用标准化名称）
-    const existing = db.prepare(`
-        SELECT id FROM matches 
-        WHERE home_team = ? AND away_team = ? 
-        AND date(match_time) = date(?)
-    `).get(homeTeam, awayTeam, isoTime);
-    
+    const existing = await isMatchExists(match);
     if (existing) return false;
     
     const finalHomeLogo = getTeamLogo(homeTeam);
     const finalAwayLogo = getTeamLogo(awayTeam);
-    
-    // 生成唯一 match_id（增加随机性防止重复）
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 6);
     const matchId = `${homeTeam.substring(0, 3)}${awayTeam.substring(0, 3)}_${timestamp}_${random}`.toUpperCase().replace(/[^A-Z0-9_]/g, '');
     
-    // 截止时间 = 比赛开始时间（不提前）
-    const cutoffDateTimeUTC = isoTime;
-    
     try {
-        const result = db.prepare(`
-            INSERT INTO matches 
-            (match_id, home_team, away_team, league, home_logo, away_logo, match_time, cutoff_time, status, is_active, source, execution_rate, min_authorization, match_limit) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', 1, 'auto-deepseek', 30, 100, 500)
-        `).run(
-            matchId, 
-            homeTeam, 
-            awayTeam, 
-            match.league || 'Unknown', 
-            finalHomeLogo, 
-            finalAwayLogo, 
-            isoTime, 
-            cutoffDateTimeUTC
-        );
-        
-        return result.changes > 0;
+        if (isProduction) {
+            await query(`
+                INSERT INTO matches 
+                (match_id, home_team, away_team, league, home_logo, away_logo, match_time, cutoff_time, status, is_active, source, execution_rate, min_authorization, match_limit) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $7, 'upcoming', 1, 'auto-deepseek', 30, 100, 500)
+            `, [matchId, homeTeam, awayTeam, match.league || 'Unknown', finalHomeLogo, finalAwayLogo, isoTime]);
+            return true;
+        } else {
+            const db = getDb();
+            const result = db.prepare(`
+                INSERT INTO matches 
+                (match_id, home_team, away_team, league, home_logo, away_logo, match_time, cutoff_time, status, is_active, source, execution_rate, min_authorization, match_limit) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', 1, 'auto-deepseek', 30, 100, 500)
+            `).run(matchId, homeTeam, awayTeam, match.league || 'Unknown', finalHomeLogo, finalAwayLogo, isoTime, isoTime);
+            return result.changes > 0;
+        }
     } catch (err) {
         logger.error(`插入 matches 失败: ${homeTeam} vs ${awayTeam}`, err.message);
-        throw err;
+        return false;
     }
 }
 
-/**
- * 自动获取并录入比赛
- */
 export async function autoFetchAndInsertMatches() {
-    const db = getDb();
     const results = { 
         total: 0, 
         newToPool: 0, 
@@ -654,37 +620,23 @@ export async function autoFetchAndInsertMatches() {
         logger.info('🔄 开始自动获取比赛数据...');
         const matches = await fetchUpcomingMatches();
         
-        // 验证 API 返回数据
         if (!matches || !Array.isArray(matches) || matches.length === 0) {
             logger.warn('未获取到比赛数据或数据格式错误');
             return results;
         }
         
-        // 调试日志：打印 API 返回的第一場比賽時間
-        if (matches.length > 0) {
-            logger.debug(`🔍 API 返回的原始時間範例: ${matches[0].match_time_utc}`);
-            logger.debug(`🔍 轉換後的 ISO 時間: ${toUTCISOString(matches[0].match_time_utc)}`);
-        }
-        
         results.total = matches.length;
         logger.info(`📋 获取到 ${matches.length} 场比赛`);
         
-        // 开始事务
-        db.prepare('BEGIN TRANSACTION').run();
-        
-        // 用于去重的 Set（基于标准化名称）
         const processedMatches = new Set();
         
         for (const match of matches) {
             try {
-                // 验证必要字段
                 if (!match.home_team || !match.away_team || !match.match_time_utc) {
-                    logger.warn(`比赛数据不完整，跳过: ${JSON.stringify(match)}`);
                     results.errors++;
                     continue;
                 }
                 
-                // 标准化球队名称
                 const normalizedHome = normalizeTeamName(match.home_team);
                 const normalizedAway = normalizeTeamName(match.away_team);
                 const isoTime = toUTCISOString(match.match_time_utc);
@@ -694,51 +646,38 @@ export async function autoFetchAndInsertMatches() {
                     continue;
                 }
                 
-                // 创建去重键（基于标准化后的球队和日期）
                 const dedupeKey = `${normalizedHome}|${normalizedAway}|${isoTime.split('T')[0]}`;
-                
                 if (processedMatches.has(dedupeKey)) {
-                    logger.debug(`跳过重复比赛（本次批次内重复）: ${normalizedHome} vs ${normalizedAway}`);
                     results.duplicates.push({ home: normalizedHome, away: normalizedAway, time: isoTime });
                     results.skipped++;
                     continue;
                 }
-                
                 processedMatches.add(dedupeKey);
                 
-                // 创建标准化后的比赛对象
                 const normalizedMatch = {
                     ...match,
                     home_team: normalizedHome,
-                    away_team: normalizedAway,
-                    original_home: match.home_team,
-                    original_away: match.away_team
+                    away_team: normalizedAway
                 };
                 
-                // 检查数据库中是否已存在
-                if (isMatchExists(db, normalizedMatch)) {
-                    logger.debug(`比赛已存在，跳过: ${normalizedHome} vs ${normalizedAway}`);
+                if (await isMatchExists(normalizedMatch)) {
                     results.skipped++;
                     continue;
                 }
                 
-                // 插入到 match_pool
-                const poolInserted = insertIntoMatchPool(db, normalizedMatch);
+                const poolInserted = await insertIntoMatchPool(normalizedMatch);
                 if (poolInserted) results.newToPool++;
                 
-                // 插入到 matches
-                const matchesInserted = insertIntoMatches(db, normalizedMatch);
+                const matchesInserted = await insertIntoMatches(normalizedMatch);
                 if (matchesInserted) results.newToMatches++;
                 
                 results.matches.push({ 
                     home_team: normalizedHome, 
                     away_team: normalizedAway, 
-                    match_time: match.match_time_utc,
-                    original_home: match.home_team,
-                    original_away: match.away_team
+                    match_time: match.match_time_utc
                 });
                 
-                logger.debug(`✅ 成功录入比赛: ${normalizedHome} vs ${normalizedAway} (原始: ${match.home_team} vs ${match.away_team})`);
+                logger.debug(`✅ 成功录入比赛: ${normalizedHome} vs ${normalizedAway}`);
                 
             } catch (err) {
                 results.errors++;
@@ -746,85 +685,67 @@ export async function autoFetchAndInsertMatches() {
             }
         }
         
-        // 提交事务
-        db.prepare('COMMIT').run();
-        
-        logger.info(`📊 自动录入完成: 总计 ${results.total}, 新增 match_pool ${results.newToPool}, 新增 matches ${results.newToMatches}, 跳过 ${results.skipped}, 错误 ${results.errors}, 重复 ${results.duplicates.length}`);
+        logger.info(`📊 自动录入完成: 总计 ${results.total}, 新增 match_pool ${results.newToPool}, 新增 matches ${results.newToMatches}, 跳过 ${results.skipped}, 错误 ${results.errors}`);
         
         return results;
         
     } catch (error) {
-        // 回滚事务
-        try {
-            db.prepare('ROLLBACK').run();
-        } catch (rollbackErr) {
-            logger.error('事务回滚失败:', rollbackErr);
-        }
-        
         logger.error('自动录入失败:', error);
         results.errors++;
         return results;
     }
 }
 
-/**
- * 手动触发比赛数据同步
- */
 export async function manualFetchAndInsert() {
     logger.info('👤 管理员手动触发比赛数据同步');
     return autoFetchAndInsertMatches();
 }
 
-/**
- * 清理数据库中的重复比赛数据
- */
 export async function cleanupDuplicateMatches() {
-    const db = getDb();
-    const results = { 
-        poolCleaned: 0, 
-        matchesCleaned: 0,
-        errors: 0
-    };
+    const results = { poolCleaned: 0, matchesCleaned: 0, errors: 0 };
     
     try {
         logger.info('🧹 开始清理重复比赛数据...');
         
-        // 清理 match_pool 表
-        const poolDuplicates = db.prepare(`
-            DELETE FROM match_pool 
-            WHERE id NOT IN (
-                SELECT MIN(id)
-                FROM match_pool
-                GROUP BY home_team, away_team, date(match_datetime)
-            )
-        `).run();
-        results.poolCleaned = poolDuplicates.changes;
+        if (isProduction) {
+            const poolResult = await query(`
+                DELETE FROM match_pool 
+                WHERE id NOT IN (
+                    SELECT MIN(id) FROM match_pool
+                    GROUP BY home_team, away_team, DATE(match_datetime)
+                )
+            `);
+            results.poolCleaned = poolResult?.rowCount || 0;
+            
+            const matchesResult = await query(`
+                DELETE FROM matches 
+                WHERE id NOT IN (
+                    SELECT MIN(id) FROM matches
+                    GROUP BY home_team, away_team, DATE(match_time)
+                )
+            `);
+            results.matchesCleaned = matchesResult?.rowCount || 0;
+        } else {
+            const db = getDb();
+            const poolResult = db.prepare(`
+                DELETE FROM match_pool 
+                WHERE id NOT IN (
+                    SELECT MIN(id) FROM match_pool
+                    GROUP BY home_team, away_team, date(match_datetime)
+                )
+            `).run();
+            results.poolCleaned = poolResult.changes;
+            
+            const matchesResult = db.prepare(`
+                DELETE FROM matches 
+                WHERE id NOT IN (
+                    SELECT MIN(id) FROM matches
+                    GROUP BY home_team, away_team, date(match_time)
+                )
+            `).run();
+            results.matchesCleaned = matchesResult.changes;
+        }
         
-        // 清理 matches 表
-        const matchesDuplicates = db.prepare(`
-            DELETE FROM matches 
-            WHERE id NOT IN (
-                SELECT MIN(id)
-                FROM matches
-                GROUP BY home_team, away_team, date(match_time)
-            )
-        `).run();
-        results.matchesCleaned = matchesDuplicates.changes;
-        
-        // 更新球队名称为标准名称
-        const updatePool = db.prepare(`
-            UPDATE match_pool 
-            SET home_team = ? 
-            WHERE home_team = ?
-        `);
-        
-        const updateMatches = db.prepare(`
-            UPDATE matches 
-            SET home_team = ? 
-            WHERE home_team = ?
-        `);
-        
-        // 这里可以批量更新常见变体
         logger.info(`🧹 清理完成: match_pool 删除 ${results.poolCleaned} 条重复, matches 删除 ${results.matchesCleaned} 条重复`);
         
         return results;
