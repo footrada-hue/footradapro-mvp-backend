@@ -1,175 +1,147 @@
 /**
  * FOOTRADAPRO - Auto Fetch Scores Service
- * @description 自动获取已结束比赛的比分（使用 DeepSeek API 联网搜索）
- * @version 3.1.0
- * @since 2026-04-02
- * @i18n 支持多语言，所有文案已标记
+ * @description 自动获取已结束比赛的比分（使用 DeepSeek API 联网搜索，带二次确认）
+ * @version 4.0.0
+ * @since 2026-06-07
  */
 
 import 'dotenv/config';
 import logger from '../utils/logger.js';
+import { fetchAndConfirmMatchScore } from '../services/deepseek.service.js';
 
-// DeepSeek API 配置
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+const isProduction = process.env.NODE_ENV === 'production';
 
 /**
- * 从 DeepSeek API 获取比赛比分
+ * 获取并更新比赛比分（带二次确认）
+ * @param {number} matchId - 比赛ID
  * @param {string} homeTeam - 主队名称
  * @param {string} awayTeam - 客队名称
  * @param {string} league - 联赛名称
- * @returns {Promise<{home: number, away: number} | null>}
+ * @returns {Promise<{success: boolean, updated: boolean, needManualCheck: boolean}>}
  */
-async function fetchScoreFromDeepSeek(homeTeam, awayTeam, league) {
-    if (!DEEPSEEK_API_KEY) {
-        logger.warn('DeepSeek API key not configured');
-        return null;
-    }
-
-    const prompt = `请搜索 ${homeTeam} vs ${awayTeam} 的 ${league} 比赛最终比分。
-
-要求：
-1. 必须使用联网搜索获取真实比分
-2. 只返回 JSON 格式，不要有任何额外文字
-3. 如果搜索不到，返回 {"home_score": null, "away_score": null}
-
-返回格式示例：
-{"home_score": 2, "away_score": 1}`;
-
+export async function fetchAndUpdateMatchScore(matchId, homeTeam, awayTeam, league) {
     try {
-        const response = await fetch(DEEPSEEK_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
-            },
-            body: JSON.stringify({
-                model: 'deepseek-chat',
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'You are a football data assistant. Must use web search to get real match scores. Return only pure JSON format data.'
-                    },
-                    {
-                        role: 'user',
-                        content: prompt
-                    }
-                ],
-                temperature: 0.1,
-                max_tokens: 100,
-                extra_body: { enable_search: true }
-            })
-        });
-
-        const data = await response.json();
-        let content = data.choices?.[0]?.message?.content || '';
+        logger.info(`📊 开始获取比分: ${homeTeam} vs ${awayTeam} (${league})`);
         
-        content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        // 调用 deepseek.service.js 中带二次确认的比分获取函数
+        const scoreResult = await fetchAndConfirmMatchScore(homeTeam, awayTeam);
         
-        const result = JSON.parse(content);
-        
-        if (result.home_score !== null && result.away_score !== null) {
-            return { home: result.home_score, away: result.away_score };
+        if (scoreResult.success && scoreResult.confirmed) {
+            // 比分确认，更新数据库
+            await updateMatchScore(matchId, scoreResult.home, scoreResult.away, true);
+            logger.info(`✅ 比赛 ${matchId} 比分已确认: ${scoreResult.home}:${scoreResult.away}`);
+            return { success: true, updated: true, needManualCheck: false };
+            
+        } else if (scoreResult.success && scoreResult.needManualCheck) {
+            // 比分不一致，需人工确认（仍然保存比分，但标记为未确认）
+            await updateMatchScore(matchId, scoreResult.home, scoreResult.away, false);
+            logger.warn(`⚠️ 比赛 ${matchId} 比分需人工确认: ${scoreResult.message}`);
+            return { success: true, updated: true, needManualCheck: true, message: scoreResult.message };
+            
+        } else {
+            logger.error(`❌ 比赛 ${matchId} 获取比分失败: ${scoreResult.error}`);
+            return { success: false, updated: false, needManualCheck: true, error: scoreResult.error };
         }
-        return null;
+        
     } catch (error) {
-        logger.error('Fetch score error:', error.message);
-        return null;
+        logger.error(`获取比赛 ${matchId} 比分失败:`, error.message);
+        return { success: false, updated: false, needManualCheck: true, error: error.message };
     }
 }
 
 /**
- * 更新已结束比赛的比分
+ * 更新比赛比分
+ */
+async function updateMatchScore(matchId, homeScore, awayScore, confirmed = true) {
+    try {
+        if (isProduction) {
+            const { query } = await import('../database/connection.js');
+            await query(`
+                UPDATE matches 
+                SET home_score = $1, 
+                    away_score = $2, 
+                    score_confirmed = $3,
+                    updated_at = NOW()
+                WHERE id = $4
+            `, [homeScore, awayScore, confirmed, matchId]);
+        } else {
+            const { getDb } = await import('../database/connection.js');
+            const db = getDb();
+            db.prepare(`
+                UPDATE matches 
+                SET home_score = ?, 
+                    away_score = ?, 
+                    score_confirmed = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            `).run(homeScore, awayScore, confirmed ? 1 : 0, matchId);
+        }
+        return true;
+    } catch (error) {
+        logger.error('更新比赛比分失败:', error);
+        return false;
+    }
+}
+
+/**
+ * 批量获取已结束但无比分比赛的比分（定时任务备用）
  */
 async function updateScoresForFinishedMatches() {
-    const isProduction = process.env.NODE_ENV === 'production';
-    
     try {
-        const { query } = await import('../database/connection.js');
-        
-        const now = new Date().toISOString();
+        const { query, getDb } = await import('../database/connection.js');
         
         // 获取需要更新比分的比赛
         let matches;
         if (isProduction) {
-            // PostgreSQL 版本
             matches = await query(`
-                SELECT id, match_id, home_team, away_team, match_time, league
+                SELECT id, home_team, away_team, league
                 FROM matches 
                 WHERE status = 'finished' 
-                AND (home_score IS NULL OR away_score IS NULL OR (home_score = 0 AND away_score = 0))
-                AND (match_time + INTERVAL '110 minutes') <= $1::timestamp
-                ORDER BY match_time DESC
-                LIMIT 10
-            `, [now]);
+                AND (home_score IS NULL OR away_score IS NULL OR score_confirmed = false)
+                ORDER BY finished_at DESC
+                LIMIT 20
+            `);
         } else {
-            // SQLite 版本
-            const { getDb } = await import('../database/connection.js');
             const db = getDb();
             matches = db.prepare(`
-                SELECT id, match_id, home_team, away_team, match_time, league
+                SELECT id, home_team, away_team, league
                 FROM matches 
                 WHERE status = 'finished' 
-                AND (home_score IS NULL OR away_score IS NULL OR (home_score = 0 AND away_score = 0))
-                AND datetime(match_time, '+110 minutes') <= datetime(?)
-                ORDER BY match_time DESC
-                LIMIT 10
-            `).all(now);
+                AND (home_score IS NULL OR away_score IS NULL OR score_confirmed = 0)
+                ORDER BY finished_at DESC
+                LIMIT 20
+            `).all();
         }
         
         if (!matches || matches.length === 0) {
             return;
         }
         
-        logger.info(`Found ${matches.length} finished matches without scores`);
+        logger.info(`📋 发现 ${matches.length} 场待获取比分的比赛`);
         
         for (const match of matches) {
-            logger.info(`Fetching score for: ${match.home_team} vs ${match.away_team} (${match.league})`);
-            
-            const score = await fetchScoreFromDeepSeek(match.home_team, match.away_team, match.league);
-            
-            if (score) {
-                if (isProduction) {
-                    await query(`
-                        UPDATE matches 
-                        SET home_score = $1, away_score = $2
-                        WHERE id = $3
-                    `, [score.home, score.away, match.id]);
-                } else {
-                    const { getDb } = await import('../database/connection.js');
-                    const db = getDb();
-                    db.prepare(`
-                        UPDATE matches 
-                        SET home_score = ?, away_score = ?
-                        WHERE id = ?
-                    `).run(score.home, score.away, match.id);
-                }
-                
-                logger.info(`✅ Score updated: ${match.home_team} ${score.home}:${score.away} ${match.away_team}`);
-            } else {
-                logger.warn(`⚠️ Could not fetch score for: ${match.home_team} vs ${match.away_team} (${match.league})`);
-            }
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await fetchAndUpdateMatchScore(match.id, match.home_team, match.away_team, match.league);
+            // 避免 API 请求过快
+            await new Promise(resolve => setTimeout(resolve, 2000));
         }
         
     } catch (error) {
-        logger.error('Update scores error:', error);
+        logger.error('批量更新比分失败:', error);
     }
 }
 
-// 延迟执行，等待数据库初始化
+// 延迟执行
 setTimeout(() => {
     updateScoresForFinishedMatches().catch(err => {
-        logger.error('Initial score fetch failed:', err);
+        logger.error('初始化比分获取失败:', err);
     });
-}, 5000);
+}, 8000);
 
-// 每 10 分钟执行一次
+// 每 15 分钟执行一次（作为补充）
 setInterval(() => {
     updateScoresForFinishedMatches().catch(err => {
-        logger.error('Scheduled score fetch failed:', err);
+        logger.error('定时比分获取失败:', err);
     });
-}, 10 * 60 * 1000);
+}, 15 * 60 * 1000);
 
 export { updateScoresForFinishedMatches };

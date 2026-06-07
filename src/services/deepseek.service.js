@@ -312,3 +312,196 @@ export default {
     fetchUpcomingMatches,
     fetchMatchesForSpecificDate
 };
+/**
+ * 获取比赛比分（带联网搜索）
+ * @param {string} homeTeam - 主队名称
+ * @param {string} awayTeam - 客队名称
+ * @param {string} matchDate - 比赛日期（可选，YYYY-MM-DD）
+ * @returns {Promise<{success: boolean, home: number, away: number, status: string, source: string, error?: string}>}
+ */
+export async function fetchMatchScore(homeTeam, awayTeam, matchDate = null) {
+    if (!DEEPSEEK_API_KEY) {
+        console.warn('⚠️ DEEPSEEK_API_KEY 未配置');
+        return { success: false, error: 'API_KEY_NOT_CONFIGURED', home: 0, away: 0, status: 'unknown' };
+    }
+
+    const dateStr = matchDate ? `于 ${matchDate} 进行的` : '';
+    const prompt = `请使用联网搜索功能，搜索 "${homeTeam} vs ${awayTeam}" ${dateStr} 的最新比赛比分。
+
+【核心要求】：
+1. 必须使用联网搜索获取真实、最新的比分数据
+2. 只返回 JSON 格式，不要有任何 markdown 标记或其他文字
+3. 如果比赛已结束，返回最终比分
+4. 如果比赛正在进行中，返回当前比分和状态 "live"
+5. 如果比赛尚未开始，返回状态 "pending"
+6. 如果无法找到该比赛，返回状态 "not_found"
+
+【返回格式】：
+{
+  "success": true,
+  "home_score": 2,
+  "away_score": 1,
+  "status": "finished",
+  "source": "deepseek"
+}
+
+或
+
+{
+  "success": false,
+  "status": "pending",
+  "message": "比赛尚未开始"
+}`;
+
+    try {
+        console.log(`📡 获取比分: ${homeTeam} vs ${awayTeam}`);
+        const data = await callWithRetry(prompt);
+        
+        if (!data.choices || !data.choices[0]) {
+            console.error(`❌ DeepSeek API 响应缺少 choices 字段`);
+            return { success: false, error: 'API_RESPONSE_ERROR', home: 0, away: 0, status: 'unknown' };
+        }
+        
+        let content = data.choices[0].message.content;
+        content = cleanMarkdown(content);
+        
+        if (!content) {
+            return { success: false, error: 'EMPTY_RESPONSE', home: 0, away: 0, status: 'unknown' };
+        }
+        
+        const result = JSON.parse(content);
+        
+        if (result.status === 'finished' && result.home_score !== undefined && result.away_score !== undefined) {
+            console.log(`✅ 比分获取成功: ${homeTeam} ${result.home_score}:${result.away_score} ${awayTeam}`);
+            return {
+                success: true,
+                home: result.home_score,
+                away: result.away_score,
+                status: 'finished',
+                source: 'deepseek'
+            };
+        }
+        
+        if (result.status === 'live' && result.home_score !== undefined && result.away_score !== undefined) {
+            console.log(`🔄 比赛进行中: ${homeTeam} ${result.home_score}:${result.away_score} ${awayTeam}`);
+            return {
+                success: true,
+                home: result.home_score,
+                away: result.away_score,
+                status: 'live',
+                source: 'deepseek'
+            };
+        }
+        
+        console.log(`⏳ 比赛尚未结束: ${result.message || result.status}`);
+        return {
+            success: false,
+            error: result.message || '比赛尚未结束',
+            home: 0,
+            away: 0,
+            status: result.status || 'pending'
+        };
+        
+    } catch (error) {
+        console.error(`❌ 获取比分失败:`, error.message);
+        return { success: false, error: error.message, home: 0, away: 0, status: 'unknown' };
+    }
+}
+
+/**
+ * 获取比赛比分（带二次确认）
+ * @param {string} homeTeam - 主队名称
+ * @param {string} awayTeam - 客队名称
+ * @param {string} matchDate - 比赛日期
+ * @returns {Promise<{success: boolean, home: number, away: number, confirmed: boolean, needManualCheck: boolean, message?: string}>}
+ */
+export async function fetchAndConfirmMatchScore(homeTeam, awayTeam, matchDate = null) {
+    console.log(`📊 开始获取并确认比分: ${homeTeam} vs ${awayTeam}`);
+    
+    // 第一次获取
+    const firstResult = await fetchMatchScore(homeTeam, awayTeam, matchDate);
+    console.log(`第一次获取结果: ${firstResult.success ? `${firstResult.home}:${firstResult.away}` : firstResult.error}`);
+    
+    if (!firstResult.success) {
+        return {
+            success: false,
+            home: 0,
+            away: 0,
+            confirmed: false,
+            needManualCheck: true,
+            message: firstResult.error
+        };
+    }
+    
+    // 如果比赛不是 finished 状态，直接返回
+    if (firstResult.status !== 'finished') {
+        return {
+            success: false,
+            home: 0,
+            away: 0,
+            confirmed: false,
+            needManualCheck: false,
+            message: `比赛状态: ${firstResult.status}`
+        };
+    }
+    
+    // 等待 60 秒后第二次确认
+    console.log('⏳ 等待 60 秒进行第二次确认...');
+    await delay(60000);
+    
+    // 第二次获取
+    const secondResult = await fetchMatchScore(homeTeam, awayTeam, matchDate);
+    console.log(`第二次获取结果: ${secondResult.success ? `${secondResult.home}:${secondResult.away}` : secondResult.error}`);
+    
+    if (!secondResult.success || secondResult.status !== 'finished') {
+        return {
+            success: true,
+            home: firstResult.home,
+            away: firstResult.away,
+            confirmed: false,
+            needManualCheck: true,
+            message: '第二次获取失败或比赛未结束，请人工确认'
+        };
+    }
+    
+    // 对比两次结果
+    if (firstResult.home === secondResult.home && firstResult.away === secondResult.away) {
+        console.log(`✅ 两次比分一致，确认: ${firstResult.home}:${firstResult.away}`);
+        return {
+            success: true,
+            home: firstResult.home,
+            away: firstResult.away,
+            confirmed: true,
+            needManualCheck: false
+        };
+    }
+    
+    // 两次不一致，进行第三次确认
+    console.log('⚠️ 两次比分不一致，进行第三次确认...');
+    await delay(30000);
+    
+    const thirdResult = await fetchMatchScore(homeTeam, awayTeam, matchDate);
+    console.log(`第三次获取结果: ${thirdResult.success ? `${thirdResult.home}:${thirdResult.away}` : thirdResult.error}`);
+    
+    if (thirdResult.success && thirdResult.status === 'finished' &&
+        thirdResult.home === secondResult.home && thirdResult.away === secondResult.away) {
+        // 第二、三次一致
+        return {
+            success: true,
+            home: thirdResult.home,
+            away: thirdResult.away,
+            confirmed: true,
+            needManualCheck: false
+        };
+    }
+    
+    // 仍然不一致，需要人工确认
+    return {
+        success: true,
+        home: secondResult.home,
+        away: secondResult.away,
+        confirmed: false,
+        needManualCheck: true,
+        message: `比分不一致，请人工确认。第一次: ${firstResult.home}:${firstResult.away}, 第二次: ${secondResult.home}:${secondResult.away}`
+    };
+}
