@@ -110,7 +110,7 @@
         if (!withdrawTableBody) return;
         
         try {
-            withdrawTableBody.innerHTML = '<tr><td colspan="10" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr>';
+            withdrawTableBody.innerHTML = '<tr><td colspan="10" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...<\/td><\/tr>';
             
             const statsRes = await adminRequest('/admin/withdraw/stats');
             if (statsRes.success) {
@@ -136,7 +136,7 @@
             }
         } catch (err) {
             console.error('加载提现数据失败:', err);
-            withdrawTableBody.innerHTML = '<tr><td colspan="10" class="loading" style="color: #ef4444;">加载失败，请刷新重试</td></tr>';
+            withdrawTableBody.innerHTML = '<tr><td colspan="10" class="loading" style="color: #ef4444;">加载失败，请刷新重试<\/td><\/tr>';
         }
     }
 
@@ -164,7 +164,7 @@
         if (!withdrawTableBody) return;
         
         if (filteredWithdrawals.length === 0) {
-            withdrawTableBody.innerHTML = '<tr><td colspan="10" class="loading">暂无记录</td></tr>';
+            withdrawTableBody.innerHTML = '<tr><td colspan="10" class="loading">暂无记录<\/td><\/tr>';
             return;
         }
 
@@ -180,23 +180,23 @@
                               w.status === 'rejected' ? '已拒绝' : '已完成';
             
             html += `<tr>
-                <td>${w.id}</td>
-                <td>${UTILS.formatDateTime(w.created_at)}</td>
-                <td>${w.username || w.user_id}<br><small style="color: #8e95a3;">UID: ${w.uid || '-'}</small></td>
-                <td>${UTILS.formatAmount(w.amount)} USDT</td>
-                <td>${fee} USDT</td>
-                <td>${UTILS.formatAmount(netAmount)} USDT</td>
-                <td>${w.network || '-'}</td>
-                <td><span class="address-truncate" title="${w.to_address || ''}">${w.to_address || '-'}</span></td>
-                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td>${w.id}<\/td>
+                <td>${UTILS.formatDateTime(w.created_at)}<\/td>
+                <td>${w.username || w.user_id}<br><small style="color: #8e95a3;">UID: ${w.uid || '-'}<\/small><\/td>
+                <td>${UTILS.formatAmount(w.amount)} USDT<\/td>
+                <td>${fee} USDT<\/td>
+                <td>${UTILS.formatAmount(netAmount)} USDT<\/td>
+                <td>${w.network || '-'}<\/td>
+                <td><span class="address-truncate" title="${w.to_address || ''}">${w.to_address || '-'}<\/span><\/td>
+                <td><span class="status-badge ${statusClass}">${statusText}<\/span><\/td>
                 <td>
                     <div class="action-group">
                         ${w.status === 'pending' ? 
-                            `<button class="action-btn" onclick="window.openWithdrawReview(${w.id})"><i class="fas fa-gavel"></i> 审核</button>` : 
-                            `<button class="action-btn" disabled style="opacity:0.5;"><i class="fas fa-check"></i> 已处理</button>`}
-                    </div>
-                </td>
-            </tr>`;
+                            `<button class="action-btn" onclick="window.openWithdrawReview(${w.id})"><i class="fas fa-gavel"></i> 审核<\/button>` : 
+                            `<button class="action-btn" disabled style="opacity:0.5;"><i class="fas fa-check"></i> 已处理<\/button>`}
+                    <\/div>
+                <\/td>
+            记载`;
         });
         withdrawTableBody.innerHTML = html;
     }
@@ -206,7 +206,7 @@
         if (!depositTableBody) return;
         
         try {
-            depositTableBody.innerHTML = '<tr><td colspan="9" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr>';
+            depositTableBody.innerHTML = '<tr><td colspan="9" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...<\/td><\/tr>';
             
             const statsRes = await adminRequest('/admin/deposit/stats');
             if (statsRes.success) {
@@ -232,7 +232,7 @@
             }
         } catch (err) {
             console.error('加载充值数据失败:', err);
-            depositTableBody.innerHTML = '<tr><td colspan="9" class="loading" style="color: #ef4444;">加载失败，请刷新重试</td></tr>';
+            depositTableBody.innerHTML = '<tr><td colspan="9" class="loading" style="color: #ef4444;">加载失败，请刷新重试<\/td><\/tr>';
         }
     }
 
@@ -260,7 +260,7 @@
         if (!depositTableBody) return;
         
         if (filteredDeposits.length === 0) {
-            depositTableBody.innerHTML = '<tr><td colspan="9" class="loading">暂无记录</td></tr>';
+            depositTableBody.innerHTML = '<tr><td colspan="9" class="loading">暂无记录<\/td><\/tr>';
             return;
         }
 
@@ -272,23 +272,23 @@
                               d.status === 'completed' ? '已完成' : '已驳回';
             
             html += `<tr>
-                <td>${d.id}</td>
-                <td>${UTILS.formatDateTime(d.created_at)}</td>
-                <td>${d.username || d.user_id}<br><small style="color: #8e95a3;">UID: ${d.uid || '-'}</small></td>
-                <td>${UTILS.formatAmount(d.amount)} USDT</td>
-                <td>${d.network || '-'}</td>
-                <td><span class="address-truncate" title="${d.tx_hash || ''}">${d.tx_hash || '-'}</span></td>
-                <td>${d.confirmations || 0}</td>
-                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td>${d.id}<\/td>
+                <td>${UTILS.formatDateTime(d.created_at)}<\/td>
+                <td>${d.username || d.user_id}<br><small style="color: #8e95a3;">UID: ${d.uid || '-'}<\/small><\/td>
+                <td>${UTILS.formatAmount(d.amount)} USDT<\/td>
+                <td>${d.network || '-'}<\/td>
+                <td><span class="address-truncate" title="${d.tx_hash || ''}">${d.tx_hash || '-'}<\/span><\/td>
+                <td>${d.confirmations || 0}<\/td>
+                <td><span class="status-badge ${statusClass}">${statusText}<\/span><\/td>
                 <td>
                     <div class="action-group">
                         ${d.status === 'pending' ? 
-                            `<button class="action-btn" onclick="alert('充值确认功能开发中')"><i class="fas fa-check-circle"></i> 确认</button>
-                             <button class="action-btn warning" onclick="alert('充值驳回功能开发中')"><i class="fas fa-times-circle"></i> 驳回</button>` : 
-                            `<button class="action-btn" disabled style="opacity:0.5;"><i class="fas fa-check"></i> 已处理</button>`}
-                    </div>
-                </td>
-            </tr>`;
+                            `<button class="action-btn" onclick="alert('充值确认功能开发中')"><i class="fas fa-check-circle"></i> 确认<\/button>
+                             <button class="action-btn warning" onclick="alert('充值驳回功能开发中')"><i class="fas fa-times-circle"></i> 驳回<\/button>` : 
+                            `<button class="action-btn" disabled style="opacity:0.5;"><i class="fas fa-check"></i> 已处理<\/button>`}
+                    <\/div>
+                <\/td>
+            记载`;
         });
         depositTableBody.innerHTML = html;
     }
@@ -298,7 +298,7 @@
         if (!tbody) return;
         
         try {
-            tbody.innerHTML = '<tr><td colspan="10" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...<\/td><\/tr>';
             
             const statsRes = await adminRequest('/admin/finance/stats');
             if (statsRes.success) {
@@ -307,10 +307,10 @@
                 const todayWithdrawEl = document.getElementById('todayWithdraw');
                 const totalRevenueEl = document.getElementById('totalRevenue');
                 
-                if (totalBalanceEl) totalBalanceEl.textContent = statsRes.data.totalBalance.toFixed(2) + ' USDT';
-                if (todayDepositEl) todayDepositEl.textContent = statsRes.data.todayDeposit.toFixed(2) + ' USDT';
-                if (todayWithdrawEl) todayWithdrawEl.textContent = statsRes.data.todayWithdraw.toFixed(2) + ' USDT';
-                if (totalRevenueEl) totalRevenueEl.textContent = statsRes.data.totalRevenue.toFixed(2) + ' USDT';
+                if (totalBalanceEl) totalBalanceEl.textContent = Number(statsRes.data.totalBalance || 0).toFixed(2) + ' USDT';
+                if (todayDepositEl) todayDepositEl.textContent = Number(statsRes.data.todayDeposit || 0).toFixed(2) + ' USDT';
+                if (todayWithdrawEl) todayWithdrawEl.textContent = Number(statsRes.data.todayWithdraw || 0).toFixed(2) + ' USDT';
+                if (totalRevenueEl) totalRevenueEl.textContent = Number(statsRes.data.totalRevenue || 0).toFixed(2) + ' USDT';
             }
 
             const recordsRes = await adminRequest('/admin/finance/records');
@@ -320,7 +320,7 @@
             }
         } catch (err) {
             console.error('加载财务数据失败:', err);
-            tbody.innerHTML = '<tr><td colspan="10" class="loading" style="color: #ef4444;">加载失败，请重试</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="loading" style="color: #ef4444;">加载失败，请重试<\/td><\/tr>';
         }
     }
 
@@ -356,13 +356,15 @@
 
         let html = '';
         filtered.forEach(user => {
+            // 确保 balance 是数字
+            const balance = Number(user.balance) || 0;
             html += `
-                <div class="user-item" onclick="window.selectUser(${user.id}, '${user.username}', ${user.balance})">
+                <div class="user-item" onclick="window.selectUser(${user.id}, '${escapeHtml(user.username)}', ${balance})">
                     <div>
-                        <strong>${user.username}</strong>
-                        <div style="font-size: 12px; color: #8e95a3;">UID: ${user.uid}</div>
+                        <strong>${escapeHtml(user.username)}</strong>
+                        <div style="font-size: 12px; color: #8e95a3;">UID: ${escapeHtml(user.uid)}</div>
                     </div>
-                    <div style="color: #10b981;">${user.balance.toFixed(2)} USDT</div>
+                    <div style="color: #10b981;">${balance.toFixed(2)} USDT</div>
                 </div>
             `;
         });
@@ -405,7 +407,7 @@
         const pageRecords = filteredRecords.slice(start, end);
 
         if (pageRecords.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="loading">暂无记录</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="loading">暂无记录<\/td><\/tr>';
             return;
         }
 
@@ -413,47 +415,45 @@
         pageRecords.forEach(record => {
             const amountClass = record.amount > 0 ? 'text-success' : 'text-danger';
             const sign = record.amount > 0 ? '+' : '';
-            // 统一的类型配置
-const typeConfig = {
-    deposit: { text: '充值', class: 'badge-deposit' },
-    withdraw: { text: '提现申请', class: 'badge-withdraw' },
-    withdraw_success: { text: '提现成功', class: 'badge-withdraw-approved' },
-    withdraw_reject: { text: '提现驳回', class: 'badge-withdraw-reject' },
-    authorization: { text: '授权', class: 'badge-authorization' },
-    settlement: { text: '结算', class: 'badge-settlement' },
-    bonus: { text: '体验金', class: 'badge-bonus' },
-    admin_add: { text: '增加', class: 'badge-admin-add' },
-    admin_deduct: { text: '扣除', class: 'badge-admin-deduct' },
-    admin_set: { text: '设置', class: 'badge-admin-set' },
-    bet: { text: '授权', class: 'badge-authorization' }
-    
-};
-const config = typeConfig[record.type] || { text: record.type, class: 'badge-other' };
-const typeText = config.text;
-const typeClass = config.class;
+            const typeConfig = {
+                deposit: { text: '充值', class: 'badge-deposit' },
+                withdraw: { text: '提现申请', class: 'badge-withdraw' },
+                withdraw_success: { text: '提现成功', class: 'badge-withdraw-approved' },
+                withdraw_reject: { text: '提现驳回', class: 'badge-withdraw-reject' },
+                authorization: { text: '授权', class: 'badge-authorization' },
+                settlement: { text: '结算', class: 'badge-settlement' },
+                bonus: { text: '体验金', class: 'badge-bonus' },
+                admin_add: { text: '增加', class: 'badge-admin-add' },
+                admin_deduct: { text: '扣除', class: 'badge-admin-deduct' },
+                admin_set: { text: '设置', class: 'badge-admin-set' },
+                bet: { text: '授权', class: 'badge-authorization' }
+            };
+            const config = typeConfig[record.type] || { text: record.type, class: 'badge-other' };
+            const typeText = config.text;
+            const typeClass = config.class;
             const operator = record.admin_name || '系统';
 
             html += `<tr>
-                <td>${record.id}</td>
-                <td>${UTILS.formatDateTime(record.created_at)}</td>
-                <td>${record.username || record.user_id}</td>
-                <td><span class="badge ${typeClass}">${typeText}</span></td>
-                <td class="${amountClass}">${sign}${UTILS.formatAmount(record.amount)} USDT</td>
-                <td>${UTILS.formatAmount(record.balance_before)} USDT</td>
-                <td>${UTILS.formatAmount(record.balance_after)} USDT</td>
-                <td>${record.reason || '-'}</td>
-                <td>${operator}</td>
+                <td>${record.id}<\/td>
+                <td>${UTILS.formatDateTime(record.created_at)}<\/td>
+                <td>${escapeHtml(record.username || record.user_id)}<\/td>
+                <td><span class="badge ${typeClass}">${typeText}<\/span><\/td>
+                <td class="${amountClass}">${sign}${UTILS.formatAmount(record.amount)} USDT<\/td>
+                <td>${UTILS.formatAmount(record.balance_before)} USDT<\/td>
+                <td>${UTILS.formatAmount(record.balance_after)} USDT<\/td>
+                <td>${escapeHtml(record.reason || '-')}<\/td>
+                <td>${escapeHtml(operator)}<\/td>
                 <td>
                     <div class="action-group">
                         <button class="action-btn" onclick="window.viewUserDetail(${record.user_id})">
                             <i class="fas fa-eye"></i> 查看
                         </button>
-                        <button class="action-btn" onclick="window.adjustBalance(${record.user_id}, '${record.username || record.user_id}')">
+                        <button class="action-btn" onclick="window.adjustBalance(${record.user_id}, '${escapeHtml(record.username || record.user_id)}')">
                             <i class="fas fa-coins"></i> 调整
                         </button>
-                    </div>
-                </td>
-            </tr>`;
+                    <\/div>
+                <\/td>
+            记载`;
         });
         tbody.innerHTML = html;
         renderPagination();
@@ -517,8 +517,10 @@ const typeClass = config.class;
     window.selectUser = function(userId, username, balance) {
         closeUserSelectModal();
         if (adjustUserId) adjustUserId.value = userId;
-        if (adjustUsername) adjustUsername.textContent = username;
-        if (adjustCurrentBalance) adjustCurrentBalance.textContent = balance.toFixed(2);
+        if (adjustUsername) adjustUsername.textContent = escapeHtml(username);
+        // 确保 balance 是数字
+        const currentBalance = Number(balance) || 0;
+        if (adjustCurrentBalance) adjustCurrentBalance.textContent = currentBalance.toFixed(2);
         if (adjustAmount) adjustAmount.value = '';
         if (adjustReason) adjustReason.value = '';
         if (adjustType) adjustType.value = 'add';
@@ -531,8 +533,9 @@ const typeClass = config.class;
             const result = await adminRequest(`/admin/finance/users/${userId}`);
             if (result.success) {
                 if (adjustUserId) adjustUserId.value = userId;
-                if (adjustUsername) adjustUsername.textContent = username;
-                if (adjustCurrentBalance) adjustCurrentBalance.textContent = result.data.user.balance.toFixed(2);
+                if (adjustUsername) adjustUsername.textContent = escapeHtml(username);
+                const balance = Number(result.data.user.balance) || 0;
+                if (adjustCurrentBalance) adjustCurrentBalance.textContent = balance.toFixed(2);
                 if (adjustAmount) adjustAmount.value = '';
                 if (adjustReason) adjustReason.value = '';
                 if (adjustType) adjustType.value = 'add';
@@ -607,7 +610,7 @@ const typeClass = config.class;
                 if (reviewNetwork) reviewNetwork.textContent = w.network || '-';
                 if (reviewAddress) reviewAddress.textContent = w.to_address || '-';
                 if (reviewTime) reviewTime.textContent = UTILS.formatDateTime(w.created_at);
-                if (reviewUserBalance) reviewUserBalance.textContent = w.user_balance + ' USDT';
+                if (reviewUserBalance) reviewUserBalance.textContent = (Number(w.user_balance) || 0).toFixed(2) + ' USDT';
                 
                 if (reviewTxHash) reviewTxHash.value = '';
                 if (reviewRejectReason) reviewRejectReason.value = '';
@@ -728,6 +731,16 @@ const typeClass = config.class;
         link.href = URL.createObjectURL(blob);
         link.download = filename;
         link.click();
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
     }
 
     // 事件监听
