@@ -1,3 +1,21 @@
+// 在文件开头添加这个函数
+async function ensureColumns() {
+    try {
+        const { query } = await import('../database/connection.js');
+        await query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS score_confirmed BOOLEAN DEFAULT FALSE`).catch(() => {});
+        await query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS finished_at TIMESTAMP`).catch(() => {});
+        await query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS score_fetch_triggered BOOLEAN DEFAULT FALSE`).catch(() => {});
+        logger.info('✅ 数据库字段检查完成');
+    } catch (err) {
+        logger.debug('字段检查:', err.message);
+    }
+}
+
+// 在 setTimeout 之前调用
+setTimeout(async () => {
+    await ensureColumns();
+    updateScoresForFinishedMatches();
+}, 8000);
 /**
  * FOOTRADAPRO - Auto Fetch Scores Service
  * @description 自动获取已结束比赛的比分（使用 DeepSeek API 联网搜索）
