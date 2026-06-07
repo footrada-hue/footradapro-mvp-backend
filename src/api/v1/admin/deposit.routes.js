@@ -1,8 +1,7 @@
 /**
  * deposit.routes.js - 充值管理路由
- * 修復：正确解析 balance_logs 表中的 reason 字段
- * 支持提取 Network、TxID、Screenshot 等信息
- * @version 2.0.0 - 支持 PostgreSQL 和 SQLite
+ * 支持测试/真实双余额模式
+ * @version 3.0.0 - 支持 PostgreSQL 和 SQLite
  */
 
 import express from 'express';
@@ -30,6 +29,7 @@ router.get('/pending', adminAuth, hasRole(['finance_admin', 'super_admin']), asy
                     b.balance_after,
                     b.type,
                     b.reason,
+                    b.mode,
                     b.created_at,
                     u.username,
                     u.uid,
@@ -53,6 +53,7 @@ router.get('/pending', adminAuth, hasRole(['finance_admin', 'super_admin']), asy
                     b.balance_after,
                     b.type,
                     b.reason,
+                    b.mode,
                     b.created_at,
                     u.username,
                     u.uid,
@@ -89,6 +90,7 @@ router.get('/pending', adminAuth, hasRole(['finance_admin', 'super_admin']), asy
                 network,
                 tx_hash: txHash,
                 screenshot,
+                mode: d.mode || 'real',
                 status: 'pending',
                 user_balance: d.user_balance,
                 created_at: d.created_at
@@ -118,6 +120,7 @@ router.get('/all', adminAuth, hasRole(['finance_admin', 'super_admin']), async (
                     b.balance_after,
                     b.type,
                     b.reason,
+                    b.mode,
                     b.created_at,
                     u.username,
                     u.uid,
@@ -152,6 +155,7 @@ router.get('/all', adminAuth, hasRole(['finance_admin', 'super_admin']), async (
                     b.balance_after,
                     b.type,
                     b.reason,
+                    b.mode,
                     b.created_at,
                     u.username,
                     u.uid,
@@ -205,6 +209,7 @@ router.get('/all', adminAuth, hasRole(['finance_admin', 'super_admin']), async (
                 network,
                 tx_hash: txHash,
                 screenshot,
+                mode: d.mode || 'real',
                 status: recordStatus,
                 user_balance: d.user_balance,
                 created_at: d.created_at
@@ -233,6 +238,7 @@ router.get('/detail/:id', adminAuth, hasRole(['finance_admin', 'super_admin']), 
                     b.balance_after,
                     b.type,
                     b.reason,
+                    b.mode,
                     b.created_at,
                     u.username,
                     u.uid,
@@ -253,6 +259,7 @@ router.get('/detail/:id', adminAuth, hasRole(['finance_admin', 'super_admin']), 
                     b.balance_after,
                     b.type,
                     b.reason,
+                    b.mode,
                     b.created_at,
                     u.username,
                     u.uid,
@@ -295,6 +302,7 @@ router.get('/detail/:id', adminAuth, hasRole(['finance_admin', 'super_admin']), 
             network,
             tx_hash: txHash,
             screenshot,
+            mode: deposit.mode || 'real',
             status,
             admin_note: '',
             user_balance: deposit.user_balance,
@@ -310,7 +318,7 @@ router.get('/detail/:id', adminAuth, hasRole(['finance_admin', 'super_admin']), 
     }
 });
 
-// 确认充值
+// 确认充值（支持双余额模式）
 router.post('/:id/confirm', adminAuth, hasRole(['finance_admin', 'super_admin']), async (req, res) => {
     const { admin_note = '', actual_amount } = req.body;
     const adminId = req.admin.id;
@@ -337,13 +345,17 @@ router.post('/:id/confirm', adminAuth, hasRole(['finance_admin', 'super_admin'])
             throw new Error('充值记录不存在或已处理');
         }
         
+        // 根据模式选择要更新的余额字段
+        const mode = deposit.mode || 'real';
+        const balanceField = mode === 'test' ? 'test_balance' : 'real_balance';
+        
         let user;
         if (isProduction) {
-            const userResult = await query('SELECT * FROM users WHERE id = $1', [deposit.user_id]);
+            const userResult = await query(`SELECT * FROM users WHERE id = $1`, [deposit.user_id]);
             user = userResult?.[0];
         } else {
             const db = getDb();
-            user = db.prepare('SELECT * FROM users WHERE id = ?').get(deposit.user_id);
+            user = db.prepare(`SELECT * FROM users WHERE id = ?`).get(deposit.user_id);
         }
         
         if (!user) {
@@ -351,18 +363,19 @@ router.post('/:id/confirm', adminAuth, hasRole(['finance_admin', 'super_admin'])
         }
         
         const addAmount = actual_amount && parseFloat(actual_amount) > 0 ? parseFloat(actual_amount) : deposit.amount;
-        const newBalance = user.balance + addAmount;
+        const currentBalance = user[balanceField] || 0;
+        const newBalance = currentBalance + addAmount;
         
         if (isProduction) {
             await query(`
                 UPDATE users 
-                SET balance = $1,
+                SET ${balanceField} = $1,
                     updated_at = NOW()
                 WHERE id = $2
             `, [newBalance, deposit.user_id]);
             
             const newReason = deposit.reason + 
-                ` | completed at ${new Date().toISOString()} | 管理员: ${adminName} | 实际到账: ${addAmount} USDT | 管理员备注: ${admin_note}`;
+                ` | completed at ${new Date().toISOString()} | 管理员: ${adminName} | 实际到账: ${addAmount} USDT | 模式: ${mode} | 管理员备注: ${admin_note}`;
             
             await query(`
                 UPDATE balance_logs 
@@ -372,27 +385,28 @@ router.post('/:id/confirm', adminAuth, hasRole(['finance_admin', 'super_admin'])
             
             await query(`
                 INSERT INTO balance_logs (
-                    user_id, amount, balance_before, balance_after, type, reason, admin_id, created_at
-                ) VALUES ($1, $2, $3, $4, 'deposit_success', $5, $6, NOW())
+                    user_id, amount, balance_before, balance_after, type, reason, admin_id, mode, created_at
+                ) VALUES ($1, $2, $3, $4, 'deposit_success', $5, $6, $7, NOW())
             `, [
                 deposit.user_id,
                 addAmount,
-                user.balance,
+                currentBalance,
                 newBalance,
-                `充值成功: ${addAmount} USDT, 由管理员 ${adminName} 确认, 原申请: ${deposit.amount} USDT, 备注: ${admin_note}`,
-                adminId
+                `充值成功: ${addAmount} USDT, 由管理员 ${adminName} 确认, 原申请: ${deposit.amount} USDT, 模式: ${mode}, 备注: ${admin_note}`,
+                adminId,
+                mode
             ]);
         } else {
             const db = getDb();
             db.prepare(`
                 UPDATE users 
-                SET balance = ?,
+                SET ${balanceField} = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
             `).run(newBalance, deposit.user_id);
             
             const newReason = deposit.reason + 
-                ` | completed at ${new Date().toISOString()} | 管理员: ${adminName} | 实际到账: ${addAmount} USDT | 管理员备注: ${admin_note}`;
+                ` | completed at ${new Date().toISOString()} | 管理员: ${adminName} | 实际到账: ${addAmount} USDT | 模式: ${mode} | 管理员备注: ${admin_note}`;
             
             db.prepare(`
                 UPDATE balance_logs 
@@ -402,15 +416,16 @@ router.post('/:id/confirm', adminAuth, hasRole(['finance_admin', 'super_admin'])
             
             db.prepare(`
                 INSERT INTO balance_logs (
-                    user_id, amount, balance_before, balance_after, type, reason, admin_id, created_at
-                ) VALUES (?, ?, ?, ?, 'deposit_success', ?, ?, CURRENT_TIMESTAMP)
+                    user_id, amount, balance_before, balance_after, type, reason, admin_id, mode, created_at
+                ) VALUES (?, ?, ?, ?, 'deposit_success', ?, ?, ?, CURRENT_TIMESTAMP)
             `).run(
                 deposit.user_id,
                 addAmount,
-                user.balance,
+                currentBalance,
                 newBalance,
-                `充值成功: ${addAmount} USDT, 由管理员 ${adminName} 确认, 原申请: ${deposit.amount} USDT, 备注: ${admin_note}`,
-                adminId
+                `充值成功: ${addAmount} USDT, 由管理员 ${adminName} 确认, 原申请: ${deposit.amount} USDT, 模式: ${mode}, 备注: ${admin_note}`,
+                adminId,
+                mode
             );
         }
         
@@ -443,7 +458,8 @@ router.post('/:id/confirm', adminAuth, hasRole(['finance_admin', 'super_admin'])
         await logAdminAction(req, 'deposit_confirm', {
             deposit_id: req.params.id,
             amount: addAmount,
-            user_id: deposit.user_id
+            user_id: deposit.user_id,
+            mode: mode
         }, 'deposit', req.params.id);
         
         res.json({ 
@@ -452,7 +468,8 @@ router.post('/:id/confirm', adminAuth, hasRole(['finance_admin', 'super_admin'])
             data: {
                 depositId: req.params.id,
                 amount: addAmount,
-                userId: deposit.user_id
+                userId: deposit.user_id,
+                mode: mode
             }
         });
         
@@ -494,9 +511,11 @@ router.post('/:id/reject', adminAuth, hasRole(['finance_admin', 'super_admin']),
             throw new Error('充值记录不存在或已处理');
         }
         
+        const mode = deposit.mode || 'real';
+        
         if (isProduction) {
             const newReason = deposit.reason + 
-                ` | rejected at ${new Date().toISOString()} | 管理员: ${adminName} | 驳回原因: ${rejectReason}`;
+                ` | rejected at ${new Date().toISOString()} | 管理员: ${adminName} | 模式: ${mode} | 驳回原因: ${rejectReason}`;
             
             await query(`
                 UPDATE balance_logs 
@@ -506,7 +525,7 @@ router.post('/:id/reject', adminAuth, hasRole(['finance_admin', 'super_admin']),
         } else {
             const db = getDb();
             const newReason = deposit.reason + 
-                ` | rejected at ${new Date().toISOString()} | 管理员: ${adminName} | 驳回原因: ${rejectReason}`;
+                ` | rejected at ${new Date().toISOString()} | 管理员: ${adminName} | 模式: ${mode} | 驳回原因: ${rejectReason}`;
             
             db.prepare(`
                 UPDATE balance_logs 
@@ -544,7 +563,8 @@ router.post('/:id/reject', adminAuth, hasRole(['finance_admin', 'super_admin']),
             deposit_id: req.params.id,
             amount: deposit.amount,
             user_id: deposit.user_id,
-            reason: rejectReason
+            reason: rejectReason,
+            mode: mode
         }, 'deposit', req.params.id);
         
         res.json({ 
@@ -553,7 +573,8 @@ router.post('/:id/reject', adminAuth, hasRole(['finance_admin', 'super_admin']),
             data: {
                 depositId: req.params.id,
                 amount: deposit.amount,
-                userId: deposit.user_id
+                userId: deposit.user_id,
+                mode: mode
             }
         });
         

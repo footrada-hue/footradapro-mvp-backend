@@ -58,7 +58,7 @@ router.get('/stats', async (req, res) => {
 
 /**
  * ======================================================
- * 获取所有提现记录（完整版）
+ * 获取所有提现记录（完整版）- 支持双余额模式
  * ======================================================
  */
 router.get('/all', async (req, res) => {
@@ -71,10 +71,13 @@ router.get('/all', async (req, res) => {
             let queryStr = `
                 SELECT 
                     w.*,
+                    w.mode,
                     u.username,
                     u.uid,
                     u.email,
-                    u.balance as user_balance
+                    u.balance as user_balance,
+                    u.test_balance as user_test_balance,
+                    u.real_balance as user_real_balance
                 FROM withdraw_requests w
                 LEFT JOIN users u ON w.user_id = u.id
             `;
@@ -96,10 +99,13 @@ router.get('/all', async (req, res) => {
             let queryStr = `
                 SELECT 
                     w.*,
+                    w.mode,
                     u.username,
                     u.uid,
                     u.email,
-                    u.balance as user_balance
+                    u.balance as user_balance,
+                    u.test_balance as user_test_balance,
+                    u.real_balance as user_real_balance
                 FROM withdraw_requests w
                 LEFT JOIN users u ON w.user_id = u.id
             `;
@@ -128,7 +134,7 @@ router.get('/all', async (req, res) => {
 
 /**
  * ======================================================
- * 获取单个提现详情
+ * 获取单个提现详情 - 支持双余额模式
  * ======================================================
  */
 router.get('/detail/:id', async (req, res) => {
@@ -141,10 +147,13 @@ router.get('/detail/:id', async (req, res) => {
             const result = await query(`
                 SELECT 
                     w.*,
+                    w.mode,
                     u.username,
                     u.uid,
                     u.email,
-                    u.balance as user_balance
+                    u.balance as user_balance,
+                    u.test_balance as user_test_balance,
+                    u.real_balance as user_real_balance
                 FROM withdraw_requests w
                 LEFT JOIN users u ON w.user_id = u.id
                 WHERE w.id = $1
@@ -155,10 +164,13 @@ router.get('/detail/:id', async (req, res) => {
             withdrawal = db.prepare(`
                 SELECT 
                     w.*,
+                    w.mode,
                     u.username,
                     u.uid,
                     u.email,
-                    u.balance as user_balance
+                    u.balance as user_balance,
+                    u.test_balance as user_test_balance,
+                    u.real_balance as user_real_balance
                 FROM withdraw_requests w
                 LEFT JOIN users u ON w.user_id = u.id
                 WHERE w.id = ?

@@ -1,5 +1,5 @@
 /**
- * 财务管理控制器
+ * 财务管理控制器 - 支持测试/真实双余额模式
  */
 
 (function() {
@@ -77,6 +77,10 @@
         
         try {
             const response = await fetch(`/api/v1${endpoint}`, { ...defaultOptions, ...options });
+            if (response.status === 401) {
+                window.location.href = '/admin/index.html';
+                throw new Error('UNAUTHORIZED');
+            }
             return await response.json();
         } catch (err) {
             if (err.message === 'UNAUTHORIZED') {
@@ -110,7 +114,7 @@
         if (!withdrawTableBody) return;
         
         try {
-            withdrawTableBody.innerHTML = '<tr><td colspan="10" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...<\/td><\/tr>';
+            withdrawTableBody.innerHTML = '<tr><td colspan="10" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr>';
             
             const statsRes = await adminRequest('/admin/withdraw/stats');
             if (statsRes.success) {
@@ -136,7 +140,7 @@
             }
         } catch (err) {
             console.error('加载提现数据失败:', err);
-            withdrawTableBody.innerHTML = '<tr><td colspan="10" class="loading" style="color: #ef4444;">加载失败，请刷新重试<\/td><\/tr>';
+            withdrawTableBody.innerHTML = '<tr><td colspan="10" class="loading" style="color: #ef4444;">加载失败，请刷新重试</td></tr>';
         }
     }
 
@@ -164,7 +168,7 @@
         if (!withdrawTableBody) return;
         
         if (filteredWithdrawals.length === 0) {
-            withdrawTableBody.innerHTML = '<tr><td colspan="10" class="loading">暂无记录<\/td><\/tr>';
+            withdrawTableBody.innerHTML = '<tr><td colspan="10" class="loading">暂无记录</td></tr>';
             return;
         }
 
@@ -178,25 +182,27 @@
             const statusText = w.status === 'pending' ? '待审核' : 
                               w.status === 'approved' ? '已通过' : 
                               w.status === 'rejected' ? '已拒绝' : '已完成';
+            const modeText = w.mode === 'test' ? '🧪 测试' : (w.mode === 'real' ? '💰 真实' : '-');
             
             html += `<tr>
-                <td>${w.id}<\/td>
-                <td>${UTILS.formatDateTime(w.created_at)}<\/td>
-                <td>${w.username || w.user_id}<br><small style="color: #8e95a3;">UID: ${w.uid || '-'}<\/small><\/td>
-                <td>${UTILS.formatAmount(w.amount)} USDT<\/td>
-                <td>${fee} USDT<\/td>
-                <td>${UTILS.formatAmount(netAmount)} USDT<\/td>
-                <td>${w.network || '-'}<\/td>
-                <td><span class="address-truncate" title="${w.to_address || ''}">${w.to_address || '-'}<\/span><\/td>
-                <td><span class="status-badge ${statusClass}">${statusText}<\/span><\/td>
+                <td>${w.id}</td>
+                <td>${UTILS.formatDateTime(w.created_at)}</td>
+                <td>${w.username || w.user_id}<br><small style="color: #8e95a3;">UID: ${w.uid || '-'}</small></td>
+                <td>${UTILS.formatAmount(w.amount)} USDT</td>
+                <td>${fee} USDT</td>
+                <td>${UTILS.formatAmount(netAmount)} USDT</td>
+                <td>${w.network || '-'}</td>
+                <td><span class="address-truncate" title="${w.to_address || ''}">${w.to_address || '-'}</span></td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td><small style="color: #8e95a3;">${modeText}</small></td>
                 <td>
                     <div class="action-group">
                         ${w.status === 'pending' ? 
-                            `<button class="action-btn" onclick="window.openWithdrawReview(${w.id})"><i class="fas fa-gavel"></i> 审核<\/button>` : 
-                            `<button class="action-btn" disabled style="opacity:0.5;"><i class="fas fa-check"></i> 已处理<\/button>`}
-                    <\/div>
-                <\/td>
-            记载`;
+                            `<button class="action-btn" onclick="window.openWithdrawReview(${w.id})"><i class="fas fa-gavel"></i> 审核</button>` : 
+                            `<button class="action-btn" disabled style="opacity:0.5;"><i class="fas fa-check"></i> 已处理</button>`}
+                    </div>
+                </td>
+            </tr>`;
         });
         withdrawTableBody.innerHTML = html;
     }
@@ -206,7 +212,7 @@
         if (!depositTableBody) return;
         
         try {
-            depositTableBody.innerHTML = '<tr><td colspan="9" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...<\/td><\/tr>';
+            depositTableBody.innerHTML = '<tr><td colspan="9" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr>';
             
             const statsRes = await adminRequest('/admin/deposit/stats');
             if (statsRes.success) {
@@ -232,7 +238,7 @@
             }
         } catch (err) {
             console.error('加载充值数据失败:', err);
-            depositTableBody.innerHTML = '<tr><td colspan="9" class="loading" style="color: #ef4444;">加载失败，请刷新重试<\/td><\/tr>';
+            depositTableBody.innerHTML = '<tr><td colspan="9" class="loading" style="color: #ef4444;">加载失败，请刷新重试</td></tr>';
         }
     }
 
@@ -260,7 +266,7 @@
         if (!depositTableBody) return;
         
         if (filteredDeposits.length === 0) {
-            depositTableBody.innerHTML = '<tr><td colspan="9" class="loading">暂无记录<\/td><\/tr>';
+            depositTableBody.innerHTML = '<tr><td colspan="9" class="loading">暂无记录</td></tr>';
             return;
         }
 
@@ -270,25 +276,27 @@
                                d.status === 'completed' ? 'status-approved' : 'status-rejected';
             const statusText = d.status === 'pending' ? '待确认' : 
                               d.status === 'completed' ? '已完成' : '已驳回';
+            const modeText = d.mode === 'test' ? '🧪 测试' : (d.mode === 'real' ? '💰 真实' : '-');
             
             html += `<tr>
-                <td>${d.id}<\/td>
-                <td>${UTILS.formatDateTime(d.created_at)}<\/td>
-                <td>${d.username || d.user_id}<br><small style="color: #8e95a3;">UID: ${d.uid || '-'}<\/small><\/td>
-                <td>${UTILS.formatAmount(d.amount)} USDT<\/td>
-                <td>${d.network || '-'}<\/td>
-                <td><span class="address-truncate" title="${d.tx_hash || ''}">${d.tx_hash || '-'}<\/span><\/td>
-                <td>${d.confirmations || 0}<\/td>
-                <td><span class="status-badge ${statusClass}">${statusText}<\/span><\/td>
+                <td>${d.id}</td>
+                <td>${UTILS.formatDateTime(d.created_at)}</td>
+                <td>${d.username || d.user_id}<br><small style="color: #8e95a3;">UID: ${d.uid || '-'}</small></td>
+                <td>${UTILS.formatAmount(d.amount)} USDT</td>
+                <td>${d.network || '-'}</td>
+                <td><span class="address-truncate" title="${d.tx_hash || ''}">${d.tx_hash || '-'}</span></td>
+                <td>${d.confirmations || 0}</td>
+                <td><small style="color: #8e95a3;">${modeText}</small></td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td>
                     <div class="action-group">
                         ${d.status === 'pending' ? 
-                            `<button class="action-btn" onclick="alert('充值确认功能开发中')"><i class="fas fa-check-circle"></i> 确认<\/button>
-                             <button class="action-btn warning" onclick="alert('充值驳回功能开发中')"><i class="fas fa-times-circle"></i> 驳回<\/button>` : 
-                            `<button class="action-btn" disabled style="opacity:0.5;"><i class="fas fa-check"></i> 已处理<\/button>`}
-                    <\/div>
-                <\/td>
-            记载`;
+                            `<button class="action-btn" onclick="alert('充值确认功能开发中')"><i class="fas fa-check-circle"></i> 确认</button>
+                             <button class="action-btn warning" onclick="alert('充值驳回功能开发中')"><i class="fas fa-times-circle"></i> 驳回</button>` : 
+                            `<button class="action-btn" disabled style="opacity:0.5;"><i class="fas fa-check"></i> 已处理</button>`}
+                    </div>
+                </td>
+            </tr>`;
         });
         depositTableBody.innerHTML = html;
     }
@@ -298,7 +306,7 @@
         if (!tbody) return;
         
         try {
-            tbody.innerHTML = '<tr><td colspan="10" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...<\/td><\/tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</td></tr>';
             
             const statsRes = await adminRequest('/admin/finance/stats');
             if (statsRes.success) {
@@ -306,11 +314,17 @@
                 const todayDepositEl = document.getElementById('todayDeposit');
                 const todayWithdrawEl = document.getElementById('todayWithdraw');
                 const totalRevenueEl = document.getElementById('totalRevenue');
+                const testBalanceEl = document.getElementById('testBalance');
+                const realBalanceEl = document.getElementById('realBalance');
                 
                 if (totalBalanceEl) totalBalanceEl.textContent = Number(statsRes.data.totalBalance || 0).toFixed(2) + ' USDT';
                 if (todayDepositEl) todayDepositEl.textContent = Number(statsRes.data.todayDeposit || 0).toFixed(2) + ' USDT';
                 if (todayWithdrawEl) todayWithdrawEl.textContent = Number(statsRes.data.todayWithdraw || 0).toFixed(2) + ' USDT';
                 if (totalRevenueEl) totalRevenueEl.textContent = Number(statsRes.data.totalRevenue || 0).toFixed(2) + ' USDT';
+                
+                // 显示双余额
+                if (testBalanceEl) testBalanceEl.textContent = Number(statsRes.data.testBalance || 0).toFixed(2) + ' USDT';
+                if (realBalanceEl) realBalanceEl.textContent = Number(statsRes.data.realBalance || 0).toFixed(2) + ' USDT';
             }
 
             const recordsRes = await adminRequest('/admin/finance/records');
@@ -320,7 +334,7 @@
             }
         } catch (err) {
             console.error('加载财务数据失败:', err);
-            tbody.innerHTML = '<tr><td colspan="10" class="loading" style="color: #ef4444;">加载失败，请重试<\/td><\/tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="loading" style="color: #ef4444;">加载失败，请重试</td></tr>';
         }
     }
 
@@ -338,7 +352,7 @@
         }
     }
 
-    // 渲染用户列表
+    // 渲染用户列表（支持双余额显示）
     function renderUserList() {
         if (!userListDiv) return;
         
@@ -356,15 +370,18 @@
 
         let html = '';
         filtered.forEach(user => {
-            // 确保 balance 是数字
-            const balance = Number(user.balance) || 0;
+            const testBalance = Number(user.test_balance) || 0;
+            const realBalance = Number(user.real_balance) || 0;
             html += `
-                <div class="user-item" onclick="window.selectUser(${user.id}, '${escapeHtml(user.username)}', ${balance})">
+                <div class="user-item" onclick="window.selectUser(${user.id}, '${escapeHtml(user.username)}', ${testBalance}, ${realBalance})">
                     <div>
                         <strong>${escapeHtml(user.username)}</strong>
                         <div style="font-size: 12px; color: #8e95a3;">UID: ${escapeHtml(user.uid)}</div>
                     </div>
-                    <div style="color: #10b981;">${balance.toFixed(2)} USDT</div>
+                    <div style="font-size: 12px;">
+                        <div style="color: #60A5FA;">🧪 ${testBalance.toFixed(2)} USDT</div>
+                        <div style="color: #10B981;">💰 ${realBalance.toFixed(2)} USDT</div>
+                    </div>
                 </div>
             `;
         });
@@ -398,7 +415,7 @@
         renderTable();
     }
 
-    // 渲染表格
+    // 渲染表格（添加模式列）
     function renderTable() {
         if (!tbody) return;
         
@@ -407,7 +424,7 @@
         const pageRecords = filteredRecords.slice(start, end);
 
         if (pageRecords.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="loading">暂无记录<\/td><\/tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="loading">暂无记录</td></tr>';
             return;
         }
 
@@ -432,17 +449,19 @@
             const typeText = config.text;
             const typeClass = config.class;
             const operator = record.admin_name || '系统';
+            const modeText = record.mode === 'test' ? '🧪 测试' : (record.mode === 'real' ? '💰 真实' : '-');
 
             html += `<tr>
-                <td>${record.id}<\/td>
-                <td>${UTILS.formatDateTime(record.created_at)}<\/td>
-                <td>${escapeHtml(record.username || record.user_id)}<\/td>
-                <td><span class="badge ${typeClass}">${typeText}<\/span><\/td>
-                <td class="${amountClass}">${sign}${UTILS.formatAmount(record.amount)} USDT<\/td>
-                <td>${UTILS.formatAmount(record.balance_before)} USDT<\/td>
-                <td>${UTILS.formatAmount(record.balance_after)} USDT<\/td>
-                <td>${escapeHtml(record.reason || '-')}<\/td>
-                <td>${escapeHtml(operator)}<\/td>
+                <td>${record.id}</td>
+                <td>${UTILS.formatDateTime(record.created_at)}</td>
+                <td>${escapeHtml(record.username || record.user_id)}</td>
+                <td><span class="badge ${typeClass}">${typeText}</span></td>
+                <td class="${amountClass}">${sign}${UTILS.formatAmount(record.amount)} USDT</td>
+                <td>${UTILS.formatAmount(record.balance_before)} USDT</td>
+                <td>${UTILS.formatAmount(record.balance_after)} USDT</td>
+                <td><small style="color: #8e95a3;">${modeText}</small></td>
+                <td>${escapeHtml(record.reason || '-')}</td>
+                <td>${escapeHtml(operator)}</td>
                 <td>
                     <div class="action-group">
                         <button class="action-btn" onclick="window.viewUserDetail(${record.user_id})">
@@ -451,9 +470,9 @@
                         <button class="action-btn" onclick="window.adjustBalance(${record.user_id}, '${escapeHtml(record.username || record.user_id)}')">
                             <i class="fas fa-coins"></i> 调整
                         </button>
-                    <\/div>
-                <\/td>
-            记载`;
+                    </div>
+                </td>
+            </tr>`;
         });
         tbody.innerHTML = html;
         renderPagination();
@@ -503,6 +522,7 @@
             loadUsers();
             if (userSearchInput) {
                 userSearchInput.value = '';
+                userSearchInput.removeEventListener('input', renderUserList);
                 userSearchInput.addEventListener('input', renderUserList);
             }
         }
@@ -513,29 +533,55 @@
         if (userSelectModal) userSelectModal.classList.remove('show');
     };
 
-    // 选择用户
-    window.selectUser = function(userId, username, balance) {
+    // 选择用户（支持双余额）
+    window.selectUser = function(userId, username, testBalance, realBalance) {
         closeUserSelectModal();
         if (adjustUserId) adjustUserId.value = userId;
         if (adjustUsername) adjustUsername.textContent = escapeHtml(username);
-        // 确保 balance 是数字
-        const currentBalance = Number(balance) || 0;
-        if (adjustCurrentBalance) adjustCurrentBalance.textContent = currentBalance.toFixed(2);
+        
+        // 存储双余额到 data 属性
+        adjustModal.setAttribute('data-test-balance', testBalance || 0);
+        adjustModal.setAttribute('data-real-balance', realBalance || 0);
+        
+        // 显示当前余额信息（根据选择的模式）
+        updateCurrentBalanceDisplay();
+        
         if (adjustAmount) adjustAmount.value = '';
         if (adjustReason) adjustReason.value = '';
         if (adjustType) adjustType.value = 'add';
         if (adjustModal) adjustModal.classList.add('show');
     };
+    
+    // 更新当前余额显示
+    function updateCurrentBalanceDisplay() {
+        const selectedMode = document.getElementById('balanceMode')?.value || 'real';
+        const testBalance = Number(adjustModal?.getAttribute('data-test-balance') || 0);
+        const realBalance = Number(adjustModal?.getAttribute('data-real-balance') || 0);
+        
+        if (adjustCurrentBalance) {
+            const currentBal = selectedMode === 'test' ? testBalance : realBalance;
+            adjustCurrentBalance.textContent = currentBal.toFixed(2);
+            adjustCurrentBalance.parentElement.innerHTML = `<div><strong>用户:</strong> <span id="adjustUsername">${adjustUsername?.textContent || ''}</span></div>
+                <div><strong>当前余额 (${selectedMode === 'test' ? '🧪 测试模式' : '💰 真实模式'}):</strong> <span id="adjustCurrentBalanceValue">${currentBal.toFixed(2)}</span> USDT</div>`;
+        }
+    }
 
-    // 打开调整余额模态框
+    // 打开调整余额模态框（支持双余额）
     window.adjustBalance = async function(userId, username) {
         try {
             const result = await adminRequest(`/admin/finance/users/${userId}`);
             if (result.success) {
                 if (adjustUserId) adjustUserId.value = userId;
                 if (adjustUsername) adjustUsername.textContent = escapeHtml(username);
-                const balance = Number(result.data.user.balance) || 0;
-                if (adjustCurrentBalance) adjustCurrentBalance.textContent = balance.toFixed(2);
+                
+                const testBalance = Number(result.data.user.test_balance) || 0;
+                const realBalance = Number(result.data.user.real_balance) || 0;
+                
+                adjustModal.setAttribute('data-test-balance', testBalance);
+                adjustModal.setAttribute('data-real-balance', realBalance);
+                
+                updateCurrentBalanceDisplay();
+                
                 if (adjustAmount) adjustAmount.value = '';
                 if (adjustReason) adjustReason.value = '';
                 if (adjustType) adjustType.value = 'add';
@@ -551,7 +597,7 @@
         if (adjustModal) adjustModal.classList.remove('show');
     };
 
-    // 提交调整
+    // 提交调整（支持双余额模式）
     window.submitAdjustBalance = async function() {
         const userId = adjustUserId?.value;
         const type = adjustType?.value;
@@ -559,6 +605,7 @@
         const reason = adjustReason?.value || 
             (type === 'add' ? '管理员增加' : 
              type === 'deduct' ? '管理员扣除' : '管理员设置');
+        const mode = document.getElementById('balanceMode')?.value || 'real';
         
         if (!amount || amount <= 0) {
             alert('请输入有效的金额');
@@ -570,13 +617,13 @@
         
         if (type === 'add') {
             endpoint = `/admin/finance/users/${userId}/add`;
-            body = { amount, reason };
+            body = { amount, reason, mode };
         } else if (type === 'deduct') {
             endpoint = `/admin/finance/users/${userId}/deduct`;
-            body = { amount, reason };
+            body = { amount, reason, mode };
         } else if (type === 'set') {
             endpoint = `/admin/finance/users/${userId}/set`;
-            body = { balance: amount, reason };
+            body = { balance: amount, reason, mode };
         }
         
         try {
@@ -589,6 +636,9 @@
                 alert('余额调整成功！');
                 closeAdjustModal();
                 loadFinanceData();
+                // 刷新提现和充值列表
+                loadWithdrawals();
+                loadDeposits();
             } else {
                 alert(result.message || '调整失败');
             }
@@ -610,7 +660,10 @@
                 if (reviewNetwork) reviewNetwork.textContent = w.network || '-';
                 if (reviewAddress) reviewAddress.textContent = w.to_address || '-';
                 if (reviewTime) reviewTime.textContent = UTILS.formatDateTime(w.created_at);
-                if (reviewUserBalance) reviewUserBalance.textContent = (Number(w.user_balance) || 0).toFixed(2) + ' USDT';
+                if (reviewUserBalance) {
+                    const balance = w.mode === 'test' ? (Number(w.user_test_balance) || 0) : (Number(w.user_real_balance) || 0);
+                    reviewUserBalance.textContent = balance.toFixed(2) + ' USDT';
+                }
                 
                 if (reviewTxHash) reviewTxHash.value = '';
                 if (reviewRejectReason) reviewRejectReason.value = '';
@@ -707,6 +760,7 @@
                 时间: UTILS.formatDateTime(r.created_at),
                 用户: r.username || r.user_id,
                 类型: r.type,
+                模式: r.mode === 'test' ? '测试模式' : (r.mode === 'real' ? '真实模式' : '-'),
                 金额: r.amount,
                 变动前: r.balance_before,
                 变动后: r.balance_after,

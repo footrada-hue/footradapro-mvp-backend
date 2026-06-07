@@ -10,7 +10,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 // 所有路由需要管理员认证
 router.use(adminAuth);
 
-// ==================== 获取财务统计数据 ====================
+// ==================== 获取财务统计数据（含双余额）====================
 router.get('/stats', hasPermission('finance.view'), async (req, res) => {
     try {
         console.log('=== 开始获取财务统计 ===');
@@ -19,6 +19,8 @@ router.get('/stats', hasPermission('finance.view'), async (req, res) => {
         let todayDeposit = 0;
         let todayWithdraw = 0;
         let totalRevenue = 0;
+        let testBalance = 0;
+        let realBalance = 0;
         
         if (isProduction) {
             // PostgreSQL 版本
@@ -26,6 +28,14 @@ router.get('/stats', hasPermission('finance.view'), async (req, res) => {
                 const result = await query('SELECT COALESCE(SUM(balance), 0) as total FROM users');
                 totalBalance = parseFloat(result[0]?.total || 0);
                 console.log('✅ 总余额查询成功:', totalBalance);
+                
+                // 获取测试模式总余额（test_balance）
+                const testResult = await query('SELECT COALESCE(SUM(test_balance), 0) as total FROM users');
+                testBalance = parseFloat(testResult[0]?.total || 0);
+                
+                // 获取真实模式总余额（real_balance）
+                const realResult = await query('SELECT COALESCE(SUM(real_balance), 0) as total FROM users');
+                realBalance = parseFloat(realResult[0]?.total || 0);
             } catch (err) {
                 console.error('❌ 总余额查询失败:', err.message);
             }
@@ -74,6 +84,15 @@ router.get('/stats', hasPermission('finance.view'), async (req, res) => {
             try {
                 const result = db.prepare('SELECT COALESCE(SUM(balance), 0) as total FROM users').get();
                 totalBalance = result.total || 0;
+                
+                // 获取测试模式总余额
+                const testResult = db.prepare('SELECT COALESCE(SUM(test_balance), 0) as total FROM users').get();
+                testBalance = testResult.total || 0;
+                
+                // 获取真实模式总余额
+                const realResult = db.prepare('SELECT COALESCE(SUM(real_balance), 0) as total FROM users').get();
+                realBalance = realResult.total || 0;
+                
                 console.log('✅ 总余额查询成功:', totalBalance);
             } catch (err) {
                 console.error('❌ 总余额查询失败:', err.message);
@@ -131,7 +150,9 @@ router.get('/stats', hasPermission('finance.view'), async (req, res) => {
             totalBalance,
             todayDeposit,
             todayWithdraw,
-            totalRevenue
+            totalRevenue,
+            testBalance,
+            realBalance
         };
         
         console.log('✅ 返回数据:', responseData);
@@ -146,7 +167,7 @@ router.get('/stats', hasPermission('finance.view'), async (req, res) => {
     }
 });
 
-// ==================== 获取所有财务记录 ====================
+// ==================== 获取所有财务记录（含模式字段）====================
 router.get('/records', hasPermission('finance.view'), async (req, res) => {
     try {
         console.log('=== 开始获取财务记录 ===');
@@ -166,6 +187,7 @@ router.get('/records', hasPermission('finance.view'), async (req, res) => {
                         bl.type,
                         bl.reason,
                         bl.admin_id,
+                        bl.mode,
                         bl.created_at,
                         COALESCE(u.username, '未知用户') as username,
                         COALESCE(a.username, '系统') as admin_name
@@ -217,6 +239,7 @@ router.get('/records', hasPermission('finance.view'), async (req, res) => {
                         bl.type,
                         bl.reason,
                         bl.admin_id,
+                        bl.mode,
                         bl.created_at,
                         COALESCE(u.username, '未知用户') as username,
                         COALESCE(a.username, '系统') as admin_name
@@ -250,14 +273,14 @@ router.get('/records', hasPermission('finance.view'), async (req, res) => {
     }
 });
 
-// ==================== 获取所有用户列表（用于调整余额时选择）====================
+// ==================== 获取所有用户列表（含双余额）====================
 router.get('/users', hasPermission('finance.view'), async (req, res) => {
     try {
         let users = [];
         
         if (isProduction) {
             const result = await query(`
-                SELECT id, uid, username, balance
+                SELECT id, uid, username, balance, test_balance, real_balance
                 FROM users
                 ORDER BY id DESC
                 LIMIT 100
@@ -266,7 +289,7 @@ router.get('/users', hasPermission('finance.view'), async (req, res) => {
         } else {
             const db = getDb();
             users = db.prepare(`
-                SELECT id, uid, username, balance
+                SELECT id, uid, username, balance, test_balance, real_balance
                 FROM users
                 ORDER BY id DESC
                 LIMIT 100
@@ -280,7 +303,7 @@ router.get('/users', hasPermission('finance.view'), async (req, res) => {
     }
 });
 
-// ==================== 获取单个用户余额明细 ====================
+// ==================== 获取单个用户余额明细（含双余额）====================
 router.get('/users/:userId', hasPermission('finance.view'), async (req, res) => {
     const { userId } = req.params;
     
@@ -288,11 +311,11 @@ router.get('/users/:userId', hasPermission('finance.view'), async (req, res) => 
         let user = null;
         
         if (isProduction) {
-            const result = await query('SELECT id, uid, username, balance FROM users WHERE id = $1', [userId]);
+            const result = await query('SELECT id, uid, username, balance, test_balance, real_balance FROM users WHERE id = $1', [userId]);
             user = result?.[0];
         } else {
             const db = getDb();
-            user = db.prepare('SELECT id, uid, username, balance FROM users WHERE id = ?').get(userId);
+            user = db.prepare('SELECT id, uid, username, balance, test_balance, real_balance FROM users WHERE id = ?').get(userId);
         }
         
         if (!user) {
@@ -306,60 +329,64 @@ router.get('/users/:userId', hasPermission('finance.view'), async (req, res) => 
     }
 });
 
-// ==================== 手动增加用户余额 ====================
+// ==================== 手动增加用户余额（支持模式）====================
 router.post('/users/:userId/add', hasPermission('finance.adjust'), async (req, res) => {
     const { userId } = req.params;
-    const { amount, reason } = req.body;
+    const { amount, reason, mode = 'real' } = req.body;
     const adminId = req.session?.adminId;
     
     if (!amount || amount <= 0) {
         return res.status(400).json({ success: false, error: 'INVALID_AMOUNT' });
     }
     
+    // 根据模式选择余额字段
+    const balanceField = mode === 'test' ? 'test_balance' : 'real_balance';
+    
     try {
         let user = null;
         
         if (isProduction) {
-            const result = await query('SELECT balance FROM users WHERE id = $1', [userId]);
+            const result = await query(`SELECT ${balanceField} as current_balance FROM users WHERE id = $1`, [userId]);
             user = result?.[0];
         } else {
             const db = getDb();
-            user = db.prepare('SELECT balance FROM users WHERE id = ?').get(userId);
+            user = db.prepare(`SELECT ${balanceField} as current_balance FROM users WHERE id = ?`).get(userId);
         }
         
         if (!user) throw new Error('USER_NOT_FOUND');
         
-        const balanceBefore = user.balance;
+        const balanceBefore = user.current_balance;
         const balanceAfter = balanceBefore + parseFloat(amount);
         
         if (isProduction) {
-            await query('UPDATE users SET balance = $1 WHERE id = $2', [balanceAfter, userId]);
+            await query(`UPDATE users SET ${balanceField} = $1 WHERE id = $2`, [balanceAfter, userId]);
             await query(`
                 INSERT INTO balance_logs (
                     user_id, amount, balance_before, balance_after, 
-                    type, reason, admin_id, created_at
-                ) VALUES ($1, $2, $3, $4, 'admin_add', $5, $6, NOW())
-            `, [userId, parseFloat(amount), balanceBefore, balanceAfter, reason || '管理员增加', adminId]);
+                    type, reason, admin_id, mode, created_at
+                ) VALUES ($1, $2, $3, $4, 'admin_add', $5, $6, $7, NOW())
+            `, [userId, parseFloat(amount), balanceBefore, balanceAfter, reason || '管理员增加', adminId, mode]);
         } else {
             const db = getDb();
             db.transaction(() => {
-                db.prepare('UPDATE users SET balance = ? WHERE id = ?').run(balanceAfter, userId);
+                db.prepare(`UPDATE users SET ${balanceField} = ? WHERE id = ?`).run(balanceAfter, userId);
                 db.prepare(`
                     INSERT INTO balance_logs (
                         user_id, amount, balance_before, balance_after, 
-                        type, reason, admin_id, created_at
-                    ) VALUES (?, ?, ?, ?, 'admin_add', ?, ?, CURRENT_TIMESTAMP)
-                `).run(userId, parseFloat(amount), balanceBefore, balanceAfter, reason || '管理员增加', adminId);
+                        type, reason, admin_id, mode, created_at
+                    ) VALUES (?, ?, ?, ?, 'admin_add', ?, ?, ?, CURRENT_TIMESTAMP)
+                `).run(userId, parseFloat(amount), balanceBefore, balanceAfter, reason || '管理员增加', adminId, mode);
             })();
         }
         
-        logger.info(`管理员 ${adminId} 增加用户 ${userId} 余额 ${amount} USDT`);
+        logger.info(`管理员 ${adminId} 增加用户 ${userId} ${mode}模式余额 ${amount} USDT`);
         
         res.json({
             success: true,
             data: {
                 new_balance: balanceAfter,
-                added: amount
+                added: amount,
+                mode: mode
             }
         });
     } catch (error) {
@@ -371,64 +398,68 @@ router.post('/users/:userId/add', hasPermission('finance.adjust'), async (req, r
     }
 });
 
-// ==================== 手动扣除用户余额 ====================
+// ==================== 手动扣除用户余额（支持模式）====================
 router.post('/users/:userId/deduct', hasPermission('finance.adjust'), async (req, res) => {
     const { userId } = req.params;
-    const { amount, reason } = req.body;
+    const { amount, reason, mode = 'real' } = req.body;
     const adminId = req.session?.adminId;
     
     if (!amount || amount <= 0) {
         return res.status(400).json({ success: false, error: 'INVALID_AMOUNT' });
     }
     
+    // 根据模式选择余额字段
+    const balanceField = mode === 'test' ? 'test_balance' : 'real_balance';
+    
     try {
         let user = null;
         
         if (isProduction) {
-            const result = await query('SELECT balance FROM users WHERE id = $1', [userId]);
+            const result = await query(`SELECT ${balanceField} as current_balance FROM users WHERE id = $1`, [userId]);
             user = result?.[0];
         } else {
             const db = getDb();
-            user = db.prepare('SELECT balance FROM users WHERE id = ?').get(userId);
+            user = db.prepare(`SELECT ${balanceField} as current_balance FROM users WHERE id = ?`).get(userId);
         }
         
         if (!user) throw new Error('USER_NOT_FOUND');
         
-        if (user.balance < parseFloat(amount)) {
+        if (user.current_balance < parseFloat(amount)) {
             throw new Error('INSUFFICIENT_BALANCE');
         }
         
-        const balanceBefore = user.balance;
+        const balanceBefore = user.current_balance;
         const balanceAfter = balanceBefore - parseFloat(amount);
         
         if (isProduction) {
-            await query('UPDATE users SET balance = $1 WHERE id = $2', [balanceAfter, userId]);
+            await query(`UPDATE users SET ${balanceField} = $1 WHERE id = $2`, [balanceAfter, userId]);
             await query(`
                 INSERT INTO balance_logs (
                     user_id, amount, balance_before, balance_after, 
-                    type, reason, admin_id, created_at
-                ) VALUES ($1, $2, $3, $4, 'admin_deduct', $5, $6, NOW())
-            `, [userId, -parseFloat(amount), balanceBefore, balanceAfter, reason || '管理员扣除', adminId]);
+                    type, reason, admin_id, mode, created_at
+                ) VALUES ($1, $2, $3, $4, 'admin_deduct', $5, $6, $7, NOW())
+            `, [userId, -parseFloat(amount), balanceBefore, balanceAfter, reason || '管理员扣除', adminId, mode]);
         } else {
             const db = getDb();
             db.transaction(() => {
-                db.prepare('UPDATE users SET balance = ? WHERE id = ?').run(balanceAfter, userId);
+                db.prepare(`UPDATE users SET ${balanceField} = ? WHERE id = ?`).run(balanceAfter, userId);
                 db.prepare(`
                     INSERT INTO balance_logs (
                         user_id, amount, balance_before, balance_after, 
-                        type, reason, admin_id, created_at
-                    ) VALUES (?, ?, ?, ?, 'admin_deduct', ?, ?, CURRENT_TIMESTAMP)
-                `).run(userId, -parseFloat(amount), balanceBefore, balanceAfter, reason || '管理员扣除', adminId);
+                        type, reason, admin_id, mode, created_at
+                    ) VALUES (?, ?, ?, ?, 'admin_deduct', ?, ?, ?, CURRENT_TIMESTAMP)
+                `).run(userId, -parseFloat(amount), balanceBefore, balanceAfter, reason || '管理员扣除', adminId, mode);
             })();
         }
         
-        logger.info(`管理员 ${adminId} 扣除用户 ${userId} 余额 ${amount} USDT`);
+        logger.info(`管理员 ${adminId} 扣除用户 ${userId} ${mode}模式余额 ${amount} USDT`);
         
         res.json({
             success: true,
             data: {
                 new_balance: balanceAfter,
-                deducted: amount
+                deducted: amount,
+                mode: mode
             }
         });
     } catch (error) {
@@ -443,61 +474,65 @@ router.post('/users/:userId/deduct', hasPermission('finance.adjust'), async (req
     }
 });
 
-// ==================== 设置用户余额（直接覆盖）====================
+// ==================== 设置用户余额（支持模式）====================
 router.post('/users/:userId/set', hasPermission('finance.adjust'), async (req, res) => {
     const { userId } = req.params;
-    const { balance, reason } = req.body;
+    const { balance, reason, mode = 'real' } = req.body;
     const adminId = req.session?.adminId;
     
     if (balance === undefined || balance < 0) {
         return res.status(400).json({ success: false, error: 'INVALID_BALANCE' });
     }
     
+    // 根据模式选择余额字段
+    const balanceField = mode === 'test' ? 'test_balance' : 'real_balance';
+    
     try {
         let user = null;
         
         if (isProduction) {
-            const result = await query('SELECT balance FROM users WHERE id = $1', [userId]);
+            const result = await query(`SELECT ${balanceField} as current_balance FROM users WHERE id = $1`, [userId]);
             user = result?.[0];
         } else {
             const db = getDb();
-            user = db.prepare('SELECT balance FROM users WHERE id = ?').get(userId);
+            user = db.prepare(`SELECT ${balanceField} as current_balance FROM users WHERE id = ?`).get(userId);
         }
         
         if (!user) throw new Error('USER_NOT_FOUND');
         
-        const balanceBefore = user.balance;
+        const balanceBefore = user.current_balance;
         const balanceAfter = parseFloat(balance);
         const amount = balanceAfter - balanceBefore;
         
         if (isProduction) {
-            await query('UPDATE users SET balance = $1 WHERE id = $2', [balanceAfter, userId]);
+            await query(`UPDATE users SET ${balanceField} = $1 WHERE id = $2`, [balanceAfter, userId]);
             await query(`
                 INSERT INTO balance_logs (
                     user_id, amount, balance_before, balance_after, 
-                    type, reason, admin_id, created_at
-                ) VALUES ($1, $2, $3, $4, 'admin_set', $5, $6, NOW())
-            `, [userId, amount, balanceBefore, balanceAfter, reason || '管理员设置', adminId]);
+                    type, reason, admin_id, mode, created_at
+                ) VALUES ($1, $2, $3, $4, 'admin_set', $5, $6, $7, NOW())
+            `, [userId, amount, balanceBefore, balanceAfter, reason || '管理员设置', adminId, mode]);
         } else {
             const db = getDb();
             db.transaction(() => {
-                db.prepare('UPDATE users SET balance = ? WHERE id = ?').run(balanceAfter, userId);
+                db.prepare(`UPDATE users SET ${balanceField} = ? WHERE id = ?`).run(balanceAfter, userId);
                 db.prepare(`
                     INSERT INTO balance_logs (
                         user_id, amount, balance_before, balance_after, 
-                        type, reason, admin_id, created_at
-                    ) VALUES (?, ?, ?, ?, 'admin_set', ?, ?, CURRENT_TIMESTAMP)
-                `).run(userId, amount, balanceBefore, balanceAfter, reason || '管理员设置', adminId);
+                        type, reason, admin_id, mode, created_at
+                    ) VALUES (?, ?, ?, ?, 'admin_set', ?, ?, ?, CURRENT_TIMESTAMP)
+                `).run(userId, amount, balanceBefore, balanceAfter, reason || '管理员设置', adminId, mode);
             })();
         }
         
-        logger.info(`管理员 ${adminId} 设置用户 ${userId} 余额为 ${balance} USDT`);
+        logger.info(`管理员 ${adminId} 设置用户 ${userId} ${mode}模式余额为 ${balance} USDT`);
         
         res.json({
             success: true,
             data: {
                 new_balance: balanceAfter,
-                changed: amount
+                changed: amount,
+                mode: mode
             }
         });
     } catch (error) {
