@@ -2,6 +2,7 @@
  * Support Admin Module - Admin Side
  * Fixed: Full emoji picker with large selection panel and working send functionality
  * Added: Admin status (online/away/busy), heartbeat, browser notifications, sound alerts
+ * Added: Image/File upload functionality
  */
 class SupportAdmin {
     constructor() {
@@ -9,12 +10,13 @@ class SupportAdmin {
         this.pollingInterval = null;
         this.heartbeatInterval = null;
         this.isSending = false;
+        this.isUploading = false;
         this.conversationsList = document.getElementById('conversationsList');
         this.messagesArea = document.getElementById('messagesArea');
         this.replyInput = document.getElementById('replyInput');
         this.sendReplyBtn = document.getElementById('sendReplyBtn');
         this.socket = null;
-this.isSocketConnected = false;
+        this.isSocketConnected = false;
         this.init();
     }
     
@@ -54,7 +56,9 @@ this.isSocketConnected = false;
             emojiActivities: 'Activities',
             emojiTravel: 'Travel & Places',
             emojiObjects: 'Objects',
-            emojiSymbols: 'Symbols'
+            emojiSymbols: 'Symbols',
+            uploadFailed: 'Upload failed',
+            uploading: 'Uploading...'
         };
         
         let text = translations[key] || key;
@@ -115,7 +119,6 @@ this.isSocketConnected = false;
                     const originalTitle = document.title.replace(/^\[\d+\]\s*/, '');
                     document.title = `[${unreadResult.data.total_unread}] ${originalTitle}`;
                     
-                    // 新消息通知和声音
                     if (!document.hasFocus()) {
                         this.sendNotification('New Message', `You have ${unreadResult.data.total_unread} unread messages`);
                         this.playSound();
@@ -187,7 +190,6 @@ this.isSocketConnected = false;
             `;
         }).join('');
         
-        // 渲染完成后，恢复当前选中会话的高亮
         if (this.currentConvId) {
             const activeItem = document.querySelector(`.conv-item[data-conv-id="${this.currentConvId}"]`);
             if (activeItem) {
@@ -206,13 +208,12 @@ this.isSocketConnected = false;
     }
     
     async selectConversation(convId) {
-        // 加入 WebSocket 房間
-if (this.socket && this.isSocketConnected) {
-    this.socket.emit('join-conversation', {
-        convId: convId,
-        role: 'admin'
-    });
-}
+        if (this.socket && this.isSocketConnected) {
+            this.socket.emit('join-conversation', {
+                convId: convId,
+                role: 'admin'
+            });
+        }
         this.currentConvId = convId;
         await this.markConversationRead(convId);
         
@@ -379,8 +380,8 @@ if (this.socket && this.isSocketConnected) {
     // ==================== 发送回复 ====================
     
     async sendReply() {
-        if (this.isSending) {
-            console.log('[SupportAdmin] Already sending, skipping...');
+        if (this.isSending || this.isUploading) {
+            console.log('[SupportAdmin] Already sending or uploading, skipping...');
             return;
         }
         
@@ -446,97 +447,178 @@ if (this.socket && this.isSocketConnected) {
         }
     }
     
-    async updateStatus() {
-        if (!this.currentConvId) return;
+    // ==================== 文件上传功能 ====================
+    
+    async uploadFile(file) {
+        if (!this.currentConvId) {
+            alert('Please select a conversation first');
+            return false;
+        }
         
-        const newStatus = document.getElementById('statusSelect').value;
+        this.isUploading = true;
+        this.showUploadProgress(true);
+        
+        const originalBtnText = this.sendReplyBtn ? this.sendReplyBtn.textContent : '';
+        if (this.sendReplyBtn) {
+            this.sendReplyBtn.textContent = this.t('uploading');
+            this.sendReplyBtn.disabled = true;
+        }
         
         try {
-            const response = await fetch('/api/v1/admin/support/status', {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('convId', this.currentConvId);
+            
+            const response = await fetch('/api/v1/admin/support/upload', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                console.log('[SupportAdmin] File uploaded successfully:', result.data);
+                
+                // 发送带附件的消息
+                await this.sendMessageWithAttachment(result.data.url, file.type, file.name);
+                return true;
+            } else {
+                alert(result.error || this.t('uploadFailed'));
+                return false;
+            }
+        } catch (error) {
+            console.error('[SupportAdmin] Upload error:', error);
+            alert(this.t('uploadFailed'));
+            return false;
+        } finally {
+            this.isUploading = false;
+            this.showUploadProgress(false);
+            if (this.sendReplyBtn) {
+                this.sendReplyBtn.textContent = originalBtnText;
+                this.sendReplyBtn.disabled = false;
+            }
+        }
+    }
+    
+    async sendMessageWithAttachment(fileUrl, fileType, fileName) {
+        if (!this.currentConvId) return;
+        
+        const attachment = {
+            url: fileUrl,
+            type: fileType.startsWith('image/') ? 'image' : 'file',
+            originalName: fileName || 'file',
+            size: 0
+        };
+        
+        try {
+            const response = await fetch('/api/v1/admin/support/reply', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify({
                     convId: this.currentConvId,
-                    status: newStatus
+                    content: '',
+                    attachments: [attachment]
                 })
             });
             
             const result = await response.json();
             
             if (result.success) {
+                console.log('[SupportAdmin] Message with attachment sent');
+                await this.loadMessages(this.currentConvId);
                 await this.loadConversations();
                 await this.loadStats();
-                alert(this.t('statusUpdated'));
+                this.scrollToBottom();
             } else {
-                alert(result.error || this.t('updateFailed'));
+                console.error('[SupportAdmin] Send attachment failed:', result.error);
+                alert(result.error || 'Failed to send message');
             }
         } catch (error) {
-            console.error('Update status error:', error);
-            alert(this.t('updateFailed'));
+            console.error('[SupportAdmin] Send attachment error:', error);
+            alert('Failed to send message');
         }
     }
+    
+    showUploadProgress(show) {
+        let progressDiv = document.getElementById('uploadProgress');
+        if (show) {
+            if (!progressDiv) {
+                progressDiv = document.createElement('div');
+                progressDiv.id = 'uploadProgress';
+                progressDiv.className = 'upload-progress';
+                progressDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+                document.body.appendChild(progressDiv);
+            }
+            progressDiv.style.display = 'block';
+        } else {
+            if (progressDiv) {
+                progressDiv.style.display = 'none';
+            }
+        }
+    }
+    
     // ==================== WebSocket 連接 ====================
-connectWebSocket() {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}`;
     
-    console.log('[SupportAdmin] Connecting to WebSocket:', wsUrl);
-    
-    this.socket = io(wsUrl, {
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000
-    });
-    
-    this.socket.on('connect', () => {
-        console.log('[SupportAdmin] WebSocket connected');
-        this.isSocketConnected = true;
+    connectWebSocket() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}`;
         
-        // 加入管理員房間
-        this.socket.emit('join', {
-            role: 'admin',
-            roomId: 'admin-support'
+        console.log('[SupportAdmin] Connecting to WebSocket:', wsUrl);
+        
+        this.socket = io(wsUrl, {
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
         });
         
-        if (this.currentConvId) {
-            this.socket.emit('join-conversation', {
-                convId: this.currentConvId,
-                role: 'admin'
+        this.socket.on('connect', () => {
+            console.log('[SupportAdmin] WebSocket connected');
+            this.isSocketConnected = true;
+            
+            this.socket.emit('join', {
+                role: 'admin',
+                roomId: 'admin-support'
             });
-        }
-    });
-    
-    this.socket.on('disconnect', () => {
-        console.log('[SupportAdmin] WebSocket disconnected');
-        this.isSocketConnected = false;
-    });
-    
-    // 監聽新消息
-    this.socket.on('new-message', (message) => {
-        console.log('[SupportAdmin] New message via WebSocket:', message);
+            
+            if (this.currentConvId) {
+                this.socket.emit('join-conversation', {
+                    convId: this.currentConvId,
+                    role: 'admin'
+                });
+            }
+        });
         
-        if (message.conv_id === this.currentConvId || message.convId === this.currentConvId) {
-            this.loadMessages(this.currentConvId);
-            this.scrollToBottom();
-        }
+        this.socket.on('disconnect', () => {
+            console.log('[SupportAdmin] WebSocket disconnected');
+            this.isSocketConnected = false;
+        });
         
-        this.loadConversations();
-        this.loadStats();
+        this.socket.on('new-message', (message) => {
+            console.log('[SupportAdmin] New message via WebSocket:', message);
+            
+            if (message.conv_id === this.currentConvId || message.convId === this.currentConvId) {
+                this.loadMessages(this.currentConvId);
+                this.scrollToBottom();
+            }
+            
+            this.loadConversations();
+            this.loadStats();
+            
+            if (!document.hasFocus()) {
+                this.sendNotification('New message from User', message.content);
+                this.playSound();
+            }
+        });
         
-        if (!document.hasFocus()) {
-            this.sendNotification('New message from User', message.content);
-            this.playSound();
-        }
-    });
+        this.socket.on('connect_error', (error) => {
+            console.error('[SupportAdmin] WebSocket error:', error);
+            this.isSocketConnected = false;
+        });
+    }
     
-    this.socket.on('connect_error', (error) => {
-        console.error('[SupportAdmin] WebSocket error:', error);
-        this.isSocketConnected = false;
-    });
-}
-// =====================================================
     startPolling() {
         if (this.pollingInterval) clearInterval(this.pollingInterval);
         this.pollingInterval = setInterval(() => {
@@ -952,6 +1034,37 @@ connectWebSocket() {
             adminEmojiBtn.addEventListener('click', this._emojiBtnHandler);
         }
         
+        // ==================== 文件上传事件绑定 ====================
+        const fileUploadBtn = document.getElementById('adminFileUploadBtn');
+        if (fileUploadBtn) {
+            fileUploadBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[SupportAdmin] File upload button clicked');
+                document.getElementById('adminFileInput').click();
+            });
+        }
+        
+        const adminFileInput = document.getElementById('adminFileInput');
+        if (adminFileInput) {
+            adminFileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                console.log('[SupportAdmin] File selected:', file.name, file.type, file.size);
+                
+                // 检查文件大小（限制 10MB）
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('File too large. Maximum size is 10MB.');
+                    adminFileInput.value = '';
+                    return;
+                }
+                
+                await this.uploadFile(file);
+                adminFileInput.value = '';
+            });
+        }
+        
         const closeQuickReplyBtn = document.getElementById('closeQuickReplyBtn');
         if (closeQuickReplyBtn) {
             closeQuickReplyBtn.addEventListener('click', () => {
@@ -960,7 +1073,6 @@ connectWebSocket() {
             });
         }
         
-        // 客服状态切换
         const adminStatusSelect = document.getElementById('adminStatusSelect');
         if (adminStatusSelect) {
             adminStatusSelect.addEventListener('change', (e) => {
@@ -974,16 +1086,48 @@ connectWebSocket() {
             const emojiPicker = document.getElementById('adminEmojiPicker');
             const quickBtn = document.getElementById('quickReplyBtn');
             const emojiBtn = document.getElementById('adminEmojiBtn');
+            const fileUploadBtn2 = document.getElementById('adminFileUploadBtn');
             
             if (quickPanel && !quickPanel.contains(e.target) && e.target !== quickBtn && !quickBtn?.contains(e.target)) {
                 quickPanel.style.display = 'none';
             }
-            if (emojiPicker && !emojiPicker.contains(e.target) && e.target !== emojiBtn && !emojiBtn?.contains(e.target)) {
+            if (emojiPicker && !emojiPicker.contains(e.target) && e.target !== emojiBtn && !emojiBtn?.contains(e.target) && e.target !== fileUploadBtn2) {
                 this.hideAdminEmojiPicker();
             }
         });
         
         console.log('[SupportAdmin] All events bound successfully');
+    }
+    
+    async updateStatus() {
+        if (!this.currentConvId) return;
+        
+        const newStatus = document.getElementById('statusSelect').value;
+        
+        try {
+            const response = await fetch('/api/v1/admin/support/status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    convId: this.currentConvId,
+                    status: newStatus
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                await this.loadConversations();
+                await this.loadStats();
+                alert(this.t('statusUpdated'));
+            } else {
+                alert(result.error || this.t('updateFailed'));
+            }
+        } catch (error) {
+            console.error('Update status error:', error);
+            alert(this.t('updateFailed'));
+        }
     }
     
     setupTabNotification() {
@@ -1147,6 +1291,20 @@ adminEmojiStyles.textContent = `
     
     #adminEmojiPicker .emoji-picker-close:hover {
         background: #f9fafb;
+    }
+    
+    .upload-progress {
+        position: fixed;
+        bottom: 100px;
+        right: 20px;
+        background: rgba(18, 28, 44, 0.9);
+        backdrop-filter: blur(8px);
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: 1px solid rgba(59, 130, 246, 0.25);
+        font-size: 12px;
+        z-index: 1000;
+        color: white;
     }
     
     @media (max-width: 768px) {

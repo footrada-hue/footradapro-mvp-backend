@@ -314,7 +314,7 @@
             display: flex;
             gap: 8px;
         }
-        .admin-emoji-btn, .quick-reply-toggle {
+        .admin-emoji-btn, .quick-reply-toggle, .admin-file-btn {
             background: rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(255,255,255,0.1);
             font-size: 18px;
@@ -329,7 +329,7 @@
             justify-content: center;
             transition: all 0.2s;
         }
-        .admin-emoji-btn:hover, .quick-reply-toggle:hover {
+        .admin-emoji-btn:hover, .quick-reply-toggle:hover, .admin-file-btn:hover {
             background: rgba(59, 130, 246, 0.2);
             color: var(--primary);
             border-color: var(--primary);
@@ -494,6 +494,20 @@
             text-decoration: none;
         }
 
+        /* 上傳進度提示 */
+        .upload-progress {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border-glow);
+            font-size: 12px;
+            z-index: 1000;
+        }
+
         /* 響應式 */
         @media (max-width: 768px) {
             .sidebar {
@@ -565,6 +579,7 @@
                 <div class="reply-tools">
                     <button id="adminEmojiBtn" class="admin-emoji-btn" title="Emoji"><i class="far fa-smile"></i></button>
                     <button id="quickReplyBtn" class="quick-reply-toggle" title="Quick Replies"><i class="fas fa-bolt"></i></button>
+                    <button id="adminFileUploadBtn" class="admin-file-btn" title="Upload Image / File"><i class="fas fa-image"></i></button>
                 </div>
                 <input type="text" id="replyInput" placeholder="Type your reply...">
                 <button id="sendReplyBtn">Send Reply</button>
