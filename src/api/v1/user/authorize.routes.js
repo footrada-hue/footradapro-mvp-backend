@@ -530,5 +530,129 @@ router.get('/:authId', async (req, res) => {
         });
     }
 });
+// ==================== 获取授权复盘报告 ====================
+router.get('/:authId/report', async (req, res) => {
+    const { authId } = req.params;
+    const userId = req.session.userId;
 
+    if (!userId) {
+        return res.status(401).json({ 
+            success: false, 
+            error: 'UNAUTHORIZED' 
+        });
+    }
+
+    try {
+        // 1. 获取授权详情
+        let auth = null;
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT 
+                    a.*,
+                    m.home_team,
+                    m.away_team,
+                    m.home_logo,
+                    m.away_logo,
+                    m.league,
+                    m.match_time,
+                    m.status as match_status,
+                    m.result,
+                    m.execution_rate as match_execution_rate,
+                    m.home_score,
+                    m.away_score,
+                    m.settled,
+                    m.report
+                FROM authorizations a
+                LEFT JOIN matches m ON a.match_id = m.match_id
+                WHERE a.auth_id = $1 AND a.user_id = $2
+            `, [authId, userId]);
+            auth = result?.[0] || null;
+        } else {
+            const db = getDb();
+            auth = db.prepare(`
+                SELECT 
+                    a.*,
+                    m.home_team,
+                    m.away_team,
+                    m.home_logo,
+                    m.away_logo,
+                    m.league,
+                    m.match_time,
+                    m.status as match_status,
+                    m.result,
+                    m.execution_rate as match_execution_rate,
+                    m.home_score,
+                    m.away_score,
+                    m.settled,
+                    m.report
+                FROM authorizations a
+                LEFT JOIN matches m ON a.match_id = m.match_id
+                WHERE a.auth_id = ? AND a.user_id = ?
+            `).get(authId, userId);
+        }
+
+        if (!auth) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'NOT_FOUND',
+                message: '授权记录不存在'
+            });
+        }
+
+        // 2. 构建报告数据
+        const reportData = {
+            auth_id: auth.auth_id,
+            amount: auth.amount,
+            deployed_amount: auth.deployed_amount,
+            reserved_amount: auth.reserved_amount,
+            execution_rate: auth.execution_rate,
+            profit: auth.profit,
+            user_profit: auth.user_profit,
+            platform_fee: auth.platform_fee,
+            status: auth.status,
+            created_at: auth.created_at,
+            settled_at: auth.settled_at,
+            is_test: auth.is_test,
+            mode: auth.is_test ? 'test' : 'live',
+            // 比赛信息
+            match: {
+                home_team: auth.home_team,
+                away_team: auth.away_team,
+                home_logo: auth.home_logo,
+                away_logo: auth.away_logo,
+                league: auth.league,
+                match_time: auth.match_time,
+                match_status: auth.match_status,
+                result: auth.result,
+                home_score: auth.home_score,
+                away_score: auth.away_score,
+                settled: auth.settled
+            },
+            // AI 报告
+            report: auth.report,
+            // 结算信息
+            settlement: {
+                status: auth.status === 'won' ? 'win' : (auth.status === 'lost' ? 'loss' : (auth.status === 'settled' ? 'settled' : 'pending')),
+                is_settled: auth.status === 'settled' || auth.status === 'won' || auth.status === 'lost',
+                settled_at: auth.settled_at
+            }
+        };
+
+        logger.info(`用户 ${userId} 获取授权报告: ${authId}`);
+
+        res.json({ 
+            success: true, 
+            data: reportData
+        });
+
+    } catch (error) {
+        logger.error('获取授权报告错误:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'INTERNAL_ERROR',
+            message: error.message
+        });
+    }
+});
 export default router;
