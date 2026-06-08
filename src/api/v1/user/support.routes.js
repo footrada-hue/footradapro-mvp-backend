@@ -6,6 +6,7 @@ import supportService from '../../../services/support.service.js';
 import geoService from '../../../services/geo.service.js';
 import logger from '../../../utils/logger.js';
 import telegramService from '../../../services/telegram.service.js';
+import uploadService from '../../../services/upload.service.js';
 
 const router = express.Router();
 
@@ -94,27 +95,49 @@ router.post('/message', async (req, res) => {
             });
         }
         
-        const { convId, content } = req.body;
+        const { convId, content, attachments } = req.body;
         
-        if (!convId || !content || !content.trim()) {
+        if (!convId) {
             return res.status(400).json({
                 success: false,
-                error: 'Missing required parameters'
+                error: 'Missing conversation ID'
             });
         }
         
-        if (content.trim().length > 5000) {
+        const hasContent = content && content.trim();
+        const hasAttachments = attachments && Array.isArray(attachments) && attachments.length > 0;
+        
+        if (!hasContent && !hasAttachments) {
+            return res.status(400).json({
+                success: false,
+                error: 'No content or attachments provided'
+            });
+        }
+        
+        if (hasContent && content.trim().length > 5000) {
             return res.status(400).json({
                 success: false,
                 error: 'Message content cannot exceed 5000 characters'
             });
         }
         
-        logger.info(`[API] Send message - User: ${userId}, Conv: ${convId}`);
+        logger.info(`[API] Send message - User: ${userId}, Conv: ${convId}, Has attachments: ${hasAttachments}`);
         
-        const message = await supportService.addUserMessage(convId, userId, content.trim());
+        let message;
+        if (hasAttachments) {
+            // 使用带附件的方法
+            message = await supportService.addMessageWithAttachments(
+                convId, 
+                userId, 
+                hasContent ? content.trim() : '', 
+                'user', 
+                attachments
+            );
+        } else {
+            message = await supportService.addUserMessage(convId, userId, content.trim());
+        }
         
-        // 异步发送 Telegram 通知 - 强制发送，不检查管理员在线状态
+        // 异步发送 Telegram 通知
         setImmediate(async () => {
             try {
                 const db = supportService.getDb();
@@ -131,7 +154,7 @@ router.post('/message', async (req, res) => {
                 
                 await telegramService.notifyNewMessage(
                     { username: displayName, email: user?.email },
-                    content,
+                    content || '[Attachment]',
                     convId,
                     conversation?.country_name
                 );
@@ -147,6 +170,7 @@ router.post('/message', async (req, res) => {
             data: {
                 id: message.id,
                 content: message.content,
+                attachments: message.attachments ? (typeof message.attachments === 'string' ? JSON.parse(message.attachments) : message.attachments) : null,
                 created_at: message.created_at
             }
         });
@@ -238,6 +262,76 @@ router.post('/rate', async (req, res) => {
     } catch (error) {
         logger.error(`[API] Rate error: ${error.message}`);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/v1/user/support/upload
+ * Upload image/file for conversation
+ */
+router.post('/upload', async (req, res) => {
+    try {
+        const userId = getUserIdFromRequest(req);
+        
+        if (!userId) {
+            return res.status(401).json({ success: false, error: 'UNAUTHORIZED' });
+        }
+        
+        // 使用 multer 中间件处理文件上传
+        const uploadMiddleware = uploadService.getUploadMiddleware();
+        
+        uploadMiddleware(req, res, async (err) => {
+            if (err) {
+                logger.error(`[API] Upload error: ${err.message}`);
+                return res.status(400).json({ success: false, error: err.message });
+            }
+            
+            if (!req.file) {
+                return res.status(400).json({ success: false, error: 'No file uploaded' });
+            }
+            
+            // 从 req.body 获取 convId
+            const convId = req.body.convId;
+            
+            if (!convId) {
+                logger.error(`[API] Missing convId. Body: ${JSON.stringify(req.body)}`);
+                if (req.file && req.file.filename) {
+                    uploadService.deleteFile(req.file.filename);
+                }
+                return res.status(400).json({ success: false, error: 'Missing conversation ID' });
+            }
+            
+            try {
+                const fileInfo = uploadService.getFileInfo(req.file);
+                
+                if (!fileInfo) {
+                    return res.status(400).json({ success: false, error: 'Failed to process file' });
+                }
+                
+                logger.info(`[API] User ${userId} uploaded file: ${fileInfo.filename} for conversation ${convId}`);
+                
+                res.json({
+                    success: true,
+                    data: {
+                        url: fileInfo.url,
+                        filename: fileInfo.originalName,
+                        type: fileInfo.type,
+                        size: fileInfo.size,
+                        convId: convId
+                    },
+                    message: 'File uploaded successfully'
+                });
+            } catch (error) {
+                logger.error(`[API] Upload processing error: ${error.message}`);
+                if (req.file && req.file.filename) {
+                    uploadService.deleteFile(req.file.filename);
+                }
+                res.status(500).json({ success: false, error: error.message || 'Failed to process upload' });
+            }
+        });
+    } catch (error) {
+        logger.error(`[API] Upload route error: ${error.message}`);
+        res.status(500).json({ success: false, error: error.message || 'Failed to upload file' });
     }
 });
 

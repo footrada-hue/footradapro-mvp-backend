@@ -763,11 +763,12 @@ this.socket.emit('send-message', {
     async uploadAndSendFile(file) {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('convId', this.convId);  // 添加这一行
       
       this.showTemporarySuccess('上传中...');
       
       try {
-        const response = await fetch('/api/v1/upload/chat', {
+        const response = await fetch('/api/v1/user/support/upload', {
           method: 'POST',
           credentials: 'include',
           body: formData
