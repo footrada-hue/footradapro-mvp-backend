@@ -449,97 +449,97 @@ class SupportAdmin {
     
     // ==================== 文件上传功能 ====================
     
-    async uploadFile(file) {
-        if (!this.currentConvId) {
-            alert('Please select a conversation first');
-            return false;
-        }
-        
-        this.isUploading = true;
-        this.showUploadProgress(true);
-        
-        const originalBtnText = this.sendReplyBtn ? this.sendReplyBtn.textContent : '';
-        if (this.sendReplyBtn) {
-            this.sendReplyBtn.textContent = this.t('uploading');
-            this.sendReplyBtn.disabled = true;
-        }
-        
-        try {
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('convId', this.currentConvId);
-            
-            const response = await fetch('/api/v1/admin/support/upload', {
-                method: 'POST',
-                body: formData,
-                credentials: 'include'
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                console.log('[SupportAdmin] File uploaded successfully:', result.data);
-                
-                // 发送带附件的消息
-                await this.sendMessageWithAttachment(result.data.url, file.type, file.name);
-                return true;
-            } else {
-                alert(result.error || this.t('uploadFailed'));
-                return false;
-            }
-        } catch (error) {
-            console.error('[SupportAdmin] Upload error:', error);
-            alert(this.t('uploadFailed'));
-            return false;
-        } finally {
-            this.isUploading = false;
-            this.showUploadProgress(false);
-            if (this.sendReplyBtn) {
-                this.sendReplyBtn.textContent = originalBtnText;
-                this.sendReplyBtn.disabled = false;
-            }
-        }
+async uploadFile(file) {
+    if (!this.currentConvId) {
+        alert('Please select a conversation first');
+        return false;
     }
     
-    async sendMessageWithAttachment(fileUrl, fileType, fileName) {
-        if (!this.currentConvId) return;
+    this.isUploading = true;
+    this.showUploadProgress(true);
+    
+    const originalBtnText = this.sendReplyBtn ? this.sendReplyBtn.textContent : '';
+    if (this.sendReplyBtn) {
+        this.sendReplyBtn.textContent = this.t('uploading');
+        this.sendReplyBtn.disabled = true;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('convId', this.currentConvId);  // 关键：添加 convId
         
-        const attachment = {
-            url: fileUrl,
-            type: fileType.startsWith('image/') ? 'image' : 'file',
-            originalName: fileName || 'file',
-            size: 0
-        };
+        const response = await fetch('/api/v1/admin/support/upload', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+        });
         
-        try {
-            const response = await fetch('/api/v1/admin/support/reply', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                    convId: this.currentConvId,
-                    content: '',
-                    attachments: [attachment]
-                })
-            });
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log('[SupportAdmin] File uploaded successfully:', result.data);
             
-            const result = await response.json();
-            
-            if (result.success) {
-                console.log('[SupportAdmin] Message with attachment sent');
-                await this.loadMessages(this.currentConvId);
-                await this.loadConversations();
-                await this.loadStats();
-                this.scrollToBottom();
-            } else {
-                console.error('[SupportAdmin] Send attachment failed:', result.error);
-                alert(result.error || 'Failed to send message');
-            }
-        } catch (error) {
-            console.error('[SupportAdmin] Send attachment error:', error);
-            alert('Failed to send message');
+            // 发送带附件的消息
+            await this.sendMessageWithAttachment(result.data.url, file.type, file.name);
+            return true;
+        } else {
+            alert(result.error || this.t('uploadFailed'));
+            return false;
+        }
+    } catch (error) {
+        console.error('[SupportAdmin] Upload error:', error);
+        alert(this.t('uploadFailed'));
+        return false;
+    } finally {
+        this.isUploading = false;
+        this.showUploadProgress(false);
+        if (this.sendReplyBtn) {
+            this.sendReplyBtn.textContent = originalBtnText;
+            this.sendReplyBtn.disabled = false;
         }
     }
+}
+    
+async sendMessageWithAttachment(fileUrl, fileType, fileName) {
+    if (!this.currentConvId) return;
+    
+    const attachment = {
+        url: fileUrl,
+        type: fileType.startsWith('image/') ? 'image' : 'file',
+        originalName: fileName || 'file',
+        size: 0
+    };
+    
+    try {
+        const response = await fetch('/api/v1/admin/support/reply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                convId: this.currentConvId,
+                content: '',
+                attachments: [attachment]
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log('[SupportAdmin] Message with attachment sent');
+            await this.loadMessages(this.currentConvId);
+            await this.loadConversations();
+            await this.loadStats();
+            this.scrollToBottom();
+        } else {
+            console.error('[SupportAdmin] Send attachment failed:', result.error);
+            alert(result.error || 'Failed to send message');
+        }
+    } catch (error) {
+        console.error('[SupportAdmin] Send attachment error:', error);
+        alert('Failed to send message');
+    }
+}
     
     showUploadProgress(show) {
         let progressDiv = document.getElementById('uploadProgress');
