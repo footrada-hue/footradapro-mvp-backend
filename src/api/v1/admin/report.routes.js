@@ -4,6 +4,8 @@
  * @version 2.0.0 - 支持 PostgreSQL 和 SQLite
  */
 import { fetchMatchStatistics, generateDeepReport } from '../../../services/match-data.service.js';
+console.log('🔍 [DEBUG] fetchMatchStatistics type:', typeof fetchMatchStatistics);
+console.log('🔍 [DEBUG] generateDeepReport type:', typeof generateDeepReport);
 import express from 'express';
 import { query, getDb } from '../../../database/connection.js';
 import { adminAuth } from '../../../middlewares/admin.middleware.js';
@@ -567,5 +569,14 @@ router.post('/generate-report', async (req, res) => {
         logger.error('生成报告失败:', error);
         res.status(500).json({ success: false, error: error.message });
     }
+});
+// 测试端点
+router.get('/test-ai', (req, res) => {
+    res.json({ 
+        success: true, 
+        message: 'AI routes are working',
+        hasFetch: typeof fetchMatchStatistics === 'function',
+        hasGenerate: typeof generateDeepReport === 'function'
+    });
 });
 export default router;
