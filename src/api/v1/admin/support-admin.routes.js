@@ -49,30 +49,39 @@ router.get('/conversations', async (req, res) => {
 
 /**
  * POST /api/v1/admin/support/reply
- * Admin reply to conversation
+ * Admin reply to conversation (supports text and attachments)
  */
 router.post('/reply', async (req, res) => {
     try {
         const adminId = req.admin?.id || req.session?.adminId;
-        const { convId, content } = req.body;
+        const { convId, content, attachments } = req.body;
         
-        if (!convId || !content || !content.trim()) {
-            return res.status(400).json({ success: false, error: 'Missing required parameters' });
+        if (!convId) {
+            return res.status(400).json({ success: false, error: 'Missing conversation ID' });
         }
         
-        if (content.trim().length > 5000) {
+        // 检查是否有内容或附件
+        const hasContent = content && content.trim();
+        const hasAttachments = attachments && Array.isArray(attachments) && attachments.length > 0;
+        
+        if (!hasContent && !hasAttachments) {
+            return res.status(400).json({ success: false, error: 'No content or attachments provided' });
+        }
+        
+        if (hasContent && content.trim().length > 5000) {
             return res.status(400).json({ success: false, error: 'Reply cannot exceed 5000 characters' });
         }
         
-        logger.info(`[Admin API] Admin ${adminId} replying to conversation ${convId}`);
+        logger.info(`[Admin API] Admin ${adminId} replying to conversation ${convId}${hasAttachments ? ` with ${attachments.length} attachment(s)` : ''}`);
         
-        const message = await supportService.addAdminMessage(convId, adminId, content.trim());
+        const message = await supportService.addAdminMessage(convId, adminId, hasContent ? content.trim() : '', attachments);
         
         res.json({
             success: true,
             data: {
                 id: message.id,
                 content: message.content,
+                attachments: message.attachments ? (typeof message.attachments === 'string' ? JSON.parse(message.attachments) : message.attachments) : null,
                 created_at: message.created_at
             }
         });
@@ -290,7 +299,9 @@ router.post('/heartbeat', async (req, res) => {
 router.post('/upload', async (req, res) => {
     try {
         const adminId = req.admin?.id || req.session?.adminId;
-        const { convId } = req.body;
+        
+        // 从 multipart form data 中获取 convId
+        const convId = req.body.convId;
         
         if (!convId) {
             return res.status(400).json({ success: false, error: 'Missing conversation ID' });
