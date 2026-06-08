@@ -296,16 +296,9 @@ router.post('/heartbeat', async (req, res) => {
  * POST /api/v1/admin/support/upload
  * Upload image/file for conversation
  */
-router.post('/upload', async (req, res) => {
+router.post('/upload', (req, res) => {
     try {
         const adminId = req.admin?.id || req.session?.adminId;
-        
-        // 从 multipart form data 中获取 convId
-        const convId = req.body.convId;
-        
-        if (!convId) {
-            return res.status(400).json({ success: false, error: 'Missing conversation ID' });
-        }
         
         // 使用 multer 中间件处理文件上传
         const uploadMiddleware = uploadService.getUploadMiddleware();
@@ -320,6 +313,18 @@ router.post('/upload', async (req, res) => {
                 return res.status(400).json({ success: false, error: 'No file uploaded' });
             }
             
+            // 从 req.body 获取 convId（multer 解析后可用）
+            const convId = req.body.convId;
+            
+            if (!convId) {
+                logger.error(`[Admin API] Missing convId. Body: ${JSON.stringify(req.body)}`);
+                // 清理上传的文件
+                if (req.file && req.file.filename) {
+                    uploadService.deleteFile(req.file.filename);
+                }
+                return res.status(400).json({ success: false, error: 'Missing conversation ID' });
+            }
+            
             try {
                 const fileInfo = uploadService.getFileInfo(req.file);
                 
@@ -329,13 +334,17 @@ router.post('/upload', async (req, res) => {
                 
                 logger.info(`[Admin API] Admin ${adminId} uploaded file: ${fileInfo.filename} for conversation ${convId}`);
                 
+                // 可选：自动发送带附件的消息
+                // await supportService.addAdminMessage(convId, adminId, '', [fileInfo]);
+                
                 res.json({
                     success: true,
                     data: {
                         url: fileInfo.url,
                         filename: fileInfo.originalName,
                         type: fileInfo.type,
-                        size: fileInfo.size
+                        size: fileInfo.size,
+                        convId: convId
                     },
                     message: 'File uploaded successfully'
                 });
