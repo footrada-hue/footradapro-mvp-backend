@@ -1,5 +1,5 @@
 /**
- * 复盘报告编辑器控制器 - 完整修复版
+ * 复盘报告编辑器控制器 - 完整修复版（含 AI 功能）
  */
 
 (function() {
@@ -9,6 +9,7 @@
     
     let currentMatch = null;
     let currentReport = null;
+    let events = [];
 
     // 格式化函数
     function formatDate(dateStr) {
@@ -137,6 +138,7 @@
                     away: parseFloat(document.getElementById('xgAway')?.value || 0)
                 }
             },
+            evidence_chain: events,
             ai_deepdive: document.getElementById('aiDeepdive')?.value || '',
             status: status
         };
@@ -229,6 +231,8 @@
             const el = document.getElementById(field);
             if (el) el.value = field.includes('possession') ? 50 : (field.includes('xg') ? 0 : 0);
         });
+        events = [];
+        renderEvents();
     }
 
     // 填充表单数据
@@ -274,7 +278,204 @@
             }
         }
         
+        if (report.evidence_chain && Array.isArray(report.evidence_chain)) {
+            events = report.evidence_chain;
+            renderEvents();
+        }
+        
         if (report.ai_deepdive) document.getElementById('aiDeepdive').value = report.ai_deepdive;
+    }
+
+    // 渲染事件
+    function renderEvents() {
+        const container = document.getElementById('eventsContainer');
+        if (!container) return;
+
+        if (events.length === 0) {
+            container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">暂无关键事件</div>';
+            return;
+        }
+
+        container.innerHTML = events.map((event, index) => `
+            <div class="event-item">
+                <input type="text" placeholder="分钟" value="${escapeHtml(event.time || '')}" onchange="window.updateEvent(${index}, 'time', this.value)">
+                <input type="text" placeholder="事件描述" value="${escapeHtml(event.description || '')}" onchange="window.updateEvent(${index}, 'description', this.value)">
+                <i class="fas fa-trash-alt" onclick="window.removeEvent(${index})"></i>
+            </div>
+        `).join('');
+    }
+
+    window.updateEvent = function(index, field, value) {
+        if (events[index]) events[index][field] = value;
+    };
+
+    window.removeEvent = function(index) {
+        events.splice(index, 1);
+        renderEvents();
+    };
+
+    function addEvent() {
+        events.push({ time: '', description: '' });
+        renderEvents();
+    }
+
+    // ==================== AI 功能 ====================
+    
+    async function aiFetchMatchData() {
+        if (!currentMatch) {
+            alert('请先选择比赛');
+            return;
+        }
+        
+        const btn = document.getElementById('aiFetchDataBtn');
+        if (!btn) return;
+        
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 获取中...';
+        btn.disabled = true;
+        
+        try {
+            const result = await adminRequest('/fetch-match-data', {
+                method: 'POST',
+                body: JSON.stringify({
+                    matchId: currentMatch.match_id
+                })
+            });
+            
+            if (result.success && result.data) {
+                const data = result.data;
+                
+                // 填充统计数据
+                if (data.statistics) {
+                    const stats = data.statistics;
+                    if (stats.possession) {
+                        if (document.getElementById('possessionHome')) document.getElementById('possessionHome').value = stats.possession.home;
+                        if (document.getElementById('possessionAway')) document.getElementById('possessionAway').value = stats.possession.away;
+                    }
+                    if (stats.shots) {
+                        if (document.getElementById('shotsHome')) document.getElementById('shotsHome').value = stats.shots.home;
+                        if (document.getElementById('shotsAway')) document.getElementById('shotsAway').value = stats.shots.away;
+                    }
+                    if (stats.shots_on_target) {
+                        if (document.getElementById('shotsOnTargetHome')) document.getElementById('shotsOnTargetHome').value = stats.shots_on_target.home;
+                        if (document.getElementById('shotsOnTargetAway')) document.getElementById('shotsOnTargetAway').value = stats.shots_on_target.away;
+                    }
+                    if (stats.corners) {
+                        if (document.getElementById('cornersHome')) document.getElementById('cornersHome').value = stats.corners.home;
+                        if (document.getElementById('cornersAway')) document.getElementById('cornersAway').value = stats.corners.away;
+                    }
+                    if (stats.fouls) {
+                        if (document.getElementById('foulsHome')) document.getElementById('foulsHome').value = stats.fouls.home;
+                        if (document.getElementById('foulsAway')) document.getElementById('foulsAway').value = stats.fouls.away;
+                    }
+                    if (stats.yellow_cards) {
+                        if (document.getElementById('yellowCardsHome')) document.getElementById('yellowCardsHome').value = stats.yellow_cards.home;
+                        if (document.getElementById('yellowCardsAway')) document.getElementById('yellowCardsAway').value = stats.yellow_cards.away;
+                    }
+                    if (stats.red_cards) {
+                        if (document.getElementById('redCardsHome')) document.getElementById('redCardsHome').value = stats.red_cards.home;
+                        if (document.getElementById('redCardsAway')) document.getElementById('redCardsAway').value = stats.red_cards.away;
+                    }
+                    if (stats.xg) {
+                        if (document.getElementById('xgHome')) document.getElementById('xgHome').value = stats.xg.home;
+                        if (document.getElementById('xgAway')) document.getElementById('xgAway').value = stats.xg.away;
+                    }
+                }
+                
+                // 填充关键事件
+                if (data.key_events && data.key_events.length > 0) {
+                    events = data.key_events.map(e => ({
+                        time: e.time,
+                        description: `${e.team} ${e.event}${e.player ? ` (${e.player})` : ''}`
+                    }));
+                    renderEvents();
+                }
+                
+                alert('✅ 比赛数据获取成功！');
+            } else {
+                alert('获取失败：' + (result.error || '未知错误'));
+            }
+        } catch (err) {
+            alert('获取失败：' + err.message);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    async function aiGenerateReport() {
+        if (!currentMatch) {
+            alert('请先选择比赛');
+            return;
+        }
+        
+        // 收集统计数据
+        const statistics = {
+            possession: {
+                home: parseFloat(document.getElementById('possessionHome')?.value || 50),
+                away: parseFloat(document.getElementById('possessionAway')?.value || 50)
+            },
+            shots: {
+                home: parseInt(document.getElementById('shotsHome')?.value || 0),
+                away: parseInt(document.getElementById('shotsAway')?.value || 0)
+            },
+            shots_on_target: {
+                home: parseInt(document.getElementById('shotsOnTargetHome')?.value || 0),
+                away: parseInt(document.getElementById('shotsOnTargetAway')?.value || 0)
+            },
+            corners: {
+                home: parseInt(document.getElementById('cornersHome')?.value || 0),
+                away: parseInt(document.getElementById('cornersAway')?.value || 0)
+            },
+            fouls: {
+                home: parseInt(document.getElementById('foulsHome')?.value || 0),
+                away: parseInt(document.getElementById('foulsAway')?.value || 0)
+            },
+            yellow_cards: {
+                home: parseInt(document.getElementById('yellowCardsHome')?.value || 0),
+                away: parseInt(document.getElementById('yellowCardsAway')?.value || 0)
+            },
+            red_cards: {
+                home: parseInt(document.getElementById('redCardsHome')?.value || 0),
+                away: parseInt(document.getElementById('redCardsAway')?.value || 0)
+            },
+            xg: {
+                home: parseFloat(document.getElementById('xgHome')?.value || 0),
+                away: parseFloat(document.getElementById('xgAway')?.value || 0)
+            }
+        };
+        
+        const btn = document.getElementById('aiGenerateReportBtn');
+        if (!btn) return;
+        
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
+        btn.disabled = true;
+        
+        try {
+            const result = await adminRequest('/generate-report', {
+                method: 'POST',
+                body: JSON.stringify({
+                    matchId: currentMatch.match_id,
+                    statistics: statistics,
+                    keyEvents: events,
+                    homeScore: parseInt(document.getElementById('homeScore')?.value || 0),
+                    awayScore: parseInt(document.getElementById('awayScore')?.value || 0)
+                })
+            });
+            
+            if (result.success && result.data.report) {
+                document.getElementById('aiDeepdive').value = result.data.report;
+                alert('✅ 深度报告生成成功！');
+            } else {
+                alert('生成失败：' + (result.error || '未知错误'));
+            }
+        } catch (err) {
+            alert('生成失败：' + err.message);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
     }
 
     // 加载比赛到编辑器
@@ -324,7 +525,6 @@
         const success = await loadMatchToEditor(matchId);
         if (success) {
             showEditor(true);
-            // 更新下拉框选中状态
             const select = document.getElementById('matchSelect');
             if (select) select.value = matchId;
             document.getElementById('newReportBtn').disabled = false;
@@ -343,16 +543,19 @@
         const cancelEdit = document.getElementById('cancelEdit');
         const saveDraftBtn = document.getElementById('saveDraftBtn');
         const publishBtn = document.getElementById('publishBtn');
+        const addEventBtn = document.getElementById('addEventBtn');
         const showTemplateBtn = document.getElementById('showTemplateBtn');
         const closeTemplateModal = document.getElementById('closeTemplateModal');
         const closeModalBtn = document.getElementById('closeModalBtn');
         const templateModal = document.getElementById('templateModal');
         const logoutBtn = document.getElementById('logoutBtn');
+        const aiFetchDataBtn = document.getElementById('aiFetchDataBtn');
+        const aiGenerateReportBtn = document.getElementById('aiGenerateReportBtn');
 
         if (matchSelect) {
             matchSelect.addEventListener('change', async (e) => {
                 const matchId = e.target.value;
-                newReportBtn.disabled = !matchId;
+                if (newReportBtn) newReportBtn.disabled = !matchId;
                 if (matchId) {
                     await loadMatchToEditor(matchId);
                 }
@@ -376,36 +579,34 @@
                 currentReport = null;
                 resetForm();
                 if (matchSelect) matchSelect.value = '';
-                newReportBtn.disabled = true;
+                if (newReportBtn) newReportBtn.disabled = true;
             });
         }
 
-        if (saveDraftBtn) {
-            saveDraftBtn.addEventListener('click', () => saveReport('draft'));
-        }
+        if (saveDraftBtn) saveDraftBtn.addEventListener('click', () => saveReport('draft'));
+        if (publishBtn) publishBtn.addEventListener('click', () => saveReport('published'));
+        if (addEventBtn) addEventBtn.addEventListener('click', addEvent);
+        
+        // AI 按钮事件绑定
+        if (aiFetchDataBtn) aiFetchDataBtn.addEventListener('click', aiFetchMatchData);
+        if (aiGenerateReportBtn) aiGenerateReportBtn.addEventListener('click', aiGenerateReport);
 
-        if (publishBtn) {
-            publishBtn.addEventListener('click', () => saveReport('published'));
-        }
-
+        // 模板模态框
         if (showTemplateBtn) {
             showTemplateBtn.addEventListener('click', () => {
                 if (templateModal) templateModal.classList.add('show');
             });
         }
-
         if (closeTemplateModal) {
             closeTemplateModal.addEventListener('click', () => {
                 if (templateModal) templateModal.classList.remove('show');
             });
         }
-
         if (closeModalBtn) {
             closeModalBtn.addEventListener('click', () => {
                 if (templateModal) templateModal.classList.remove('show');
             });
         }
-
         if (templateModal) {
             templateModal.addEventListener('click', (e) => {
                 if (e.target === templateModal) templateModal.classList.remove('show');
@@ -432,7 +633,6 @@
         await renderMatchSelect();
         await renderRecentReports();
         
-        // 检查 URL 参数
         const urlParams = new URLSearchParams(window.location.search);
         const urlMatchId = urlParams.get('matchId');
         if (urlMatchId) {
@@ -446,7 +646,6 @@
         }
     }
 
-    // 设置管理员名称
     const storedAdmin = localStorage.getItem('admin_name');
     if (storedAdmin) {
         const adminNameSpan = document.getElementById('adminName');

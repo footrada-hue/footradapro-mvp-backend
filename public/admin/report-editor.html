@@ -305,7 +305,7 @@
         }
         .report-textarea:focus { outline: none; border-color: var(--primary); }
 
-        .editor-actions { display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
+        .editor-actions { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
         .btn-primary {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             border: none;
@@ -500,9 +500,19 @@
                             <textarea class="report-textarea" id="aiDeepdive" placeholder="请编写 AI 深度分析报告..."></textarea>
 
                             <div class="editor-actions">
-                                <button class="btn-secondary" id="cancelEdit"><i class="fas fa-times"></i> 取消</button>
-                                <button class="btn-secondary" id="saveDraftBtn"><i class="fas fa-save"></i> 保存草稿</button>
-                                <button class="btn-primary" id="publishBtn"><i class="fas fa-globe"></i> 发布报告</button>
+                                <div>
+                                    <button class="btn-secondary" id="aiFetchDataBtn">
+                                        <i class="fas fa-robot"></i> AI 获取比赛数据
+                                    </button>
+                                    <button class="btn-secondary" id="aiGenerateReportBtn">
+                                        <i class="fas fa-magic"></i> AI 生成深度报告
+                                    </button>
+                                </div>
+                                <div>
+                                    <button class="btn-secondary" id="cancelEdit">取消</button>
+                                    <button class="btn-secondary" id="saveDraftBtn">保存草稿</button>
+                                    <button class="btn-primary" id="publishBtn">发布报告</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -553,420 +563,18 @@ fund flow accurately predicted the outcome.
         </div>
     </div>
 
+    <script src="/js/admin/report_editor.js"></script>
+    
     <script>
-        (function() {
-            const UTILS = window.FOOTRADAPRO?.UTILS || {
-                formatDateTime: (dt) => new Date(dt).toLocaleString('zh-CN'),
-                formatAmount: (num) => num.toFixed(2)
-            };
-
-            // DOM 元素
-            const matchSelect = document.getElementById('matchSelect');
-            const newReportBtn = document.getElementById('newReportBtn');
-            const reportEditor = document.getElementById('reportEditor');
-            const recentReportsDiv = document.getElementById('recentReports');
-            const reportsList = document.getElementById('reportsList');
-            const cancelEdit = document.getElementById('cancelEdit');
-            const saveDraftBtn = document.getElementById('saveDraftBtn');
-            const publishBtn = document.getElementById('publishBtn');
-            const addEventBtn = document.getElementById('addEventBtn');
-            const showTemplateBtn = document.getElementById('showTemplateBtn');
-            const templateModal = document.getElementById('templateModal');
-            const closeTemplateModal = document.getElementById('closeTemplateModal');
-            const closeModalBtn = document.getElementById('closeModalBtn');
-            const logoutBtn = document.getElementById('logoutBtn');
-
-            // 显示元素
-            const displayTeams = document.getElementById('displayTeams');
-            const displayLeague = document.getElementById('displayLeague');
-            const displayTime = document.getElementById('displayTime');
-            const displayScoreText = document.getElementById('displayScoreText');
-
-            // 表单元素
-            const aiDeepdive = document.getElementById('aiDeepdive');
-            const homeScore = document.getElementById('homeScore');
-            const awayScore = document.getElementById('awayScore');
-            const possessionHome = document.getElementById('possessionHome');
-            const possessionAway = document.getElementById('possessionAway');
-            const shotsHome = document.getElementById('shotsHome');
-            const shotsAway = document.getElementById('shotsAway');
-            const shotsOnTargetHome = document.getElementById('shotsOnTargetHome');
-            const shotsOnTargetAway = document.getElementById('shotsOnTargetAway');
-            const cornersHome = document.getElementById('cornersHome');
-            const cornersAway = document.getElementById('cornersAway');
-            const foulsHome = document.getElementById('foulsHome');
-            const foulsAway = document.getElementById('foulsAway');
-            const yellowCardsHome = document.getElementById('yellowCardsHome');
-            const yellowCardsAway = document.getElementById('yellowCardsAway');
-            const redCardsHome = document.getElementById('redCardsHome');
-            const redCardsAway = document.getElementById('redCardsAway');
-            const xgHome = document.getElementById('xgHome');
-            const xgAway = document.getElementById('xgAway');
-
-            let matches = [];
-            let currentMatch = null;
-            let events = [];
-
-            const storedAdmin = localStorage.getItem('admin_name');
-            if (storedAdmin) document.getElementById('adminName').textContent = storedAdmin;
-
-            async function adminRequest(endpoint, options = {}) {
-                const defaultOptions = {
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include'
-                };
-                try {
-                    const response = await fetch(`/api/v1/admin/report${endpoint}`, { ...defaultOptions, ...options });
-                    if (response.status === 401) {
-                        window.location.href = '/admin/index.html';
-                        throw new Error('UNAUTHORIZED');
-                    }
-                    const data = await response.json();
-                    if (!data.success) throw new Error(data.error || '请求失败');
-                    return data;
-                } catch (err) {
-                    console.error('API请求失败:', err);
-                    throw err;
-                }
-            }
-
-            async function loadMatches() {
-                try {
-                    const result = await adminRequest('/matches');
-                    if (result.success) {
-                        matches = result.data;
-                        renderMatchSelect();
-                    }
-                } catch (err) { console.error('加载比赛失败:', err); }
-            }
-
-            function renderMatchSelect() {
-                let html = '<option value="">请选择已清算的比赛...</option>';
-                matches.forEach(match => {
-                    const statusText = match.has_report ? (match.report_status === 'published' ? ' [已发布]' : ' [草稿]') : '';
-                    html += `<option value="${match.match_id}">${escapeHtml(match.home_team)} vs ${escapeHtml(match.away_team)} (${UTILS.formatDateTime(match.match_time)})${statusText}</option>`;
+        fetch('/admin/components/sidebar.html')
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById('sidebar-container').innerHTML = html;
+                const currentPath = window.location.pathname;
+                document.querySelectorAll('.admin-nav-item').forEach(link => {
+                    if (link.getAttribute('href') === currentPath) link.classList.add('active');
                 });
-                matchSelect.innerHTML = html;
-            }
-
-            async function loadRecentReports() {
-                try {
-                    const result = await adminRequest('/');
-                    if (result.success) renderRecentReports(result.data);
-                } catch (err) {
-                    reportsList.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>加载失败</p></div>';
-                }
-            }
-
-            function renderRecentReports(reports) {
-                if (!reports || reports.length === 0) {
-                    reportsList.innerHTML = '<div class="empty-state"><i class="fas fa-file-alt"></i><p>暂无报告</p></div>';
-                    return;
-                }
-                let html = '';
-                reports.slice(0, 10).forEach(report => {
-                    const statusClass = report.status === 'published' ? 'published' : 'draft';
-                    const statusText = report.status === 'published' ? '已发布' : '草稿';
-                    html += `
-                        <div class="report-item">
-                            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                                <span class="report-item-status ${statusClass}"></span>
-                                <span class="report-item-title">${escapeHtml(report.home_team)} vs ${escapeHtml(report.away_team)}</span>
-                                <span class="report-item-meta">${report.home_score || 0} : ${report.away_score || 0}</span>
-                                <span class="report-item-meta">${statusText}</span>
-                                <span class="report-item-meta">${UTILS.formatDateTime(report.published_at || report.updated_at)}</span>
-                            </div>
-                            <div class="report-item-actions">
-                                <button onclick="window.editReport('${report.match_id}')"><i class="fas fa-edit"></i> 编辑</button>
-                                <button onclick="window.viewReport('${report.match_id}')"><i class="fas fa-eye"></i> 查看</button>
-                            </div>
-                        </div>
-                    `;
-                });
-                reportsList.innerHTML = html;
-            }
-
-            function escapeHtml(str) {
-                if (!str) return '';
-                return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
-            }
-
-            function resetForm() {
-                if (homeScore) homeScore.value = 0;
-                if (awayScore) awayScore.value = 0;
-                if (possessionHome) possessionHome.value = 50;
-                if (possessionAway) possessionAway.value = 50;
-                if (shotsHome) shotsHome.value = 0;
-                if (shotsAway) shotsAway.value = 0;
-                if (shotsOnTargetHome) shotsOnTargetHome.value = 0;
-                if (shotsOnTargetAway) shotsOnTargetAway.value = 0;
-                if (cornersHome) cornersHome.value = 0;
-                if (cornersAway) cornersAway.value = 0;
-                if (foulsHome) foulsHome.value = 0;
-                if (foulsAway) foulsAway.value = 0;
-                if (yellowCardsHome) yellowCardsHome.value = 0;
-                if (yellowCardsAway) yellowCardsAway.value = 0;
-                if (redCardsHome) redCardsHome.value = 0;
-                if (redCardsAway) redCardsAway.value = 0;
-                if (xgHome) xgHome.value = 0;
-                if (xgAway) xgAway.value = 0;
-                if (aiDeepdive) aiDeepdive.value = '';
-                events = [];
-                renderEvents();
-            }
-
-            function loadReportData(report) {
-                currentMatch = report;
-                if (displayTeams) displayTeams.textContent = `${report.home_team} vs ${report.away_team}`;
-                if (displayLeague) displayLeague.textContent = report.league || '未知联赛';
-                if (displayTime) displayTime.innerHTML = `<i class="fas fa-calendar"></i> ${UTILS.formatDateTime(report.match_time)}`;
-                if (displayScoreText) displayScoreText.textContent = (report.home_score !== undefined && report.away_score !== undefined) ? `${report.home_score} : ${report.away_score}` : '比分待获取';
-
-                if (homeScore && report.home_score !== undefined) homeScore.value = report.home_score;
-                if (awayScore && report.away_score !== undefined) awayScore.value = report.away_score;
-                if (aiDeepdive && report.ai_deepdive) aiDeepdive.value = report.ai_deepdive;
-
-                if (report.prediction_data) {
-                    const pd = report.prediction_data;
-                    if (pd.possession) {
-                        if (possessionHome && pd.possession.home) possessionHome.value = pd.possession.home;
-                        if (possessionAway && pd.possession.away) possessionAway.value = pd.possession.away;
-                    }
-                    if (pd.shots) {
-                        if (shotsHome && pd.shots.home) shotsHome.value = pd.shots.home;
-                        if (shotsAway && pd.shots.away) shotsAway.value = pd.shots.away;
-                    }
-                    if (pd.shots_on_target) {
-                        if (shotsOnTargetHome && pd.shots_on_target.home) shotsOnTargetHome.value = pd.shots_on_target.home;
-                        if (shotsOnTargetAway && pd.shots_on_target.away) shotsOnTargetAway.value = pd.shots_on_target.away;
-                    }
-                    if (pd.corners) {
-                        if (cornersHome && pd.corners.home) cornersHome.value = pd.corners.home;
-                        if (cornersAway && pd.corners.away) cornersAway.value = pd.corners.away;
-                    }
-                    if (pd.fouls) {
-                        if (foulsHome && pd.fouls.home) foulsHome.value = pd.fouls.home;
-                        if (foulsAway && pd.fouls.away) foulsAway.value = pd.fouls.away;
-                    }
-                    if (pd.yellow_cards) {
-                        if (yellowCardsHome && pd.yellow_cards.home) yellowCardsHome.value = pd.yellow_cards.home;
-                        if (yellowCardsAway && pd.yellow_cards.away) yellowCardsAway.value = pd.yellow_cards.away;
-                    }
-                    if (pd.red_cards) {
-                        if (redCardsHome && pd.red_cards.home) redCardsHome.value = pd.red_cards.home;
-                        if (redCardsAway && pd.red_cards.away) redCardsAway.value = pd.red_cards.away;
-                    }
-                    if (pd.xg) {
-                        if (xgHome && pd.xg.home) xgHome.value = pd.xg.home;
-                        if (xgAway && pd.xg.away) xgAway.value = pd.xg.away;
-                    }
-                }
-
-                if (report.key_events) {
-                    events = report.key_events;
-                    renderEvents();
-                }
-            }
-
-            function renderEvents() {
-                const container = document.getElementById('eventsContainer');
-                if (!container) return;
-
-                if (events.length === 0) {
-                    container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">暂无关键事件</div>';
-                    return;
-                }
-
-                container.innerHTML = events.map((event, index) => `
-                    <div class="event-item">
-                        <input type="text" placeholder="分钟" value="${escapeHtml(event.time || '')}" onchange="window.updateEvent(${index}, 'time', this.value)">
-                        <input type="text" placeholder="事件描述" value="${escapeHtml(event.description || '')}" onchange="window.updateEvent(${index}, 'description', this.value)">
-                        <i class="fas fa-trash-alt" onclick="window.removeEvent(${index})"></i>
-                    </div>
-                `).join('');
-            }
-
-            window.updateEvent = function(index, field, value) {
-                if (events[index]) events[index][field] = value;
-            };
-
-            window.removeEvent = function(index) {
-                events.splice(index, 1);
-                renderEvents();
-            };
-
-            function addEvent() {
-                events.push({ time: '', description: '' });
-                renderEvents();
-            }
-
-            async function saveReport(status) {
-                if (!currentMatch) {
-                    alert('请先选择比赛');
-                    return;
-                }
-
-                const predictionData = {
-                    possession: { home: parseFloat(possessionHome?.value || 50), away: parseFloat(possessionAway?.value || 50) },
-                    shots: { home: parseInt(shotsHome?.value || 0), away: parseInt(shotsAway?.value || 0) },
-                    shots_on_target: { home: parseInt(shotsOnTargetHome?.value || 0), away: parseInt(shotsOnTargetAway?.value || 0) },
-                    corners: { home: parseInt(cornersHome?.value || 0), away: parseInt(cornersAway?.value || 0) },
-                    fouls: { home: parseInt(foulsHome?.value || 0), away: parseInt(foulsAway?.value || 0) },
-                    yellow_cards: { home: parseInt(yellowCardsHome?.value || 0), away: parseInt(yellowCardsAway?.value || 0) },
-                    red_cards: { home: parseInt(redCardsHome?.value || 0), away: parseInt(redCardsAway?.value || 0) },
-                    xg: { home: parseFloat(xgHome?.value || 0), away: parseFloat(xgAway?.value || 0) }
-                };
-
-                const data = {
-                    match_id: currentMatch.match_id,
-                    match_time: currentMatch.match_time,
-                    league: currentMatch.league,
-                    home_team: currentMatch.home_team,
-                    away_team: currentMatch.away_team,
-                    home_logo: currentMatch.home_logo,
-                    away_logo: currentMatch.away_logo,
-                    home_score: parseInt(homeScore?.value || 0),
-                    away_score: parseInt(awayScore?.value || 0),
-                    prediction_data: predictionData,
-                    evidence_chain: events,
-                    ai_deepdive: aiDeepdive?.value || '',
-                    status: status
-                };
-
-                try {
-                    const result = await adminRequest('/save', { method: 'POST', body: JSON.stringify(data) });
-                    if (result.success) {
-                        alert(status === 'published' ? '✅ 报告发布成功！' : '✅ 草稿保存成功！');
-                        if (status === 'published') {
-                            if (confirm('报告发布成功！是否立即查看？')) {
-                                window.open(`/report-detail.html?match_id=${currentMatch.match_id}`, '_blank');
-                            }
-                        }
-                        cancelEdit.click();
-                        await loadRecentReports();
-                        await loadMatches();
-                    }
-                } catch (err) {
-                    alert('保存失败：' + err.message);
-                }
-            }
-
-            async function loadMatchToEditor(matchId) {
-                try {
-                    // 尝试加载已有报告
-                    try {
-                        const reportResult = await adminRequest(`/${matchId}`);
-                        if (reportResult.success) {
-                            loadReportData(reportResult.data);
-                            reportEditor.style.display = 'block';
-                            recentReportsDiv.style.display = 'none';
-                            return true;
-                        }
-                    } catch (e) {}
-
-                    // 加载比赛基础信息
-                    const match = matches.find(m => m.match_id === matchId);
-                    if (!match) return false;
-
-                    currentMatch = match;
-                    if (displayTeams) displayTeams.textContent = `${match.home_team} vs ${match.away_team}`;
-                    if (displayLeague) displayLeague.textContent = match.league || '未知联赛';
-                    if (displayTime) displayTime.innerHTML = `<i class="fas fa-calendar"></i> ${UTILS.formatDateTime(match.match_time)}`;
-                    if (displayScoreText) displayScoreText.textContent = (match.home_score !== undefined && match.away_score !== undefined) ? `${match.home_score} : ${match.away_score}` : '比分待获取';
-                    if (homeScore && match.home_score !== undefined) homeScore.value = match.home_score;
-                    if (awayScore && match.away_score !== undefined) awayScore.value = match.away_score;
-
-                    resetForm();
-                    reportEditor.style.display = 'block';
-                    recentReportsDiv.style.display = 'none';
-                    return true;
-                } catch (err) {
-                    alert('加载比赛失败：' + err.message);
-                    return false;
-                }
-            }
-
-            // 全局函数供按钮调用
-            window.editReport = async function(matchId) {
-                await loadMatchToEditor(matchId);
-                if (matchSelect) matchSelect.value = matchId;
-                if (newReportBtn) newReportBtn.disabled = false;
-            };
-
-            window.viewReport = function(matchId) {
-                window.open(`/report-detail.html?match_id=${matchId}`, '_blank');
-            };
-
-            // 事件绑定
-            if (matchSelect) {
-                matchSelect.addEventListener('change', () => {
-                    if (newReportBtn) newReportBtn.disabled = !matchSelect.value;
-                    if (matchSelect.value) loadMatchToEditor(matchSelect.value);
-                });
-            }
-
-            if (newReportBtn) {
-                newReportBtn.addEventListener('click', () => {
-                    if (matchSelect && matchSelect.value) loadMatchToEditor(matchSelect.value);
-                });
-            }
-
-            if (cancelEdit) {
-                cancelEdit.addEventListener('click', () => {
-                    reportEditor.style.display = 'none';
-                    recentReportsDiv.style.display = 'block';
-                    currentMatch = null;
-                    if (matchSelect) matchSelect.value = '';
-                    if (newReportBtn) newReportBtn.disabled = true;
-                    resetForm();
-                });
-            }
-
-            if (saveDraftBtn) saveDraftBtn.addEventListener('click', () => saveReport('draft'));
-            if (publishBtn) publishBtn.addEventListener('click', () => saveReport('published'));
-            if (addEventBtn) addEventBtn.addEventListener('click', addEvent);
-
-            // 模板模态框
-            function showTemplate() { if (templateModal) templateModal.classList.add('show'); }
-            function hideTemplate() { if (templateModal) templateModal.classList.remove('show'); }
-            if (showTemplateBtn) showTemplateBtn.addEventListener('click', showTemplate);
-            if (closeTemplateModal) closeTemplateModal.addEventListener('click', hideTemplate);
-            if (closeModalBtn) closeModalBtn.addEventListener('click', hideTemplate);
-            if (templateModal) templateModal.addEventListener('click', (e) => { if (e.target === templateModal) hideTemplate(); });
-
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', () => {
-                    localStorage.removeItem('admin_token');
-                    localStorage.removeItem('admin_name');
-                    window.location.href = '/admin/index.html';
-                });
-            }
-
-            // 加载侧边栏
-            fetch('/admin/components/sidebar.html')
-                .then(res => res.text())
-                .then(html => {
-                    document.getElementById('sidebar-container').innerHTML = html;
-                    const currentPath = window.location.pathname;
-                    document.querySelectorAll('.admin-nav-item').forEach(link => {
-                        if (link.getAttribute('href') === currentPath) link.classList.add('active');
-                    });
-                }).catch(err => console.error('加载侧边栏失败:', err));
-
-            // 初始化
-            (async function() {
-                await loadMatches();
-                await loadRecentReports();
-
-                const urlParams = new URLSearchParams(window.location.search);
-                const urlMatchId = urlParams.get('matchId');
-                if (urlMatchId && matchSelect) {
-                    matchSelect.value = urlMatchId;
-                    if (newReportBtn) newReportBtn.disabled = false;
-                    await loadMatchToEditor(urlMatchId);
-                }
-            })();
-        })();
+            }).catch(err => console.error('加载侧边栏失败:', err));
     </script>
 </body>
 </html>
