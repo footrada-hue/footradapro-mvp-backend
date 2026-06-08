@@ -246,82 +246,89 @@ class SupportService {
         }
     }
     
-    async addAdminMessage(convId, adminId, content) {
-        try {
-            const now = this.getCurrentTimestamp();
-            let message = null;
-            
-            if (isProduction) {
-                const insertResult = await this.query(`
-                    INSERT INTO support_messages 
-                    (conv_id, sender_type, sender_id, content, created_at)
-                    VALUES ($1, 'admin', $2, $3, $4)
-                    RETURNING id
-                `, [convId, adminId, content, now]);
-                const newId = insertResult?.[0]?.id;
-                
-                await this.query('UPDATE support_conversations SET updated_at = $1 WHERE id = $2', [now, convId]);
-                
-                const convResult = await this.query('SELECT first_response_at FROM support_conversations WHERE id = $1', [convId]);
-                if ((!convResult || convResult.length === 0 || !convResult[0].first_response_at)) {
-                    await this.query('UPDATE support_conversations SET first_response_at = $1 WHERE id = $2', [now, convId]);
-                }
-                
-                const msgResult = await this.query('SELECT * FROM support_messages WHERE id = $1', [newId]);
-                message = msgResult?.[0] || null;
-            } else {
-                const db = await this.getDb();
-                const stmt = db.prepare(`
-                    INSERT INTO support_messages 
-                    (conv_id, sender_type, sender_id, content, created_at)
-                    VALUES (?, 'admin', ?, ?, ?)
-                `);
-                const info = stmt.run(convId, adminId, content, now);
-                
-                db.prepare('UPDATE support_conversations SET updated_at = ? WHERE id = ?').run(now, convId);
-                
-                const conv = db.prepare('SELECT first_response_at FROM support_conversations WHERE id = ?').get(convId);
-                if (!conv || !conv.first_response_at) {
-                    db.prepare('UPDATE support_conversations SET first_response_at = ? WHERE id = ?').run(now, convId);
-                }
-                
-                message = db.prepare('SELECT * FROM support_messages WHERE rowid = ?').get(info.lastInsertRowid);
-            }
-            
-            // WebSocket 广播
-            try {
-                const io = getIO();
-                if (io && message && message.conv_id) {
-                    let conversation = null;
-                    if (isProduction) {
-                        const convResult = await this.query('SELECT user_id FROM support_conversations WHERE id = $1', [message.conv_id]);
-                        conversation = convResult?.[0] || null;
-                    } else {
-                        const db = await this.getDb();
-                        conversation = db.prepare('SELECT user_id FROM support_conversations WHERE id = ?').get(message.conv_id);
-                    }
-                    if (conversation) {
-                        io.to(`user_${conversation.user_id}`).emit('new-message', {
-                            id: message.id,
-                            conv_id: message.conv_id,
-                            content: message.content,
-                            sender_type: 'admin',
-                            sender_id: adminId,
-                            created_at: message.created_at
-                        });
-                        console.log(`📡 WebSocket 广播消息到用户 ${conversation.user_id}`);
-                    }
-                }
-            } catch (wsErr) {
-                console.error('WebSocket 广播失败:', wsErr.message);
-            }
-            
-            return message;
-        } catch (error) {
-            logger.error('[SupportService] addAdminMessage error:', error);
-            throw error;
+async addAdminMessage(convId, adminId, content, attachments = null) {
+    try {
+        const now = this.getCurrentTimestamp();
+        let message = null;
+        
+        // 处理附件
+        let attachmentsJson = null;
+        if (attachments && Array.isArray(attachments) && attachments.length > 0) {
+            attachmentsJson = JSON.stringify(attachments);
         }
+        
+        if (isProduction) {
+            const insertResult = await this.query(`
+                INSERT INTO support_messages 
+                (conv_id, sender_type, sender_id, content, attachments, created_at)
+                VALUES ($1, 'admin', $2, $3, $4, $5)
+                RETURNING id
+            `, [convId, adminId, content || '', attachmentsJson, now]);
+            const newId = insertResult?.[0]?.id;
+            
+            await this.query('UPDATE support_conversations SET updated_at = $1 WHERE id = $2', [now, convId]);
+            
+            const convResult = await this.query('SELECT first_response_at FROM support_conversations WHERE id = $1', [convId]);
+            if ((!convResult || convResult.length === 0 || !convResult[0].first_response_at)) {
+                await this.query('UPDATE support_conversations SET first_response_at = $1 WHERE id = $2', [now, convId]);
+            }
+            
+            const msgResult = await this.query('SELECT * FROM support_messages WHERE id = $1', [newId]);
+            message = msgResult?.[0] || null;
+        } else {
+            const db = await this.getDb();
+            const stmt = db.prepare(`
+                INSERT INTO support_messages 
+                (conv_id, sender_type, sender_id, content, attachments, created_at)
+                VALUES (?, 'admin', ?, ?, ?, ?)
+            `);
+            const info = stmt.run(convId, adminId, content || '', attachmentsJson, now);
+            
+            db.prepare('UPDATE support_conversations SET updated_at = ? WHERE id = ?').run(now, convId);
+            
+            const conv = db.prepare('SELECT first_response_at FROM support_conversations WHERE id = ?').get(convId);
+            if (!conv || !conv.first_response_at) {
+                db.prepare('UPDATE support_conversations SET first_response_at = ? WHERE id = ?').run(now, convId);
+            }
+            
+            message = db.prepare('SELECT * FROM support_messages WHERE rowid = ?').get(info.lastInsertRowid);
+        }
+        
+        // WebSocket 广播
+        try {
+            const io = getIO();
+            if (io && message && message.conv_id) {
+                let conversation = null;
+                if (isProduction) {
+                    const convResult = await this.query('SELECT user_id FROM support_conversations WHERE id = $1', [message.conv_id]);
+                    conversation = convResult?.[0] || null;
+                } else {
+                    const db = await this.getDb();
+                    conversation = db.prepare('SELECT user_id FROM support_conversations WHERE id = ?').get(message.conv_id);
+                }
+                if (conversation) {
+                    io.to(`user_${conversation.user_id}`).emit('new-message', {
+                        id: message.id,
+                        conv_id: message.conv_id,
+                        content: message.content,
+                        attachments: message.attachments ? JSON.parse(message.attachments) : null,
+                        sender_type: 'admin',
+                        sender_id: adminId,
+                        created_at: message.created_at
+                    });
+                    console.log(`📡 WebSocket 广播消息到用户 ${conversation.user_id}`);
+                }
+            }
+        } catch (wsErr) {
+            console.error('WebSocket 广播失败:', wsErr.message);
+        }
+        
+        return message;
+    } catch (error) {
+        logger.error('[SupportService] addAdminMessage error:', error);
+        throw error;
     }
+}
     
     async getMessages(convId, limit = 100) {
         try {
