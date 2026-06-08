@@ -2,6 +2,7 @@
 import express from 'express';
 import { adminAuth } from '../../../middlewares/admin.middleware.js';
 import supportService from '../../../services/support.service.js';
+import uploadService from '../../../services/upload.service.js';
 import logger from '../../../utils/logger.js';
 
 const router = express.Router();
@@ -275,6 +276,70 @@ router.post('/heartbeat', async (req, res) => {
     } catch (error) {
         logger.error(`[Admin API] Heartbeat error: ${error.message}`);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * ==================== 文件上传 API ====================
+ */
+
+/**
+ * POST /api/v1/admin/support/upload
+ * Upload image/file for conversation
+ */
+router.post('/upload', async (req, res) => {
+    try {
+        const adminId = req.admin?.id || req.session?.adminId;
+        const { convId } = req.body;
+        
+        if (!convId) {
+            return res.status(400).json({ success: false, error: 'Missing conversation ID' });
+        }
+        
+        // 使用 multer 中间件处理文件上传
+        const uploadMiddleware = uploadService.getUploadMiddleware();
+        
+        uploadMiddleware(req, res, async (err) => {
+            if (err) {
+                logger.error(`[Admin API] Upload error: ${err.message}`);
+                return res.status(400).json({ success: false, error: err.message });
+            }
+            
+            if (!req.file) {
+                return res.status(400).json({ success: false, error: 'No file uploaded' });
+            }
+            
+            try {
+                const fileInfo = uploadService.getFileInfo(req.file);
+                
+                if (!fileInfo) {
+                    return res.status(400).json({ success: false, error: 'Failed to process file' });
+                }
+                
+                logger.info(`[Admin API] Admin ${adminId} uploaded file: ${fileInfo.filename} for conversation ${convId}`);
+                
+                res.json({
+                    success: true,
+                    data: {
+                        url: fileInfo.url,
+                        filename: fileInfo.originalName,
+                        type: fileInfo.type,
+                        size: fileInfo.size
+                    },
+                    message: 'File uploaded successfully'
+                });
+            } catch (error) {
+                logger.error(`[Admin API] Upload processing error: ${error.message}`);
+                // 清理上传的文件
+                if (req.file && req.file.filename) {
+                    uploadService.deleteFile(req.file.filename);
+                }
+                res.status(500).json({ success: false, error: error.message || 'Failed to process upload' });
+            }
+        });
+    } catch (error) {
+        logger.error(`[Admin API] Upload route error: ${error.message}`);
+        res.status(500).json({ success: false, error: error.message || 'Failed to upload file' });
     }
 });
 
