@@ -1,7 +1,7 @@
 /**
  * FOOTRADAPRO - 清算管理API路由
  * @description 支持新清算規則：執行比例、盈利/虧損狀態切換、平台抽成20%
- * @version 2.1.0 - 修复 match_id 类型转换错误
+ * @version 2.1.0 - 修复 match_id 类型转换错误和 settlements auth_id 类型错误
  * @feature 支援沙盒用戶 (is_test_mode)，測試用戶體驗完整清算流程
  */
 
@@ -561,18 +561,18 @@ router.post('/execute', hasPermission('matches.settle'), async (req, res) => {
                 `).run(authStatus, profit, platformFee, deployedAmount, reservedAmount, finalProfitRate, status, auth.id);
             }
             
-            // 插入 settlements 记录
+            // 插入 settlements 记录 - 修复：使用 auth.id（整数）而不是 auth.auth_id（字符串）
             if (isProduction) {
                 await query(`
                     INSERT INTO settlements (auth_id, user_id, match_id, amount, profit, is_test, settled_at)
                     VALUES ($1, $2, $3, $4, $5, $6, NOW())
-                `, [auth.auth_id, auth.user_id, match.match_id, auth.amount, profit, isTestAuth ? 1 : 0]);
+                `, [auth.id, auth.user_id, match.match_id, auth.amount, profit, isTestAuth ? 1 : 0]);
             } else {
                 const db = getDb();
                 db.prepare(`
                     INSERT INTO settlements (auth_id, user_id, match_id, amount, profit, is_test, settled_at)
                     VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                `).run(auth.auth_id, auth.user_id, match.match_id, auth.amount, profit, isTestAuth ? 1 : 0);
+                `).run(auth.id, auth.user_id, match.match_id, auth.amount, profit, isTestAuth ? 1 : 0);
             }
             
             // 发送通知
