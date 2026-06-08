@@ -1,7 +1,7 @@
 /**
  * FOOTRADAPRO - 清算管理API路由
  * @description 支持新清算規則：執行比例、盈利/虧損狀態切換、平台抽成20%
- * @version 2.0.0 - 支持 PostgreSQL 和 SQLite
+ * @version 2.1.0 - 修复 match_id 类型转换错误
  * @feature 支援沙盒用戶 (is_test_mode)，測試用戶體驗完整清算流程
  */
 
@@ -215,7 +215,7 @@ router.get('/history', hasPermission('matches.settle'), async (req, res) => {
     }
 });
 
-// ==================== 获取清算预览数据 ====================
+// ==================== 获取清算预览数据（修复类型转换错误）====================
 router.get('/preview/:matchId', hasPermission('matches.settle'), async (req, res) => {
     const { matchId } = req.params;
     
@@ -225,7 +225,8 @@ router.get('/preview/:matchId', hasPermission('matches.settle'), async (req, res
         let match = null;
         
         if (isProduction) {
-            const result = await query(`
+            // PostgreSQL 版本 - 先按 match_id（字符串）查询
+            const matchIdResult = await query(`
                 SELECT 
                     id,
                     match_id,
@@ -236,10 +237,33 @@ router.get('/preview/:matchId', hasPermission('matches.settle'), async (req, res
                     execution_rate,
                     status
                 FROM matches 
-                WHERE match_id = $1 OR id = $2
-            `, [matchId, matchId]);
-            match = result?.[0];
+                WHERE match_id = $1
+            `, [matchId]);
+            
+            if (matchIdResult && matchIdResult.length > 0) {
+                match = matchIdResult[0];
+            } else {
+                // 如果按 match_id 查不到，尝试按 id（整数）查询
+                const numericId = parseInt(matchId);
+                if (!isNaN(numericId)) {
+                    const idResult = await query(`
+                        SELECT 
+                            id,
+                            match_id,
+                            home_team,
+                            away_team,
+                            league,
+                            match_time,
+                            execution_rate,
+                            status
+                        FROM matches 
+                        WHERE id = $1
+                    `, [numericId]);
+                    match = idResult?.[0] || null;
+                }
+            }
         } else {
+            // SQLite 版本
             const db = getDb();
             match = db.prepare(`
                 SELECT 
@@ -380,11 +404,21 @@ router.post('/execute', hasPermission('matches.settle'), async (req, res) => {
         const config = await getSettlementConfig();
         console.log(`📋 清算配置: 平台抽成=${config.platform_fee_rate * 100}%, 平台承担亏损=${config.platform_loss_rate * 100}%`);
         
-        // 获取比赛信息
+        // 获取比赛信息 - 修复类型转换错误
         let match = null;
         if (isProduction) {
-            const result = await query(`SELECT * FROM matches WHERE match_id = $1 OR id = $2`, [matchId, matchId]);
-            match = result?.[0];
+            // 先按 match_id 查询
+            const matchIdResult = await query(`SELECT * FROM matches WHERE match_id = $1`, [matchId]);
+            if (matchIdResult && matchIdResult.length > 0) {
+                match = matchIdResult[0];
+            } else {
+                // 尝试按 id 查询
+                const numericId = parseInt(matchId);
+                if (!isNaN(numericId)) {
+                    const idResult = await query(`SELECT * FROM matches WHERE id = $1`, [numericId]);
+                    match = idResult?.[0] || null;
+                }
+            }
         } else {
             const db = getDb();
             match = db.prepare(`SELECT * FROM matches WHERE match_id = ? OR id = ?`).get(matchId, matchId);
