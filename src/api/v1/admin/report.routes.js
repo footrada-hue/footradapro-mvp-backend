@@ -1,11 +1,9 @@
 /**
  * FOOTRADAPRO - 報告管理API路由
  * @description 管理比賽報告的創建、編輯、發布
- * @version 2.0.0 - 支持 PostgreSQL 和 SQLite
+ * @version 2.1.0 - 支持 PostgreSQL 和 SQLite，添加 AI 报告生成功能
  */
 import { fetchMatchStatistics, generateDeepReport } from '../../../services/match-data.service.js';
-console.log('🔍 [DEBUG] fetchMatchStatistics type:', typeof fetchMatchStatistics);
-console.log('🔍 [DEBUG] generateDeepReport type:', typeof generateDeepReport);
 import express from 'express';
 import { query, getDb } from '../../../database/connection.js';
 import { adminAuth } from '../../../middlewares/admin.middleware.js';
@@ -209,7 +207,144 @@ router.get('/match/:matchId', async (req, res) => {
     }
 });
 
-// ==================== 获取单个报告详情（后台用）====================
+// ==================== AI 测试端点（必须放在 :matchId 之前）====================
+router.get('/test-ai', (req, res) => {
+    res.json({ 
+        success: true, 
+        message: 'AI routes are working',
+        hasFetch: typeof fetchMatchStatistics === 'function',
+        hasGenerate: typeof generateDeepReport === 'function'
+    });
+});
+
+// ==================== AI 获取比赛数据 ====================
+router.post('/fetch-match-data', async (req, res) => {
+    try {
+        const { matchId } = req.body;
+        
+        if (!matchId) {
+            return res.status(400).json({ success: false, error: 'Missing match ID' });
+        }
+        
+        // 获取比赛信息
+        let match = null;
+        if (isProduction) {
+            const result = await query(`
+                SELECT match_id, home_team, away_team, league, match_time, home_score, away_score
+                FROM matches WHERE match_id = $1
+            `, [matchId]);
+            match = result?.[0];
+        } else {
+            const db = getDb();
+            match = db.prepare(`
+                SELECT match_id, home_team, away_team, league, match_time, home_score, away_score
+                FROM matches WHERE match_id = ?
+            `).get(matchId);
+        }
+        
+        if (!match) {
+            return res.status(404).json({ success: false, error: 'Match not found' });
+        }
+        
+        // 判断比赛结果
+        let matchResult = 'draw';
+        if (match.home_score > match.away_score) {
+            matchResult = 'home_win';
+        } else if (match.away_score > match.home_score) {
+            matchResult = 'away_win';
+        }
+        
+        const matchDate = new Date(match.match_time).toISOString().split('T')[0];
+        
+        // 调用 AI 获取数据
+        const data = await fetchMatchStatistics(
+            match.home_team, 
+            match.away_team, 
+            match.league, 
+            matchDate,
+            matchResult
+        );
+        
+        if (data) {
+            res.json({ success: true, data });
+        } else {
+            res.status(500).json({ success: false, error: 'Failed to fetch match data' });
+        }
+        
+    } catch (error) {
+        logger.error('获取比赛数据失败:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ==================== AI 生成深度报告 ====================
+router.post('/generate-report', async (req, res) => {
+    try {
+        const { matchId, statistics, keyEvents, totalAmount, profit, payout, isWin } = req.body;
+        
+        if (!matchId) {
+            return res.status(400).json({ success: false, error: 'Missing match ID' });
+        }
+        
+        // 获取比赛信息
+        let match = null;
+        if (isProduction) {
+            const result = await query(`
+                SELECT match_id, home_team, away_team, league, match_time, home_score, away_score
+                FROM matches WHERE match_id = $1
+            `, [matchId]);
+            match = result?.[0];
+        } else {
+            const db = getDb();
+            match = db.prepare(`
+                SELECT match_id, home_team, away_team, league, match_time, home_score, away_score
+                FROM matches WHERE match_id = ?
+            `).get(matchId);
+        }
+        
+        if (!match) {
+            return res.status(404).json({ success: false, error: 'Match not found' });
+        }
+        
+        // 判断结果
+        let result = 'draw';
+        if (match.home_score > match.away_score) {
+            result = 'home_win';
+        } else if (match.away_score > match.home_score) {
+            result = 'away_win';
+        }
+        
+        const matchDate = new Date(match.match_time).toISOString().split('T')[0];
+        
+        const report = await generateDeepReport({
+            homeTeam: match.home_team,
+            awayTeam: match.away_team,
+            league: match.league,
+            matchDate: matchDate,
+            homeScore: match.home_score,
+            awayScore: match.away_score,
+            result: result,
+            statistics: statistics,
+            keyEvents: keyEvents || [],
+            totalAmount: totalAmount,
+            profit: profit,
+            payout: payout,
+            isWin: isWin
+        });
+        
+        if (report) {
+            res.json({ success: true, data: { report } });
+        } else {
+            res.status(500).json({ success: false, error: 'Failed to generate report' });
+        }
+        
+    } catch (error) {
+        logger.error('生成报告失败:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ==================== 获取单个报告详情（后台用）- 必须放在具体路由之后 ====================
 router.get('/:matchId', async (req, res) => {
     const { matchId } = req.params;
     
@@ -444,139 +579,5 @@ router.post('/publish/:matchId', async (req, res) => {
         res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
     }
 });
-// ==================== AI 获取比赛数据 ====================
-router.post('/fetch-match-data', async (req, res) => {
-    try {
-        const { matchId, result } = req.body;
-        
-        if (!matchId) {
-            return res.status(400).json({ success: false, error: 'Missing match ID' });
-        }
-        
-        // 获取比赛信息
-        let match = null;
-        if (isProduction) {
-            const result = await query(`
-                SELECT match_id, home_team, away_team, league, match_time, home_score, away_score
-                FROM matches WHERE match_id = $1
-            `, [matchId]);
-            match = result?.[0];
-        } else {
-            const db = getDb();
-            match = db.prepare(`
-                SELECT match_id, home_team, away_team, league, match_time, home_score, away_score
-                FROM matches WHERE match_id = ?
-            `).get(matchId);
-        }
-        
-        if (!match) {
-            return res.status(404).json({ success: false, error: 'Match not found' });
-        }
-        
-        // 判断比赛结果
-        let matchResult = 'draw';
-        if (match.home_score > match.away_score) {
-            matchResult = 'home_win';
-        } else if (match.away_score > match.home_score) {
-            matchResult = 'away_win';
-        }
-        
-        const matchDate = new Date(match.match_time).toISOString().split('T')[0];
-        
-        // 调用 AI 获取数据
-        const data = await fetchMatchStatistics(
-            match.home_team, 
-            match.away_team, 
-            match.league, 
-            matchDate,
-            matchResult
-        );
-        
-        if (data) {
-            res.json({ success: true, data });
-        } else {
-            res.status(500).json({ success: false, error: 'Failed to fetch match data' });
-        }
-        
-    } catch (error) {
-        logger.error('获取比赛数据失败:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
 
-// ==================== AI 生成深度报告 ====================
-router.post('/generate-report', async (req, res) => {
-    try {
-        const { matchId, statistics, keyEvents, totalAmount, profit, payout, isWin } = req.body;
-        
-        if (!matchId) {
-            return res.status(400).json({ success: false, error: 'Missing match ID' });
-        }
-        
-        // 获取比赛信息
-        let match = null;
-        if (isProduction) {
-            const result = await query(`
-                SELECT match_id, home_team, away_team, league, match_time, home_score, away_score
-                FROM matches WHERE match_id = $1
-            `, [matchId]);
-            match = result?.[0];
-        } else {
-            const db = getDb();
-            match = db.prepare(`
-                SELECT match_id, home_team, away_team, league, match_time, home_score, away_score
-                FROM matches WHERE match_id = ?
-            `).get(matchId);
-        }
-        
-        if (!match) {
-            return res.status(404).json({ success: false, error: 'Match not found' });
-        }
-        
-        // 判断结果
-        let result = 'draw';
-        if (match.home_score > match.away_score) {
-            result = 'home_win';
-        } else if (match.away_score > match.home_score) {
-            result = 'away_win';
-        }
-        
-        const matchDate = new Date(match.match_time).toISOString().split('T')[0];
-        
-        const report = await generateDeepReport({
-            homeTeam: match.home_team,
-            awayTeam: match.away_team,
-            league: match.league,
-            matchDate: matchDate,
-            homeScore: match.home_score,
-            awayScore: match.away_score,
-            result: result,
-            statistics: statistics,
-            keyEvents: keyEvents || [],
-            totalAmount: totalAmount,
-            profit: profit,
-            payout: payout,
-            isWin: isWin
-        });
-        
-        if (report) {
-            res.json({ success: true, data: { report } });
-        } else {
-            res.status(500).json({ success: false, error: 'Failed to generate report' });
-        }
-        
-    } catch (error) {
-        logger.error('生成报告失败:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-// 测试端点
-router.get('/test-ai', (req, res) => {
-    res.json({ 
-        success: true, 
-        message: 'AI routes are working',
-        hasFetch: typeof fetchMatchStatistics === 'function',
-        hasGenerate: typeof generateDeepReport === 'function'
-    });
-});
 export default router;
