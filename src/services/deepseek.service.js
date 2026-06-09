@@ -1,7 +1,7 @@
 /**
  * DeepSeek API Service
  * @description 调用 DeepSeek API 获取比赛数据（启用联网搜索）
- * @version 10.0.0 - 优化 Prompt，过滤休赛期虚假比赛
+ * @version 11.0.0 - 优化 Prompt，优先抓取世界杯比赛
  * @since 2026-04-12
  */
 
@@ -11,8 +11,26 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 const MAX_TOKENS = 8192;
 
+// 优先抓取的赛事（权重从高到低）
+const PRIORITY_COMPETITIONS = [
+    'World Cup',           // 世界杯 - 最高优先级
+    'FIFA World Cup',      // 国际足联世界杯
+    'World Cup Qualifiers' // 世界杯预选赛
+];
+
 // 在役联赛白名单（6月份有比赛的联赛）
 const ACTIVE_LEAGUES = [
+    // 世界杯相关赛事（优先）
+    'World Cup', 'FIFA World Cup', 'World Cup Qualifiers',
+    // 国家队赛事
+    'UEFA Nations League', 'UEFA Euro Qualifiers', 'CONMEBOL Qualifiers',
+    'AFC Asian Cup Qualifiers', 'CAF Africa Cup of Nations Qualifiers',
+    'CONCACAF Nations League',
+    // 各大洲俱乐部赛事
+    'UEFA Champions League', 'UEFA Europa League', 'UEFA Europa Conference League',
+    'AFC Champions League', 'CAF Champions League', 'CONCACAF Champions League',
+    'Copa Libertadores', 'Copa Sudamericana',
+    // 主流联赛（休赛期可能没有，但保留）
     'J1 League', 'J2 League',
     'K League 1', 'K League 2',
     'Chinese Super League', 'China League One',
@@ -56,69 +74,80 @@ const ENDED_LEAGUES = [
     'English League One', 'English League Two'
 ];
 
+// 未来抓取天数配置
+const FUTURE_DAYS = 7;
+
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * 构建提示词 - 只获取在役联赛的真实比赛
- * @param {string} date - 日期字符串 (YYYY-MM-DD)
+ * 构建提示词 - 优先抓取世界杯比赛
+ * @param {string} startDate - 起始日期 (YYYY-MM-DD)
  * @param {number} targetCount - 目标获取数量
  * @returns {string}
  */
-function buildPrompt(date, targetCount) {
-    return `请使用联网搜索功能，搜索 ${date} 当天正在进行的真实足球比赛赛程。
+function buildPrompt(startDate, targetCount) {
+    return `请使用联网搜索功能，搜索 ${startDate} 至未来 ${FUTURE_DAYS} 天的足球比赛赛程。
 
-【核心要求】：
-1. ⭐ 只返回 ${date} 当天**真实存在**的官方比赛，不要返回友谊赛、表演赛、慈善赛、预测性赛程
-2. ⭐ 只返回以下在役联赛的比赛（这些联赛在6月份有比赛）：
+【核心要求 - 按优先级排序】：
+1. ⭐⭐⭐ 最高优先级：请优先搜索并返回 **世界杯 (World Cup)** 相关的比赛
+   - 包括：FIFA World Cup、World Cup 2026、世界杯正赛
+   - 如果未来 ${FUTURE_DAYS} 天内有世界杯比赛，请全部返回
+
+2. ⭐⭐ 第二优先级：国际A级赛事
+   - 世界杯预选赛 (World Cup Qualifiers)
+   - 欧洲国家联赛 (UEFA Nations League)
+   - 欧洲杯预选赛 (UEFA Euro Qualifiers)
+   - 美洲杯 (Copa América)
+   - 亚洲杯 (AFC Asian Cup)
+   - 非洲杯 (Africa Cup of Nations)
+
+3. ⭐ 第三优先级：各大洲俱乐部顶级赛事
+   - 欧冠 (UEFA Champions League)
+   - 欧联杯 (UEFA Europa League)
+   - 亚冠 (AFC Champions League)
+   - 解放者杯 (Copa Libertadores)
+
+4. 第四优先级：在役联赛（6月份仍在进行的联赛）
    - J1 League, J2 League (日本)
    - K League 1, K League 2 (韩国)
-   - Chinese Super League, China League One (中国)
-   - Major League Soccer (美国/加拿大)
-   - Swedish Allsvenskan (瑞典)
-   - Norwegian Eliteserien (挪威)
-   - Brazilian Serie A, Serie B (巴西)
-   - Argentine Primera División (阿根廷)
-   - A-League (澳大利亚)
-   - Russian Premier League (俄罗斯)
-   - Turkish Super Lig (土耳其)
-   - Czech First League, Polish Ekstraklasa, Ukrainian Premier League
-   - Danish Superliga, Austrian Bundesliga, Swiss Super League
-   - Croatian First League, Greek Super League, Hungarian NB I
-   - Romanian Liga I, Bulgarian First League, Serbian SuperLiga
-   - Israeli Premier League, Qatar Stars League, UAE Pro League, Saudi Pro League
+   - Chinese Super League (中国)
+   - Major League Soccer (美国)
+   - Swedish Allsvenskan, Norwegian Eliteserien
+   - Brazilian Serie A, Argentine Primera División
+   - Russian Premier League, Turkish Super Lig
+   - 以及其他仍在进行中的联赛
 
-3. ⭐ 绝对不要返回以下已结束赛季的联赛：
-   - Premier League, EFL Championship (英超及英冠)
-   - La Liga, La Liga 2 (西甲及西乙)
-   - Serie A, Serie B (意甲及意乙)
-   - Bundesliga, 2. Bundesliga (德甲及德乙)
-   - Ligue 1, Ligue 2 (法甲及法乙)
-   - Eredivisie (荷甲)
-   - Primeira Liga (葡超)
-   - Belgian Pro League (比甲)
-   - Scottish Premiership (苏超)
+【禁止返回】：
+- 绝对不要返回以下已结束赛季的联赛：
+  Premier League, La Liga, Serie A, Bundesliga, Ligue 1
+  Eredivisie, Primeira Liga, Belgian Pro League, Scottish Premiership
 
-4. 如果当天上述在役联赛没有比赛，返回空数组 {"matches": []}，绝对不要编造比赛
-5. 比赛时间使用 UTC 格式（YYYY-MM-DD HH:MM:SS）
-6. 联赛名称使用英文标准名称
-7. 球队名称必须使用英文全称
-8. 只返回 JSON 格式，不要有任何 markdown 标记或其他文字
+【其他要求】：
+- 只返回真实存在的官方比赛，不要编造
+- 比赛时间使用 UTC 格式（YYYY-MM-DD HH:MM:SS）
+- 联赛名称使用英文标准名称
+- 球队名称必须使用英文全称
+- 只返回 JSON 格式，不要有任何 markdown 标记
 
 【返回格式】：
 {
   "matches": [
     {
-      "league": "J1 League",
-      "home_team": "Kawasaki Frontale",
-      "away_team": "Yokohama F Marinos",
-      "match_time_utc": "${date} 10:00:00"
+      "league": "World Cup",
+      "home_team": "Brazil",
+      "away_team": "Argentina",
+      "match_time_utc": "${startDate} 14:00:00"
+    },
+    {
+      "league": "UEFA Champions League",
+      "home_team": "Real Madrid",
+      "away_team": "Bayern Munich",
+      "match_time_utc": "${startDate} 20:00:00"
     }
   ]
 }
 
-如果当天没有符合条件的比赛，返回 {"matches": []}
-
-请开始搜索 ${date} 当天的比赛。`;
+请开始搜索，优先返回世界杯比赛。`;
 }
 
 /**
@@ -156,7 +185,7 @@ async function callWithRetry(prompt, retryCount = 0) {
                 messages: [
                     {
                         role: 'system',
-                        content: '你是一个专业的足球数据助手。请使用联网搜索功能获取最新、真实的足球比赛数据。只返回纯JSON格式的数据，不要有任何额外文字。球队名称必须使用英文全称。只返回在役联赛的真实比赛，绝对不要编造或返回已结束赛季的比赛。'
+                        content: '你是一个专业的足球数据助手，优先关注世界杯比赛。请使用联网搜索功能获取最新、真实的足球比赛数据。世界杯比赛必须优先返回。只返回纯JSON格式的数据，不要有任何额外文字。'
                     },
                     {
                         role: 'user',
@@ -191,42 +220,53 @@ async function callWithRetry(prompt, retryCount = 0) {
 }
 
 /**
- * 过滤比赛 - 只保留在役联赛，排除已结束联赛
+ * 过滤比赛 - 优先保留世界杯比赛
  * @param {Array} matches - 比赛数组
  * @returns {Array}
  */
-function filterActiveLeaguesOnly(matches) {
+function filterAndPrioritizeMatches(matches) {
     if (!matches || !Array.isArray(matches)) return [];
     
-    return matches.filter(match => {
+    // 分离世界杯比赛和其他比赛
+    const worldCupMatches = [];
+    const otherMatches = [];
+    
+    for (const match of matches) {
         const league = match.league || '';
+        const isWorldCup = PRIORITY_COMPETITIONS.some(wc => league.includes(wc));
         
         // 检查是否在黑名单中（已结束的欧洲五大联赛）
         if (ENDED_LEAGUES.includes(league)) {
             console.log(`⏭️ 过滤掉已结束联赛: ${league} - ${match.home_team} vs ${match.away_team}`);
-            return false;
+            continue;
         }
         
-        // 可选：检查是否在白名单中（注释掉，保留所有非黑名单的联赛）
-        // if (!ACTIVE_LEAGUES.includes(league) && !ACTIVE_LEAGUES.some(l => league.includes(l))) {
-        //     console.log(`⚠️ 未知联赛: ${league} - ${match.home_team} vs ${match.away_team}，保留但请留意`);
-        // }
-        
-        return true;
-    });
+        if (isWorldCup) {
+            worldCupMatches.push(match);
+            console.log(`⭐ 优先保留世界杯比赛: ${league} - ${match.home_team} vs ${match.away_team}`);
+        } else {
+            otherMatches.push(match);
+        }
+    }
+    
+    // 世界杯比赛排在前面
+    const result = [...worldCupMatches, ...otherMatches];
+    console.log(`📊 过滤结果: 世界杯 ${worldCupMatches.length} 场, 其他 ${otherMatches.length} 场`);
+    
+    return result;
 }
 
 /**
- * 获取当天的比赛数据
- * @param {string} date - 日期字符串 (YYYY-MM-DD)
+ * 获取未来多天的比赛数据
+ * @param {string} startDate - 起始日期 (YYYY-MM-DD)
  * @param {number} targetCount - 目标获取数量
  * @returns {Promise<Array>}
  */
-async function fetchMatchesForDate(date, targetCount = 50) {
-    const prompt = buildPrompt(date, targetCount);
+async function fetchUpcomingMatchesData(startDate, targetCount = 80) {
+    const prompt = buildPrompt(startDate, targetCount);
     
     try {
-        console.log(`📡 调用 DeepSeek API 获取 ${date} 的比赛数据，目标 ${targetCount} 场`);
+        console.log(`📡 调用 DeepSeek API 获取未来 ${FUTURE_DAYS} 天的比赛数据，目标 ${targetCount} 场`);
         const data = await callWithRetry(prompt);
         
         if (!data.choices || !data.choices[0]) {
@@ -245,30 +285,26 @@ async function fetchMatchesForDate(date, targetCount = 50) {
         const result = JSON.parse(content);
         
         if (result.matches && Array.isArray(result.matches)) {
-            // 验证比赛时间是否为当天
+            // 验证比赛时间
             const validMatches = result.matches.filter(m => {
                 if (!m.home_team || !m.away_team || !m.match_time_utc) {
                     return false;
                 }
-                // 检查比赛日期是否为当天
+                // 检查比赛日期是否在范围内
                 const matchDate = m.match_time_utc.split(' ')[0];
-                if (matchDate !== date) {
-                    console.warn(`⚠️ 跳过非当天比赛: ${m.home_team} vs ${m.away_team}, 日期: ${matchDate}`);
+                if (matchDate < startDate) {
+                    console.warn(`⚠️ 跳过过期比赛: ${m.home_team} vs ${m.away_team}, 日期: ${matchDate}`);
                     return false;
                 }
                 return true;
             });
             
-            // 过滤掉已结束联赛的比赛
-            const filteredMatches = filterActiveLeaguesOnly(validMatches);
+            console.log(`✅ 获取 ${result.matches.length} 场，有效 ${validMatches.length} 场`);
             
-            const filteredCount = validMatches.length - filteredMatches.length;
-            if (filteredCount > 0) {
-                console.log(`📌 过滤掉 ${filteredCount} 场已结束联赛的比赛`);
-            }
+            // 过滤和优先级排序
+            const prioritizedMatches = filterAndPrioritizeMatches(validMatches);
             
-            console.log(`✅ 获取 ${result.matches.length} 场，有效 ${validMatches.length} 场（当天），通过联赛过滤 ${filteredMatches.length} 场`);
-            return filteredMatches;
+            return prioritizedMatches;
         }
         
         return [];
@@ -280,79 +316,7 @@ async function fetchMatchesForDate(date, targetCount = 50) {
 }
 
 /**
- * 获取未来7天的比赛（备用方案）- 只抓取在役联赛
- * @param {string} startDate - 起始日期
- * @param {number} targetCount - 目标获取数量
- * @returns {Promise<Array>}
- */
-async function fetchUpcomingMatchesBackup(startDate, targetCount = 30) {
-    const prompt = `请使用联网搜索功能，搜索 ${startDate} 至未来 7 天的足球比赛赛程。
-
-【核心要求】：
-1. 只返回**真实存在**的官方比赛
-2. 只返回以下在役联赛：
-   - J1 League, J2 League (日本)
-   - K League 1, K League 2 (韩国)
-   - Chinese Super League, China League One (中国)
-   - Major League Soccer (美国/加拿大)
-   - Swedish Allsvenskan, Norwegian Eliteserien
-   - Brazilian Serie A, Serie B
-   - Argentine Primera División
-   - A-League
-   - Russian Premier League, Turkish Super Lig
-   - Czech First League, Polish Ekstraklasa, Ukrainian Premier League
-   - Danish Superliga, Austrian Bundesliga, Swiss Super League
-
-3. 绝对不要返回欧洲五大联赛（英超、西甲、意甲、德甲、法甲）及荷甲、葡超、比甲、苏超
-4. 如果当天没有比赛，返回空数组
-
-【返回格式】：
-{
-  "matches": [
-    {
-      "league": "J1 League",
-      "home_team": "Kawasaki Frontale",
-      "away_team": "Yokohama F Marinos",
-      "match_time_utc": "${startDate} 10:00:00"
-    }
-  ]
-}
-
-请返回符合条件的所有比赛。`;
-    
-    try {
-        console.log(`📡 使用备用方案获取未来7天比赛...`);
-        const data = await callWithRetry(prompt);
-        
-        if (!data.choices || !data.choices[0]) {
-            return [];
-        }
-        
-        let content = data.choices[0].message.content;
-        content = cleanMarkdown(content);
-        
-        if (!content) {
-            return [];
-        }
-        
-        const result = JSON.parse(content);
-        
-        if (result.matches && Array.isArray(result.matches)) {
-            const validMatches = result.matches.filter(m => m.home_team && m.away_team && m.match_time_utc);
-            const filteredMatches = filterActiveLeaguesOnly(validMatches);
-            console.log(`✅ 备用方案获取 ${validMatches.length} 场，过滤后 ${filteredMatches.length} 场`);
-            return filteredMatches;
-        }
-        
-        return [];
-    } catch (error) {
-        console.error(`❌ 备用方案失败:`, error.message);
-        return [];
-    }
-}
-
-/**
- * 获取比赛数据（主入口）
+ * 获取比赛数据（主入口）- 获取未来7天比赛
  * @returns {Promise<Array>}
  */
 export async function fetchUpcomingMatches() {
@@ -363,45 +327,29 @@ export async function fetchUpcomingMatches() {
 
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
-    console.log(`📡 开始搜索 ${todayStr} 当天的比赛数据...`);
+    console.log(`📡 开始搜索未来 ${FUTURE_DAYS} 天的比赛数据...`);
+    console.log(`📌 优先抓取: 世界杯 > 国际赛事 > 俱乐部赛事`);
     console.log(`📌 已过滤联赛: ${ENDED_LEAGUES.join(', ')}`);
     
     const startTime = Date.now();
-    let allMatches = [];
     
-    // 方案一：获取今天的比赛
-    console.log(`\n📡 方案一：获取 ${todayStr} 当天的比赛...`);
-    const todayMatches = await fetchMatchesForDate(todayStr, 60);
-    allMatches.push(...todayMatches);
-    console.log(`✅ 当天实际获取 ${todayMatches.length} 场比赛`);
-    
-    // 如果今天没有比赛，使用备用方案获取未来几天的比赛
-    if (todayMatches.length === 0) {
-        console.log(`\n⚠️ 当天没有比赛数据，使用备用方案获取未来7天比赛...`);
-        const backupMatches = await fetchUpcomingMatchesBackup(todayStr, 50);
-        
-        // 过滤出未来3天内的比赛
-        const threeDaysLater = new Date(today);
-        threeDaysLater.setDate(threeDaysLater.getDate() + 3);
-        const threeDaysLaterStr = threeDaysLater.toISOString().split('T')[0];
-        
-        const recentMatches = backupMatches.filter(m => {
-            const matchDate = m.match_time_utc.split(' ')[0];
-            return matchDate <= threeDaysLaterStr;
-        });
-        
-        allMatches.push(...recentMatches);
-        console.log(`✅ 备用方案获取未来3天内比赛 ${recentMatches.length} 场`);
-    }
+    // 直接获取未来 FUTURE_DAYS 天的比赛
+    const matches = await fetchUpcomingMatchesData(todayStr, 80);
     
     const duration = Date.now() - startTime;
-    console.log(`\n📊 总共获取 ${allMatches.length} 场比赛，耗时 ${duration}ms`);
+    console.log(`\n📊 总共获取 ${matches.length} 场比赛，耗时 ${duration}ms`);
     
-    if (allMatches.length === 0) {
-        console.log(`⚠️ 今天（${todayStr}）没有符合条件的在役联赛比赛（休赛期）`);
+    if (matches.length === 0) {
+        console.log(`⚠️ 未来 ${FUTURE_DAYS} 天内没有符合条件的比赛`);
+    } else {
+        // 统计世界杯比赛数量
+        const worldCupCount = matches.filter(m => 
+            PRIORITY_COMPETITIONS.some(wc => (m.league || '').includes(wc))
+        ).length;
+        console.log(`📊 比赛统计: 世界杯 ${worldCupCount} 场, 其他 ${matches.length - worldCupCount} 场`);
     }
     
-    return allMatches;
+    return matches;
 }
 
 /**
@@ -416,7 +364,10 @@ export async function fetchMatchesForSpecificDate(date) {
     }
     
     console.log(`📡 手动获取 ${date} 的比赛数据...`);
-    return fetchMatchesForDate(date, 50);
+    // 从指定日期开始获取未来 FUTURE_DAYS 天的比赛
+    const matches = await fetchUpcomingMatchesData(date, 80);
+    // 只返回指定日期的比赛
+    return matches.filter(m => m.match_time_utc.split(' ')[0] === date);
 }
 
 /**
@@ -425,7 +376,7 @@ export async function fetchMatchesForSpecificDate(date) {
  * @returns {Promise<Array>}
  */
 export async function fetchMatchesFromDeepSeek(date) {
-    return fetchMatchesForDate(date, 20);
+    return fetchMatchesForSpecificDate(date);
 }
 
 /**
