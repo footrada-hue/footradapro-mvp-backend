@@ -657,5 +657,45 @@ router.post('/execute', hasPermission('matches.settle'), async (req, res) => {
         });
     }
 });
-
+// ==================== 一键获取所有比赛比分 ====================
+router.post('/fetch-all-scores', hasPermission('matches.settle'), async (req, res) => {
+    try {
+        const { query } = await import('../../../database/connection.js');
+        
+        // 获取所有需要比分的比赛
+        const matches = await query(`
+            SELECT id, home_team, away_team, league
+            FROM matches 
+            WHERE status = 'finished' 
+            AND (home_score IS NULL OR away_score IS NULL)
+            AND match_time < NOW() - INTERVAL '90 minutes'
+        `);
+        
+        if (!matches || matches.length === 0) {
+            return res.json({ success: true, message: '没有需要获取比分的比赛', count: 0 });
+        }
+        
+        // 立即返回响应，避免超时
+        res.json({ success: true, message: `开始获取 ${matches.length} 场比赛的比分`, count: matches.length });
+        
+        // 异步执行比分获取
+        const { fetchAndUpdateMatchScore } = await import('../../../jobs/auto-fetch-scores.js');
+        
+        for (const match of matches) {
+            try {
+                console.log(`📡 一键获取比分: ${match.home_team} vs ${match.away_team}`);
+                await fetchAndUpdateMatchScore(match.id, match.home_team, match.away_team, match.league);
+                await new Promise(resolve => setTimeout(resolve, 1500)); // 避免 API 限流
+            } catch (err) {
+                console.error(`获取 ${match.home_team} vs ${match.away_team} 比分失败:`, err.message);
+            }
+        }
+        
+        console.log(`✅ 一键获取比分完成，共处理 ${matches.length} 场比赛`);
+        
+    } catch (error) {
+        console.error('一键获取比分失败:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 export default router;
