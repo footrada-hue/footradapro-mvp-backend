@@ -146,7 +146,6 @@ async function updateScoresForFinishedMatches() {
         
         for (const match of matches) {
             await fetchAndUpdateMatchScore(match.id, match.home_team, match.away_team, match.league);
-            // 避免 API 请求过快
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
         
@@ -168,6 +167,3 @@ setTimeout(() => {
         logger.error('初始化比分获取失败:', err);
     });
 }, 30000);
-
-// 只导出一个（删除重复的 export）
-export { fetchAndUpdateMatchScore };
