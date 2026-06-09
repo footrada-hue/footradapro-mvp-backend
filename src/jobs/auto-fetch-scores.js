@@ -1,7 +1,7 @@
 /**
  * FOOTRADAPRO - Auto Fetch Scores Service
  * @description 自动获取已结束比赛的比分（使用 DeepSeek API 联网搜索）
- * @version 5.0.0 - 永久修复比分获取逻辑
+ * @version 5.1.0 - 修复重复导出错误
  */
 
 import 'dotenv/config';
@@ -18,6 +18,42 @@ const RETRY_DELAYS = {
     FAILED: 10 * 60 * 1000,   // 获取失败：10分钟后重试
     CONFIRM: 2 * 60 * 1000    // 需要确认：2分钟后二次确认
 };
+
+/**
+ * 更新比赛比分
+ */
+async function updateMatchScore(matchId, homeScore, awayScore) {
+    try {
+        if (isProduction) {
+            const { query } = await import('../database/connection.js');
+            await query(`
+                UPDATE matches 
+                SET home_score = $1, 
+                    away_score = $2, 
+                    score_confirmed = true,
+                    score_fetch_triggered = true,
+                    updated_at = NOW()
+                WHERE id = $3
+            `, [homeScore, awayScore, matchId]);
+        } else {
+            const { getDb } = await import('../database/connection.js');
+            const db = getDb();
+            db.prepare(`
+                UPDATE matches 
+                SET home_score = ?, 
+                    away_score = ?, 
+                    score_confirmed = 1,
+                    score_fetch_triggered = 1,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            `).run(homeScore, awayScore, matchId);
+        }
+        return true;
+    } catch (error) {
+        logger.error('更新比赛比分失败:', error);
+        return false;
+    }
+}
 
 /**
  * 获取并更新比赛比分
@@ -72,45 +108,9 @@ export async function fetchAndUpdateMatchScore(matchId, homeTeam, awayTeam, leag
 }
 
 /**
- * 更新比赛比分
- */
-async function updateMatchScore(matchId, homeScore, awayScore) {
-    try {
-        if (isProduction) {
-            const { query } = await import('../database/connection.js');
-            await query(`
-                UPDATE matches 
-                SET home_score = $1, 
-                    away_score = $2, 
-                    score_confirmed = true,
-                    score_fetch_triggered = true,
-                    updated_at = NOW()
-                WHERE id = $3
-            `, [homeScore, awayScore, matchId]);
-        } else {
-            const { getDb } = await import('../database/connection.js');
-            const db = getDb();
-            db.prepare(`
-                UPDATE matches 
-                SET home_score = ?, 
-                    away_score = ?, 
-                    score_confirmed = 1,
-                    score_fetch_triggered = 1,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-            `).run(homeScore, awayScore, matchId);
-        }
-        return true;
-    } catch (error) {
-        logger.error('更新比赛比分失败:', error);
-        return false;
-    }
-}
-
-/**
  * 批量获取已结束但无比分比赛的比分（定时任务备用）
  */
-export async function updateScoresForFinishedMatches() {
+async function updateScoresForFinishedMatches() {
     try {
         const { query, getDb } = await import('../database/connection.js');
         
@@ -169,4 +169,5 @@ setTimeout(() => {
     });
 }, 30000);
 
-export { updateScoresForFinishedMatches };
+// 只导出一个（删除重复的 export）
+export { fetchAndUpdateMatchScore };
