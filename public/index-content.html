@@ -6,6 +6,21 @@
 
 <div class="container">
   <main class="content">
+    <!-- 世界杯主题 Banner -->
+    <div class="worldcup-banner" id="worldcupBanner">
+      <div class="worldcup-banner-content">
+        <div class="worldcup-icon">🏆</div>
+        <div class="worldcup-text">
+          <div class="worldcup-title">FIFA World Cup 2026</div>
+          <div class="worldcup-countdown" id="worldcupCountdown">Loading...</div>
+        </div>
+        <button class="worldcup-btn" onclick="window.location.href='/match-market.html?competition=worldcup'">
+          Explore Matches <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+      <div class="worldcup-bg-pattern"></div>
+    </div>
+
     <div class="mode-note" id="modeNote"><i class="fa-regular fa-circle-info"></i> Sandbox uses virtual funds — no real asset risk.</div>
 
     <div class="grid">
@@ -68,7 +83,7 @@
             <tr><th>Timestamp</th><th>Match</th><th>Amount</th><th>Status</th><th>Mode</th><th></th></tr>
           </thead>
           <tbody id="recentAuthTableBody">
-            <tr><td colspan="6" style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-pulse"></i> Loading...<\/td><\/tr>
+            <tr><td colspan="6" style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-pulse"></i> Loading...</td></tr>
           </tbody>
         </table>
       </div>
@@ -602,6 +617,88 @@
     padding: 40px;
     color: var(--text-muted);
   }
+
+  /* ========== 世界杯主题样式 ========== */
+  .worldcup-banner {
+    background: linear-gradient(135deg, #1a4d2e 0%, #0d2a1a 100%);
+    border-radius: 32px;
+    padding: 20px 28px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+  .worldcup-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 2;
+  }
+  .worldcup-icon {
+    font-size: 48px;
+    animation: pulse 2s infinite;
+  }
+  .worldcup-text {
+    flex: 1;
+  }
+  .worldcup-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #ffd700;
+    text-shadow: 0 0 10px rgba(255,215,0,0.5);
+    letter-spacing: 1px;
+  }
+  .worldcup-countdown {
+    font-size: 14px;
+    color: rgba(255,255,255,0.8);
+    margin-top: 4px;
+  }
+  .worldcup-btn {
+    background: linear-gradient(135deg, #ffd700, #ffb347);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 40px;
+    font-weight: 700;
+    color: #1a1a2e;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .worldcup-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255,215,0,0.3);
+  }
+  .worldcup-bg-pattern {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 200px;
+    height: 100%;
+    background: repeating-linear-gradient(45deg, rgba(255,215,0,0.1) 0px, rgba(255,215,0,0.1) 2px, transparent 2px, transparent 8px);
+    pointer-events: none;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  /* 世界杯比赛卡片特殊样式 */
+  .worldcup-highlight {
+    border: 2px solid #ffd700;
+    position: relative;
+  }
+  .worldcup-highlight::before {
+    content: "🏆";
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 20px;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
   @media (max-width: 1199px) {
     .events-grid { grid-template-columns: repeat(2, 1fr); }
   }
@@ -629,7 +726,6 @@
 </style>
 
 <script>
-// ========== 首页完整版 ==========
 (function() {
   'use strict';
   
@@ -690,7 +786,6 @@
     const startNum = Number(start) || 0;
     const endNum = Number(end) || 0;
     const startTime = performance.now();
-    
     function update(currentTime) {
       const elapsed = currentTime - startTime;
       const progress = Math.min(1, elapsed / duration);
@@ -710,24 +805,10 @@
   
   const fetchUserBalance = async () => {
     try {
-      const timestamp = Date.now();
-      const response = await fetch(`/api/v1/user/balance?_=${timestamp}`, { 
-        credentials: 'include',
-        cache: 'no-cache'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      
+      const response = await fetch(`/api/v1/user/balance?_=${Date.now()}`, { credentials: 'include' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const result = await response.json();
-      console.log('💰 余额API返回:', result);
-      
-      if (result.success && result.data) {
-        const currentBalance = Number(result.data.balance) || 0;
-        console.log(`💰 当前余额: ${currentBalance} ${result.data.is_test_mode ? 'tUSDT' : 'USDT'}`);
-        return currentBalance;
-      }
+      if (result.success && result.data) return Number(result.data.balance) || 0;
       return 0;
     } catch (error) {
       console.error('获取余额失败:', error);
@@ -739,15 +820,9 @@
     try {
       const isSandbox = ThemeManager ? ThemeManager.isTestMode : true;
       const mode = isSandbox ? 'test' : 'live';
-      const response = await fetch(`/api/v1/user/stats/locked?mode=${mode}`, {
-        credentials: 'include',
-        cache: 'no-cache'
-      });
+      const response = await fetch(`/api/v1/user/stats/locked?mode=${mode}`, { credentials: 'include' });
       const result = await response.json();
-      
-      if (result.success && result.data) {
-        return Number(result.data.total) || 0;
-      }
+      if (result.success && result.data) return Number(result.data.total) || 0;
       return 0;
     } catch (error) {
       console.error('获取锁定资金失败:', error);
@@ -761,7 +836,6 @@
       const mode = isSandbox ? 'test' : 'live';
       const response = await fetch(`/api/v1/user/stats/chart?days=${days}&mode=${mode}`, { credentials: 'include' });
       const result = await response.json();
-      
       if (result.success && result.data) {
         return {
           labels: result.data.labels,
@@ -778,14 +852,9 @@
   
   const fetchRecentAuthorizations = async () => {
     try {
-      const response = await fetch('/api/v1/user/authorize/list?limit=3', { 
-        credentials: 'include' 
-      });
+      const response = await fetch('/api/v1/user/authorize/list?limit=3', { credentials: 'include' });
       const result = await response.json();
-      
-      if (result.success && result.data) {
-        return result.data;
-      }
+      if (result.success && result.data) return result.data;
       return [];
     } catch (error) {
       console.error('获取最近授权记录失败:', error);
@@ -797,7 +866,6 @@
     const isSandbox = ThemeManager ? ThemeManager.isTestMode : true;
     const modeClass = isSandbox ? 'sandbox-mode' : 'live-mode';
     const modeText = isSandbox ? 'Sandbox' : 'Live';
-    
     if (dom.recentAuthTable) {
       if (!authorizations || authorizations.length === 0) {
         dom.recentAuthTable.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No authorization records</td></tr>';
@@ -814,7 +882,6 @@
         `).join('');
       }
     }
-    
     if (dom.recentAuthMobile) {
       if (!authorizations || authorizations.length === 0) {
         dom.recentAuthMobile.innerHTML = '<div class="mobile-history-card" style="text-align:center;padding:40px;">No authorization records</div>';
@@ -835,88 +902,40 @@
   
   const updateBalanceUI = async (skipAnimation = false) => {
     if (!ThemeManager) return;
-    
     const isSandbox = ThemeManager.isTestMode;
     const currency = isSandbox ? 'tUSDT' : 'USDT';
-    
     let availableBalance = await fetchUserBalance();
     let lockedAmount = await fetchLockedFunds();
-    
     availableBalance = Number(availableBalance) || 0;
     lockedAmount = Number(lockedAmount) || 0;
     const totalAssetsNum = availableBalance + lockedAmount;
-    
-    console.log(`💰 余额计算: 可用=${availableBalance}, 锁定=${lockedAmount}, 总资产=${totalAssetsNum}`);
-    
     if (dom.totalAssets) {
       const currentTotal = parseFloat(dom.totalAssets.innerText) || 0;
-      if (skipAnimation || dom.totalAssets.innerText === '--' || isNaN(currentTotal)) {
-        dom.totalAssets.innerText = totalAssetsNum.toFixed(2);
-      } else {
-        animateNumber(dom.totalAssets, currentTotal, totalAssetsNum);
-      }
+      if (skipAnimation || dom.totalAssets.innerText === '--' || isNaN(currentTotal)) dom.totalAssets.innerText = totalAssetsNum.toFixed(2);
+      else animateNumber(dom.totalAssets, currentTotal, totalAssetsNum);
     }
-    
     if (dom.available) {
       const currentAvail = parseFloat(dom.available.innerText) || 0;
-      if (skipAnimation || dom.available.innerText === '--' || isNaN(currentAvail)) {
-        dom.available.innerText = `${availableBalance.toFixed(2)} ${currency}`;
-      } else {
-        animateNumber(dom.available, currentAvail, availableBalance);
-        setTimeout(() => {
-          if (!dom.available.innerText.includes(currency)) {
-            dom.available.innerText = `${availableBalance.toFixed(2)} ${currency}`;
-          }
-        }, 50);
-      }
+      if (skipAnimation || dom.available.innerText === '--' || isNaN(currentAvail)) dom.available.innerText = `${availableBalance.toFixed(2)} ${currency}`;
+      else { animateNumber(dom.available, currentAvail, availableBalance); setTimeout(() => { if (!dom.available.innerText.includes(currency)) dom.available.innerText = `${availableBalance.toFixed(2)} ${currency}`; }, 50); }
     }
-    
     if (dom.lockedDisplay) {
       const currentLocked = parseFloat(dom.lockedDisplay.innerText) || 0;
-      if (skipAnimation || dom.lockedDisplay.innerText === '0.00 tUSDT' || dom.lockedDisplay.innerText === '0.00 USDT' || isNaN(currentLocked)) {
-        dom.lockedDisplay.innerText = `${lockedAmount.toFixed(2)} ${currency}`;
-      } else {
-        animateNumber(dom.lockedDisplay, currentLocked, lockedAmount);
-        setTimeout(() => {
-          if (!dom.lockedDisplay.innerText.includes(currency)) {
-            dom.lockedDisplay.innerText = `${lockedAmount.toFixed(2)} ${currency}`;
-          }
-        }, 50);
-      }
+      if (skipAnimation || dom.lockedDisplay.innerText === '0.00 tUSDT' || isNaN(currentLocked)) dom.lockedDisplay.innerText = `${lockedAmount.toFixed(2)} ${currency}`;
+      else { animateNumber(dom.lockedDisplay, currentLocked, lockedAmount); setTimeout(() => { if (!dom.lockedDisplay.innerText.includes(currency)) dom.lockedDisplay.innerText = `${lockedAmount.toFixed(2)} ${currency}`; }, 50); }
     }
-    
-    if (dom.modeNote) {
-      dom.modeNote.innerHTML = isSandbox 
-        ? '<i class="fa-regular fa-circle-info"></i> Sandbox uses virtual funds (tUSDT) — no real asset risk.' 
-        : '<i class="fa-regular fa-circle-info"></i> Live mode uses real funds (USDT). Please ensure sufficient balance.';
-    }
+    if (dom.modeNote) dom.modeNote.innerHTML = isSandbox ? '<i class="fa-regular fa-circle-info"></i> Sandbox uses virtual funds (tUSDT) — no real asset risk.' : '<i class="fa-regular fa-circle-info"></i> Live mode uses real funds (USDT). Please ensure sufficient balance.';
   };
   
   const initChart = (labels, authData, profitData) => {
     if (!dom.chartCanvas) return;
     if (authProfitChart) authProfitChart.destroy();
-    
     const isSandbox = ThemeManager ? ThemeManager.isTestMode : true;
     const currency = isSandbox ? 'tUSDT' : 'USDT';
-    
     authProfitChart = new Chart(dom.chartCanvas, {
       type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [
-          { label: `Authorized Amount (${currency})`, data: authData, backgroundColor: '#3b82f6', borderRadius: 4, barPercentage: 0.6, categoryPercentage: 0.7 },
-          { label: `Profit / Loss (${currency})`, data: profitData, backgroundColor: profitData.map(v => v >= 0 ? '#10b981' : '#ef4444'), borderRadius: 4, barPercentage: 0.6, categoryPercentage: 0.7 }
-        ]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: true,
-        plugins: { tooltip: { callbacks: { label: function(context) {
-          let val = context.raw;
-          if (context.dataset.label.includes('Profit')) return context.dataset.label + ': ' + (val >= 0 ? '+' : '') + val.toFixed(2) + ' ' + currency;
-          return context.dataset.label + ': ' + val.toFixed(2) + ' ' + currency;
-        } } }, legend: { display: false } },
-        scales: { y: { title: { display: true, text: currency, color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(148, 163, 184, 0.15)' }, ticks: { font: { size: 9 } } }, x: { grid: { display: false }, ticks: { font: { size: 9 } } } }
-      }
+      data: { labels: labels, datasets: [{ label: `Authorized Amount (${currency})`, data: authData, backgroundColor: '#3b82f6', borderRadius: 4, barPercentage: 0.6 }, { label: `Profit / Loss (${currency})`, data: profitData, backgroundColor: profitData.map(v => v >= 0 ? '#10b981' : '#ef4444'), borderRadius: 4, barPercentage: 0.6 }] },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { tooltip: { callbacks: { label: function(context) { let val = context.raw; if (context.dataset.label.includes('Profit')) return context.dataset.label + ': ' + (val >= 0 ? '+' : '') + val.toFixed(2) + ' ' + currency; return context.dataset.label + ': ' + val.toFixed(2) + ' ' + currency; } } }, legend: { display: false } }, scales: { y: { title: { display: true, text: currency, color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(148, 163, 184, 0.15)' }, ticks: { font: { size: 9 } } }, x: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
     });
   };
   
@@ -933,112 +952,112 @@
   const updateChart = async (period) => {
     if (!dom.chartCanvas) return;
     currentChartPeriod = period;
-    
-    let days = 30;
-    switch(period) {
-      case '1d': days = 1; break;
-      case '1w': days = 7; break;
-      case '1m': days = 30; break;
-      case '1y': days = 365; break;
-      default: days = 30;
-    }
-    
+    let days = period === '1d' ? 1 : period === '1w' ? 7 : period === '1m' ? 30 : 365;
     const data = await fetchChartData(days);
-    if (data) {
-      initChart(data.labels, data.authorized, data.profit);
-    } else {
-      const fallbackData = getFallbackData(period);
-      initChart(fallbackData.labels, fallbackData.authorized, fallbackData.profit);
-    }
+    if (data) initChart(data.labels, data.authorized, data.profit);
+    else initChart(getFallbackData(period).labels, getFallbackData(period).authorized, getFallbackData(period).profit);
   };
   
-function getTeamLogoUrl(logoUrl) {
-    // 如果有队徽数据（URL 或 Base64），直接返回
+  function getTeamLogoUrl(logoUrl) {
     if (logoUrl && logoUrl !== '/uploads/teams/default.png' && logoUrl !== 'NULL') {
-        // 如果是 Base64 格式（以 data:image 开头），不添加时间戳
-        if (logoUrl.startsWith('data:image')) {
-            return logoUrl;
-        }
-        return logoUrl + '?t=' + Date.now();
+      if (logoUrl.startsWith('data:image')) return logoUrl;
+      return logoUrl + '?t=' + Date.now();
     }
     return '/uploads/teams/default.png';
-}
-function renderSpotlightMatches(matches) {
+  }
+  
+  function renderSpotlightMatches(matches) {
     if (!dom.spotlightGrid) return;
-    
     if (!matches || matches.length === 0) {
-        dom.spotlightGrid.innerHTML = '<div class="empty-state" style="text-align:center;padding:40px;"><i class="fas fa-futbol"></i><p>No upcoming matches</p></div>';
-        return;
+      dom.spotlightGrid.innerHTML = '<div class="empty-state" style="text-align:center;padding:40px;"><i class="fas fa-futbol"></i><p>No upcoming matches</p></div>';
+      return;
     }
-    
-    dom.spotlightGrid.innerHTML = matches.map(match => {
-        const time = formatMatchTime(match.match_time);
-        const relativeTime = getRelativeTime(match.match_time);
-        const leagueName = match.league || 'Unknown';
-        const confidence = match.confidence || 85;
-        const homeLogo = getTeamLogoUrl(match.home_logo);
-        const awayLogo = getTeamLogoUrl(match.away_logo);
-        
-        return `
-            <div class="match-card" data-match-id="${match.id}">
-                <div class="status-badge status-upcoming">Upcoming</div>
-                <div class="match-logos-wrapper">
-                    <div class="match-logo-item">
-                        <img class="match-logo" src="${homeLogo}" alt="${escapeHtml(match.home_team)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'logo-fallback\\'><i class=\\'fas fa-futbol\\'></i></div><div class=\\'match-team-name\\'>${escapeHtml(match.home_team)}</div>'">
-                        <div class="match-team-name">${escapeHtml(match.home_team)}</div>
-                    </div>
-                    <div class="match-vs-badge">VS</div>
-                    <div class="match-logo-item">
-                        <img class="match-logo" src="${awayLogo}" alt="${escapeHtml(match.away_team)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'logo-fallback\\'><i class=\\'fas fa-futbol\\'></i></div><div class=\\'match-team-name\\'>${escapeHtml(match.away_team)}</div>'">
-                        <div class="match-team-name">${escapeHtml(match.away_team)}</div>
-                    </div>
-                </div>
-                <div class="match-info">
-                    <div class="match-league-time">
-                        <span class="league-badge">${escapeHtml(leagueName)}</span>
-                        <span>${time} (${relativeTime})</span>
-                    </div>
-                    <div class="confidence-bar">
-                        <div class="confidence-label">
-                            <span>AI Confidence</span>
-                            <span>${confidence}%</span>
-                        </div>
-                        <div class="confidence-progress">
-                            <div class="confidence-fill" style="width: ${confidence}%"></div>
-                        </div>
-                    </div>
-                </div>
-                <button class="authorize-btn" onclick="window.location.href='/shell.html?page=authorize&matchId=${match.id}'">
-                    Authorize <i class="fas fa-arrow-right"></i>
-                </button>
+    dom.spotlightGrid.innerHTML = matches.slice(0, 4).map(match => {
+      const time = formatMatchTime(match.match_time);
+      const relativeTime = getRelativeTime(match.match_time);
+      const leagueName = match.league || 'Unknown';
+      const confidence = match.confidence || 85;
+      const homeLogo = getTeamLogoUrl(match.home_logo);
+      const awayLogo = getTeamLogoUrl(match.away_logo);
+      return `
+        <div class="match-card" data-match-id="${match.id}">
+          <div class="status-badge status-upcoming">Upcoming</div>
+          <div class="match-logos-wrapper">
+            <div class="match-logo-item">
+              <img class="match-logo" src="${homeLogo}" alt="${escapeHtml(match.home_team)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'logo-fallback\\'><i class=\\'fas fa-futbol\\'></i></div><div class=\\'match-team-name\\'>${escapeHtml(match.home_team)}</div>'">
+              <div class="match-team-name">${escapeHtml(match.home_team)}</div>
             </div>
-        `;
+            <div class="match-vs-badge">VS</div>
+            <div class="match-logo-item">
+              <img class="match-logo" src="${awayLogo}" alt="${escapeHtml(match.away_team)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'logo-fallback\\'><i class=\\'fas fa-futbol\\'></i></div><div class=\\'match-team-name\\'>${escapeHtml(match.away_team)}</div>'">
+              <div class="match-team-name">${escapeHtml(match.away_team)}</div>
+            </div>
+          </div>
+          <div class="match-info">
+            <div class="match-league-time">
+              <span class="league-badge">${escapeHtml(leagueName)}</span>
+              <span>${time} (${relativeTime})</span>
+            </div>
+            <div class="confidence-bar">
+              <div class="confidence-label"><span>AI Confidence</span><span>${confidence}%</span></div>
+              <div class="confidence-progress"><div class="confidence-fill" style="width: ${confidence}%"></div></div>
+            </div>
+          </div>
+          <button class="authorize-btn" onclick="window.location.href='/shell.html?page=authorize&matchId=${match.id}'">Authorize <i class="fas fa-arrow-right"></i></button>
+        </div>
+      `;
     }).join('');
-}  
-
-const waitForMatchesData = () => {
+  }
+  
+  // ========== 世界杯相关功能 ==========
+  const updateWorldCupCountdown = () => {
+    const countdownEl = document.getElementById('worldcupCountdown');
+    if (!countdownEl) return;
+    const worldCupStart = new Date(2026, 5, 11);
+    const now = new Date();
+    const diff = worldCupStart - now;
+    if (diff <= 0) {
+      countdownEl.innerHTML = '🏆 Tournament is LIVE! 🏆';
+      return;
+    }
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (86400000)) / (1000 * 60 * 60));
+    countdownEl.innerHTML = `Starts in ${days} days ${hours} hours`;
+  };
+  
+  const highlightWorldCupMatches = () => {
+    const matchCards = document.querySelectorAll('.match-card');
+    matchCards.forEach(card => {
+      const leagueBadge = card.querySelector('.league-badge');
+      if (leagueBadge) {
+        const leagueText = leagueBadge.innerText.toLowerCase();
+        if (leagueText.includes('world cup') || leagueText.includes('fifa')) {
+          card.classList.add('worldcup-highlight');
+        }
+      }
+    });
+  };
+  
+  const waitForMatchesData = () => {
     return new Promise((resolve) => {
       if (window.AppState && window.AppState.filteredMatches && window.AppState.filteredMatches.length > 0) {
-        resolve(window.AppState.filteredMatches.slice(0, 4));
+        resolve(window.AppState.filteredMatches);
         return;
       }
       if (window.AppState && window.AppState.matches && window.AppState.matches.length > 0) {
-        const upcoming = window.AppState.matches.filter(m => m.calculated_status === 'upcoming' || m.status === 'upcoming');
-        resolve(upcoming.slice(0, 4));
+        resolve(window.AppState.matches);
         return;
       }
-      
       let checkCount = 0;
       const maxChecks = 50;
       const checkInterval = setInterval(() => {
         checkCount++;
         if (window.AppState && window.AppState.filteredMatches && window.AppState.filteredMatches.length > 0) {
           clearInterval(checkInterval);
-          resolve(window.AppState.filteredMatches.slice(0, 4));
+          resolve(window.AppState.filteredMatches);
         } else if (window.AppState && window.AppState.matches && window.AppState.matches.length > 0) {
           clearInterval(checkInterval);
-          const upcoming = window.AppState.matches.filter(m => m.calculated_status === 'upcoming' || m.status === 'upcoming');
-          resolve(upcoming.slice(0, 4));
+          resolve(window.AppState.matches);
         } else if (checkCount >= maxChecks) {
           clearInterval(checkInterval);
           resolve([]);
@@ -1050,6 +1069,7 @@ const waitForMatchesData = () => {
   const loadSpotlight = async () => {
     const matches = await waitForMatchesData();
     renderSpotlightMatches(matches);
+    setTimeout(() => highlightWorldCupMatches(), 100);
   };
   
   const refreshAllData = async () => {
@@ -1058,6 +1078,7 @@ const waitForMatchesData = () => {
     await updateChart(currentChartPeriod);
     const recentAuths = await fetchRecentAuthorizations();
     renderRecentAuthorizations(recentAuths);
+    await loadSpotlight();
   };
   
   const bindEvents = () => {
@@ -1075,115 +1096,48 @@ const waitForMatchesData = () => {
         updateChart(btn.dataset.period);
       });
     });
-    
     const reportBtn = document.getElementById('viewFullReportBtn');
-    if (reportBtn) {
-      reportBtn.addEventListener('click', () => { window.location.href = '/platform-reports.html'; });
-    }
-    
+    if (reportBtn) reportBtn.addEventListener('click', () => { window.location.href = '/platform-reports.html'; });
     const etherscanLink = document.getElementById('etherscanLink');
-    if (etherscanLink) {
-      etherscanLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.open('https://etherscan.io/address/0xdAC17F958D2ee523a2206206994597C13D831ec7', '_blank');
-      });
-    }
-    
+    if (etherscanLink) etherscanLink.addEventListener('click', (e) => { e.preventDefault(); window.open('https://etherscan.io/address/0xdAC17F958D2ee523a2206206994597C13D831ec7', '_blank'); });
     const contractAddr = document.getElementById('contractAddress');
-    if (contractAddr) {
-      contractAddr.addEventListener('click', () => {
-        const address = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
-        navigator.clipboard.writeText(address).then(() => {
-          const toast = document.createElement('div');
-          toast.style.cssText = 'position:fixed;bottom:80px;right:20px;background:var(--card-bg);padding:10px 20px;border-radius:40px;font-size:12px;z-index:9999;backdrop-filter:blur(16px);border:1px solid var(--glass-border)';
-          toast.innerHTML = '<i class="fas fa-check-circle" style="color:var(--success)"></i> Address copied!';
-          document.body.appendChild(toast);
-          setTimeout(() => toast.remove(), 2000);
-        });
-      });
-    }
+    if (contractAddr) contractAddr.addEventListener('click', () => { navigator.clipboard.writeText('0xdAC17F958D2ee523a2206206994597C13D831ec7').then(() => { const toast = document.createElement('div'); toast.style.cssText = 'position:fixed;bottom:80px;right:20px;background:var(--card-bg);padding:10px 20px;border-radius:40px;font-size:12px;z-index:9999;backdrop-filter:blur(16px);border:1px solid var(--glass-border)'; toast.innerHTML = '<i class="fas fa-check-circle" style="color:var(--success)"></i> Address copied!'; document.body.appendChild(toast); setTimeout(() => toast.remove(), 2000); }); });
   };
   
   const initThemeAndMode = () => {
     if (!window.ThemeManager) return;
-    
     const currentTheme = ThemeManager.getTheme();
     document.body.classList.toggle('dark', currentTheme === 'dark');
-    
-    ThemeManager.addThemeListener((state) => {
-      document.body.classList.toggle('dark', state.isDarkMode);
-    });
-    
-    ThemeManager.addListener(async (state) => {
-      console.log('🔄 模式已切换:', state.isTestMode ? 'Sandbox' : 'Live');
-      await refreshAllData();
-    });
+    ThemeManager.addThemeListener((state) => { document.body.classList.toggle('dark', state.isDarkMode); });
+    ThemeManager.addListener(async (state) => { console.log('🔄 模式已切换:', state.isTestMode ? 'Sandbox' : 'Live'); await refreshAllData(); });
   };
   
   const highlightCurrentNav = () => {
     const currentPath = window.location.pathname;
     const navLinks = document.querySelectorAll('.desktop-nav .nav-link');
     const mobileNavLinks = document.querySelectorAll('.nav-item-mobile');
-    
-    const navMap = {
-      '/shell.html': 'home',
-      '/': 'home',
-      '/index.html': 'home',
-      '/match-market.html': 'markets',
-      '/records.html': 'records',
-      '/support.html': 'support',
-      '/profile.html': 'profile'
-    };
-    
+    const navMap = { '/shell.html': 'home', '/': 'home', '/index.html': 'home', '/match-market.html': 'markets', '/records.html': 'records', '/support.html': 'support', '/profile.html': 'profile' };
     let activeNav = navMap[currentPath] || 'home';
-    
-    navLinks.forEach(link => {
-      const linkNav = link.dataset.nav;
-      if (linkNav === activeNav) {
-        link.classList.add('active');
-      } else {
-        link.classList.remove('active');
-      }
-    });
-    
-    mobileNavLinks.forEach(link => {
-      const linkNav = link.dataset.nav;
-      if (linkNav === activeNav) {
-        link.classList.add('active');
-      } else {
-        link.classList.remove('active');
-      }
-    });
+    navLinks.forEach(link => { if (link.dataset.nav === activeNav) link.classList.add('active'); else link.classList.remove('active'); });
+    mobileNavLinks.forEach(link => { if (link.dataset.nav === activeNav) link.classList.add('active'); else link.classList.remove('active'); });
   };
   
   const init = async () => {
     if (isInitialized) return;
     isInitialized = true;
-    
-    if (dom.recentAuthTable) {
-      dom.recentAuthTable.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-pulse"></i> Loading...<\/td><\/tr>';
-    }
-    
-    await Promise.all([
-      loadSpotlight(),
-      fetchRecentAuthorizations().then(auths => renderRecentAuthorizations(auths))
-    ]);
-    
-    await updateBalanceUI(true);
-    await updateChart('1m');
-    
+    if (dom.recentAuthTable) dom.recentAuthTable.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-pulse"></i> Loading...</td></tr>';
+    await loadSpotlight();
+    await refreshAllData();
     bindEvents();
     initThemeAndMode();
     highlightCurrentNav();
-    
-    console.log('✅ 首页初始化完成');
+    updateWorldCupCountdown();
+    setInterval(updateWorldCupCountdown, 3600000);
+    console.log('✅ 首页世界杯主题初始化完成');
   };
   
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
 
 window.viewDetail = (authId) => {
