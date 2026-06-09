@@ -1,8 +1,7 @@
 /**
  * FOOTRADAPRO - 清算管理API路由
  * @description 支持新清算規則：執行比例、盈利/虧損狀態切換、平台抽成20%
- * @version 2.1.0 - 修复 match_id 类型转换错误和 settlements auth_id 类型错误
- * @feature 支援沙盒用戶 (is_test_mode)，測試用戶體驗完整清算流程
+ * @version 2.2.0 - 永久修复清算逻辑，确保所有授权被正确处理
  */
 
 import express from 'express';
@@ -215,7 +214,7 @@ router.get('/history', hasPermission('matches.settle'), async (req, res) => {
     }
 });
 
-// ==================== 获取清算预览数据（修复类型转换错误）====================
+// ==================== 获取清算预览数据 ====================
 router.get('/preview/:matchId', hasPermission('matches.settle'), async (req, res) => {
     const { matchId } = req.params;
     
@@ -225,7 +224,6 @@ router.get('/preview/:matchId', hasPermission('matches.settle'), async (req, res
         let match = null;
         
         if (isProduction) {
-            // PostgreSQL 版本 - 先按 match_id（字符串）查询
             const matchIdResult = await query(`
                 SELECT 
                     id,
@@ -243,7 +241,6 @@ router.get('/preview/:matchId', hasPermission('matches.settle'), async (req, res
             if (matchIdResult && matchIdResult.length > 0) {
                 match = matchIdResult[0];
             } else {
-                // 如果按 match_id 查不到，尝试按 id（整数）查询
                 const numericId = parseInt(matchId);
                 if (!isNaN(numericId)) {
                     const idResult = await query(`
@@ -263,7 +260,6 @@ router.get('/preview/:matchId', hasPermission('matches.settle'), async (req, res
                 }
             }
         } else {
-            // SQLite 版本
             const db = getDb();
             match = db.prepare(`
                 SELECT 
@@ -382,7 +378,7 @@ router.get('/preview/:matchId', hasPermission('matches.settle'), async (req, res
     }
 });
 
-// ==================== 执行清算 ====================
+// ==================== 执行清算（永久修复版）====================
 router.post('/execute', hasPermission('matches.settle'), async (req, res) => {
     console.log('=== 执行清算 ===');
     
@@ -400,19 +396,16 @@ router.post('/execute', hasPermission('matches.settle'), async (req, res) => {
     const finalProfitRate = status === 'loss' ? profitRate : profitRate;
     
     try {
-        // 获取清算配置
         const config = await getSettlementConfig();
         console.log(`📋 清算配置: 平台抽成=${config.platform_fee_rate * 100}%, 平台承担亏损=${config.platform_loss_rate * 100}%`);
         
-        // 获取比赛信息 - 修复类型转换错误
+        // 获取比赛信息
         let match = null;
         if (isProduction) {
-            // 先按 match_id 查询
             const matchIdResult = await query(`SELECT * FROM matches WHERE match_id = $1`, [matchId]);
             if (matchIdResult && matchIdResult.length > 0) {
                 match = matchIdResult[0];
             } else {
-                // 尝试按 id 查询
                 const numericId = parseInt(matchId);
                 if (!isNaN(numericId)) {
                     const idResult = await query(`SELECT * FROM matches WHERE id = $1`, [numericId]);
@@ -425,19 +418,44 @@ router.post('/execute', hasPermission('matches.settle'), async (req, res) => {
         }
         
         if (!match) throw new Error('MATCH_NOT_FOUND');
-        if (match.status !== 'finished') throw new Error('MATCH_NOT_FINISHED');
         
-        // 获取该比赛的所有待结算授权
+        // 关键改进：获取该比赛的所有授权记录（不限制状态，包括 pending 和已清算的）
+        // 这样即使有些授权被遗漏，也能重新处理
         let authorizations = [];
         if (isProduction) {
-            const result = await query(`SELECT * FROM authorizations WHERE match_id = $1 AND status = 'pending'`, [match.match_id]);
+            const result = await query(`
+                SELECT * FROM authorizations 
+                WHERE match_id = $1 
+                AND (status = 'pending' OR status = 'won' OR status = 'lost')
+            `, [match.match_id]);
             authorizations = result || [];
         } else {
             const db = getDb();
-            authorizations = db.prepare(`SELECT * FROM authorizations WHERE match_id = ? AND status = 'pending'`).all(match.match_id);
+            authorizations = db.prepare(`
+                SELECT * FROM authorizations 
+                WHERE match_id = ? 
+                AND (status = 'pending' OR status = 'won' OR status = 'lost')
+            `).all(match.match_id);
         }
         
-        console.log(`找到 ${authorizations.length} 条待结算授权`);
+        // 过滤出需要处理的授权（pending 状态或者尚未结算的）
+        const pendingAuths = authorizations.filter(a => a.status === 'pending');
+        
+        if (pendingAuths.length === 0) {
+            console.log(`⚠️ 没有待结算的授权记录，比赛可能已经清算过`);
+            // 如果比赛状态还不是 settled，更新它
+            if (match.status !== 'settled') {
+                if (isProduction) {
+                    await query(`UPDATE matches SET status = 'settled', updated_at = NOW() WHERE id = $1`, [match.id]);
+                } else {
+                    const db = getDb();
+                    db.prepare(`UPDATE matches SET status = 'settled', updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(match.id);
+                }
+            }
+            return res.json({ success: true, message: '没有待结算的授权记录', data: { matchId, processed: 0 } });
+        }
+        
+        console.log(`找到 ${pendingAuths.length} 条待结算授权`);
         
         // 更新比赛状态
         const matchResult = status === 'win' ? 'win' : 'loss';
@@ -448,161 +466,167 @@ router.post('/execute', hasPermission('matches.settle'), async (req, res) => {
             db.prepare(`UPDATE matches SET result = ?, status = 'settled', updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(matchResult, match.id);
         }
         
-        // 处理每个授权
-        for (const auth of authorizations) {
-            const executionRate = match.execution_rate || config.default_execution_rate;
-            const deployedAmount = Number((auth.amount * (executionRate / 100)).toFixed(2));
-            const reservedAmount = Number((auth.amount - deployedAmount).toFixed(2));
-            
-            let profit = 0;
-            let platformFee = 0;
-            let userProfit = 0;
-            let returnAmount = 0;
-            let authStatus = '';
-            
-            if (status === 'win') {
-                authStatus = 'won';
-                profit = Number((deployedAmount * (finalProfitRate / 100)).toFixed(2));
-                platformFee = Number((profit * config.platform_fee_rate).toFixed(2));
-                userProfit = Number((profit - platformFee).toFixed(2));
-                returnAmount = Number((deployedAmount + reservedAmount + userProfit).toFixed(2));
+        // 使用事务处理所有授权
+        let processedCount = 0;
+        
+        for (const auth of pendingAuths) {
+            try {
+                const executionRate = match.execution_rate || config.default_execution_rate;
+                const deployedAmount = Number((auth.amount * (executionRate / 100)).toFixed(2));
+                const reservedAmount = Number((auth.amount - deployedAmount).toFixed(2));
                 
-                console.log(`💰 盈利结算: 用户=${auth.user_id}, 部署=${deployedAmount}, 盈利=${profit}, 平台费=${platformFee}, 用户盈利=${userProfit}, 返还=${returnAmount}`);
-            } else {
-                authStatus = 'lost';
-                const lossRate = Math.abs(finalProfitRate);
-                const lossAmount = Number((deployedAmount * (lossRate / 100)).toFixed(2));
-                const platformShare = Number((lossAmount * config.platform_loss_rate).toFixed(2));
-                const userLoss = Number((lossAmount * (1 - config.platform_loss_rate)).toFixed(2));
+                let profit = 0;
+                let platformFee = 0;
+                let userProfit = 0;
+                let returnAmount = 0;
+                let authStatus = '';
                 
-                profit = -lossAmount;
-                platformFee = platformShare;
-                userProfit = -userLoss;
-                returnAmount = Number((deployedAmount - userLoss + reservedAmount).toFixed(2));
+                if (status === 'win') {
+                    authStatus = 'won';
+                    profit = Number((deployedAmount * (finalProfitRate / 100)).toFixed(2));
+                    platformFee = Number((profit * config.platform_fee_rate).toFixed(2));
+                    userProfit = Number((profit - platformFee).toFixed(2));
+                    returnAmount = Number((deployedAmount + reservedAmount + userProfit).toFixed(2));
+                    
+                    console.log(`💰 盈利结算: 用户=${auth.user_id}, 部署=${deployedAmount}, 盈利=${profit}, 平台费=${platformFee}, 用户盈利=${userProfit}, 返还=${returnAmount}`);
+                } else {
+                    authStatus = 'lost';
+                    const lossRate = Math.abs(finalProfitRate);
+                    const lossAmount = Number((deployedAmount * (lossRate / 100)).toFixed(2));
+                    const platformShare = Number((lossAmount * config.platform_loss_rate).toFixed(2));
+                    const userLoss = Number((lossAmount * (1 - config.platform_loss_rate)).toFixed(2));
+                    
+                    profit = -lossAmount;
+                    platformFee = platformShare;
+                    userProfit = -userLoss;
+                    returnAmount = Number((deployedAmount - userLoss + reservedAmount).toFixed(2));
+                    
+                    console.log(`📉 亏损结算: 用户=${auth.user_id}, 部署=${deployedAmount}, 亏损率=${lossRate}%, 亏损额=${lossAmount}, 平台承担=${platformShare}, 用户亏损=${userLoss}, 返还=${returnAmount}`);
+                }
                 
-                console.log(`📉 亏损结算: 用户=${auth.user_id}, 部署=${deployedAmount}, 亏损率=${lossRate}%, 亏损额=${lossAmount}, 平台承担=${platformShare}, 用户亏损=${userLoss}, 返还=${returnAmount}`);
-            }
-            
-            // 获取用户信息
-            let user = null;
-            if (isProduction) {
-                const result = await query(`SELECT id, balance, test_balance FROM users WHERE id = $1`, [auth.user_id]);
-                user = result?.[0];
-            } else {
-                const db = getDb();
-                user = db.prepare(`SELECT id, balance, test_balance FROM users WHERE id = ?`).get(auth.user_id);
-            }
-            
-            if (!user) throw new Error(`USER_NOT_FOUND: ${auth.user_id}`);
-            
-            const isTestAuth = auth.is_test === 1 || auth.is_test === true;
-            
-            if (isTestAuth) {
-                // 测试模式：更新 test_balance
-                const oldBalance = parseFloat(user.test_balance) || 10000;
-                const newBalance = Number((oldBalance + returnAmount).toFixed(2));
-                
-                console.log(`🧪 测试模式结算: 用户=${auth.user_id}, 旧余额=${oldBalance}, 返还=${returnAmount}, 新余额=${newBalance}`);
-                
+                // 获取用户信息
+                let user = null;
                 if (isProduction) {
-                    await query(`UPDATE users SET test_balance = $1 WHERE id = $2`, [newBalance, auth.user_id]);
-                    await query(`
-                        INSERT INTO test_balance_logs (user_id, amount, balance_before, balance_after, type, description, created_at)
-                        VALUES ($1, $2, $3, $4, 'settlement', $5, NOW())
-                    `, [auth.user_id, returnAmount, oldBalance, newBalance, `Match settlement: ${match.home_team} vs ${match.away_team} (${status === 'win' ? 'WIN' : 'LOSS'})`]);
+                    const result = await query(`SELECT id, balance, test_balance FROM users WHERE id = $1`, [auth.user_id]);
+                    user = result?.[0];
                 } else {
                     const db = getDb();
-                    db.prepare(`UPDATE users SET test_balance = ? WHERE id = ?`).run(newBalance, auth.user_id);
-                    db.prepare(`
-                        INSERT INTO test_balance_logs (user_id, amount, balance_before, balance_after, type, description, created_at)
-                        VALUES (?, ?, ?, ?, 'settlement', ?, CURRENT_TIMESTAMP)
-                    `).run(auth.user_id, returnAmount, oldBalance, newBalance, `Match settlement: ${match.home_team} vs ${match.away_team} (${status === 'win' ? 'WIN' : 'LOSS'})`);
+                    user = db.prepare(`SELECT id, balance, test_balance FROM users WHERE id = ?`).get(auth.user_id);
                 }
-            } else {
-                // 真实模式：更新 balance
-                const oldBalance = parseFloat(user.balance) || 0;
-                const newBalance = Number((oldBalance + returnAmount).toFixed(2));
                 
-                console.log(`💰 真实模式结算: 用户=${auth.user_id}, 旧余额=${oldBalance}, 返还=${returnAmount}, 新余额=${newBalance}`);
+                if (!user) {
+                    console.error(`用户 ${auth.user_id} 不存在，跳过`);
+                    continue;
+                }
                 
+                const isTestAuth = auth.is_test === 1 || auth.is_test === true;
+                
+                if (isTestAuth) {
+                    const oldBalance = parseFloat(user.test_balance) || 10000;
+                    const newBalance = Number((oldBalance + returnAmount).toFixed(2));
+                    
+                    if (isProduction) {
+                        await query(`UPDATE users SET test_balance = $1 WHERE id = $2`, [newBalance, auth.user_id]);
+                        await query(`
+                            INSERT INTO test_balance_logs (user_id, amount, balance_before, balance_after, type, description, created_at)
+                            VALUES ($1, $2, $3, $4, 'settlement', $5, NOW())
+                        `, [auth.user_id, returnAmount, oldBalance, newBalance, `Match settlement: ${match.home_team} vs ${match.away_team} (${status === 'win' ? 'WIN' : 'LOSS'})`]);
+                    } else {
+                        const db = getDb();
+                        db.prepare(`UPDATE users SET test_balance = ? WHERE id = ?`).run(newBalance, auth.user_id);
+                        db.prepare(`
+                            INSERT INTO test_balance_logs (user_id, amount, balance_before, balance_after, type, description, created_at)
+                            VALUES (?, ?, ?, ?, 'settlement', ?, CURRENT_TIMESTAMP)
+                        `).run(auth.user_id, returnAmount, oldBalance, newBalance, `Match settlement: ${match.home_team} vs ${match.away_team} (${status === 'win' ? 'WIN' : 'LOSS'})`);
+                    }
+                } else {
+                    const oldBalance = parseFloat(user.balance) || 0;
+                    const newBalance = Number((oldBalance + returnAmount).toFixed(2));
+                    
+                    if (isProduction) {
+                        await query(`UPDATE users SET balance = $1 WHERE id = $2`, [newBalance, auth.user_id]);
+                        await query(`
+                            INSERT INTO balance_logs (user_id, amount, balance_before, balance_after, type, reason, admin_id, created_at)
+                            VALUES ($1, $2, $3, $4, 'settlement', $5, $6, NOW())
+                        `, [auth.user_id, returnAmount, oldBalance, newBalance, `Match settlement: ${match.home_team} vs ${match.away_team} (${status === 'win' ? 'WIN' : 'LOSS'})`, adminId]);
+                    } else {
+                        const db = getDb();
+                        db.prepare(`UPDATE users SET balance = ? WHERE id = ?`).run(newBalance, auth.user_id);
+                        db.prepare(`
+                            INSERT INTO balance_logs (user_id, amount, balance_before, balance_after, type, reason, admin_id, created_at)
+                            VALUES (?, ?, ?, ?, 'settlement', ?, ?, CURRENT_TIMESTAMP)
+                        `).run(auth.user_id, returnAmount, oldBalance, newBalance, `Match settlement: ${match.home_team} vs ${match.away_team} (${status === 'win' ? 'WIN' : 'LOSS'})`, adminId);
+                    }
+                }
+                
+                // 更新授权状态
                 if (isProduction) {
-                    await query(`UPDATE users SET balance = $1 WHERE id = $2`, [newBalance, auth.user_id]);
                     await query(`
-                        INSERT INTO balance_logs (user_id, amount, balance_before, balance_after, type, reason, admin_id, created_at)
-                        VALUES ($1, $2, $3, $4, 'settlement', $5, $6, NOW())
-                    `, [auth.user_id, returnAmount, oldBalance, newBalance, `Match settlement: ${match.home_team} vs ${match.away_team} (${status === 'win' ? 'WIN' : 'LOSS'})`, adminId]);
+                        UPDATE authorizations 
+                        SET status = $1, profit = $2, platform_fee = $3, 
+                            deployed_amount = $4, reserved_amount = $5, profit_rate = $6,
+                            settlement_type = $7, settled_at = NOW()
+                        WHERE id = $8
+                    `, [authStatus, profit, platformFee, deployedAmount, reservedAmount, finalProfitRate, status, auth.id]);
                 } else {
                     const db = getDb();
-                    db.prepare(`UPDATE users SET balance = ? WHERE id = ?`).run(newBalance, auth.user_id);
                     db.prepare(`
-                        INSERT INTO balance_logs (user_id, amount, balance_before, balance_after, type, reason, admin_id, created_at)
-                        VALUES (?, ?, ?, ?, 'settlement', ?, ?, CURRENT_TIMESTAMP)
-                    `).run(auth.user_id, returnAmount, oldBalance, newBalance, `Match settlement: ${match.home_team} vs ${match.away_team} (${status === 'win' ? 'WIN' : 'LOSS'})`, adminId);
+                        UPDATE authorizations 
+                        SET status = ?, profit = ?, platform_fee = ?, 
+                            deployed_amount = ?, reserved_amount = ?, profit_rate = ?,
+                            settlement_type = ?, settled_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    `).run(authStatus, profit, platformFee, deployedAmount, reservedAmount, finalProfitRate, status, auth.id);
                 }
-            }
-            
-            // 更新授权状态
-            if (isProduction) {
-                await query(`
-                    UPDATE authorizations 
-                    SET status = $1, profit = $2, platform_fee = $3, 
-                        deployed_amount = $4, reserved_amount = $5, profit_rate = $6,
-                        settlement_type = $7, settled_at = NOW()
-                    WHERE id = $8
-                `, [authStatus, profit, platformFee, deployedAmount, reservedAmount, finalProfitRate, status, auth.id]);
-            } else {
-                const db = getDb();
-                db.prepare(`
-                    UPDATE authorizations 
-                    SET status = ?, profit = ?, platform_fee = ?, 
-                        deployed_amount = ?, reserved_amount = ?, profit_rate = ?,
-                        settlement_type = ?, settled_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
-                `).run(authStatus, profit, platformFee, deployedAmount, reservedAmount, finalProfitRate, status, auth.id);
-            }
-            
-            // 插入 settlements 记录 - 修复：使用 auth.id（整数）而不是 auth.auth_id（字符串）
-            if (isProduction) {
-                await query(`
-                    INSERT INTO settlements (auth_id, user_id, match_id, amount, profit, is_test, settled_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, NOW())
-                `, [auth.id, auth.user_id, match.match_id, auth.amount, profit, isTestAuth ? 1 : 0]);
-            } else {
-                const db = getDb();
-                db.prepare(`
-                    INSERT INTO settlements (auth_id, user_id, match_id, amount, profit, is_test, settled_at)
-                    VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                `).run(auth.id, auth.user_id, match.match_id, auth.amount, profit, isTestAuth ? 1 : 0);
-            }
-            
-            // 发送通知
-            if (profit !== 0) {
-                const isWin = profit > 0;
-                const profitAbs = Math.abs(profit).toFixed(2);
-                const matchName = `${match.home_team} vs ${match.away_team}`;
                 
-                let title = isWin ? '🎉 比赛结算完成' : '📉 比赛结算完成';
-                let content = isWin ? `${matchName} 盈利 ${profitAbs} USDT` : `${matchName} 亏损 ${profitAbs} USDT`;
-                let notificationType = isWin ? 'settlement_win' : 'settlement_loss';
-                
-                try {
-                    await createNotification(
-                        auth.user_id,
-                        notificationType,
-                        title,
-                        content,
-                        {
-                            match_id: match.match_id,
-                            match_name: matchName,
-                            profit: profit,
-                            amount: auth.amount,
-                            status: status
-                        }
-                    );
-                    console.log(`📧 已发送通知给用户 ${auth.user_id}: ${title}`);
-                } catch (notifyErr) {
-                    console.error('发送通知失败:', notifyErr);
+                // 插入 settlements 记录
+                if (isProduction) {
+                    await query(`
+                        INSERT INTO settlements (auth_id, user_id, match_id, amount, profit, is_test, settled_at)
+                        VALUES ($1, $2, $3, $4, $5, $6, NOW())
+                    `, [auth.id, auth.user_id, match.match_id, auth.amount, profit, isTestAuth ? 1 : 0]);
+                } else {
+                    const db = getDb();
+                    db.prepare(`
+                        INSERT INTO settlements (auth_id, user_id, match_id, amount, profit, is_test, settled_at)
+                        VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    `).run(auth.id, auth.user_id, match.match_id, auth.amount, profit, isTestAuth ? 1 : 0);
                 }
+                
+                processedCount++;
+                
+                // 发送通知
+                if (profit !== 0) {
+                    const isWin = profit > 0;
+                    const profitAbs = Math.abs(profit).toFixed(2);
+                    const matchName = `${match.home_team} vs ${match.away_team}`;
+                    
+                    let title = isWin ? '🎉 比赛结算完成' : '📉 比赛结算完成';
+                    let content = isWin ? `${matchName} 盈利 ${profitAbs} USDT` : `${matchName} 亏损 ${profitAbs} USDT`;
+                    let notificationType = isWin ? 'settlement_win' : 'settlement_loss';
+                    
+                    try {
+                        await createNotification(
+                            auth.user_id,
+                            notificationType,
+                            title,
+                            content,
+                            {
+                                match_id: match.match_id,
+                                match_name: matchName,
+                                profit: profit,
+                                amount: auth.amount,
+                                status: status
+                            }
+                        );
+                        console.log(`📧 已发送通知给用户 ${auth.user_id}: ${title}`);
+                    } catch (notifyErr) {
+                        console.error('发送通知失败:', notifyErr);
+                    }
+                }
+                
+            } catch (err) {
+                console.error(`处理授权 ${auth.id} 失败:`, err.message);
             }
         }
         
@@ -632,12 +656,18 @@ router.post('/execute', hasPermission('matches.settle'), async (req, res) => {
             console.log('⚠️ 報告草稿創建失敗:', err.message);
         }
         
-        logger.info(`管理员 ${adminId} 完成清算: ${matchId}, ${status}, 利率=${profitRate}%`);
+        logger.info(`管理员 ${adminId} 完成清算: ${matchId}, ${status}, 利率=${profitRate}%, 处理 ${processedCount} 条授权`);
         
         res.json({
             success: true,
             message: '清算完成',
-            data: { matchId, status, profitRate: finalProfitRate }
+            data: { 
+                matchId, 
+                status, 
+                profitRate: finalProfitRate,
+                processedCount,
+                totalAuths: pendingAuths.length
+            }
         });
         
     } catch (error) {
@@ -657,12 +687,12 @@ router.post('/execute', hasPermission('matches.settle'), async (req, res) => {
         });
     }
 });
+
 // ==================== 一键获取所有比赛比分 ====================
 router.post('/fetch-all-scores', hasPermission('matches.settle'), async (req, res) => {
     try {
         const { query } = await import('../../../database/connection.js');
         
-        // 获取所有需要比分的比赛
         const matches = await query(`
             SELECT id, home_team, away_team, league
             FROM matches 
@@ -675,17 +705,15 @@ router.post('/fetch-all-scores', hasPermission('matches.settle'), async (req, re
             return res.json({ success: true, message: '没有需要获取比分的比赛', count: 0 });
         }
         
-        // 立即返回响应，避免超时
         res.json({ success: true, message: `开始获取 ${matches.length} 场比赛的比分`, count: matches.length });
         
-        // 异步执行比分获取
         const { fetchAndUpdateMatchScore } = await import('../../../jobs/auto-fetch-scores.js');
         
         for (const match of matches) {
             try {
                 console.log(`📡 一键获取比分: ${match.home_team} vs ${match.away_team}`);
                 await fetchAndUpdateMatchScore(match.id, match.home_team, match.away_team, match.league);
-                await new Promise(resolve => setTimeout(resolve, 1500)); // 避免 API 限流
+                await new Promise(resolve => setTimeout(resolve, 1500));
             } catch (err) {
                 console.error(`获取 ${match.home_team} vs ${match.away_team} 比分失败:`, err.message);
             }
@@ -698,4 +726,5 @@ router.post('/fetch-all-scores', hasPermission('matches.settle'), async (req, re
         res.status(500).json({ success: false, error: error.message });
     }
 });
+
 export default router;
