@@ -325,6 +325,40 @@
     return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
   }
 
+  // 获取记录显示类型（映射测试模式的类型到前端显示）
+  function getDisplayType(record, isTestMode) {
+    if (!isTestMode) {
+      return record.type;
+    }
+    // 测试模式：将 authorize 映射为 deposit，settle 映射为 withdraw
+    if (record.type === 'authorize') return 'deposit';
+    if (record.type === 'settle') return 'withdraw';
+    return record.type;
+  }
+
+  // 获取金额符号
+  function getAmountSign(record, isTestMode) {
+    if (!isTestMode) {
+      return record.amount > 0 ? '+' : '-';
+    }
+    // 测试模式：authorize 是支出（-），settle 是收入（+）
+    if (record.type === 'authorize') return '-';
+    if (record.type === 'settle') return '+';
+    return record.amount > 0 ? '+' : '-';
+  }
+
+  // 获取金额绝对值
+  function getAbsAmount(record) {
+    return Math.abs(record.amount).toFixed(2);
+  }
+
+  // 获取显示金额（带符号）
+  function getDisplayAmount(record, isTestMode) {
+    const sign = getAmountSign(record, isTestMode);
+    const amount = getAbsAmount(record);
+    return `${sign}${amount}`;
+  }
+
   // 加载资金统计
   async function loadFundStats() {
     try {
@@ -340,14 +374,14 @@
           if (DOM.totalDeposit) DOM.totalDeposit.innerHTML = '—';
           if (DOM.totalWithdraw) DOM.totalWithdraw.innerHTML = '—';
           if (DOM.netFund) {
-            const testBalance = data.data?.test_balance || 10000;
+            const testBalance = data.data?.test?.current_balance || 10000;
             DOM.netFund.innerHTML = testBalance.toFixed(2) + ' <span class="currency">' + currency + '</span>';
           }
         } else {
-          if (DOM.totalDeposit) DOM.totalDeposit.innerHTML = (data.data?.total_deposit || 0).toFixed(2) + ' <span class="currency">' + currency + '</span>';
-          if (DOM.totalWithdraw) DOM.totalWithdraw.innerHTML = (data.data?.total_withdraw || 0).toFixed(2) + ' <span class="currency">' + currency + '</span>';
+          if (DOM.totalDeposit) DOM.totalDeposit.innerHTML = (data.data?.real?.total_deposit || 0).toFixed(2) + ' <span class="currency">' + currency + '</span>';
+          if (DOM.totalWithdraw) DOM.totalWithdraw.innerHTML = (data.data?.real?.total_withdraw || 0).toFixed(2) + ' <span class="currency">' + currency + '</span>';
           if (DOM.netFund) {
-            const netFund = data.data?.net_fund || 0;
+            const netFund = data.data?.real?.net_change || 0;
             DOM.netFund.innerHTML = netFund.toFixed(2) + ' <span class="currency">' + currency + '</span>';
           }
         }
@@ -375,22 +409,30 @@
       const res = await fetch(url, { credentials: 'include' });
       const data = await res.json();
 
-if (data.success) {
-  let newRecords = data.data || [];
-  
-  // ✅ 只保留充值和提现记录，过滤掉授权(authorize)和结算(settle)等
-  newRecords = newRecords.filter(record => 
-    record.type === 'deposit' || record.type === 'withdraw'
-  );
-  
-  if (reset) {
-    allRecords = newRecords;
-  } else {
-    allRecords = [...allRecords, ...newRecords];
-  }
+      if (data.success) {
+        let newRecords = data.data || [];
+        
+        // 根据模式显示不同的记录类型
+        if (isTestMode) {
+          // 测试模式：显示 authorize 和 settle 类型的记录
+          newRecords = newRecords.filter(record => 
+            record.type === 'authorize' || record.type === 'settle'
+          );
+        } else {
+          // 真实模式：显示 deposit 和 withdraw 类型的记录
+          newRecords = newRecords.filter(record => 
+            record.type === 'deposit' || record.type === 'withdraw'
+          );
+        }
+        
+        if (reset) {
+          allRecords = newRecords;
+        } else {
+          allRecords = [...allRecords, ...newRecords];
+        }
 
         hasMore = data.pagination?.pages > currentPage;
-        renderRecords(currency);
+        renderRecords(currency, isTestMode);
         
         if (targetId) {
           setTimeout(() => scrollToTarget(targetId), 500);
@@ -405,7 +447,7 @@ if (data.success) {
   }
 
   // 渲染记录
-  function renderRecords(currency) {
+  function renderRecords(currency, isTestMode) {
     if (allRecords.length === 0) {
       showEmpty();
       return;
@@ -413,14 +455,24 @@ if (data.success) {
 
     let html = '';
     allRecords.forEach(record => {
-      const isDeposit = record.amount > 0;
+      const displayType = getDisplayType(record, isTestMode);
+      const isDeposit = displayType === 'deposit';
       const typeText = isDeposit ? 'Deposit' : 'Withdraw';
       const icon = isDeposit ? 'arrow-down' : 'arrow-up';
       const amountClass = isDeposit ? 'deposit' : 'withdraw';
-      const amountPrefix = isDeposit ? '+' : '-';
-      const amount = Math.abs(record.amount).toFixed(2);
+      const amountDisplay = getDisplayAmount(record, isTestMode);
+      const absAmount = getAbsAmount(record);
+      
+      // 获取描述信息
+      let description = '';
+      if (isTestMode) {
+        description = record.type === 'authorize' ? 'Authorization' : 'Settlement';
+        if (record.match_id) description += ` - Match ${record.match_id.substring(0, 8)}...`;
+      } else {
+        description = record.reason || record.description || '';
+      }
+      
       const statusText = record.status === 'completed' ? 'Completed' : (record.reason || 'Processing');
-      const description = record.reason || record.description || '';
       const isTarget = record.id == targetId;
       
       html += `
@@ -434,7 +486,7 @@ if (data.success) {
             <div class="fund-desc"><i class="fas fa-clock"></i> ${formatDate(record.created_at)}</div>
           </div>
           <div class="fund-right">
-            <div class="fund-amount ${amountClass}">${amountPrefix}${amount} ${escapeHtml(currency)}</div>
+            <div class="fund-amount ${amountClass}">${amountDisplay} ${escapeHtml(currency)}</div>
             <div class="fund-time">${escapeHtml(statusText)}</div>
           </div>
         </div>

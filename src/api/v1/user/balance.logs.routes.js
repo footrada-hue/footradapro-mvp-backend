@@ -100,7 +100,6 @@ router.get('/stats', updateLastActive, (req, res) => {
                         total_authorized: testStats?.total_authorized || 0,
                         total_profit: testStats?.total_profit || 0,
                         authorize_count: testStats?.authorize_count || 0,
-                        reset_count: testStats?.reset_count || 0,
                         net_change: testStats?.net_change || 0
                     }
                 },
@@ -174,7 +173,6 @@ router.get('/stats', updateLastActive, (req, res) => {
                         total_authorized: testStats?.total_authorized || 0,
                         total_profit: testStats?.total_profit || 0,
                         authorize_count: testStats?.authorize_count || 0,
-                        reset_count: testStats?.reset_count || 0,
                         net_change: testStats?.net_change || 0
                     }
                 },
@@ -355,8 +353,12 @@ router.get('/test', updateLastActive, (req, res) => {
         `;
         const params = [userId];
 
-        // 根據類型過濾
-        if (type === 'authorize') {
+        // 根據類型過濾（支持前端传入的 deposit/withdraw 类型）
+        if (type === 'deposit') {
+            query += " AND type = 'authorize'";
+        } else if (type === 'withdraw') {
+            query += " AND type = 'settle'";
+        } else if (type === 'authorize') {
             query += " AND type = 'authorize'";
         } else if (type === 'settle') {
             query += " AND type = 'settle'";
@@ -540,8 +542,12 @@ async function handleTestBalanceLogs(userId, type, page, limit, db) {
     `;
     const params = [userId];
 
-    // 根據類型過濾
-    if (type === 'authorize') {
+    // 根據類型過濾（支持前端传入的 deposit/withdraw 类型）
+    if (type === 'deposit') {
+        query += " AND type = 'authorize'";
+    } else if (type === 'withdraw') {
+        query += " AND type = 'settle'";
+    } else if (type === 'authorize') {
         query += " AND type = 'authorize'";
     } else if (type === 'settle') {
         query += " AND type = 'settle'";
