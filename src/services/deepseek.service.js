@@ -1,7 +1,7 @@
 /**
  * DeepSeek API Service
  * @description 调用 DeepSeek API 获取比赛数据（启用联网搜索）
- * @version 11.0.0 - 优化 Prompt，优先抓取世界杯比赛
+ * @version 12.0.0 - 优化比分获取 Prompt，提高成功率
  * @since 2026-04-12
  */
 
@@ -227,7 +227,6 @@ async function callWithRetry(prompt, retryCount = 0) {
 function filterAndPrioritizeMatches(matches) {
     if (!matches || !Array.isArray(matches)) return [];
     
-    // 分离世界杯比赛和其他比赛
     const worldCupMatches = [];
     const otherMatches = [];
     
@@ -235,7 +234,6 @@ function filterAndPrioritizeMatches(matches) {
         const league = match.league || '';
         const isWorldCup = PRIORITY_COMPETITIONS.some(wc => league.includes(wc));
         
-        // 检查是否在黑名单中（已结束的欧洲五大联赛）
         if (ENDED_LEAGUES.includes(league)) {
             console.log(`⏭️ 过滤掉已结束联赛: ${league} - ${match.home_team} vs ${match.away_team}`);
             continue;
@@ -249,7 +247,6 @@ function filterAndPrioritizeMatches(matches) {
         }
     }
     
-    // 世界杯比赛排在前面
     const result = [...worldCupMatches, ...otherMatches];
     console.log(`📊 过滤结果: 世界杯 ${worldCupMatches.length} 场, 其他 ${otherMatches.length} 场`);
     
@@ -285,12 +282,10 @@ async function fetchUpcomingMatchesData(startDate, targetCount = 80) {
         const result = JSON.parse(content);
         
         if (result.matches && Array.isArray(result.matches)) {
-            // 验证比赛时间
             const validMatches = result.matches.filter(m => {
                 if (!m.home_team || !m.away_team || !m.match_time_utc) {
                     return false;
                 }
-                // 检查比赛日期是否在范围内
                 const matchDate = m.match_time_utc.split(' ')[0];
                 if (matchDate < startDate) {
                     console.warn(`⚠️ 跳过过期比赛: ${m.home_team} vs ${m.away_team}, 日期: ${matchDate}`);
@@ -300,10 +295,7 @@ async function fetchUpcomingMatchesData(startDate, targetCount = 80) {
             });
             
             console.log(`✅ 获取 ${result.matches.length} 场，有效 ${validMatches.length} 场`);
-            
-            // 过滤和优先级排序
             const prioritizedMatches = filterAndPrioritizeMatches(validMatches);
-            
             return prioritizedMatches;
         }
         
@@ -332,8 +324,6 @@ export async function fetchUpcomingMatches() {
     console.log(`📌 已过滤联赛: ${ENDED_LEAGUES.join(', ')}`);
     
     const startTime = Date.now();
-    
-    // 直接获取未来 FUTURE_DAYS 天的比赛
     const matches = await fetchUpcomingMatchesData(todayStr, 80);
     
     const duration = Date.now() - startTime;
@@ -342,7 +332,6 @@ export async function fetchUpcomingMatches() {
     if (matches.length === 0) {
         console.log(`⚠️ 未来 ${FUTURE_DAYS} 天内没有符合条件的比赛`);
     } else {
-        // 统计世界杯比赛数量
         const worldCupCount = matches.filter(m => 
             PRIORITY_COMPETITIONS.some(wc => (m.league || '').includes(wc))
         ).length;
@@ -364,9 +353,7 @@ export async function fetchMatchesForSpecificDate(date) {
     }
     
     console.log(`📡 手动获取 ${date} 的比赛数据...`);
-    // 从指定日期开始获取未来 FUTURE_DAYS 天的比赛
     const matches = await fetchUpcomingMatchesData(date, 80);
-    // 只返回指定日期的比赛
     return matches.filter(m => m.match_time_utc.split(' ')[0] === date);
 }
 
@@ -380,7 +367,7 @@ export async function fetchMatchesFromDeepSeek(date) {
 }
 
 /**
- * 获取比赛比分（带联网搜索）- 优化版，大幅减少 token 消耗
+ * 获取比赛比分（带联网搜索）- 优化版
  * @param {string} homeTeam - 主队名称
  * @param {string} awayTeam - 客队名称
  * @param {string} matchDate - 比赛日期（可选，YYYY-MM-DD）
@@ -392,8 +379,8 @@ export async function fetchMatchScore(homeTeam, awayTeam, matchDate = null) {
         return { success: false, error: 'API_KEY_NOT_CONFIGURED', home: 0, away: 0, status: 'unknown' };
     }
 
-    // 优化后的精简 prompt（减少 90% token 消耗）
-    const prompt = `${homeTeam} vs ${awayTeam} 最终比分，只返回 JSON：{"home":0,"away":0}`;
+    // 更精确的 prompt，提高成功率
+    const prompt = `${homeTeam} vs ${awayTeam} 最终比分。只返回JSON：{"home":数字,"away":数字}。如果比赛还没开始或不知道比分，返回{"home":0,"away":0}`;
 
     try {
         console.log(`📡 获取比分: ${homeTeam} vs ${awayTeam}`);
@@ -442,7 +429,6 @@ export async function fetchMatchScore(homeTeam, awayTeam, matchDate = null) {
 export async function fetchAndConfirmMatchScore(homeTeam, awayTeam, matchDate = null) {
     console.log(`📊 开始获取并确认比分: ${homeTeam} vs ${awayTeam}`);
     
-    // 第一次获取
     const firstResult = await fetchMatchScore(homeTeam, awayTeam, matchDate);
     console.log(`第一次获取结果: ${firstResult.success ? `${firstResult.home}:${firstResult.away}` : firstResult.error}`);
     
@@ -457,7 +443,6 @@ export async function fetchAndConfirmMatchScore(homeTeam, awayTeam, matchDate = 
         };
     }
     
-    // 如果比赛不是 finished 状态，直接返回
     if (firstResult.status !== 'finished') {
         return {
             success: false,
@@ -469,11 +454,9 @@ export async function fetchAndConfirmMatchScore(homeTeam, awayTeam, matchDate = 
         };
     }
     
-    // 等待 60 秒后第二次确认
     console.log('⏳ 等待 60 秒进行第二次确认...');
     await delay(60000);
     
-    // 第二次获取
     const secondResult = await fetchMatchScore(homeTeam, awayTeam, matchDate);
     console.log(`第二次获取结果: ${secondResult.success ? `${secondResult.home}:${secondResult.away}` : secondResult.error}`);
     
@@ -488,7 +471,6 @@ export async function fetchAndConfirmMatchScore(homeTeam, awayTeam, matchDate = 
         };
     }
     
-    // 对比两次结果
     if (firstResult.home === secondResult.home && firstResult.away === secondResult.away) {
         console.log(`✅ 两次比分一致，确认: ${firstResult.home}:${firstResult.away}`);
         return {
@@ -500,7 +482,6 @@ export async function fetchAndConfirmMatchScore(homeTeam, awayTeam, matchDate = 
         };
     }
     
-    // 两次不一致，进行第三次确认
     console.log('⚠️ 两次比分不一致，进行第三次确认...');
     await delay(30000);
     
@@ -509,7 +490,6 @@ export async function fetchAndConfirmMatchScore(homeTeam, awayTeam, matchDate = 
     
     if (thirdResult.success && thirdResult.status === 'finished' &&
         thirdResult.home === secondResult.home && thirdResult.away === secondResult.away) {
-        // 第二、三次一致
         return {
             success: true,
             home: thirdResult.home,
@@ -519,7 +499,6 @@ export async function fetchAndConfirmMatchScore(homeTeam, awayTeam, matchDate = 
         };
     }
     
-    // 仍然不一致，需要人工确认
     return {
         success: true,
         home: secondResult.home,

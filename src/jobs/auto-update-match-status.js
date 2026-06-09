@@ -1,23 +1,41 @@
 /**
  * FOOTRADAPRO - Auto Update Match Status Service
  * @description 自动更新比赛状态：upcoming → live → finished
- * @version 4.0.0 - 修复状态更新逻辑
+ * @version 5.0.0 - 永久修复状态更新和比分获取
  */
 
 import logger from '../utils/logger.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+// 比赛结束判断时间（分钟）- 改为 90 分钟（正常比赛时间+补时）
+const MATCH_DURATION_MINUTES = 90;
+
+async function ensureColumns() {
+    try {
+        if (isProduction) {
+            const { query } = await import('../database/connection.js');
+            await query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS score_confirmed BOOLEAN DEFAULT FALSE`).catch(() => {});
+            await query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS finished_at TIMESTAMP`).catch(() => {});
+            await query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS score_fetch_triggered BOOLEAN DEFAULT FALSE`).catch(() => {});
+        } else {
+            const { getDb } = await import('../database/connection.js');
+            const db = getDb();
+            db.exec(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS score_confirmed INTEGER DEFAULT 0`).catch(() => {});
+            db.exec(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS finished_at TEXT`).catch(() => {});
+            db.exec(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS score_fetch_triggered INTEGER DEFAULT 0`).catch(() => {});
+        }
+        logger.info('✅ 数据库字段检查完成');
+    } catch (err) {
+        logger.debug('字段检查:', err.message);
+    }
+}
+
 async function updateMatchStatus() {
     try {
         const { query, getDb, initDatabase } = await import('../database/connection.js');
         
         await initDatabase();
-        
-        const now = new Date().toISOString();
-        
-        let liveChanges = 0;
-        let finishedChanges = 0;
         
         if (isProduction) {
             // ========== PostgreSQL 版本 ==========
@@ -31,34 +49,54 @@ async function updateMatchStatus() {
                 AND match_time <= NOW()
                 RETURNING id
             `);
-            liveChanges = toLive?.length || 0;
             
-            // 2. 将已结束的比赛从 live 改为 finished（不依赖 score_fetch_triggered）
+            if (toLive?.length > 0) {
+                logger.info(`⏰ 已将 ${toLive.length} 场比赛状态更新为 live`);
+            }
+            
+            // 2. 将已结束的比赛从 live 改为 finished（使用更短的时间）
             const toFinished = await query(`
                 UPDATE matches 
                 SET status = 'finished', 
                     finished_at = NOW(),
                     updated_at = NOW()
                 WHERE status = 'live' 
-                AND match_time <= NOW() - INTERVAL '110 minutes'
-                RETURNING id
+                AND match_time <= NOW() - INTERVAL '${MATCH_DURATION_MINUTES} minutes'
+                RETURNING id, home_team, away_team, league
             `);
-            finishedChanges = toFinished?.length || 0;
             
-            // 3. 额外处理：如果比赛时间已过但状态还是 upcoming（比如脚本漏掉了）
+            // 3. 修复遗漏的比赛：状态是 upcoming 但比赛时间已过
             const orphanFinished = await query(`
                 UPDATE matches 
                 SET status = 'finished', 
                     finished_at = NOW(),
                     updated_at = NOW()
                 WHERE status = 'upcoming' 
-                AND match_time <= NOW() - INTERVAL '120 minutes'
-                RETURNING id
+                AND match_time <= NOW() - INTERVAL '${MATCH_DURATION_MINUTES + 10} minutes'
+                RETURNING id, home_team, away_team, league
             `);
             
-            if (orphanFinished?.length > 0) {
-                finishedChanges += orphanFinished.length;
-                logger.info(`⏰ 修复了 ${orphanFinished.length} 场遗漏的已结束比赛`);
+            const finishedMatches = [...(toFinished || []), ...(orphanFinished || [])];
+            
+            if (finishedMatches.length > 0) {
+                logger.info(`✅ 已将 ${finishedMatches.length} 场比赛状态更新为 finished`);
+                
+                // 立即触发比分获取（不延迟）
+                const { fetchAndUpdateMatchScore } = await import('./auto-fetch-scores.js');
+                
+                for (const match of finishedMatches) {
+                    // 异步获取比分，不阻塞
+                    setImmediate(async () => {
+                        try {
+                            logger.info(`📊 获取比分: ${match.home_team} vs ${match.away_team}`);
+                            await fetchAndUpdateMatchScore(match.id, match.home_team, match.away_team, match.league);
+                        } catch (err) {
+                            logger.error(`获取比赛 ${match.id} 比分失败:`, err.message);
+                        }
+                    });
+                    // 避免 API 请求过快
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
             }
             
         } else {
@@ -71,7 +109,10 @@ async function updateMatchStatus() {
                 WHERE status = 'upcoming' 
                 AND datetime(match_time) <= datetime('now')
             `).run();
-            liveChanges = toLive.changes;
+            
+            if (toLive.changes > 0) {
+                logger.info(`⏰ 已将 ${toLive.changes} 场比赛状态更新为 live`);
+            }
             
             const toFinished = db.prepare(`
                 UPDATE matches 
@@ -79,9 +120,8 @@ async function updateMatchStatus() {
                     finished_at = CURRENT_TIMESTAMP,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE status = 'live' 
-                AND datetime(match_time, '+110 minutes') <= datetime('now')
+                AND datetime(match_time, '+${MATCH_DURATION_MINUTES} minutes') <= datetime('now')
             `).run();
-            finishedChanges = toFinished.changes;
             
             const orphanFinished = db.prepare(`
                 UPDATE matches 
@@ -89,41 +129,34 @@ async function updateMatchStatus() {
                     finished_at = CURRENT_TIMESTAMP,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE status = 'upcoming' 
-                AND datetime(match_time, '+120 minutes') <= datetime('now')
+                AND datetime(match_time, '+${MATCH_DURATION_MINUTES + 10} minutes') <= datetime('now')
             `).run();
-            finishedChanges += orphanFinished.changes;
-        }
-        
-        if (liveChanges > 0) {
-            logger.info(`⏰ 已将 ${liveChanges} 场比赛状态更新为 live`);
-        }
-        
-        if (finishedChanges > 0) {
-            logger.info(`✅ 已将 ${finishedChanges} 场比赛状态更新为 finished`);
             
-            // 触发比分获取（异步）
-            const { fetchAndUpdateMatchScore } = await import('./auto-fetch-scores.js');
+            const finishedCount = toFinished.changes + orphanFinished.changes;
             
-            // 获取刚更新的比赛ID并获取比分
-            if (isProduction) {
-                const finishedMatches = await query(`
+            if (finishedCount > 0) {
+                logger.info(`✅ 已将 ${finishedCount} 场比赛状态更新为 finished`);
+                
+                // SQLite 版本也需要触发比分获取
+                const { fetchAndUpdateMatchScore } = await import('./auto-fetch-scores.js');
+                const finishedMatches = db.prepare(`
                     SELECT id, home_team, away_team, league
                     FROM matches 
                     WHERE status = 'finished' 
-                    AND (score_fetch_triggered IS NULL OR score_fetch_triggered = false)
-                    AND match_time <= NOW() - INTERVAL '110 minutes'
+                    AND (score_fetch_triggered IS NULL OR score_fetch_triggered = 0)
+                    AND datetime(match_time, '+${MATCH_DURATION_MINUTES} minutes') <= datetime('now')
                     LIMIT 20
-                `);
+                `).all();
                 
                 for (const match of finishedMatches) {
                     setImmediate(async () => {
                         try {
                             await fetchAndUpdateMatchScore(match.id, match.home_team, match.away_team, match.league);
-                            await query(`UPDATE matches SET score_fetch_triggered = true WHERE id = $1`, [match.id]);
                         } catch (err) {
-                            logger.error(`获取比赛 ${match.id} 比分失败:`, err);
+                            logger.error(`获取比赛 ${match.id} 比分失败:`, err.message);
                         }
                     });
+                    await new Promise(resolve => setTimeout(resolve, 500));
                 }
             }
         }
@@ -133,12 +166,20 @@ async function updateMatchStatus() {
     }
 }
 
-// 立即执行一次
-setTimeout(() => {
-    updateMatchStatus();
-}, 3000);
+// 启动服务
+async function start() {
+    await ensureColumns();
+    
+    // 立即执行一次
+    await updateMatchStatus();
+    
+    // 每 2 分钟执行一次
+    setInterval(updateMatchStatus, 2 * 60 * 1000);
+    
+    logger.info('⏰ 比赛状态自动更新服务已启动 (每2分钟)');
+}
 
-// 每 2 分钟执行一次
-setInterval(updateMatchStatus, 2 * 60 * 1000);
+// 延迟启动，等待数据库初始化
+setTimeout(start, 5000);
 
 export { updateMatchStatus };
