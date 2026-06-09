@@ -1,6 +1,6 @@
 /**
- * FOOTRADAPRO - 清算管理控制器 v2.0
- * @description 支持筛选、排序、批量清算、快速清算功能
+ * FOOTRADAPRO - 清算管理控制器 v2.1
+ * @description 支持筛选、排序、批量清算、快速清算、一键获取比分功能
  */
 
 (function() {
@@ -78,21 +78,18 @@
         adminName: document.getElementById('adminName'),
         tabBtns: document.querySelectorAll('.tab-btn'),
         tabPanes: document.querySelectorAll('.tab-pane'),
-        // 筛选元素
         searchInput: document.getElementById('searchInput'),
         modeFilter: document.getElementById('modeFilter'),
         leagueFilter: document.getElementById('leagueFilter'),
         hasAuthFilter: document.getElementById('hasAuthFilter'),
         sortFilter: document.getElementById('sortFilter'),
         resetFilterBtn: document.getElementById('resetFilterBtn'),
-        // 批量操作元素
         batchBar: document.getElementById('batchBar'),
         selectedCountSpan: document.getElementById('selectedCount'),
         selectAllCheckbox: document.getElementById('selectAllCheckbox'),
         batchSettleBtn: document.getElementById('batchSettleBtn'),
         selectAllBtn: document.getElementById('selectAllBtn'),
         clearSelectionBtn: document.getElementById('clearSelectionBtn'),
-        // 批量清算模态框
         batchWinBtn: document.getElementById('batchWinBtn'),
         batchLossBtn: document.getElementById('batchLossBtn'),
         batchProfitRate: document.getElementById('batchProfitRate'),
@@ -193,7 +190,7 @@
 
         try {
             DOM.pendingTable.innerHTML = `
-                <tr><td colspan="9" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> 加载中...<\/td><\/tr>
+                <table><td colspan="9" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> 加载中...<\/td><\/tr>
             `;
 
             const result = await adminRequest('/pending');
@@ -230,18 +227,17 @@
         }
         
         const hasAuth = DOM.hasAuthFilter?.value;
-        // 模式筛选
-const mode = DOM.modeFilter?.value;
-if (mode && mode !== 'all') {
-    filtered = filtered.filter(m => {
-        if (mode === 'test') {
-            return m.has_test_auth === 1 || m.has_test_auth === true;
-        } else if (mode === 'live') {
-            return m.has_live_auth === 1 || m.has_live_auth === true;
+        const mode = DOM.modeFilter?.value;
+        if (mode && mode !== 'all') {
+            filtered = filtered.filter(m => {
+                if (mode === 'test') {
+                    return m.has_test_auth === 1 || m.has_test_auth === true;
+                } else if (mode === 'live') {
+                    return m.has_live_auth === 1 || m.has_live_auth === true;
+                }
+                return true;
+            });
         }
-        return true;
-    });
-}
         if (hasAuth === 'yes') {
             filtered = filtered.filter(m => m.auth_count > 0);
         } else if (hasAuth === 'no') {
@@ -285,32 +281,26 @@ if (mode && mode !== 'all') {
         pageMatches.forEach(match => {
             const isSelected = selectedMatches.has(match.id);
             const hasAuth = match.auth_count > 0;
-            // 判断模式并添加样式
-const hasTestAuth = match.has_test_auth === 1 || match.has_test_auth === true;
-const hasLiveAuth = match.has_live_auth === 1 || match.has_live_auth === true;
+            const hasTestAuth = match.has_test_auth === 1 || match.has_test_auth === true;
+            const hasLiveAuth = match.has_live_auth === 1 || match.has_live_auth === true;
 
-let modeClass = '';
-let modeBadges = '';
+            let modeBadges = '';
 
-if (hasTestAuth && hasLiveAuth) {
-    modeClass = 'mixed-mode';
-    modeBadges = '<span class="mode-badge-small mixed">🎯 混合模式</span>';
-} else if (hasTestAuth) {
-    modeClass = 'test-mode';
-    modeBadges = '<span class="mode-badge-small test">🧪 测试模式</span>';
-} else if (hasLiveAuth) {
-    modeClass = 'live-mode';
-    modeBadges = '<span class="mode-badge-small live">⚡ 真实模式</span>';
-} else {
-    modeClass = '';
-    modeBadges = '<span class="mode-badge-small" style="background: rgba(100,100,100,0.1); color: #666;">无授权</span>';
-}
+            if (hasTestAuth && hasLiveAuth) {
+                modeBadges = '<span class="mode-badge-small mixed">🎯 混合模式</span>';
+            } else if (hasTestAuth) {
+                modeBadges = '<span class="mode-badge-small test">🧪 测试模式</span>';
+            } else if (hasLiveAuth) {
+                modeBadges = '<span class="mode-badge-small live">⚡ 真实模式</span>';
+            } else {
+                modeBadges = '<span class="mode-badge-small" style="background: rgba(100,100,100,0.1); color: #666;">无授权</span>';
+            }
             
-html += `
-    <tr class="match-row ${modeClass}">
-        <td style="text-align: center;">
-            <input type="checkbox" class="match-checkbox" data-id="${match.id}" ${isSelected ? 'checked' : ''}>
-        </td>
+            html += `
+                <tr class="match-row">
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="match-checkbox" data-id="${match.id}" ${isSelected ? 'checked' : ''}>
+                    </td>
                     <td><strong>${UTILS.escapeHtml(match.home_team)}</strong> vs <strong>${UTILS.escapeHtml(match.away_team)}</strong></td>
                     <td>${UTILS.escapeHtml(match.league || '-')}</td>
                     <td>${UTILS.formatDateTime(match.match_time)}</td>
@@ -565,37 +555,36 @@ html += `
         }
     }
 
-// ==================== 加载清算历史 ====================
-async function loadSettledHistory() {
-    if (!DOM.historyTable) return;
+    // ==================== 加载清算历史 ====================
+    async function loadSettledHistory() {
+        if (!DOM.historyTable) return;
 
-    try {
-        DOM.historyTable.innerHTML = `
-            <tr><td colspan="8" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> 加载中...<\/td><\/tr>
-        `;
+        try {
+            DOM.historyTable.innerHTML = `
+                <tr><td colspan="8" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> 加载中...<\/td><\/tr>
+            `;
 
-        const result = await adminRequest('/history');
-        
-        if (result.success && result.data) {
-            renderSettledHistory(result.data);
+            const result = await adminRequest('/history');
             
-            // ✅ 使用后端返回的统计数据
-            if (DOM.todayCount && result.stats) {
-                DOM.todayCount.textContent = result.stats.today_count;
+            if (result.success && result.data) {
+                renderSettledHistory(result.data);
+                
+                if (DOM.todayCount && result.stats) {
+                    DOM.todayCount.textContent = result.stats.today_count;
+                }
+                if (DOM.totalAmount && result.stats) {
+                    DOM.totalAmount.textContent = UTILS.formatAmount(result.stats.total_amount) + ' USDT';
+                }
+                if (DOM.settledCount) {
+                    DOM.settledCount.textContent = result.data.length;
+                }
             }
-            if (DOM.totalAmount && result.stats) {
-                DOM.totalAmount.textContent = UTILS.formatAmount(result.stats.total_amount) + ' USDT';
-            }
-            if (DOM.settledCount) {
-                DOM.settledCount.textContent = result.data.length;
-            }
+        } catch (err) {
+            DOM.historyTable.innerHTML = `
+                <tr><td colspan="8" class="loading-cell" style="color: #ef4444;">加载失败: ${err.message}<\/td><\/tr>
+            `;
         }
-    } catch (err) {
-        DOM.historyTable.innerHTML = `
-            <td><td colspan="8" class="loading-cell" style="color: #ef4444;">加载失败: ${err.message}<\/td><\/tr>
-        `;
     }
-}
 
     function renderSettledHistory(history) {
         if (!DOM.historyTable) return;
@@ -695,7 +684,7 @@ async function loadSettledHistory() {
                     }
                 } else {
                     if (ModalDOM.authTableBody) {
-                        ModalDOM.authTableBody.innerHTML = '<tr><td colspan="4" class="empty-cell">暂无授权记录</td><\/tr>';
+                        ModalDOM.authTableBody.innerHTML = '<tr><td colspan="4" class="empty-cell">暂无授权记录<\/tr>';
                     }
                     if (ModalDOM.totalAuthCount) ModalDOM.totalAuthCount.textContent = '0';
                     if (ModalDOM.totalAuthAmount) ModalDOM.totalAuthAmount.textContent = '0.00';
@@ -837,8 +826,6 @@ async function loadSettledHistory() {
     }
 
     // ==================== 系统配置管理 ====================
-    
-    // 加载系统配置
     async function loadSettlementConfig() {
         try {
             const token = localStorage.getItem('admin_token');
@@ -878,7 +865,6 @@ async function loadSettledHistory() {
         }
     }
     
-    // 保存系统配置
     async function saveSettlementConfig() {
         try {
             if (ConfigDOM.saveConfigBtn) {
@@ -937,7 +923,6 @@ async function loadSettledHistory() {
         }
     }
     
-    // 绑定配置控件联动
     function bindConfigEvents() {
         if (ConfigDOM.platformFeeRate && ConfigDOM.platformFeeRateNum) {
             ConfigDOM.platformFeeRate.addEventListener('input', () => {
@@ -997,6 +982,50 @@ async function loadSettledHistory() {
                 }
             });
         }
+    }
+
+    // ==================== 一键获取比分功能 ====================
+    const fetchAllScoresBtn = document.getElementById('fetchAllScoresBtn');
+
+    async function fetchAllScores() {
+        if (!fetchAllScoresBtn) return;
+        
+        const originalText = fetchAllScoresBtn.innerHTML;
+        fetchAllScoresBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 获取中...';
+        fetchAllScoresBtn.disabled = true;
+        
+        try {
+            const response = await fetch('/api/v1/admin/settle/fetch-all-scores', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                },
+                credentials: 'include'
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                UTILS.showToast(`${result.message} (共 ${result.count} 场)`, 'success');
+                setTimeout(() => {
+                    loadPendingMatches();
+                    loadSettledHistory();
+                }, 3000);
+            } else {
+                UTILS.showToast(result.error || '获取比分失败', 'error');
+            }
+        } catch (err) {
+            console.error('一键获取比分失败:', err);
+            UTILS.showToast('获取比分失败: ' + err.message, 'error');
+        } finally {
+            fetchAllScoresBtn.innerHTML = originalText;
+            fetchAllScoresBtn.disabled = false;
+        }
+    }
+
+    if (fetchAllScoresBtn) {
+        fetchAllScoresBtn.addEventListener('click', fetchAllScores);
     }
 
     // ==================== 事件绑定 ====================
@@ -1135,35 +1164,35 @@ async function loadSettledHistory() {
                 window.location.href = '/admin/index.html';
             });
         }
-        // 在 bindEvents 函数中添加表头排序事件
-document.querySelectorAll('.sortable').forEach(th => {
-    th.addEventListener('click', () => {
-        const sortField = th.dataset.sort;
-        let sortValue = '';
         
-        if (sortField === 'auth') {
-            // 切换排序方向
-            const currentSort = DOM.sortFilter?.value;
-            if (currentSort === 'auth_desc') {
-                sortValue = 'auth_asc';
-            } else {
-                sortValue = 'auth_desc';
-            }
-        } else if (sortField === 'amount') {
-            const currentSort = DOM.sortFilter?.value;
-            if (currentSort === 'amount_desc') {
-                sortValue = 'amount_asc';
-            } else {
-                sortValue = 'amount_desc';
-            }
-        }
+        document.querySelectorAll('.sortable').forEach(th => {
+            th.addEventListener('click', () => {
+                const sortField = th.dataset.sort;
+                let sortValue = '';
+                
+                if (sortField === 'auth') {
+                    const currentSort = DOM.sortFilter?.value;
+                    if (currentSort === 'auth_desc') {
+                        sortValue = 'auth_asc';
+                    } else {
+                        sortValue = 'auth_desc';
+                    }
+                } else if (sortField === 'amount') {
+                    const currentSort = DOM.sortFilter?.value;
+                    if (currentSort === 'amount_desc') {
+                        sortValue = 'amount_asc';
+                    } else {
+                        sortValue = 'amount_desc';
+                    }
+                }
+                
+                if (DOM.sortFilter && sortValue) {
+                    DOM.sortFilter.value = sortValue;
+                    applyFilters();
+                }
+            });
+        });
         
-        if (DOM.sortFilter && sortValue) {
-            DOM.sortFilter.value = sortValue;
-            applyFilters();
-        }
-    });
-});
         if (DOM.tabBtns.length) {
             DOM.tabBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -1181,15 +1210,15 @@ document.querySelectorAll('.sortable').forEach(th => {
 
     // ==================== 初始化 ====================
     function init() {
-        console.log('📊 清算管理控制器 v2.0 初始化');
+        console.log('📊 清算管理控制器 v2.1 初始化');
         const storedAdmin = localStorage.getItem('admin_name');
         if (storedAdmin && DOM.adminName) {
             DOM.adminName.textContent = storedAdmin;
         }
         bindEvents();
-        bindConfigEvents();           // ← 绑定配置事件
+        bindConfigEvents();
         loadPendingMatches();
-        loadSettlementConfig();       // ← 加载配置
+        loadSettlementConfig();
         
         if (DOM.winBtn) DOM.winBtn.classList.add('active');
         if (DOM.batchWinBtn) DOM.batchWinBtn.classList.add('active');
