@@ -484,7 +484,7 @@ app.use('/api/v1/admin/upload', adminUploadRoutes);
 app.use('/api/v1/user/authorize', authorizeRoutes);
 app.use('/api/v1/user/withdraw/user', withdrawUserRoutes);
 app.use('/api/v1/user/stats', statsRoutes);
-//// app.use('/api/v1/user/balance/logs', balanceLogsRoutes);
+//app.use('/api/v1/user/balance/logs', balanceLogsRoutes);
 app.use('/api/v1/user/mode', modeRoutes);
 app.use('/api/v1/user/balance', balanceRoutes);
 app.use('/api/v1/user/support', supportRoutes);
