@@ -1,12 +1,12 @@
 /**
  * Auto Fetch Matches Cron Job
  * @description 每天从 DeepSeek API 获取比赛数据并录入（优化版）
- * @version 3.0.0
- * @since 2026-04-01
+ * @version 3.1.0 - 添加环境变量控制启动时执行
+ * @since 2026-06-12
  * 
  * 优化说明：
  * - 执行频率：每天 UTC 00:30
- * - 一次获取覆盖未来 7 天比赛
+ * - 一次获取覆盖未来 30 天比赛（世界杯期间）
  * - 优先抓取世界杯比赛
  */
 
@@ -35,11 +35,12 @@ function getNextExecutionTime() {
 
 /**
  * 执行任务
+ * @returns {Promise<object>} 执行结果
  */
 async function runJob() {
     if (isRunning) {
         logger.warn('⏳ 上一个自动录入任务还在执行中，跳过本次');
-        return;
+        return { skipped: true, message: 'Previous job still running' };
     }
     
     isRunning = true;
@@ -64,8 +65,11 @@ async function runJob() {
             logger.info(`📢 新增 ${results.newToPool} 场比赛，可用于动态消息生成`);
         }
         
+        return results;
+        
     } catch (error) {
         logger.error('定时任务执行失败:', error);
+        return { error: error.message };
     } finally {
         isRunning = false;
     }
@@ -73,19 +77,26 @@ async function runJob() {
 
 /**
  * 启动定时任务
+ * @param {boolean} runOnStartup - 是否在启动时执行一次（默认 false）
  */
-export function startAutoFetchJob() {
+export function startAutoFetchJob(runOnStartup = false) {
     if (!process.env.DEEPSEEK_API_KEY) {
         logger.warn('⚠️ DEEPSEEK_API_KEY 未配置，自动获取比赛任务不会启动');
         logger.warn('   请在 .env 文件中添加: DEEPSEEK_API_KEY=your_api_key');
         return;
     }
     
-    // 启动时立即执行一次
-    setTimeout(() => {
-        logger.info('🚀 启动时执行一次比赛数据获取');
-        runJob();
-    }, 5000);
+    // 根据参数决定是否在启动时执行
+    if (runOnStartup) {
+        setTimeout(() => {
+            logger.info('🚀 启动时执行一次比赛数据获取');
+            runJob().catch(err => {
+                logger.error('启动时比赛数据获取失败:', err);
+            });
+        }, 5000);
+    } else {
+        logger.info('⏭️ 启动时跳过比赛数据获取（可通过设置 RUN_ON_STARTUP=true 启用）');
+    }
     
     // 设置定时任务（每天执行）
     cron.schedule(CRON_SCHEDULE, runJob);

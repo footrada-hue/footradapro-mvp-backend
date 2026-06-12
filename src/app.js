@@ -1,6 +1,7 @@
 /**
  * FOOTRADAPRO MVP - Application Entry Point
  * @description Express应用入口，支持 SQLite(本地) 和 PostgreSQL(生产)
+ * @version 3.1.0 - 修复 auto-fetch-scores 无限循环问题
  */
 
 import express from 'express';
@@ -38,6 +39,8 @@ import logger from './utils/logger.js';
 
 // ==================== 导入路由 ====================
 import './jobs/auto-update-match-status.js';
+// ❌ 注意：不再直接导入 auto-fetch-scores.js，避免自动启动定时器
+// 改为在 startServer 函数中手动控制启动
 import authRoutes from './api/v1/auth.routes.js';
 import userRoutes from './api/v1/user.routes.js';
 import claimRoutes from './api/v1/user/claim.routes.js';
@@ -79,7 +82,7 @@ import adminSupportRoutes from './api/v1/admin/support-admin.routes.js';
 import uploadRoutes from './api/v1/upload.routes.js';
 import { verifyAndFixTeamLogos } from './jobs/verify-team-logos.js';
 import { initSocket } from './socket/index.js';
-import './jobs/auto-fetch-scores.js';
+// ❌ 删除：import './jobs/auto-fetch-scores.js';
 import depositNotifyRoutes from './api/v1/user/deposit-notify.routes.js';
 import './services/emailservice.js';
 import configRoutes from './api/v1/admin/config.routes.js';
@@ -684,7 +687,7 @@ const startServer = async () => {
         // 初始化 Socket.io
         initSocket(server);
         
-        server.listen(PORT, () => {
+        server.listen(PORT, async () => {
             logger.info(`Server started on port ${PORT} (${NODE_ENV} mode)`);
             logger.info(`Health check: http://localhost:${PORT}/health`);
             logger.info(`WebSocket server ready on port ${PORT}`);
@@ -693,9 +696,41 @@ const startServer = async () => {
             startDataCleanup();
             logger.info('🧹 Data cleanup service started');
 
-            // 启动自动获取比赛定时任务
-            startAutoFetchJob();
-            logger.info('🤖 Auto-fetch matches service started');
+            // 启动自动获取比赛定时任务（参数 false 表示不在启动时执行）
+            startAutoFetchJob(false);
+            logger.info('🤖 Auto-fetch matches service started (每天 00:30 UTC 执行)');
+
+            // ========== 新增：启动比分获取定时任务（每小时一次，避免 API 过载） ==========
+            try {
+                const { updateScoresForFinishedMatches } = await import('./jobs/auto-fetch-scores.js');
+                
+                // 启动时执行一次（可选，通过环境变量控制）
+                const runOnStartup = process.env.RUN_SCORE_FETCH_ON_STARTUP === 'true';
+                if (runOnStartup) {
+                    setTimeout(() => {
+                        logger.info('🏆 启动时检查待获取比分的比赛');
+                        updateScoresForFinishedMatches(5).catch(err => {
+                            logger.error('启动时比分获取失败:', err);
+                        });
+                    }, 10000);
+                    logger.info('🏆 启动时比分获取已启用（RUN_SCORE_FETCH_ON_STARTUP=true）');
+                } else {
+                    logger.info('⏭️ 启动时跳过比分获取（可通过设置 RUN_SCORE_FETCH_ON_STARTUP=true 启用）');
+                }
+                
+                // 每小时执行一次（而不是每10分钟）
+                const intervalMs = 60 * 60 * 1000; // 1小时
+                setInterval(() => {
+                    logger.info('⏰ 定时检查待获取比分的比赛');
+                    updateScoresForFinishedMatches(5).catch(err => {
+                        logger.error('定时比分获取失败:', err);
+                    });
+                }, intervalMs);
+                
+                logger.info(`🏆 Auto-fetch scores service started (每小时执行一次，间隔 ${intervalMs / 60000} 分钟)`);
+            } catch (scoreErr) {
+                logger.error('启动比分获取服务失败:', scoreErr);
+            }
         });
         
         // 启动队徽验证定时任务
