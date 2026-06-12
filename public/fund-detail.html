@@ -117,7 +117,7 @@
       padding: var(--space-4) var(--space-6); position: sticky; top:0; z-index:50; box-shadow: var(--glass-shadow);
       display: flex; align-items: center; justify-content: space-between;
     }
-    .logo { display: flex; align-items: center; gap: var(--space-3); }
+    .logo { display: flex; align-items: center; gap: var(--space-3); cursor: pointer; }
     .logo-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
     .logo-text { font-size: var(--font-md); font-weight: 700; background: var(--accent-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
     .header-actions { display: flex; gap: var(--space-5); align-items: center; }
@@ -222,12 +222,25 @@
     /* 底部导航 */
     .bottom-nav { display: none; position: fixed; bottom:0; left:0; right:0; background: var(--card-bg); backdrop-filter: blur(24px); border-top: 1px solid var(--glass-border); padding: var(--space-3) var(--space-5); z-index:60; }
     .bottom-nav-items { display: flex; justify-content: space-around; max-width: 500px; margin:0 auto; }
-    .nav-item { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); font-size: var(--font-xs); color: var(--text-muted); cursor: pointer; padding: var(--space-2) 0; transition: all var(--duration-fast); }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); font-size: var(--font-xs); color: var(--text-muted); cursor: pointer; padding: var(--space-2) 0; transition: all var(--duration-fast); text-decoration: none; }
     .nav-item.active { color: var(--accent); }
     .nav-item i { font-size: 22px; }
 
     /* 悬浮按钮 */
     .fab { position: fixed; bottom: 28px; right: 28px; width: 52px; height: 52px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px var(--accent-glow); z-index:55; cursor: pointer; transition: all var(--duration-fast); border: 1px solid rgba(255,255,255,0.2); }
+
+    /* Toast通知 */
+    .toast-notification {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: var(--success); color: white; padding: 12px 24px;
+      border-radius: 40px; font-size: 14px; z-index: 9999;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      animation: fadeInUp 0.3s ease;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translate(-50%, 20px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
 
     /* 响应式 */
     @media (max-width: 768px) {
@@ -264,7 +277,7 @@
   </div>
 
   <div class="header">
-    <div class="logo">
+    <div class="logo" onclick="location.href='/index.html'">
       <div class="logo-icon">⚽</div>
       <div class="logo-text">FootRadaPro</div>
     </div>
@@ -338,7 +351,7 @@
     </div>
   </div>
 
-  <div class="fab" onclick="alert('Support: contact via Telegram')">
+  <div class="fab" onclick="window.location.href='/support.html'">
     <i class="fa-solid fa-comment-dots"></i>
   </div>
 </div>
@@ -348,15 +361,20 @@
   const urlParams = new URLSearchParams(window.location.search);
   const targetId = urlParams.get('id');
 
-  // ==================== 模拟数据 ====================
+  // ==================== 模拟数据（生产环境应替换为 API 调用） ====================
+  // 注意：amount 字段仅用于金额数值，不用于判断类型
+  // 类型的唯一判断依据是 type 字段
   const mockRecords = [
     { id: 1, type: 'deposit', amount: 500, status: 'completed', created_at: new Date(Date.now() - 2 * 24 * 3600000).toISOString(), description: 'Deposit credited', reason: 'Deposit 500 USDT' },
-    { id: 2, type: 'withdraw', amount: -200, status: 'completed', created_at: new Date(Date.now() - 5 * 24 * 3600000).toISOString(), description: 'Withdrawal completed', reason: 'Withdraw 200 USDT' },
-    { id: 3, type: 'deposit', amount: 1000, status: 'completed', created_at: new Date(Date.now() - 10 * 24 * 3600000).toISOString(), description: 'Deposit credited', reason: 'Deposit 1000 USDT' }
+    { id: 2, type: 'withdraw', amount: 200, status: 'completed', created_at: new Date(Date.now() - 5 * 24 * 3600000).toISOString(), description: 'Withdrawal completed', reason: 'Withdraw 200 USDT' },
+    { id: 3, type: 'deposit', amount: 1000, status: 'completed', created_at: new Date(Date.now() - 10 * 24 * 3600000).toISOString(), description: 'Deposit credited', reason: 'Deposit 1000 USDT' },
+    { id: 4, type: 'deposit', amount: 100, status: 'processing', created_at: new Date(Date.now() - 1 * 24 * 3600000).toISOString(), description: 'Deposit in progress', reason: 'Deposit 100 USDT' }
   ];
 
   // 筛选状态
   let currentType = 'all';
+  // 资金记录数据（将从 API 加载）
+  let fundRecords = [];
 
   // ==================== 全局状态管理 ====================
   function getAppMode() { return localStorage.getItem('appMode') || 'sandbox'; }
@@ -389,15 +407,69 @@
     });
   }
 
+  // ==================== API 调用 ====================
+  async function loadFundRecordsFromAPI() {
+    const isSandbox = getAppMode() === 'sandbox';
+    const mode = isSandbox ? 'test' : 'live';
+    
+    try {
+      // 显示加载状态
+      const loadingState = document.getElementById('loadingState');
+      if (loadingState) loadingState.style.display = 'flex';
+      
+      // 调用资金流水 API
+      const response = await fetch(`/api/v1/user/balance/logs?mode=${mode}&limit=100`, {
+        credentials: 'include',
+        headers: { 'Accept': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success && Array.isArray(result.data)) {
+        fundRecords = result.data;
+        console.log(`✅ Loaded ${fundRecords.length} fund records from API`);
+      } else {
+        // 降级使用模拟数据
+        console.warn('API returned no data, using mock data');
+        fundRecords = [...mockRecords];
+      }
+    } catch (err) {
+      console.error('Failed to load fund records:', err);
+      // 降级使用模拟数据
+      fundRecords = [...mockRecords];
+      showToast('Unable to load fund records, showing demo data');
+    } finally {
+      const loadingState = document.getElementById('loadingState');
+      if (loadingState) loadingState.style.display = 'none';
+    }
+    
+    // 渲染数据
+    filterAndRender();
+  }
+
   // ==================== 格式化函数 ====================
   function formatDate(dateStr) {
     if (!dateStr) return '-';
     try {
       const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return '-';
       return date.toLocaleString('en-US', {
         month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
       });
     } catch { return '-'; }
+  }
+
+  function formatAmount(amount) {
+    const num = Number(amount);
+    if (isNaN(num)) return '0.00';
+    return num.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
   }
 
   function escapeHtml(str) {
@@ -405,9 +477,65 @@
     return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
   }
 
-  // ==================== 渲染函数 ====================
-  function renderRecords(records = null) {
-    const data = records || mockRecords;
+  function showToast(message, isError = false) {
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) existingToast.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    if (isError) toast.style.background = '#ef4444';
+    toast.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${message}`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  // ==================== 核心渲染函数（修复关键点） ====================
+  /**
+   * 判断是否为充值
+   * ✅ 修复：使用 type 字段而非 amount 正负
+   */
+  function isDeposit(record) {
+    return record.type === 'deposit';
+  }
+
+  /**
+   * 判断是否为提现
+   * ✅ 修复：使用 type 字段而非 amount 正负
+   */
+  function isWithdraw(record) {
+    return record.type === 'withdraw';
+  }
+
+  /**
+   * 获取显示用的金额前缀（+/-）
+   * 充值固定显示 +，提现固定显示 -
+   */
+  function getAmountPrefix(record) {
+    return isDeposit(record) ? '+' : '-';
+  }
+
+  /**
+   * 获取类型文案
+   */
+  function getTypeText(record) {
+    return isDeposit(record) ? 'Deposit' : 'Withdraw';
+  }
+
+  /**
+   * 获取图标名称
+   */
+  function getIconName(record) {
+    return isDeposit(record) ? 'arrow-down' : 'arrow-up';
+  }
+
+  /**
+   * 获取样式类名
+   */
+  function getAmountClass(record) {
+    return isDeposit(record) ? 'deposit' : 'withdraw';
+  }
+
+  function renderRecords() {
     const container = document.getElementById('fundList');
     const loadingState = document.getElementById('loadingState');
     const emptyState = document.getElementById('emptyState');
@@ -418,17 +546,36 @@
     const isSandbox = getAppMode() === 'sandbox';
     const currency = isSandbox ? 'tUSDT' : 'USDT';
     
-    // 计算统计（使用全部数据，不受筛选影响）
+    // 计算统计数据（使用全部 fundRecords，不受筛选影响）
+    // ✅ 修复：基于 type 字段统计，而非 amount 正负
     let totalDeposit = 0, totalWithdraw = 0;
-    mockRecords.forEach(record => {
-      if (record.amount > 0) totalDeposit += record.amount;
-      else totalWithdraw += Math.abs(record.amount);
+    fundRecords.forEach(record => {
+      const amountNum = Number(record.amount) || 0;
+      if (isDeposit(record)) {
+        totalDeposit += amountNum;
+      } else if (isWithdraw(record)) {
+        totalWithdraw += amountNum;
+      }
     });
-    document.getElementById('totalDeposit').innerHTML = totalDeposit.toFixed(2) + ' <span class="currency">' + currency + '</span>';
-    document.getElementById('totalWithdraw').innerHTML = totalWithdraw.toFixed(2) + ' <span class="currency">' + currency + '</span>';
-    document.getElementById('netFund').innerHTML = (totalDeposit - totalWithdraw).toFixed(2) + ' <span class="currency">' + currency + '</span>';
     
-    if (data.length === 0) {
+    const netFund = totalDeposit - totalWithdraw;
+    
+    document.getElementById('totalDeposit').innerHTML = formatAmount(totalDeposit) + ' <span class="currency">' + currency + '</span>';
+    document.getElementById('totalWithdraw').innerHTML = formatAmount(totalWithdraw) + ' <span class="currency">' + currency + '</span>';
+    document.getElementById('netFund').innerHTML = formatAmount(netFund) + ' <span class="currency">' + currency + '</span>';
+    
+    // 应用筛选
+    let filteredData = [...fundRecords];
+    if (currentType === 'deposit') {
+      filteredData = fundRecords.filter(r => isDeposit(r));
+    } else if (currentType === 'withdraw') {
+      filteredData = fundRecords.filter(r => isWithdraw(r));
+    }
+    
+    // 按时间倒序排序
+    filteredData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
+    if (filteredData.length === 0) {
       loadingState.style.display = 'none';
       emptyState.style.display = 'flex';
       container.style.display = 'none';
@@ -437,28 +584,31 @@
     }
     
     let html = '';
-    data.forEach(record => {
-      const isDeposit = record.amount > 0;
-      const typeText = isDeposit ? 'Deposit' : 'Withdraw';
-      const icon = isDeposit ? 'arrow-down' : 'arrow-up';
-      const amountClass = isDeposit ? 'deposit' : 'withdraw';
-      const amountPrefix = isDeposit ? '+' : '-';
-      const amount = Math.abs(record.amount).toFixed(2);
-      const statusText = record.status === 'completed' ? 'Completed' : 'Pending';
+    filteredData.forEach(record => {
+      const isDep = isDeposit(record);
+      const typeText = getTypeText(record);
+      const icon = getIconName(record);
+      const amountClass = getAmountClass(record);
+      const amountPrefix = getAmountPrefix(record);
+      const amountAbs = Math.abs(Number(record.amount) || 0);
+      const statusText = record.status === 'completed' ? 'Completed' : (record.status === 'processing' ? 'Processing' : 'Pending');
       const isTarget = record.id == targetId;
       
+      // 描述信息优先使用 description，否则使用 reason
+      const description = record.description || record.reason || '';
+      
       html += `
-        <div class="fund-item" data-id="${record.id}" ${isTarget ? 'data-target="true"' : ''} onclick="viewDetail(${record.id})">
+        <div class="fund-item" data-id="${record.id}" ${isTarget ? 'data-target="true"' : ''} onclick="viewDetail('${record.id}')">
           <div class="fund-icon ${amountClass}">
             <i class="fas fa-${icon}"></i>
           </div>
           <div class="fund-info">
             <div class="fund-type ${amountClass}">${typeText}</div>
-            ${record.description ? `<div class="fund-desc"><i class="fas fa-info-circle"></i> ${escapeHtml(record.description)}</div>` : ''}
+            ${description ? `<div class="fund-desc"><i class="fas fa-info-circle"></i> ${escapeHtml(description)}</div>` : ''}
             <div class="fund-desc"><i class="fas fa-clock"></i> ${formatDate(record.created_at)}</div>
           </div>
           <div class="fund-right">
-            <div class="fund-amount ${amountClass}">${amountPrefix}${amount} ${escapeHtml(currency)}</div>
+            <div class="fund-amount ${amountClass}">${amountPrefix}${formatAmount(amountAbs)} ${escapeHtml(currency)}</div>
             <div class="fund-time">${statusText}</div>
           </div>
         </div>
@@ -469,7 +619,7 @@
     loadingState.style.display = 'none';
     emptyState.style.display = 'none';
     container.style.display = 'block';
-    loadMore.style.display = 'none';
+    loadMore.style.display = 'none'; // 当前版本不分页，后续可扩展
     
     // 高亮目标记录
     if (targetId) {
@@ -486,64 +636,80 @@
 
   // ==================== 筛选功能 ====================
   function filterAndRender() {
-    let filtered = [...mockRecords];
-    if (currentType === 'deposit') {
-      filtered = mockRecords.filter(r => r.amount > 0);
-    } else if (currentType === 'withdraw') {
-      filtered = mockRecords.filter(r => r.amount < 0);
-    }
-    renderRecords(filtered);
+    renderRecords();
   }
 
   // ==================== 全局函数 ====================
   window.viewDetail = function(id) {
-    console.log('View detail:', id);
+    // 跳转到详情页，可扩展
+    window.location.href = `/fund-detail.html?id=${id}`;
   };
 
   // ==================== 事件绑定 ====================
-  // 筛选标签点击
-  document.querySelectorAll('.filter-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      currentType = tab.dataset.type;
-      filterAndRender();
+  function bindEvents() {
+    // 筛选标签点击
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentType = tab.dataset.type;
+        filterAndRender();
+      });
     });
-  });
 
-  // 主题切换
-  document.getElementById('themeToggle')?.addEventListener('click', () => {
-    const newTheme = getThemeMode() === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('theme', newTheme);
-    window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
-    updateThemeUI();
-  });
+    // 主题切换
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+      themeToggle.addEventListener('click', () => {
+        const newTheme = getThemeMode() === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('theme', newTheme);
+        window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
+        updateThemeUI();
+      });
+    }
 
-  // 监听全局状态变化
+    // Logo 点击
+    const logo = document.querySelector('.logo');
+    if (logo) {
+      logo.addEventListener('click', () => {
+        window.location.href = '/index.html';
+      });
+    }
+
+    // 底部导航
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const nav = item.dataset.nav;
+        if (nav === 'home') window.location.href = '/index.html';
+        if (nav === 'market') window.location.href = '/match-market.html';
+        if (nav === 'records') window.location.href = '/transaction-list.html';
+        if (nav === 'support') window.location.href = '/support.html';
+        if (nav === 'profile') window.location.href = '/profile.html';
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        item.classList.add('active');
+      });
+    });
+  }
+
+  // ==================== 监听全局状态变化 ====================
   window.addEventListener('appModeChanged', () => {
     updateModeUI();
-    renderRecords();
+    loadFundRecordsFromAPI();
   });
   window.addEventListener('themeChanged', () => updateThemeUI());
 
-  // 底部导航
-  document.querySelectorAll('.nav-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const nav = item.dataset.nav;
-      if (nav === 'home') window.location.href = '/index.html';
-      if (nav === 'market') window.location.href = '/match-market.html';
-      if (nav === 'records') window.location.href = '/transaction-list.html';
-      if (nav === 'support') window.location.href = '/support.html';
-      if (nav === 'profile') window.location.href = '/profile.html';
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      item.classList.add('active');
-    });
-  });
-
   // ==================== 初始化 ====================
-  updateThemeUI();
-  updateModeUI();
-  renderRecords();
+  async function init() {
+    console.log('💰 Fund Details page initializing...');
+    updateThemeUI();
+    updateModeUI();
+    bindEvents();
+    await loadFundRecordsFromAPI();
+    console.log('✅ Fund Details page ready');
+  }
+  
+  document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
