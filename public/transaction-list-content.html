@@ -1,1 +1,670 @@
-# 粘贴上面的完整代码
+<!-- 
+  transaction-list-content.html - 交易记录内容片段
+  用于 SPA 架构，显示用户的投注记录和盈亏
+  通过 shell.html 的 #app-content 区域加载
+-->
+
+<div class="transaction-list-container">
+
+  <!-- 模式指示器 -->
+  <div class="mode-indicator">
+    <i class="fa-solid fa-info-circle"></i>
+    <span>Current Mode: </span>
+    <span id="currentModeText" class="sandbox-mode-text">Sandbox</span>
+    <span id="testModeBadge" class="test-badge-mode" style="display: none;"><i class="fa-solid fa-flask"></i> Test Mode</span>
+  </div>
+
+  <!-- 筛选标签 -->
+  <div class="filter-tabs">
+    <button class="filter-tab active" data-status="all">All</button>
+    <button class="filter-tab" data-status="pending">Active</button>
+    <button class="filter-tab" data-status="settled">Settled</button>
+  </div>
+
+  <!-- 统计卡片 -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-number" id="totalCount">0</div>
+      <div class="stat-label">Total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="winCount">0</div>
+      <div class="stat-label">Won</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="lossCount">0</div>
+      <div class="stat-label">Loss</div>
+    </div>
+  </div>
+
+  <!-- 加载状态 -->
+  <div id="loadingState" class="loading-state">
+    <div class="loading-spinner"></div>
+    <p>Loading transactions...</p>
+  </div>
+
+  <!-- 空状态 -->
+  <div id="emptyState" class="empty-state" style="display: none;">
+    <i class="fa-solid fa-receipt"></i>
+    <p>No transactions found</p>
+  </div>
+
+  <!-- 交易记录列表 -->
+  <div id="transactionList"></div>
+
+  <!-- 加载更多 -->
+  <div id="loadMore" class="load-more" style="display: none;">
+    <button class="load-more-btn" id="loadMoreBtn">Load More</button>
+  </div>
+</div>
+
+<style>
+  .transaction-list-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--space-6);
+    width: 100%;
+  }
+
+  .mode-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: var(--badge-soft);
+    backdrop-filter: blur(8px);
+    padding: 6px 16px;
+    border-radius: var(--radius-full);
+    width: fit-content;
+    margin-bottom: var(--space-5);
+    font-size: var(--font-sm);
+  }
+  .mode-indicator .sandbox-mode-text { color: #8b5cf6; font-weight: 600; }
+  .mode-indicator .live-mode-text { color: #f97316; font-weight: 600; }
+  .test-badge-mode {
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    color: white;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-xs);
+    margin-left: var(--space-3);
+  }
+
+  .filter-tabs {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+    flex-wrap: wrap;
+  }
+  .filter-tab {
+    background: var(--badge-soft);
+    border: none;
+    padding: 10px 24px;
+    border-radius: var(--radius-full);
+    color: var(--text-secondary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--duration-fast);
+    font-size: var(--font-sm);
+  }
+  .filter-tab.active {
+    background: var(--accent-gradient);
+    color: white;
+    box-shadow: 0 4px 12px var(--accent-glow);
+  }
+
+  .stats-row {
+    display: flex;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+  }
+  .stat-card {
+    flex: 1;
+    background: var(--card-bg);
+    backdrop-filter: blur(24px);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--glass-border);
+    padding: var(--space-4) var(--space-3);
+    text-align: center;
+  }
+  .stat-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+  }
+  .stat-number {
+    font-size: var(--font-xl);
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.2;
+  }
+  .stat-label {
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+    margin-top: var(--space-1);
+  }
+
+  .transaction-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(24px);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--glass-border);
+    margin-bottom: var(--space-4);
+    transition: all var(--duration-base);
+  }
+  .transaction-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    box-shadow: var(--glass-shadow-hover);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-5) var(--space-5) var(--space-3);
+  }
+  .home-team-block {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .away-team-block {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .team-badge {
+    width: 40px;
+    height: 40px;
+    background: var(--badge-soft);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .team-badge i { font-size: 20px; color: var(--accent); }
+  .team-badge img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .team-name {
+    font-weight: 600;
+    font-size: var(--font-sm);
+    white-space: nowrap;
+  }
+  .vs-divider {
+    color: var(--accent);
+    font-size: var(--font-xs);
+    font-weight: 700;
+    background: var(--badge-soft);
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    margin: 0 var(--space-2);
+  }
+  .card-header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-shrink: 0;
+  }
+  .test-badge {
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    color: white;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: 10px;
+  }
+  .status-badge {
+    font-size: var(--font-xs);
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+  }
+  .status-badge.pending { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .status-badge.won { background: rgba(16,185,129,0.15); color: #10b981; }
+  .status-badge.lost { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+  .card-body {
+    padding: var(--space-2) var(--space-5);
+    cursor: pointer;
+  }
+  .match-league {
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+    margin-bottom: var(--space-2);
+  }
+  .amount-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .auth-amount {
+    font-size: var(--font-md);
+    font-weight: 700;
+  }
+  .auth-amount small {
+    font-size: var(--font-xs);
+    font-weight: normal;
+    color: var(--text-muted);
+  }
+  .profit-badge {
+    font-size: var(--font-sm);
+    font-weight: 600;
+  }
+  .profit-badge.positive { color: var(--success); }
+  .profit-badge.negative { color: var(--danger); }
+  .profit-badge.pending { color: var(--warning); }
+
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3) var(--space-5) var(--space-5);
+    border-top: 1px solid var(--border-light);
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .match-time {
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+  .footer-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .report-btn {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-xs);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--duration-fast);
+  }
+  .report-btn:hover {
+    background: var(--accent);
+    color: white;
+  }
+  .detail-btn {
+    background: var(--badge-soft);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--duration-fast);
+  }
+  .detail-btn:hover {
+    background: var(--accent);
+    color: white;
+    transform: translateX(2px);
+  }
+
+  .section-title {
+    font-size: var(--font-base);
+    font-weight: 600;
+    margin: var(--space-5) 0 var(--space-3);
+    display: flex;
+    align-items: center;
+  }
+
+  .loading-state { text-align: center; padding: 60px; }
+  .loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--border-light);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px;
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border-radius: var(--radius-2xl);
+  }
+  .empty-state i {
+    font-size: 64px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  .load-more {
+    display: flex;
+    justify-content: center;
+    margin: var(--space-6) 0;
+  }
+  .load-more-btn {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    padding: 12px 32px;
+    border-radius: var(--radius-full);
+    color: var(--accent);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--duration-fast);
+  }
+  .load-more-btn:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  @media (max-width: 768px) {
+    .transaction-list-container { padding: var(--space-4); }
+    .filter-tab { padding: 8px 18px; font-size: var(--font-xs); }
+    .stat-number { font-size: var(--font-md); }
+    .team-badge { width: 32px; height: 32px; }
+    .team-badge i { font-size: 16px; }
+    .team-name { font-size: var(--font-xs); white-space: normal; max-width: 80px; }
+    .vs-divider { padding: 2px 8px; font-size: 10px; margin: 0 var(--space-1); }
+    .card-header { padding: var(--space-4); flex-wrap: wrap; gap: var(--space-2); }
+    .card-body { padding: var(--space-2) var(--space-4); }
+    .card-footer { padding: var(--space-2) var(--space-4) var(--space-4); }
+    .auth-amount { font-size: var(--font-base); }
+    .profit-badge { font-size: var(--font-xs); }
+    .report-btn { padding: 4px 10px; font-size: 10px; }
+    .detail-btn { width: 28px; height: 28px; }
+  }
+
+  @media (max-width: 480px) {
+    .transaction-list-container { padding: var(--space-3); }
+    .stats-row { gap: var(--space-2); }
+    .stat-card { padding: var(--space-2); }
+    .stat-number { font-size: var(--font-base); }
+    .team-badge { width: 28px; height: 28px; }
+    .team-badge i { font-size: 14px; }
+    .team-name { font-size: 10px; max-width: 65px; }
+    .vs-divider { padding: 2px 6px; font-size: 9px; }
+    .card-footer { flex-direction: column; align-items: flex-start; }
+    .footer-right { width: 100%; justify-content: flex-end; }
+  }
+</style>
+
+<script>
+(function() {
+  'use strict';
+
+  let allTransactions = [];
+  let filteredTransactions = [];
+  let currentFilter = 'all';
+  let currentPage = 1;
+  let pageSize = 20;
+  let isLoading = false;
+  let hasMore = true;
+
+  const DOM = {
+    loadingState: document.getElementById('loadingState'),
+    transactionList: document.getElementById('transactionList'),
+    emptyState: document.getElementById('emptyState'),
+    loadMore: document.getElementById('loadMore'),
+    loadMoreBtn: document.getElementById('loadMoreBtn'),
+    totalCount: document.getElementById('totalCount'),
+    winCount: document.getElementById('winCount'),
+    lossCount: document.getElementById('lossCount'),
+    currentModeText: document.getElementById('currentModeText'),
+    testModeBadge: document.getElementById('testModeBadge')
+  };
+
+  function formatAmount(amount) {
+    const num = Number(amount);
+    if (isNaN(num)) return '0.00';
+    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function formatDate(dateString) {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      return `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+    } catch { return '-'; }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+  }
+
+  function getTeamLogoUrl(logoUrl) {
+    if (logoUrl && logoUrl !== '/uploads/teams/default.png') return logoUrl;
+    return null;
+  }
+
+  function updateModeUI() {
+    const isSandbox = window.ThemeManager ? window.ThemeManager.isTestMode : false;
+    if (DOM.currentModeText) {
+      DOM.currentModeText.textContent = isSandbox ? 'Sandbox' : 'Live';
+      DOM.currentModeText.className = isSandbox ? 'sandbox-mode-text' : 'live-mode-text';
+    }
+    if (DOM.testModeBadge) {
+      DOM.testModeBadge.style.display = isSandbox ? 'inline-flex' : 'none';
+    }
+  }
+
+  function renderTransactionCard(t) {
+    const isSandbox = window.ThemeManager ? window.ThemeManager.isTestMode : false;
+    const currency = isSandbox ? 'tUSDT' : 'USDT';
+    const isPending = t.status === 'pending';
+    const isWon = t.status === 'won';
+    const isLost = t.status === 'lost';
+    
+    let profitClass = 'pending';
+    let profitText = 'Pending';
+    
+const profitNum = Number(t.profit) || 0;
+if (isWon) {
+  profitClass = 'positive';
+  profitText = `+${formatAmount(profitNum)}`;
+} else if (isLost) {
+  profitClass = 'negative';
+  profitText = formatAmount(profitNum);
+}
+    
+    const statusClass = isPending ? 'pending' : (isWon ? 'won' : 'lost');
+    const statusText = isPending ? 'Pending' : (isWon ? 'Won' : 'Lost');
+
+    const homeLogoUrl = getTeamLogoUrl(t.home_logo);
+    const awayLogoUrl = getTeamLogoUrl(t.away_logo);
+
+    return `
+      <div class="transaction-card" data-auth-id="${t.auth_id}">
+        <div class="card-header">
+          <div style="display: flex; align-items: center; gap: var(--space-3);">
+            <div class="home-team-block">
+              <div class="team-badge">${homeLogoUrl ? `<img src="${homeLogoUrl}" onerror="this.onerror=null;this.parentElement.innerHTML='<i class=\\'fas fa-futbol\\'></i>'">` : '<i class="fas fa-futbol"></i>'}</div>
+              <span class="team-name">${escapeHtml(t.home_team || '?')}</span>
+            </div>
+            <span class="vs-divider">VS</span>
+            <div class="away-team-block">
+              <span class="team-name">${escapeHtml(t.away_team || '?')}</span>
+              <div class="team-badge">${awayLogoUrl ? `<img src="${awayLogoUrl}" onerror="this.onerror=null;this.parentElement.innerHTML='<i class=\\'fas fa-futbol\\'></i>'">` : '<i class="fas fa-futbol"></i>'}</div>
+            </div>
+          </div>
+          <div class="card-header-right">
+            ${isSandbox ? '<span class="test-badge"><i class="fas fa-flask"></i> Test</span>' : ''}
+            <div class="status-badge ${statusClass}">${statusText}</div>
+          </div>
+        </div>
+        <div class="card-body" onclick="viewDetail('${t.auth_id}')">
+          <div class="match-league"><i class="fas fa-trophy"></i> ${escapeHtml(t.league || 'Unknown League')}</div>
+          <div class="amount-info">
+            <div class="auth-amount">${formatAmount(t.amount || 0)} <small>${currency}</small></div>
+            <div class="profit-badge ${profitClass}">${profitText}</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="match-time"><i class="fas fa-clock"></i> ${formatDate(t.match_time || t.created_at)}</div>
+          <div class="footer-right">
+            ${!isPending && t.has_report ? `<button class="report-btn" onclick="viewReport('${t.auth_id}', event)"><i class="fas fa-file-alt"></i> Report</button>` : ''}
+            <button class="detail-btn" onclick="viewDetail('${t.auth_id}')"><i class="fas fa-chevron-right"></i></button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function applyFilters() {
+    let filtered = [...allTransactions];
+    
+    if (currentFilter === 'pending') {
+      filtered = filtered.filter(t => t.status === 'pending');
+    } else if (currentFilter === 'settled') {
+      filtered = filtered.filter(t => t.status === 'won' || t.status === 'lost');
+    }
+    
+    filtered.sort((a, b) => new Date(b.created_at || b.match_time) - new Date(a.created_at || a.match_time));
+    
+    filteredTransactions = filtered;
+    hasMore = filteredTransactions.length > pageSize;
+    currentPage = 1;
+    
+    updateStats();
+    render();
+  }
+
+  function updateStats() {
+    const total = filteredTransactions.length;
+    const wins = filteredTransactions.filter(t => t.status === 'won').length;
+    const losses = filteredTransactions.filter(t => t.status === 'lost').length;
+    
+    if (DOM.totalCount) DOM.totalCount.textContent = total;
+    if (DOM.winCount) DOM.winCount.textContent = wins;
+    if (DOM.lossCount) DOM.lossCount.textContent = losses;
+  }
+
+  function render() {
+    if (!DOM.transactionList) return;
+    
+    const displayTransactions = filteredTransactions.slice(0, currentPage * pageSize);
+    const hasMoreData = displayTransactions.length < filteredTransactions.length;
+    
+    const pending = displayTransactions.filter(t => t.status === 'pending');
+    const settled = displayTransactions.filter(t => t.status === 'won' || t.status === 'lost');
+    
+    let html = '';
+    if (pending.length > 0) {
+      html += '<div class="section-title"><i class="fas fa-hourglass-half" style="margin-right: 8px; color: #f59e0b;"></i>Active</div>';
+      pending.forEach(t => { html += renderTransactionCard(t); });
+    }
+    if (settled.length > 0) {
+      html += '<div class="section-title"><i class="fas fa-check-circle" style="margin-right: 8px; color: #10b981;"></i>Settled</div>';
+      settled.forEach(t => { html += renderTransactionCard(t); });
+    }
+    
+    if (filteredTransactions.length === 0) {
+      if (DOM.loadingState) DOM.loadingState.style.display = 'none';
+      if (DOM.emptyState) DOM.emptyState.style.display = 'flex';
+      if (DOM.transactionList) DOM.transactionList.style.display = 'none';
+      if (DOM.loadMore) DOM.loadMore.style.display = 'none';
+    } else {
+      if (DOM.loadingState) DOM.loadingState.style.display = 'none';
+      if (DOM.emptyState) DOM.emptyState.style.display = 'none';
+      if (DOM.transactionList) {
+        DOM.transactionList.style.display = 'block';
+        DOM.transactionList.innerHTML = html;
+      }
+      if (DOM.loadMore) DOM.loadMore.style.display = hasMoreData ? 'flex' : 'none';
+    }
+  }
+
+  function loadMore() {
+    if (!hasMore) return;
+    currentPage++;
+    render();
+  }
+
+  async function loadTransactions() {
+    if (isLoading) return;
+    isLoading = true;
+    
+    if (DOM.loadingState) DOM.loadingState.style.display = 'flex';
+    
+    try {
+      const isSandbox = window.ThemeManager ? window.ThemeManager.isTestMode : false;
+      const mode = isSandbox ? 'test' : 'live';
+      
+      const response = await fetch(`/api/v1/user/authorize/list?mode=${mode}&limit=100`, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        allTransactions = result.data;
+        applyFilters();
+        console.log(`✅ 加载了 ${allTransactions.length} 条交易记录`);
+      } else {
+        throw new Error(result.error || 'Failed to load transactions');
+      }
+    } catch (err) {
+      console.error('加载交易记录失败:', err);
+      if (DOM.emptyState) {
+        DOM.emptyState.style.display = 'flex';
+        const p = DOM.emptyState.querySelector('p');
+        if (p) p.textContent = 'Failed to load transactions';
+      }
+    } finally {
+      isLoading = false;
+      if (DOM.loadingState) DOM.loadingState.style.display = 'none';
+    }
+  }
+
+  function bindEvents() {
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentFilter = tab.dataset.status;
+        applyFilters();
+      });
+    });
+    
+    if (DOM.loadMoreBtn) {
+      DOM.loadMoreBtn.addEventListener('click', loadMore);
+    }
+    
+    if (window.ThemeManager && window.ThemeManager.addListener) {
+      window.ThemeManager.addListener(() => {
+        updateModeUI();
+        loadTransactions();
+      });
+    }
+  }
+
+  window.viewDetail = function(authId) {
+    window.location.href = `/shell.html?page=transaction-detail&authId=${authId}`;
+  };
+  
+  window.viewReport = function(authId, event) {
+    if (event) event.stopPropagation();
+    window.location.href = `/shell.html?page=report-detail&authId=${authId}`;
+  };
+
+  async function init() {
+    console.log('📋 交易记录页面初始化...');
+    updateModeUI();
+    bindEvents();
+    await loadTransactions();
+    console.log('✅ 交易记录页面初始化完成');
+  }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
