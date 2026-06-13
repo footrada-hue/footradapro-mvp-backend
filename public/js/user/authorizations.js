@@ -186,8 +186,9 @@
                 AppState.settled.hasMore = data.meta?.pages > AppState.settled.page;
                 AppState.settled.total = data.meta?.total || 0;
 
-                const winCount = AppState.settled.list.filter(item => item.profit > 0).length;
-                const lossCount = AppState.settled.list.filter(item => item.profit < 0).length;
+                // ✅ 修复：使用 Number() 转换 profit 避免字符串比较错误
+                const winCount = AppState.settled.list.filter(item => Number(item.profit) > 0).length;
+                const lossCount = AppState.settled.list.filter(item => Number(item.profit) < 0).length;
                 
                 if (DOM.winCount) DOM.winCount.textContent = winCount;
                 if (DOM.lossCount) DOM.lossCount.textContent = lossCount;
@@ -283,7 +284,9 @@
         const isTestMode = window.ThemeManager ? ThemeManager.isTestMode : false;
         const currency = isTestMode ? 'tUSDT' : 'USDT';
         const isPending = type === 'pending';
-        const isWin = item.profit > 0;
+        // ✅ 修复：先将 profit 转换为数字
+        const profitNum = Number(item.profit) || 0;
+        const isWin = profitNum > 0;
         
         const date = new Date(item.created_at).toLocaleString('en-US', {
             month: 'numeric',
@@ -293,7 +296,7 @@
         });
 
         const profitClass = isPending ? 'pending' : (isWin ? 'positive' : 'negative');
-        const profitText = isPending ? 'Pending' : (isWin ? `+${item.profit.toFixed(2)}` : `${item.profit.toFixed(2)}`);
+        const profitText = isPending ? 'Pending' : (isWin ? `+${profitNum.toFixed(2)}` : `${profitNum.toFixed(2)}`);
 
         const resultClass = isPending ? 'pending' : (isWin ? 'won' : 'lost');
         const statusText = isPending ? 'Active' : (isWin ? 'Profit' : 'Loss');

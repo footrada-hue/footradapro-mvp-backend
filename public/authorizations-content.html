@@ -332,43 +332,33 @@
 (function() {
   'use strict';
 
-  // 模拟数据
-  const mockAuthorizations = [
-    { id: 1, auth_id: 'A1001', home_team: 'Liverpool', away_team: 'Manchester City', league: 'Premier League', amount: 200, profit: 0, status: 'pending', created_at: new Date(Date.now() - 2 * 3600000).toISOString() },
-    { id: 2, auth_id: 'A1002', home_team: 'Real Madrid', away_team: 'Barcelona', league: 'La Liga', amount: 300, profit: 45.20, status: 'settled', created_at: new Date(Date.now() - 24 * 3600000).toISOString() },
-    { id: 3, auth_id: 'A1003', home_team: 'Bayern Munich', away_team: 'Borussia Dortmund', league: 'Bundesliga', amount: 150, profit: 22.50, status: 'settled', created_at: new Date(Date.now() - 48 * 3600000).toISOString() },
-    { id: 4, auth_id: 'A1004', home_team: 'Paris SG', away_team: 'Olympique Marseille', league: 'Ligue 1', amount: 500, profit: -30.00, status: 'settled', created_at: new Date(Date.now() - 72 * 3600000).toISOString() }
-  ];
-
   let currentStatus = 'all';
-  let items = [...mockAuthorizations];
+  let items = [];
+  let isLoading = false;
 
-  function getAppMode() {
-    return localStorage.getItem('appMode') || 'sandbox';
+  const DOM = {
+    loadingState: document.getElementById('loadingState'),
+    listContainer: document.getElementById('listContainer'),
+    emptyState: document.getElementById('emptyState'),
+    loadMore: document.getElementById('loadMore'),
+    loadMoreBtn: document.getElementById('loadMoreBtn'),
+    pendingCount: document.getElementById('pendingCount'),
+    winCount: document.getElementById('winCount'),
+    lossCount: document.getElementById('lossCount'),
+    currentModeText: document.getElementById('currentModeText'),
+    filterTabs: document.querySelectorAll('.filter-tab')
+  };
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
   }
 
-  function updateModeUI() {
-    const isSandbox = getAppMode() === 'sandbox';
-    const modeText = document.getElementById('currentModeText');
-    if (modeText) {
-      modeText.textContent = isSandbox ? 'Sandbox' : 'Live';
-      modeText.className = isSandbox ? 'sandbox-mode-text' : 'live-mode-text';
+  function getCurrencySymbol() {
+    if (window.ThemeManager && !window.ThemeManager.isTestMode) {
+      return 'USDT';
     }
-  }
-
-  function getTeamLogoHtml(teamName) {
-    const logoMap = {
-      'Liverpool': 'fa-futbol',
-      'Manchester City': 'fa-futbol',
-      'Real Madrid': 'fa-futbol',
-      'Barcelona': 'fa-futbol',
-      'Bayern Munich': 'fa-futbol',
-      'Borussia Dortmund': 'fa-futbol',
-      'Paris SG': 'fa-futbol',
-      'Olympique Marseille': 'fa-futbol'
-    };
-    const icon = logoMap[teamName] || 'fa-futbol';
-    return `<i class="fas ${icon}"></i>`;
+    return 'tUSDT';
   }
 
   function formatDate(dateStr) {
@@ -379,37 +369,46 @@
     } catch { return '-'; }
   }
 
+  function getTeamLogoHtml(teamName, logoUrl) {
+    if (logoUrl && logoUrl !== '/uploads/teams/default.png' && logoUrl !== '') {
+      return `<img src="${logoUrl}" alt="${escapeHtml(teamName)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'fas fa-futbol\'></i>'">`;
+    }
+    return `<i class="fas fa-futbol"></i>`;
+  }
+
   function renderAuthCard(item) {
+    const dateStr = formatDate(item.created_at);
     const isPending = item.status === 'pending';
-    const isWin = item.profit > 0;
+    const isWin = parseFloat(item.profit) > 0;
+    // ✅ 修复：使用 Number() 转换 profit
+    const profitNum = Number(item.profit) || 0;
     const profitClass = isPending ? 'pending' : (isWin ? 'positive' : 'negative');
-    const profitText = isPending ? 'Pending' : (isWin ? `+${item.profit.toFixed(2)}` : `${item.profit.toFixed(2)}`);
+    const profitText = isPending ? 'Pending' : (isWin ? `+${profitNum.toFixed(2)}` : `${profitNum.toFixed(2)}`);
     const statusClass = isPending ? 'active' : (isWin ? 'won' : 'loss');
     const statusText = isPending ? 'Active' : (isWin ? 'Won' : 'Loss');
-    const currency = getAppMode() === 'sandbox' ? 'tUSDT' : 'USDT';
-    const dateStr = formatDate(item.created_at);
+    const currency = getCurrencySymbol();
 
     return `
-      <div class="auth-card" data-auth-id="${item.auth_id}" onclick="window.viewAuthorizationDetail('${item.auth_id}')">
+      <div class="auth-card" onclick="window.location.href='/shell.html?page=transaction-detail&authId=${item.auth_id}'">
         <div class="auth-header">
           <div class="auth-league"><i class="fas fa-trophy"></i> ${escapeHtml(item.league)}</div>
           <div class="auth-status ${statusClass}">${statusText}</div>
         </div>
         <div class="auth-teams">
           <div class="team-with-logo">
-            <div class="team-logo-circle">${getTeamLogoHtml(item.home_team)}</div>
+            <div class="team-logo-circle">${getTeamLogoHtml(item.home_team, item.home_logo)}</div>
             <div class="team-name">${escapeHtml(item.home_team)}</div>
             <div class="team-abbr">${escapeHtml(item.home_team.substring(0, 3).toUpperCase())}</div>
           </div>
           <div class="vs-badge">VS</div>
           <div class="team-with-logo">
-            <div class="team-logo-circle">${getTeamLogoHtml(item.away_team)}</div>
+            <div class="team-logo-circle">${getTeamLogoHtml(item.away_team, item.away_logo)}</div>
             <div class="team-name">${escapeHtml(item.away_team)}</div>
             <div class="team-abbr">${escapeHtml(item.away_team.substring(0, 3).toUpperCase())}</div>
           </div>
         </div>
         <div class="auth-footer">
-          <div class="auth-amount"><i class="fas fa-coins"></i> ${item.amount} ${escapeHtml(currency)}</div>
+          <div class="auth-amount"><i class="fas fa-coins"></i> ${item.amount} ${currency}</div>
           <div class="auth-profit ${profitClass}">${profitText}</div>
         </div>
         <div class="auth-time"><i class="far fa-clock"></i> ${dateStr}</div>
@@ -417,86 +416,123 @@
     `;
   }
 
-  function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
-  }
-
   function renderList() {
+    if (!DOM.listContainer) return;
+    
     let filtered = items;
-    if (currentStatus === 'pending') filtered = items.filter(i => i.status === 'pending');
-    if (currentStatus === 'settled') filtered = items.filter(i => i.status === 'settled');
+    if (currentStatus === 'pending') {
+      filtered = items.filter(i => i.status === 'pending');
+    } else if (currentStatus === 'settled') {
+      filtered = items.filter(i => i.status === 'won' || i.status === 'lost');
+    }
 
     const pendingCount = items.filter(i => i.status === 'pending').length;
-    const winCount = items.filter(i => i.status === 'settled' && i.profit > 0).length;
-    const lossCount = items.filter(i => i.status === 'settled' && i.profit < 0).length;
+    const winCount = items.filter(i => (i.status === 'won') && parseFloat(i.profit) > 0).length;
+    const lossCount = items.filter(i => (i.status === 'lost') && parseFloat(i.profit) < 0).length;
 
-    const pendingCountEl = document.getElementById('pendingCount');
-    const winCountEl = document.getElementById('winCount');
-    const lossCountEl = document.getElementById('lossCount');
-    if (pendingCountEl) pendingCountEl.textContent = pendingCount;
-    if (winCountEl) winCountEl.textContent = winCount;
-    if (lossCountEl) lossCountEl.textContent = lossCount;
-
-    const container = document.getElementById('listContainer');
-    const emptyState = document.getElementById('emptyState');
-    const loadingState = document.getElementById('loadingState');
-    const loadMore = document.getElementById('loadMore');
-
-    if (loadingState) loadingState.style.display = 'none';
+    if (DOM.pendingCount) DOM.pendingCount.textContent = pendingCount;
+    if (DOM.winCount) DOM.winCount.textContent = winCount;
+    if (DOM.lossCount) DOM.lossCount.textContent = lossCount;
 
     if (filtered.length === 0) {
-      if (container) container.innerHTML = '';
-      if (emptyState) emptyState.style.display = 'block';
-      if (loadMore) loadMore.style.display = 'none';
+      DOM.listContainer.innerHTML = '';
+      if (DOM.emptyState) DOM.emptyState.style.display = 'block';
+      if (DOM.loadMore) DOM.loadMore.style.display = 'none';
     } else {
-      if (emptyState) emptyState.style.display = 'none';
-      if (container) container.innerHTML = filtered.map(i => renderAuthCard(i)).join('');
-      if (loadMore) loadMore.style.display = 'none';
+      if (DOM.emptyState) DOM.emptyState.style.display = 'none';
+      DOM.listContainer.innerHTML = filtered.map(item => renderAuthCard(item)).join('');
+      if (DOM.loadMore) DOM.loadMore.style.display = 'none';
     }
   }
 
   function switchTab(status) {
     currentStatus = status;
-    document.querySelectorAll('.filter-tab').forEach(tab => {
-      if (tab.dataset.status === status) tab.classList.add('active');
-      else tab.classList.remove('active');
+    DOM.filterTabs.forEach(tab => {
+      if (tab.dataset.status === status) {
+        tab.classList.add('active');
+      } else {
+        tab.classList.remove('active');
+      }
     });
     renderList();
   }
 
-  // 全局函数
-  window.viewAuthorizationDetail = function(authId) {
-    console.log('View authorization detail:', authId);
-    // 跳转到详情页
-    window.location.href = '/shell.html?page=transaction-detail&id=' + authId;
-  };
-
-  // 初始化
-  function init() {
-    updateModeUI();
+  function updateModeUI() {
+    if (!DOM.currentModeText) return;
+    const isSandbox = window.ThemeManager ? window.ThemeManager.isTestMode : true;
+    DOM.currentModeText.textContent = isSandbox ? 'Sandbox' : 'Live';
+    DOM.currentModeText.className = isSandbox ? 'sandbox-mode-text' : 'live-mode-text';
     renderList();
+  }
 
-    // 筛选标签事件
-    document.querySelectorAll('.filter-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        switchTab(tab.dataset.status);
+  async function fetchAuthorizations() {
+    try {
+      const isSandbox = window.ThemeManager ? window.ThemeManager.isTestMode : true;
+      const response = await fetch('/api/v1/user/authorize/list?limit=100', {
+        credentials: 'include',
+        cache: 'no-cache'
       });
-    });
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        items = result.data.map(auth => ({
+          id: auth.id,
+          auth_id: auth.auth_id,
+          home_team: auth.home_team || 'Unknown',
+          away_team: auth.away_team || 'Unknown',
+          home_logo: auth.home_logo || null,
+          away_logo: auth.away_logo || null,
+          league: auth.league || 'Football',
+          amount: auth.amount,
+          profit: auth.profit,
+          status: auth.status,
+          created_at: auth.created_at
+        }));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('获取授权记录失败:', error);
+      return false;
+    }
+  }
 
-    // 监听模式变化
+  async function refreshData() {
+    if (isLoading) return;
+    isLoading = true;
+    if (DOM.loadingState) DOM.loadingState.style.display = 'block';
+    
+    await fetchAuthorizations();
+    renderList();
+    
+    if (DOM.loadingState) DOM.loadingState.style.display = 'none';
+    isLoading = false;
+  }
+
+  function bindEvents() {
+    DOM.filterTabs.forEach(tab => {
+      tab.addEventListener('click', () => switchTab(tab.dataset.status));
+    });
+  }
+
+  function initModeListener() {
     if (window.ThemeManager) {
-      window.ThemeManager.addListener(() => {
+      ThemeManager.addListener(async (state) => {
+        console.log('🔄 Records: Mode changed to', state.isTestMode ? 'Sandbox' : 'Live');
         updateModeUI();
-        renderList();
+        await refreshData();
       });
     }
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
+  async function init() {
+    console.log('📋 Authorizations page initialized');
+    bindEvents();
+    initModeListener();
+    updateModeUI();
+    await refreshData();
   }
+
+  init();
 })();
 </script>

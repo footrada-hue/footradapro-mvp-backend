@@ -384,9 +384,11 @@
     const date = new Date(item.created_at);
     const dateStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
     const isPending = item.status === 'pending';
-    const isWin = item.profit > 0;
+    // ✅ 修复：先将 profit 转换为数字
+    const profitNum = Number(item.profit) || 0;
+    const isWin = profitNum > 0;
     const profitClass = isPending ? 'pending' : (isWin ? 'positive' : 'negative');
-    const profitText = isPending ? 'Pending' : (isWin ? `+${item.profit.toFixed(2)}` : `${item.profit.toFixed(2)}`);
+    const profitText = isPending ? 'Pending' : (isWin ? `+${profitNum.toFixed(2)}` : `${profitNum.toFixed(2)}`);
     const statusClass = isPending ? 'active' : (isWin ? 'won' : 'loss');
     const statusText = isPending ? 'Active' : (isWin ? 'Won' : 'Loss');
     const currency = 'USDT';
@@ -425,8 +427,9 @@
     if (currentStatus === 'settled') filtered = items.filter(i => i.status === 'settled');
 
     const pendingCount = items.filter(i => i.status === 'pending').length;
-    const winCount = items.filter(i => i.status === 'settled' && i.profit > 0).length;
-    const lossCount = items.filter(i => i.status === 'settled' && i.profit < 0).length;
+    // ✅ 修复：使用 Number() 转换 profit
+    const winCount = items.filter(i => i.status === 'settled' && Number(i.profit) > 0).length;
+    const lossCount = items.filter(i => i.status === 'settled' && Number(i.profit) < 0).length;
 
     document.getElementById('pendingCount').textContent = pendingCount;
     document.getElementById('winCount').textContent = winCount;
