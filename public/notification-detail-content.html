@@ -1,36 +1,39 @@
-<div class="notification-detail-container">
-  <div class="detail-card">
-    <div class="detail-header">
-      <a href="/shell.html?page=notifications" class="back-link">
-        <i class="fas fa-arrow-left"></i> 返回列表
-      </a>
-      <span class="detail-type" id="detailType"></span>
-    </div>
-    <h1 class="detail-title" id="detailTitle">加载中...</h1>
-    <div class="detail-time" id="detailTime"></div>
-    <div class="detail-content" id="detailContent"></div>
-    <div class="detail-footer">
-      <button class="delete-btn" id="deleteBtn">
-        <i class="fas fa-trash"></i> 删除通知
-      </button>
-    </div>
+cd ~/Desktop/footradapro-beiyong
+
+# 创建修复后的通知列表页面
+cat > public/notifications-content.html << 'EOF'
+<div class="notifications-container">
+  <div class="notifications-header">
+    <h1><i class="fa-regular fa-bell"></i> My Notifications</h1>
+    <button class="mark-all-btn" id="markAllReadBtn">
+      <i class="fa-regular fa-circle-check"></i> Mark All Read
+    </button>
+  </div>
+  
+  <div id="loadingState" class="loading-state">
+    <div class="loading-spinner"></div>
+    <p>Loading...</p>
+  </div>
+  
+  <div id="emptyState" class="empty-state" style="display: none;">
+    <i class="fa-regular fa-bell-slash"></i>
+    <p>No Notifications</p>
+  </div>
+  
+  <div id="notificationsList" class="notifications-list"></div>
+  
+  <div id="loadMore" class="load-more" style="display: none;">
+    <button class="load-more-btn" id="loadMoreBtn">Load More</button>
   </div>
 </div>
 
 <style>
-  .notification-detail-container {
+  .notifications-container {
     max-width: 800px;
     margin: 0 auto;
-    padding: 32px 20px;
+    padding: 24px;
   }
-  .detail-card {
-    background: var(--card-bg);
-    backdrop-filter: blur(20px);
-    border-radius: 28px;
-    border: 1px solid var(--glass-border);
-    padding: 32px;
-  }
-  .detail-header {
+  .notifications-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -38,139 +41,264 @@
     flex-wrap: wrap;
     gap: 12px;
   }
-  .back-link {
-    color: var(--accent);
-    text-decoration: none;
-    font-size: 0.9rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .back-link:hover {
-    text-decoration: underline;
-  }
-  .detail-type {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-  .detail-type.info { background: rgba(59,130,246,0.2); color: #60A5FA; }
-  .detail-type.success { background: rgba(16,185,129,0.2); color: #10B981; }
-  .detail-type.warning { background: rgba(245,158,11,0.2); color: #F59E0B; }
-  .detail-type.danger { background: rgba(239,68,68,0.2); color: #EF4444; }
-  .detail-title {
+  .notifications-header h1 {
     font-size: 1.5rem;
     font-weight: 700;
-    margin-bottom: 12px;
-    color: var(--text-primary);
-  }
-  .detail-time {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--border-light);
-  }
-  .detail-content {
-    font-size: 1rem;
-    line-height: 1.6;
-    color: var(--text-secondary);
-    margin-bottom: 32px;
-    white-space: pre-wrap;
-  }
-  .detail-footer {
     display: flex;
-    justify-content: flex-end;
-    padding-top: 16px;
-    border-top: 1px solid var(--border-light);
+    align-items: center;
+    gap: 10px;
   }
-  .delete-btn {
-    background: rgba(239,68,68,0.15);
-    border: 1px solid rgba(239,68,68,0.3);
+  .mark-all-btn {
+    background: var(--badge-soft);
+    border: 1px solid var(--glass-border);
     border-radius: 40px;
     padding: 8px 20px;
-    color: #EF4444;
+    color: var(--accent);
     cursor: pointer;
     transition: all 0.2s;
   }
-  .delete-btn:hover {
-    background: rgba(239,68,68,0.3);
+  .mark-all-btn:hover {
+    background: var(--accent);
+    color: white;
+  }
+  .notification-item {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    border: 1px solid var(--glass-border);
+    padding: 20px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .notification-item:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+  }
+  .notification-item.unread {
+    background: rgba(59,130,246,0.05);
+    border-left: 3px solid var(--accent);
+  }
+  .notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .notification-type {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+  }
+  .notification-type.info { background: rgba(59,130,246,0.2); color: #60A5FA; }
+  .notification-type.success { background: rgba(16,185,129,0.2); color: #10B981; }
+  .notification-type.warning { background: rgba(245,158,11,0.2); color: #F59E0B; }
+  .notification-type.danger { background: rgba(239,68,68,0.2); color: #EF4444; }
+  .notification-time {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+  .notification-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+  }
+  .notification-content {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 60px;
+    color: var(--text-muted);
+  }
+  .empty-state i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
   }
   .loading-state {
     text-align: center;
-    padding: 48px;
-    color: var(--text-muted);
+    padding: 60px;
+  }
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-light);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .load-more {
+    text-align: center;
+    margin-top: 24px;
+  }
+  .load-more-btn {
+    background: var(--badge-soft);
+    border: 1px solid var(--glass-border);
+    border-radius: 40px;
+    padding: 10px 24px;
+    color: var(--accent);
+    cursor: pointer;
   }
   @media (max-width: 768px) {
-    .notification-detail-container { padding: 16px; }
-    .detail-card { padding: 20px; }
-    .detail-title { font-size: 1.2rem; }
+    .notifications-container { padding: 16px; }
+    .notification-item { padding: 16px; }
+    .notifications-header h1 { font-size: 1.2rem; }
   }
 </style>
 
 <script>
 (function() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const notificationId = urlParams.get('id');
-  
-  if (!notificationId) {
-    document.getElementById('detailTitle').textContent = '通知不存在';
-    return;
+  let page = 1;
+  let isLoading = false;
+  let hasMore = true;
+  let notifications = [];
+
+  const DOM = {
+    list: document.getElementById('notificationsList'),
+    loadingState: document.getElementById('loadingState'),
+    emptyState: document.getElementById('emptyState'),
+    loadMore: document.getElementById('loadMore'),
+    loadMoreBtn: document.getElementById('loadMoreBtn'),
+    markAllBtn: document.getElementById('markAllReadBtn')
+  };
+
+  function formatTime(dateStr) {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000);
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
+    return date.toLocaleDateString();
   }
-  
-  async function loadNotification() {
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+  }
+
+  function renderItem(notif) {
+    const typeMap = {
+      'info': 'info',
+      'success': 'success',
+      'warning': 'warning',
+      'danger': 'danger'
+    };
+    const typeClass = typeMap[notif.type] || 'info';
+    const isUnread = !notif.is_read;
+    
+    return `
+      <div class="notification-item ${isUnread ? 'unread' : ''}" data-id="${notif.id}">
+        <div class="notification-header">
+          <span class="notification-type ${typeClass}">${notif.type || 'info'}</span>
+          <span class="notification-time">${formatTime(notif.created_at)}</span>
+        </div>
+        <div class="notification-title">${escapeHtml(notif.title || 'Notification')}</div>
+        <div class="notification-content">${escapeHtml((notif.content || '').substring(0, 100))}${(notif.content || '').length > 100 ? '...' : ''}</div>
+      </div>
+    `;
+  }
+
+  async function loadNotifications(reset = true) {
+    if (isLoading) return;
+    isLoading = true;
+    
+    if (reset) {
+      page = 1;
+      notifications = [];
+      hasMore = true;
+      if (DOM.list) DOM.list.innerHTML = '';
+    }
+    
     try {
-      const response = await fetch(`/api/v1/user/notifications/${notificationId}`, {
+      const response = await fetch(`/api/v1/user/notifications?page=${page}&limit=20`, {
         credentials: 'include'
       });
       const data = await response.json();
       
-      if (data.success && data.data) {
-        const n = data.data;
-        document.getElementById('detailTitle').textContent = n.title || '通知';
-        document.getElementById('detailContent').textContent = n.content || '';
-        document.getElementById('detailTime').textContent = new Date(n.created_at).toLocaleString();
+      if (data.success) {
+        const newItems = data.data || [];
+        if (reset) {
+          notifications = newItems;
+        } else {
+          notifications = [...notifications, ...newItems];
+        }
         
-        const typeMap = {
-          'info': { class: 'info', text: '信息' },
-          'success': { class: 'success', text: '成功' },
-          'warning': { class: 'warning', text: '警告' },
-          'danger': { class: 'danger', text: '紧急' }
-        };
-        const typeInfo = typeMap[n.type] || typeMap.info;
-        document.getElementById('detailType').textContent = typeInfo.text;
-        document.getElementById('detailType').className = `detail-type ${typeInfo.class}`;
-      } else {
-        document.getElementById('detailTitle').textContent = '通知不存在或已被删除';
+        hasMore = data.pagination?.pages > page;
+        
+        if (notifications.length === 0) {
+          if (DOM.emptyState) DOM.emptyState.style.display = 'block';
+          if (DOM.list) DOM.list.style.display = 'none';
+          if (DOM.loadingState) DOM.loadingState.style.display = 'none';
+          if (DOM.loadMore) DOM.loadMore.style.display = 'none';
+        } else {
+          if (DOM.emptyState) DOM.emptyState.style.display = 'none';
+          if (DOM.list) {
+            DOM.list.style.display = 'block';
+            DOM.list.innerHTML = notifications.map(n => renderItem(n)).join('');
+          }
+          if (DOM.loadMore) DOM.loadMore.style.display = hasMore ? 'block' : 'none';
+          if (DOM.loadingState) DOM.loadingState.style.display = 'none';
+        }
+        
+        // 绑定点击事件
+        document.querySelectorAll('.notification-item').forEach(item => {
+          item.addEventListener('click', () => {
+            const id = item.dataset.id;
+            window.location.href = `/shell.html?page=notification-detail&id=${id}`;
+          });
+        });
       }
     } catch (err) {
-      console.error('加载通知失败:', err);
-      document.getElementById('detailTitle').textContent = '加载失败';
+      console.error('Failed to load notifications:', err);
+    } finally {
+      isLoading = false;
     }
   }
-  
-  document.getElementById('deleteBtn')?.addEventListener('click', async () => {
-    if (!confirm('确定删除这条通知吗？')) return;
+
+  async function markAllAsRead() {
     try {
-      const response = await fetch(`/api/v1/user/notifications/${notificationId}`, {
-        method: 'DELETE',
+      const response = await fetch('/api/v1/user/notifications/read-all', {
+        method: 'PUT',
         credentials: 'include'
       });
       const data = await response.json();
       if (data.success) {
-        alert('删除成功');
-        window.location.href = '/shell.html?page=notifications';
-      } else {
-        alert('删除失败');
+        await loadNotifications(true);
       }
     } catch (err) {
-      console.error('删除失败:', err);
-      alert('删除失败');
+      console.error('Failed to mark all as read:', err);
     }
-  });
+  }
+
+  function loadMore() {
+    if (!hasMore || isLoading) return;
+    page++;
+    loadNotifications(false);
+  }
+
+  if (DOM.markAllBtn) {
+    DOM.markAllBtn.addEventListener('click', markAllAsRead);
+  }
+  if (DOM.loadMoreBtn) {
+    DOM.loadMoreBtn.addEventListener('click', loadMore);
+  }
   
-  loadNotification();
+  loadNotifications(true);
 })();
 </script>
+EOF
+
+# 提交
+git add public/notification-detail-content.html public/notifications-content.html
+git commit -m "i18n: 通知详情和列表页面文案改为英文"
+git push origin main
