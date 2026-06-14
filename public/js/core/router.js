@@ -18,11 +18,11 @@
             contentUrl: '/match-market-content.html',
             scripts: []
         },
-        'records': {
-            title: 'Records · FootRadaPro',
-            contentUrl: '/records-content.html',
-            scripts: []
-        },
+'records': {
+    title: 'Records · FootRadaPro',
+    contentUrl: '/transaction-list-content.html',
+    scripts: []
+},
         'support': {
             title: 'Support · FootRadaPro',
             contentUrl: '/support-content.html',
