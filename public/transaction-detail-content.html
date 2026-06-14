@@ -1014,8 +1014,15 @@
       if (isSettled && data.profit !== undefined && data.profit !== null) {
         settlementCard.style.display = 'block';
         
-        const profit = Number(data.profit) || 0;
-        const profitRate = deployed > 0 ? (profit / deployed * 100).toFixed(2) : 0;
+        // ✅ 使用后端返回的 profit_rate
+let profitRate = Number(data.profit_rate) || 0;
+const profit = Number(data.profit) || 0;
+
+// 如果后端没有返回 profit_rate，降级计算
+if (profitRate === 0 && deployed > 0) {
+    profitRate = (profit / deployed * 100);
+}
+profitRate = profitRate.toFixed(2);
         const strategyFee = profit > 0 ? profit * 0.2 : 0;
         const netProfit = profit - strategyFee;
         const finalReturn = deployed + reserved + netProfit;
