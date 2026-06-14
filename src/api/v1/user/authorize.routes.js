@@ -378,12 +378,14 @@ router.get('/list', async (req, res) => {
         let total = 0;
 
         if (isProduction) {
+            // ✅ 修复：添加 a.profit_rate
             const result = await query(`
                 SELECT 
                     a.id,
                     a.auth_id,
                     a.amount,
                     a.profit,
+                    a.profit_rate,
                     a.status,
                     a.created_at,
                     a.is_test,
@@ -412,12 +414,14 @@ router.get('/list', async (req, res) => {
             const db = getDb();
             const isTestValue = isTestMode ? 1 : 0;
             
+            // ✅ 修复：添加 a.profit_rate
             authorizations = db.prepare(`
                 SELECT 
                     a.id,
                     a.auth_id,
                     a.amount,
                     a.profit,
+                    a.profit_rate,
                     a.status,
                     a.created_at,
                     a.is_test,
