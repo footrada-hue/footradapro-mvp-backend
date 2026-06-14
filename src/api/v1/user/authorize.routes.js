@@ -494,16 +494,15 @@ router.get('/:authId', async (req, res) => {
                     a.settled_at,
                     a.deployed_amount,
                     a.reserved_amount,
-                    a.execution_rate,
                     a.platform_fee,
                     a.user_profit,
+                    m.execution_rate,
                     m.home_team,
                     m.away_team,
                     m.home_logo,
                     m.away_logo,
                     m.league,
-                    m.match_time,
-                    m.execution_rate as match_execution_rate
+                    m.match_time
                 FROM authorizations a
                 LEFT JOIN matches m ON a.match_id = m.match_id
                 WHERE a.auth_id = $1 AND a.user_id = $2
@@ -526,16 +525,15 @@ router.get('/:authId', async (req, res) => {
                     a.settled_at,
                     a.deployed_amount,
                     a.reserved_amount,
-                    a.execution_rate,
                     a.platform_fee,
                     a.user_profit,
+                    m.execution_rate,
                     m.home_team,
                     m.away_team,
                     m.home_logo,
                     m.away_logo,
                     m.league,
-                    m.match_time,
-                    m.execution_rate as match_execution_rate
+                    m.match_time
                 FROM authorizations a
                 LEFT JOIN matches m ON a.match_id = m.match_id
                 WHERE a.auth_id = ? AND a.user_id = ?
@@ -560,7 +558,8 @@ router.get('/:authId', async (req, res) => {
         logger.error('Fetch authorization error:', error);
         res.status(500).json({ 
             success: false, 
-            error: 'INTERNAL_ERROR' 
+            error: 'INTERNAL_ERROR',
+            message: error.message
         });
     }
 });
