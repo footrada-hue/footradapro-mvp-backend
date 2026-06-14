@@ -128,30 +128,33 @@
         });
     }
 
-    function filterByTime(match) {
-        if (state.timeFilter === 'all') return true;
-        if (window.FOOTRADA_TIMEZONE) {
-            switch (state.timeFilter) {
-                case 'today': return window.FOOTRADA_TIMEZONE.isToday(match.match_time);
-                case 'tomorrow': return window.FOOTRADA_TIMEZONE.isTomorrow(match.match_time);
-                case 'week': return window.FOOTRADA_TIMEZONE.isThisWeek(match.match_time);
-                default: return true;
-            }
-        }
-        const matchDate = new Date(match.match_time);
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const nextWeek = new Date(today);
-        nextWeek.setDate(nextWeek.getDate() + 7);
-        switch (state.timeFilter) {
-            case 'today': return matchDate >= today && matchDate < tomorrow;
-            case 'tomorrow': return matchDate >= tomorrow && matchDate < new Date(tomorrow.getTime() + 86400000);
-            case 'week': return matchDate >= today && matchDate < nextWeek;
-            default: return true;
-        }
+function filterByTime(match) {
+    if (state.timeFilter === 'all') return true;
+    
+    // 获取比赛日期（UTC 日期字符串）
+    const matchDate = match.match_time.split('T')[0];
+    
+    // 获取今天的 UTC 日期
+    const now = new Date();
+    const todayUTC = now.toISOString().split('T')[0];
+    
+    // 获取明天的 UTC 日期
+    const tomorrowUTC = new Date(now.getTime() + 86400000).toISOString().split('T')[0];
+    
+    // 获取一周后的 UTC 日期
+    const nextWeekUTC = new Date(now.getTime() + 7 * 86400000).toISOString().split('T')[0];
+    
+    switch (state.timeFilter) {
+        case 'today':
+            return matchDate === todayUTC;
+        case 'tomorrow':
+            return matchDate === tomorrowUTC;
+        case 'week':
+            return matchDate >= todayUTC && matchDate <= nextWeekUTC;
+        default:
+            return true;
     }
+}
 
     function sortMatches(matches) {
         return [...matches].sort((a, b) => {
