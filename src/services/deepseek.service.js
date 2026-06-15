@@ -1,7 +1,7 @@
 /**
  * DeepSeek API Service
  * @description 获取 2026 FIFA World Cup 真实官方赛程
- * @version 14.0.0 - 只获取真实世界杯数据，拒绝编造
+ * @version 15.0.0 - 如果赛程未公布则返回空数组
  */
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
@@ -12,48 +12,35 @@ const MAX_TOKENS = 8192;
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// 真实世界杯日期范围
-const WORLD_CUP_START = '2026-06-11';
-const WORLD_CUP_END = '2026-07-19';
-
 function buildWorldCupPrompt() {
-    return `【重要任务：获取 2026 FIFA World Cup 官方真实赛程】
+    return `【重要任务】
 
-⚠️ **严格限制**：
-- 只返回 FIFA 官方已经公布的【真实】赛程
-- 如果官方赛程尚未公布，请返回空数组 []
-- 绝对不要编造任何比赛、球队、时间
+⚠️ **核心规则（必须遵守）**：
+1. 如果你【不知道】或【无法确认】2026 FIFA World Cup 的真实赛程，必须返回 {"matches": []}
+2. 【绝对禁止】编造任何比赛、球队、时间
+3. 只返回 FIFA 官方已经【正式公布】的赛程
 
-📅 **比赛时间范围**：${WORLD_CUP_START} 至 ${WORLD_CUP_END}
+📅 **比赛时间范围**：2026-06-11 至 2026-07-19
 
-🏆 **比赛阶段**：
-1. 小组赛（Group Stage）- 48 场比赛
-2. 淘汰赛（Knockout Stage）
-   - Round of 32（32强）
-   - Round of 16（16强）
-   - Quarter-finals（8强）
-   - Semi-finals（半决赛）
-   - Final（决赛）
-   - Third-place match（季军赛）
+✅ **只有在你【100%确定】以下信息时才能返回**：
+- 球队名称（如 Brazil, Argentina）
+- 比赛时间（必须在该范围内）
+- 比赛阶段（小组赛/淘汰赛）
 
-✅ **真实示例**：
-{"league": "FIFA World Cup 2026", "home_team": "USA", "away_team": "Mexico", "match_time_utc": "2026-06-11 20:00:00"}
-
-❌ **禁止行为**：
-- 不要编造球队对阵
-- 不要使用 "Winner of Group A" 等占位符
-- 不要返回未确认的比赛
+❌ **禁止返回的内容**：
+- 不要返回今天的比赛（2026-06-15 不是世界杯日期）
+- 不要编造对阵
+- 不要使用占位符
 
 【返回格式】：
-{
-  "matches": [
-    {"league": "FIFA World Cup 2026", "home_team": "实际主队", "away_team": "实际客队", "match_time_utc": "2026-06-11 20:00:00"}
-  ]
-}
+{"matches": []}  ← 如果不确定，就返回这个
 
-⚠️ **如果赛程未公布，只返回 {"matches": []}**
+或者
+{"matches": [
+  {"league": "FIFA World Cup 2026", "home_team": "实际球队", "away_team": "实际球队", "match_time_utc": "2026-06-11 20:00:00"}
+]}
 
-请诚实回答，只返回官方已确认的比赛。`;
+⚠️ **再次强调：不确定就返回空数组，不要编造！**`;
 }
 
 function cleanMarkdown(content) {
@@ -77,7 +64,7 @@ async function callWithRetry(prompt, retryCount = 0) {
                 messages: [
                     {
                         role: 'system',
-                        content: '你是 FIFA 官方数据助手。只返回已经官方公布的、100% 真实的足球赛程。如果不知道或不确定，返回空数组。绝对不要编造任何数据。'
+                        content: '你是 FIFA 官方数据助手。如果你不知道某个信息，必须诚实地说不知道，返回空数组。绝对不要编造任何数据。这是最重要的规则。'
                     },
                     {
                         role: 'user',
@@ -109,43 +96,6 @@ async function callWithRetry(prompt, retryCount = 0) {
     }
 }
 
-/**
- * 验证比赛是否为真实世界杯比赛
- */
-function isValidMatch(match) {
-    // 检查必要字段
-    if (!match.home_team || !match.away_team || !match.match_time_utc) {
-        return false;
-    }
-    
-    // 检查联赛名称
-    const league = (match.league || '').toLowerCase();
-    if (!league.includes('fifa world cup') && !league.includes('world cup 2026')) {
-        return false;
-    }
-    
-    // 检查比赛时间是否在世界杯期间
-    const matchDate = match.match_time_utc.split(' ')[0];
-    if (matchDate < WORLD_CUP_START || matchDate > WORLD_CUP_END) {
-        console.log(`   ⏭️ 日期超出范围: ${matchDate}`);
-        return false;
-    }
-    
-    // 拒绝占位符
-    const placeholders = ['winner', 'tbd', 'to be determined', '?', '组', 'group'];
-    const homeLower = match.home_team.toLowerCase();
-    const awayLower = match.away_team.toLowerCase();
-    
-    for (const ph of placeholders) {
-        if (homeLower.includes(ph) || awayLower.includes(ph)) {
-            console.log(`   ⏭️ 拒绝占位符: ${match.home_team} vs ${match.away_team}`);
-            return false;
-        }
-    }
-    
-    return true;
-}
-
 export async function fetchUpcomingMatches() {
     if (!DEEPSEEK_API_KEY) {
         console.warn('⚠️ DEEPSEEK_API_KEY 未配置');
@@ -153,8 +103,6 @@ export async function fetchUpcomingMatches() {
     }
 
     console.log(`\n🏆 ========== 获取 2026 FIFA World Cup 真实赛程 ==========`);
-    console.log(`📅 比赛日期范围: ${WORLD_CUP_START} 至 ${WORLD_CUP_END}`);
-    console.log(`⚽ 模式: 只返回官方已确认的真实比赛\n`);
     
     const prompt = buildWorldCupPrompt();
     
@@ -174,27 +122,26 @@ export async function fetchUpcomingMatches() {
             return [];
         }
         
-        console.log(`📡 原始返回: ${content.substring(0, 300)}...`);
+        console.log(`📡 返回内容: ${content}`);
         
         const result = JSON.parse(content);
         
         if (result.matches && Array.isArray(result.matches)) {
-            const validMatches = result.matches.filter(match => {
-                const isValid = isValidMatch(match);
-                if (isValid) {
-                    console.log(`   ✅ 有效: ${match.home_team} vs ${match.away_team} (${match.match_time_utc})`);
-                } else {
-                    console.log(`   ❌ 无效: ${JSON.stringify(match)}`);
+            // 验证比赛时间是否在真实范围内
+            const validMatches = result.matches.filter(m => {
+                const date = m.match_time_utc?.split(' ')[0];
+                if (date && (date < '2026-06-11' || date > '2026-07-19')) {
+                    console.log(`   ❌ 拒绝: 日期超出范围 (${date}) - ${m.home_team} vs ${m.away_team}`);
+                    return false;
                 }
-                return isValid;
+                return true;
             });
             
-            console.log(`\n📊 结果: 总共 ${result.matches.length} 场，有效 ${validMatches.length} 场`);
+            console.log(`\n📊 结果: ${validMatches.length} 场有效比赛`);
             
             if (validMatches.length === 0) {
-                console.log(`\n⚠️ 未能获取到真实世界杯赛程`);
-                console.log(`💡 原因: 2026 FIFA World Cup 官方完整赛程可能尚未公布`);
-                console.log(`💡 建议: 等待 FIFA 官方公布后重试，或手动导入赛程`);
+                console.log(`\n⚠️ 2026 FIFA World Cup 官方赛程尚未公布`);
+                console.log(`💡 等待 FIFA 官方公布后会自动获取`);
             }
             
             return validMatches;
@@ -209,7 +156,7 @@ export async function fetchUpcomingMatches() {
 
 export async function fetchMatchesForSpecificDate(date) {
     const matches = await fetchUpcomingMatches();
-    return matches.filter(m => m.match_time_utc.split(' ')[0] === date);
+    return matches.filter(m => m.match_time_utc?.split(' ')[0] === date);
 }
 
 export async function fetchMatchScore(homeTeam, awayTeam) {
