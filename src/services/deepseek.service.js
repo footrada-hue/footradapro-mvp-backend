@@ -1,7 +1,7 @@
 /**
  * DeepSeek API Service
  * @description 调用 DeepSeek API 获取比赛数据（启用联网搜索）
- * @version 14.0.0 - 专注获取 2026 年 FIFA World Cup 真实赛程
+ * @version 14.1.0 - 获取所有能搜索到的真实比赛
  * @since 2026-06-15
  */
 
@@ -11,123 +11,135 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 const MAX_TOKENS = 8192;
 
-// 世界杯关键词（精确匹配）
-const WORLD_CUP_KEYWORDS = [
-    'FIFA World Cup 2026',
-    '2026 FIFA World Cup',
-    'World Cup 2026',
-    '2026 World Cup'
+// 未来抓取天数配置
+const FUTURE_DAYS = 60;
+
+// 黑名单：绝对不要的比赛类型
+const BLACKLIST_LEAGUES = [
+    'Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1',
+    'EFL Championship', 'La Liga 2', 'Serie B', '2. Bundesliga', 'Ligue 2',
+    'Eredivisie', 'Primeira Liga', 'Belgian Pro League', 'Scottish Premiership',
+    'World Cup Qualifier', 'Qualifier', 'UEFA Champions League', 'UEFA Europa League',
+    'UEFA Europa Conference League', 'Champions League', 'Europa League'
 ];
 
-// 未来抓取天数配置（世界杯赛程覆盖到7月19日）
-const FUTURE_DAYS = 45;
+// 黑名单关键词（包含这些关键词的比赛跳过）
+const BLACKLIST_KEYWORDS = [
+    'qualifier', 'qualifiers', '预选赛', 'U21', 'U19', 'U17', 'Reserves',
+    'Youth', 'Amateur', 'Women', 'Friendly', 'Club Friendly'
+];
+
+// 白名单：优先保留的比赛类型
+const WHITELIST_LEAGUES = [
+    'FIFA World Cup 2026', 'World Cup 2026', '2026 FIFA World Cup',
+    'J1 League', 'J2 League', 'K League 1', 'K League 2',
+    'Chinese Super League', 'CSL', 'Major League Soccer', 'MLS',
+    'Allsvenskan', 'Eliteserien', 'Brasileirao', 'Brazilian Serie A',
+    'Argentine Primera Division', 'Liga MX', 'A-League',
+    'Saudi Pro League', 'Qatar Stars League', 'UAE Pro League',
+    'AFC Champions League', 'CAF Champions League', 'Copa Libertadores'
+];
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * 构建世界杯专用 Prompt - 只获取 2026 年世界杯真实赛程
- * @param {string} startDate - 起始日期 (YYYY-MM-DD)
+ * 构建 Prompt - 获取所有能搜索到的比赛
+ * @param {string} startDate - 起始日期
  * @returns {string}
  */
-function buildWorldCupPrompt(startDate) {
+function buildPrompt(startDate) {
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + FUTURE_DAYS);
     const endDateStr = endDate.toISOString().split('T')[0];
     
-    return `【重要任务：获取 2026 FIFA World Cup 真实赛程】
+    return `【任务：获取足球比赛赛程】
 
-⚠️ **任务说明**：
-请使用联网搜索，获取 **FIFA World Cup 2026** 的【官方真实】赛程。
+请使用联网搜索，获取 ${startDate} 至 ${endDateStr} 期间的【真实】足球比赛。
 
-📅 **搜索范围**：${startDate} 至 ${endDateStr}
+【可以获取的比赛】：
+✅ 2026 FIFA World Cup（如果有官方赛程）
+✅ 正在进行的联赛：
+   - J1 League / J2 League（日本）
+   - K League 1 / K League 2（韩国）
+   - Chinese Super League（中国）
+   - Major League Soccer（美国）
+   - Allsvenskan（瑞典）
+   - Eliteserien（挪威）
+   - Brazilian Serie A（巴西）
+   - Argentine Primera Division（阿根廷）
 
-🏆 **必须获取的比赛**：
-1. **小组赛（Group Stage）** - 48 场比赛
-   - 所有 48 支球队的分组情况
-   - 每组 4 支球队，循环赛
+【绝对不要返回】：
+❌ 已经结束的五大联赛（英超、西甲、意甲、德甲、法甲）
+❌ 欧冠、欧联杯（赛季已结束）
+❌ 世界杯预选赛
+❌ 青年队比赛、友谊赛
+❌ 不要编造任何比赛
 
-2. **淘汰赛（Knockout Stage）**
-   - Round of 32（32强）
-   - Round of 16（16强）
-   - Quarter-finals（8强赛）
-   - Semi-finals（半决赛）
-   - Third-place match（季军赛）
-   - Final（决赛）
-
-⚠️ **重要限制**：
-- 只返回 **FIFA 官方公布**的真实赛程
-- 不要编造任何比赛对阵
-- 如果赛程尚未官方公布，请明确告知
-- 球队名称必须使用英文全称
-
-📍 **已知信息**：
-- 举办国：USA（美国）、Canada（加拿大）、Mexico（墨西哥）
-- 比赛时间：2026年6月11日 - 7月19日
-- 参赛队伍：48 支球队
-
-✅ **正确示例**：
-{"league": "FIFA World Cup 2026", "home_team": "USA", "away_team": "Mexico", "match_time_utc": "2026-06-11 20:00:00"}
-
-❌ **错误示例**：
-- 不要返回世界杯预选赛
-- 不要返回其他联赛
-- 不要返回编造的对阵
+【要求】：
+- 只返回真实存在的比赛
+- 比赛时间使用 UTC 格式
+- 球队名称使用英文全称
 
 【返回格式 JSON】：
 {
   "matches": [
     {
-      "league": "FIFA World Cup 2026",
-      "home_team": "Brazil",
-      "away_team": "Argentina",
-      "match_time_utc": "2026-06-15 20:00:00"
+      "league": "J1 League",
+      "home_team": "Yokohama F. Marinos",
+      "away_team": "Vissel Kobe",
+      "match_time_utc": "${startDate} 10:00:00"
     }
   ]
 }
 
-请立即搜索并返回 **2026 FIFA World Cup 官方赛程**！`;
+请开始搜索，返回所有能找到的真实比赛！`;
 }
 
 /**
- * 验证比赛是否为真正的世界杯比赛
+ * 检查比赛是否应该被过滤
  * @param {Object} match - 比赛对象
- * @returns {boolean}
+ * @returns {boolean} - true=跳过, false=保留
  */
-function isValidWorldCupMatch(match) {
-    if (!match) return false;
-    
+function shouldFilterMatch(match) {
     const league = (match.league || '').toLowerCase();
-    const homeTeam = match.home_team || '';
-    const awayTeam = match.away_team || '';
-    const matchTime = match.match_time_utc || '';
+    const homeTeam = (match.home_team || '').toLowerCase();
+    const awayTeam = (match.away_team || '').toLowerCase();
     
-    // 1. 检查联赛名称
-    const isValidLeague = league.includes('fifa world cup') || 
-                         league.includes('world cup 2026') ||
-                         league === 'world cup';
+    // 1. 检查黑名单联赛
+    for (const black of BLACKLIST_LEAGUES) {
+        if (league.includes(black.toLowerCase())) {
+            console.log(`   ⏭️ 黑名单联赛: ${match.league}`);
+            return true;
+        }
+    }
     
-    if (!isValidLeague) return false;
+    // 2. 检查黑名单关键词
+    for (const keyword of BLACKLIST_KEYWORDS) {
+        if (league.includes(keyword.toLowerCase()) ||
+            homeTeam.includes(keyword.toLowerCase()) ||
+            awayTeam.includes(keyword.toLowerCase())) {
+            console.log(`   ⏭️ 黑名单关键词: ${keyword}`);
+            return true;
+        }
+    }
     
-    // 2. 检查比赛时间在 2026 年 6-7 月
-    const matchYear = matchTime.split('-')[0];
-    const matchMonth = matchTime.split('-')[1];
-    const isValidDate = matchYear === '2026' && (matchMonth === '06' || matchMonth === '07');
+    // 3. 检查球队名称是否有效
+    if (!homeTeam || !awayTeam || homeTeam.length < 2 || awayTeam.length < 2) {
+        console.log(`   ⏭️ 无效球队名称`);
+        return true;
+    }
     
-    if (!isValidDate) return false;
+    // 4. 检查比赛时间是否有效
+    if (!match.match_time_utc || match.match_time_utc.length < 10) {
+        console.log(`   ⏭️ 无效比赛时间`);
+        return true;
+    }
     
-    // 3. 检查球队名称不为空且不包含占位符
-    const hasValidTeams = homeTeam && awayTeam && 
-                          homeTeam.length > 2 && awayTeam.length > 2 &&
-                          !homeTeam.includes('TBD') && !awayTeam.includes('TBD') &&
-                          !homeTeam.includes('?') && !awayTeam.includes('?');
-    
-    return hasValidTeams;
+    return false;
 }
 
 /**
  * 清理 Markdown 格式
- * @param {string} content - 原始内容
- * @returns {string}
  */
 function cleanMarkdown(content) {
     if (!content) return '';
@@ -141,9 +153,6 @@ function cleanMarkdown(content) {
 
 /**
  * 带重试机制的 API 调用
- * @param {string} prompt - 提示词
- * @param {number} retryCount - 当前重试次数
- * @returns {Promise<object>}
  */
 async function callWithRetry(prompt, retryCount = 0) {
     try {
@@ -159,7 +168,7 @@ async function callWithRetry(prompt, retryCount = 0) {
                 messages: [
                     {
                         role: 'system',
-                        content: '你是 FIFA World Cup 2026 官方数据助手。只返回 FIFA 官方公布的真实赛程。不要编造任何数据。只返回纯 JSON 格式。'
+                        content: '你是足球数据助手。使用联网搜索获取真实比赛数据。只返回纯JSON格式，不要有额外文字。'
                     },
                     {
                         role: 'user',
@@ -194,10 +203,10 @@ async function callWithRetry(prompt, retryCount = 0) {
 }
 
 /**
- * 专门获取 2026 世界杯真实赛程
+ * 获取比赛数据
  * @returns {Promise<Array>}
  */
-async function fetchWorldCupMatches() {
+export async function fetchUpcomingMatches() {
     if (!DEEPSEEK_API_KEY) {
         console.warn('⚠️ DEEPSEEK_API_KEY 未配置');
         return [];
@@ -206,11 +215,12 @@ async function fetchWorldCupMatches() {
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
     
-    console.log(`\n🏆 ========== 获取 2026 FIFA World Cup 赛程 ==========`);
-    console.log(`📅 当前日期: ${todayStr}`);
-    console.log(`⚽ 目标赛事: 2026 FIFA World Cup (2026年6月11日 - 7月19日)\n`);
+    console.log(`\n🎯 ========== 获取足球比赛 ==========`);
+    console.log(`📅 日期范围: ${todayStr} 至 未来 ${FUTURE_DAYS} 天`);
+    console.log(`⚽ 模式: 获取所有能搜索到的真实比赛\n`);
     
-    const prompt = buildWorldCupPrompt(todayStr);
+    const startTime = Date.now();
+    const prompt = buildPrompt(todayStr);
     
     try {
         const data = await callWithRetry(prompt);
@@ -221,7 +231,7 @@ async function fetchWorldCupMatches() {
         }
         
         let content = data.choices[0].message.content;
-        console.log(`📡 DeepSeek 原始返回内容长度: ${content.length}`);
+        console.log(`📡 DeepSeek 返回内容长度: ${content.length}`);
         content = cleanMarkdown(content);
         
         if (!content) {
@@ -229,130 +239,77 @@ async function fetchWorldCupMatches() {
             return [];
         }
         
-        // 尝试解析 JSON
         let result;
         try {
             result = JSON.parse(content);
         } catch (parseError) {
             console.error(`❌ JSON 解析失败:`, parseError.message);
-            console.log(`原始内容前500字符: ${content.substring(0, 500)}`);
-            return [];
+            // 尝试提取 JSON
+            const jsonMatch = content.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                try {
+                    result = JSON.parse(jsonMatch[0]);
+                } catch (e) {
+                    console.error(`❌ 无法提取有效 JSON`);
+                    return [];
+                }
+            } else {
+                return [];
+            }
         }
         
         if (result.matches && Array.isArray(result.matches)) {
-            // 验证每一场比赛
-            const validMatches = result.matches.filter(match => {
-                const isValid = isValidWorldCupMatch(match);
-                if (!isValid) {
-                    console.warn(`⚠️ 跳过无效比赛: ${JSON.stringify(match)}`);
+            console.log(`\n📊 DeepSeek 返回 ${result.matches.length} 场比赛`);
+            
+            // 过滤比赛
+            const validMatches = [];
+            for (const match of result.matches) {
+                if (!shouldFilterMatch(match)) {
+                    validMatches.push(match);
+                    console.log(`   ✅ 保留: ${match.league} - ${match.home_team} vs ${match.away_team} (${match.match_time_utc})`);
                 }
-                return isValid;
-            });
-            
-            console.log(`\n📊 获取结果:`);
-            console.log(`   原始获取: ${result.matches.length} 场`);
-            console.log(`   验证通过: ${validMatches.length} 场`);
-            
-            if (validMatches.length > 0) {
-                console.log(`\n🏆 世界杯赛程列表:`);
-                validMatches.forEach((match, idx) => {
-                    console.log(`   ${idx + 1}. ${match.home_team} vs ${match.away_team}`);
-                    console.log(`      时间: ${match.match_time_utc}`);
-                    console.log(`      赛事: ${match.league}`);
-                });
-            } else {
-                console.log(`\n⚠️ 未获取到有效世界杯赛程`);
-                console.log(`💡 可能原因:`);
-                console.log(`   1. 官方赛程尚未完全公布`);
-                console.log(`   2. DeepSeek 联网搜索未返回数据`);
-                console.log(`   3. 建议稍后重试或手动导入赛程`);
             }
+            
+            const duration = Date.now() - startTime;
+            console.log(`\n📊 最终结果: ${validMatches.length} 场有效比赛`);
+            console.log(`📊 总耗时: ${duration}ms`);
             
             return validMatches;
         }
         
-        console.log(`⚠️ API 返回格式异常:`, Object.keys(result));
         return [];
         
     } catch (error) {
-        console.error(`❌ 获取世界杯赛程失败:`, error.message);
+        console.error(`❌ 获取比赛数据失败:`, error.message);
         return [];
     }
 }
 
 /**
- * 获取比赛数据（主入口）- 只获取世界杯
- * @returns {Promise<Array>}
- */
-export async function fetchUpcomingMatches() {
-    console.log(`\n🎯 模式: 仅获取 2026 FIFA World Cup 赛程`);
-    const startTime = Date.now();
-    
-    // 只获取世界杯比赛
-    const worldCupMatches = await fetchWorldCupMatches();
-    
-    const duration = Date.now() - startTime;
-    console.log(`\n📊 总耗时: ${duration}ms`);
-    console.log(`✅ 共获取 ${worldCupMatches.length} 场有效世界杯比赛`);
-    
-    if (worldCupMatches.length === 0) {
-        console.log(`\n⚠️ 未能获取到世界杯赛程`);
-        console.log(`💡 建议:`);
-        console.log(`   1. 检查 DeepSeek API Key 是否有效`);
-        console.log(`   2. 确认联网搜索功能已开启`);
-        console.log(`   3. 等待 FIFA 官方公布完整赛程后重试`);
-        console.log(`   4. 或手动导入官方赛程到数据库`);
-    }
-    
-    return worldCupMatches;
-}
-
-/**
- * 手动指定日期获取比赛（兼容旧接口）
- * @param {string} date - 日期字符串
- * @returns {Promise<Array>}
+ * 手动获取指定日期的比赛
  */
 export async function fetchMatchesForSpecificDate(date) {
-    console.log(`📡 手动获取 ${date} 的世界杯比赛...`);
-    const allMatches = await fetchWorldCupMatches();
+    console.log(`📡 手动获取 ${date} 的比赛...`);
+    const allMatches = await fetchUpcomingMatches();
     return allMatches.filter(m => {
         const matchDate = m.match_time_utc.split(' ')[0];
         return matchDate === date;
     });
 }
 
-/**
- * 兼容旧版 API
- * @param {string} date - 日期字符串
- * @returns {Promise<Array>}
- */
 export async function fetchMatchesFromDeepSeek(date) {
     return fetchMatchesForSpecificDate(date);
 }
 
-/**
- * 获取比赛比分（暂不实现，世界杯比赛结束后才需要）
- * @param {string} homeTeam - 主队名称
- * @param {string} awayTeam - 客队名称
- * @returns {Promise<{success: boolean, home: number, away: number, status: string}>}
- */
 export async function fetchMatchScore(homeTeam, awayTeam) {
-    console.log(`⚠️ 比分获取功能暂未启用（世界杯比赛尚未开始）`);
-    return { 
-        success: false, 
-        error: 'NOT_IMPLEMENTED', 
-        home: 0, 
-        away: 0, 
-        status: 'unknown' 
-    };
+    return { success: false, error: 'NOT_IMPLEMENTED', home: 0, away: 0, status: 'unknown' };
 }
 
 export default {
     fetchMatchesFromDeepSeek,
     fetchUpcomingMatches,
-    fetchWorldCupMatches,
     fetchMatchesForSpecificDate,
     fetchMatchScore,
-    isWorldCupMatch: (league) => WORLD_CUP_KEYWORDS.some(kw => (league || '').includes(kw)),
-    WORLD_CUP_KEYWORDS
+    isWorldCupMatch: () => false,
+    WORLD_CUP_KEYWORDS: []
 };
