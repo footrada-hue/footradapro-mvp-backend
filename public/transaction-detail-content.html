@@ -1,46 +1,48 @@
 <!-- 
-  transaction-detail-content.html - 交易详情内容
-  优化版：桌面端卡片更紧凑，移动端适配良好
+  transaction-detail-content.html - Transaction Detail Content
+  Description: Display detailed transaction information including match details, status, and settlement
+  i18n Ready: All text wrapped with data-i18n attributes for future multi-language support
+  Version: 2.0.0 - Full English default, i18n ready
 -->
 
 <div class="transaction-detail-container">
-  <!-- 模式指示器 -->
+  <!-- Mode Indicator -->
   <div class="mode-indicator">
     <i class="fa-solid fa-info-circle"></i>
-    <span>Current Mode: </span>
+    <span data-i18n="txdetail.mode">Current Mode: </span>
     <span id="currentModeText" class="sandbox-mode-text">Sandbox</span>
   </div>
 
-  <!-- 加载状态 -->
+  <!-- Loading State -->
   <div id="loadingState" class="loading-state">
     <div class="loading-spinner"></div>
-    <p>Loading transaction details...</p>
+    <p data-i18n="txdetail.loading">Loading transaction details...</p>
   </div>
 
-  <!-- 错误状态 -->
+  <!-- Error State -->
   <div id="errorState" class="error-state" style="display: none;">
     <i class="fa-solid fa-circle-exclamation"></i>
-    <p>Failed to load transaction details</p>
-    <button class="retry-btn" onclick="location.reload()">Retry</button>
+    <p data-i18n="txdetail.error">Failed to load transaction details</p>
+    <button class="retry-btn" onclick="location.reload()" data-i18n="txdetail.retry">Retry</button>
   </div>
 
-  <!-- 详情内容 -->
+  <!-- Detail Content -->
   <div id="detailContent" style="display: none;">
-    <!-- 交易ID卡片 -->
+    <!-- Transaction ID Card -->
     <div class="card tx-card">
       <div class="tx-id-container">
-        <span class="tx-id-label">Transaction ID</span>
+        <span class="tx-id-label" data-i18n="txdetail.txId">Transaction ID</span>
         <span class="tx-id-value" id="authId">—</span>
         <button class="copy-btn" onclick="window.copyTxId?.()"><i class="fa-regular fa-copy"></i></button>
       </div>
     </div>
 
-    <!-- 比赛信息卡片 -->
+    <!-- Match Info Card -->
     <div class="card match-card">
       <div class="card-header">
         <div class="card-title">
           <i class="fa-solid fa-trophy"></i>
-          <span>Match Details</span>
+          <span data-i18n="txdetail.matchDetails">Match Details</span>
         </div>
       </div>
       
@@ -76,99 +78,99 @@
       </div>
     </div>
 
-    <!-- 状态卡片 -->
+    <!-- Status Card -->
     <div class="card status-card" id="statusCard">
       <div class="status-content-wrapper">
         <div class="status-icon pending">
           <i class="fas fa-hourglass-half"></i>
         </div>
         <div class="status-info">
-          <div class="status-title pending">Pending Settlement</div>
-          <div class="status-message">AI strategy is active. Waiting for match to complete.</div>
+          <div class="status-title pending" data-i18n="txdetail.statusPending">Pending Settlement</div>
+          <div class="status-message" data-i18n="txdetail.statusPendingMsg">AI strategy is active. Waiting for match to complete.</div>
         </div>
       </div>
     </div>
 
-    <!-- 倒计时卡片 -->
+    <!-- Countdown Card -->
     <div id="countdownContainer" class="card countdown-card" style="display: none;">
       <div class="countdown-header">
         <i class="fa-regular fa-clock"></i>
-        <span>Match starts in</span>
+        <span data-i18n="txdetail.countdown">Match starts in</span>
       </div>
       <div class="countdown-display" id="matchCountdown">--:--:--</div>
     </div>
 
-    <!-- 授权详情卡片 -->
+    <!-- Authorization Details Card -->
     <div class="card details-card">
       <div class="card-header">
         <div class="card-title">
           <i class="fa-solid fa-chart-line"></i>
-          <span>Authorization Details</span>
+          <span data-i18n="txdetail.authDetails">Authorization Details</span>
         </div>
       </div>
       <div class="details-list">
         <div class="detail-row">
-          <span class="detail-label">Authorization Amount</span>
+          <span class="detail-label" data-i18n="txdetail.authAmount">Authorization Amount</span>
           <span class="detail-value" id="authAmount">—</span>
         </div>
         <div class="detail-row">
-          <span class="detail-label">AI Allocation Ratio</span>
+          <span class="detail-label" data-i18n="txdetail.aiRatio">AI Allocation Ratio</span>
           <span class="detail-value" id="executionRate">—</span>
         </div>
         <div class="detail-row">
-          <span class="detail-label">Active AI Deployment</span>
+          <span class="detail-label" data-i18n="txdetail.aiDeployment">Active AI Deployment</span>
           <span class="detail-value" id="deployedAmount">—</span>
         </div>
         <div class="detail-row">
-          <span class="detail-label">AI Strategy Reserve</span>
+          <span class="detail-label" data-i18n="txdetail.aiReserve">AI Strategy Reserve</span>
           <span class="detail-value" id="reservedAmount">—</span>
         </div>
         <div class="detail-row">
-          <span class="detail-label">Authorization Time</span>
+          <span class="detail-label" data-i18n="txdetail.authTime">Authorization Time</span>
           <span class="detail-value" id="authTime">—</span>
         </div>
       </div>
     </div>
 
-    <!-- 结算卡片 -->
+    <!-- Settlement Card -->
     <div class="card settlement-card" id="settlementCard" style="display: none;">
       <div class="card-header">
         <div class="card-title">
           <i class="fa-solid fa-scale-balanced"></i>
-          <span>Settlement Details</span>
+          <span data-i18n="txdetail.settlementDetails">Settlement Details</span>
         </div>
       </div>
       <div class="settlement-grid">
         <div class="settlement-item">
-          <span class="settlement-label">Result</span>
+          <span class="settlement-label" data-i18n="txdetail.result">Result</span>
           <span class="settlement-value" id="resultText">—</span>
         </div>
         <div class="settlement-item">
-          <span class="settlement-label">Return Rate</span>
+          <span class="settlement-label" data-i18n="txdetail.returnRate">Return Rate</span>
           <span class="settlement-value" id="profitRateText">—</span>
         </div>
         <div class="settlement-item">
-          <span class="settlement-label">AI Deployment Return</span>
+          <span class="settlement-label" data-i18n="txdetail.deployedReturn">AI Deployment Return</span>
           <span class="settlement-value" id="deployedProfit">—</span>
         </div>
         <div class="settlement-item">
-          <span class="settlement-label">Strategy Fee (20%)</span>
+          <span class="settlement-label" data-i18n="txdetail.strategyFee">Strategy Fee (20%)</span>
           <span class="settlement-value" id="platformFee">—</span>
         </div>
         <div class="settlement-item">
-          <span class="settlement-label">Net Profit</span>
+          <span class="settlement-label" data-i18n="txdetail.netProfit">Net Profit</span>
           <span class="settlement-value" id="netProfit">—</span>
         </div>
         <div class="settlement-item">
-          <span class="settlement-label">Deployment Return</span>
+          <span class="settlement-label" data-i18n="txdetail.deployedCapital">Deployment Return</span>
           <span class="settlement-value" id="deployedReturn">—</span>
         </div>
         <div class="settlement-item">
-          <span class="settlement-label">Reserve Return</span>
+          <span class="settlement-label" data-i18n="txdetail.reserveCapital">Reserve Return</span>
           <span class="settlement-value" id="reservedReturn">—</span>
         </div>
         <div class="settlement-item highlight">
-          <span class="settlement-label">Final Return</span>
+          <span class="settlement-label" data-i18n="txdetail.finalReturn">Final Return</span>
           <span class="settlement-value" id="finalReturn">—</span>
         </div>
       </div>
@@ -178,16 +180,16 @@
       </div>
     </div>
 
-    <!-- 报告预览卡片 -->
+    <!-- Report Section -->
     <div id="reportSectionNew" class="card report-card" style="display: none;">
       <div class="card-header">
         <div class="card-title">
           <i class="fa-solid fa-file-alt"></i>
-          <span>AI Analysis Report</span>
+          <span data-i18n="txdetail.aiReport">AI Analysis Report</span>
         </div>
       </div>
-      <p id="reportPreviewContent">AI analysis indicates high confidence in strategy execution. View the complete report for detailed insights.</p>
-      <button class="report-btn" id="viewFullReportBtn">View Full Report →</button>
+      <p id="reportPreviewContent" data-i18n="txdetail.reportPreview">AI analysis indicates high confidence in strategy execution. View the complete report for detailed insights.</p>
+      <button class="report-btn" id="viewFullReportBtn" data-i18n="txdetail.viewFullReport">View Full Report →</button>
     </div>
   </div>
 </div>
@@ -811,6 +813,114 @@
 (function() {
   'use strict';
 
+  // ==================== i18n Configuration ====================
+  const TXDETAIL_I18N = {
+    en: {
+      'txdetail.mode': 'Current Mode: ',
+      'txdetail.loading': 'Loading transaction details...',
+      'txdetail.error': 'Failed to load transaction details',
+      'txdetail.retry': 'Retry',
+      'txdetail.txId': 'Transaction ID',
+      'txdetail.matchDetails': 'Match Details',
+      'txdetail.statusPending': 'Pending Settlement',
+      'txdetail.statusPendingMsg': 'AI strategy is active. Waiting for match to complete.',
+      'txdetail.statusWon': 'Won',
+      'txdetail.statusWonMsg': 'AI strategy generated profit. Transaction settled.',
+      'txdetail.statusLost': 'Lost',
+      'txdetail.statusLostMsg': 'AI strategy incurred loss. Transaction settled.',
+      'txdetail.countdown': 'Match starts in',
+      'txdetail.authDetails': 'Authorization Details',
+      'txdetail.authAmount': 'Authorization Amount',
+      'txdetail.aiRatio': 'AI Allocation Ratio',
+      'txdetail.aiDeployment': 'Active AI Deployment',
+      'txdetail.aiReserve': 'AI Strategy Reserve',
+      'txdetail.authTime': 'Authorization Time',
+      'txdetail.settlementDetails': 'Settlement Details',
+      'txdetail.result': 'Result',
+      'txdetail.returnRate': 'Return Rate',
+      'txdetail.deployedReturn': 'AI Deployment Return',
+      'txdetail.strategyFee': 'Strategy Fee (20%)',
+      'txdetail.netProfit': 'Net Profit',
+      'txdetail.deployedCapital': 'Deployment Return',
+      'txdetail.reserveCapital': 'Reserve Return',
+      'txdetail.finalReturn': 'Final Return',
+      'txdetail.aiReport': 'AI Analysis Report',
+      'txdetail.reportPreview': 'AI analysis indicates high confidence in strategy execution. View the complete report for detailed insights.',
+      'txdetail.viewFullReport': 'View Full Report →',
+      'txdetail.resultWin': 'Win',
+      'txdetail.resultLoss': 'Loss',
+      'txdetail.copied': 'Transaction ID copied',
+      'txdetail.leagueUnknown': 'Unknown League',
+      'txdetail.matchInProgress': 'Match in progress'
+    },
+    zh: {
+      'txdetail.mode': '当前模式: ',
+      'txdetail.loading': '加载交易详情中...',
+      'txdetail.error': '加载交易详情失败',
+      'txdetail.retry': '重试',
+      'txdetail.txId': '交易ID',
+      'txdetail.matchDetails': '比赛详情',
+      'txdetail.statusPending': '待结算',
+      'txdetail.statusPendingMsg': 'AI策略已激活，等待比赛完成。',
+      'txdetail.statusWon': '获胜',
+      'txdetail.statusWonMsg': 'AI策略产生盈利，交易已结算。',
+      'txdetail.statusLost': '亏损',
+      'txdetail.statusLostMsg': 'AI策略产生亏损，交易已结算。',
+      'txdetail.countdown': '比赛倒计时',
+      'txdetail.authDetails': '授权详情',
+      'txdetail.authAmount': '授权金额',
+      'txdetail.aiRatio': 'AI 配置比例',
+      'txdetail.aiDeployment': 'AI 部署资金',
+      'txdetail.aiReserve': 'AI 策略储备',
+      'txdetail.authTime': '授权时间',
+      'txdetail.settlementDetails': '结算详情',
+      'txdetail.result': '结果',
+      'txdetail.returnRate': '回报率',
+      'txdetail.deployedReturn': 'AI 部署回报',
+      'txdetail.strategyFee': '策略费 (20%)',
+      'txdetail.netProfit': '净利润',
+      'txdetail.deployedCapital': '部署资金返还',
+      'txdetail.reserveCapital': '储备资金返还',
+      'txdetail.finalReturn': '最终返还',
+      'txdetail.aiReport': 'AI 分析报告',
+      'txdetail.reportPreview': 'AI 分析显示策略执行置信度较高。查看完整报告获取详细洞察。',
+      'txdetail.viewFullReport': '查看完整报告 →',
+      'txdetail.resultWin': '胜利',
+      'txdetail.resultLoss': '亏损',
+      'txdetail.copied': '交易ID已复制',
+      'txdetail.leagueUnknown': '未知联赛',
+      'txdetail.matchInProgress': '比赛进行中'
+    }
+  };
+
+  let txLang = localStorage.getItem('language') || 'en';
+
+  function txT(key) {
+    return TXDETAIL_I18N[txLang]?.[key] || TXDETAIL_I18N.en[key] || key;
+  }
+
+  function updateTxI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const translation = txT(key);
+      if (translation && translation !== key) {
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          el.placeholder = translation;
+        } else {
+          el.textContent = translation;
+        }
+      }
+    });
+  }
+
+  window.addEventListener('languagechange', (e) => {
+    if (e.detail?.language) {
+      txLang = e.detail.language;
+      updateTxI18n();
+      if (currentData) renderDetail(currentData);
+    }
+  });
+
   const urlParams = new URLSearchParams(window.location.search);
   const authId = urlParams.get('authId');
   let countdownTimer = null;
@@ -874,7 +984,7 @@
     const txId = document.getElementById('authId')?.textContent;
     if (txId && txId !== '—') {
       navigator.clipboard.writeText(txId).then(() => {
-        showToast('Transaction ID copied');
+        showToast(txT('txdetail.copied'));
       }).catch(() => {
         const textarea = document.createElement('textarea');
         textarea.value = txId;
@@ -882,7 +992,7 @@
         textarea.select();
         document.execCommand('copy');
         document.body.removeChild(textarea);
-        showToast('Transaction ID copied');
+        showToast(txT('txdetail.copied'));
       });
     }
   };
@@ -931,7 +1041,7 @@
     document.getElementById('awayTeamName').textContent = data.away_team || '?';
     document.getElementById('homeTeamAbbr').textContent = (data.home_team || '?').substring(0, 3).toUpperCase();
     document.getElementById('awayTeamAbbr').textContent = (data.away_team || '?').substring(0, 3).toUpperCase();
-    document.getElementById('matchLeague').innerHTML = `<i class="fa-regular fa-circle-dot"></i> <span>${escapeHtml(data.league || 'Unknown League')}</span>`;
+    document.getElementById('matchLeague').innerHTML = `<i class="fa-regular fa-circle-dot"></i> <span>${escapeHtml(data.league || txT('txdetail.leagueUnknown'))}</span>`;
     document.getElementById('matchDate').innerHTML = `<i class="fa-regular fa-calendar"></i> <span>${formatShortDate(data.match_time)}</span>`;
     
     // Team Logos
@@ -961,16 +1071,16 @@
         <div class="status-content-wrapper">
           <div class="status-icon pending"><i class="fas fa-hourglass-half"></i></div>
           <div class="status-info">
-            <div class="status-title pending">Pending Settlement</div>
-            <div class="status-message">AI strategy is active. Waiting for match to complete.</div>
+            <div class="status-title pending">${txT('txdetail.statusPending')}</div>
+            <div class="status-message">${txT('txdetail.statusPendingMsg')}</div>
           </div>
         </div>
       `;
     } else if (isSettled) {
       const statusClass = isWon ? 'won' : 'lost';
       const icon = isWon ? 'fa-check-circle' : 'fa-times-circle';
-      const title = isWon ? 'Won' : 'Lost';
-      const message = isWon ? 'AI strategy generated profit. Transaction settled.' : 'AI strategy incurred loss. Transaction settled.';
+      const title = isWon ? txT('txdetail.statusWon') : txT('txdetail.statusLost');
+      const message = isWon ? txT('txdetail.statusWonMsg') : txT('txdetail.statusLostMsg');
       statusCard.innerHTML = `
         <div class="status-content-wrapper">
           <div class="status-icon ${statusClass}"><i class="fas ${icon}"></i></div>
@@ -992,7 +1102,7 @@
         const updateCountdown = () => {
           const diffMs = matchDate - new Date();
           if (diffMs <= 0) {
-            document.getElementById('matchCountdown').textContent = 'Match in progress';
+            document.getElementById('matchCountdown').textContent = txT('txdetail.matchInProgress');
             if (countdownTimer) clearInterval(countdownTimer);
             return;
           }
@@ -1014,21 +1124,19 @@
       if (isSettled && data.profit !== undefined && data.profit !== null) {
         settlementCard.style.display = 'block';
         
-        // ✅ 使用后端返回的 profit_rate
-let profitRate = Number(data.profit_rate) || 0;
-const profit = Number(data.profit) || 0;
+        let profitRate = Number(data.profit_rate) || 0;
+        const profit = Number(data.profit) || 0;
 
-// 如果后端没有返回 profit_rate，降级计算
-if (profitRate === 0 && deployed > 0) {
-    profitRate = (profit / deployed * 100);
-}
-profitRate = profitRate.toFixed(2);
+        if (profitRate === 0 && deployed > 0) {
+          profitRate = (profit / deployed * 100);
+        }
+        profitRate = profitRate.toFixed(2);
         const strategyFee = profit > 0 ? profit * 0.2 : 0;
         const netProfit = profit - strategyFee;
         const finalReturn = deployed + reserved + netProfit;
         
         const resultText = document.getElementById('resultText');
-        resultText.textContent = profit > 0 ? 'Win' : 'Loss';
+        resultText.textContent = profit > 0 ? txT('txdetail.resultWin') : txT('txdetail.resultLoss');
         resultText.className = `settlement-value ${profit > 0 ? 'positive' : 'negative'}`;
         
         document.getElementById('profitRateText').textContent = `${profitRate > 0 ? '+' : ''}${profitRate}%`;
@@ -1045,22 +1153,20 @@ profitRate = profitRate.toFixed(2);
     }
     
     // Report section
-// Report section - 仅已结算的授权显示报告入口
-const reportSection = document.getElementById('reportSectionNew');
-if (reportSection) {
-    if (isSettled) {
+    const reportSection = document.getElementById('reportSectionNew');
+    if (reportSection) {
+      if (isSettled) {
         reportSection.style.display = 'block';
         const reportBtn = document.getElementById('viewFullReportBtn');
         if (reportBtn) {
-            reportBtn.onclick = () => {
-                // 使用 auth_id 或 match_id 跳转到报告详情页
-                window.location.href = `/shell.html?page=report-detail&auth_id=${authId}`;
-            };
+          reportBtn.onclick = () => {
+            window.location.href = `/shell.html?page=report-detail&auth_id=${authId}`;
+          };
         }
-    } else {
+      } else {
         reportSection.style.display = 'none';
+      }
     }
-}
     
     loadingState.style.display = 'none';
     errorState.style.display = 'none';
@@ -1071,7 +1177,7 @@ if (reportSection) {
     loadingState.style.display = 'none';
     errorState.style.display = 'block';
     const errorMsg = errorState.querySelector('p');
-    if (errorMsg) errorMsg.textContent = message || 'Failed to load transaction details';
+    if (errorMsg) errorMsg.textContent = message || txT('txdetail.error');
     detailContent.style.display = 'none';
   };
 
@@ -1111,6 +1217,7 @@ if (reportSection) {
   };
 
   const init = async () => {
+    updateTxI18n();
     if (!authId) {
       showError('Missing transaction ID');
       return;
