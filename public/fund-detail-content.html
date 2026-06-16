@@ -1,59 +1,61 @@
 <!-- 
-  fund-detail-content.html - 资金明细内容片段
-  用于 SPA 架构，通过 shell.html 的 #app-content 区域加载
+  fund-detail-content.html - Fund Detail Content Fragment
+  Description: Display user fund records (deposits, withdrawals, authorizations)
+  i18n Ready: All text wrapped with data-i18n attributes for future multi-language support
+  Version: 2.0.0 - Full English default, i18n ready
 -->
 
 <div class="fund-detail-container">
 
-  <!-- 模式指示器 -->
+  <!-- Mode Indicator -->
   <div class="mode-indicator">
     <i class="fa-solid fa-info-circle"></i>
-    <span>Current Mode: </span>
+    <span data-i18n="fund.mode">Current Mode: </span>
     <span id="currentModeText" class="sandbox-mode-text">Sandbox</span>
-    <span id="testModeBadge" class="test-badge-mode" style="display: none;"><i class="fa-solid fa-flask"></i> Test Mode</span>
+    <span id="testModeBadge" class="test-badge-mode" style="display: none;"><i class="fa-solid fa-flask"></i> <span data-i18n="fund.testMode">Test Mode</span></span>
   </div>
 
-  <!-- 统计卡片 -->
+  <!-- Stats Cards -->
   <div class="stats-row">
     <div class="stat-card">
       <div class="stat-number" id="totalDeposit">0.00</div>
-      <div class="stat-label">Total Deposit</div>
+      <div class="stat-label" data-i18n="fund.totalDeposit">Total Deposit</div>
     </div>
     <div class="stat-card">
       <div class="stat-number" id="totalWithdraw">0.00</div>
-      <div class="stat-label">Total Withdraw</div>
+      <div class="stat-label" data-i18n="fund.totalWithdraw">Total Withdraw</div>
     </div>
     <div class="stat-card">
       <div class="stat-number" id="netFund">0.00</div>
-      <div class="stat-label">Net Fund</div>
+      <div class="stat-label" data-i18n="fund.netFund">Net Fund</div>
     </div>
   </div>
 
-  <!-- 筛选标签 -->
+  <!-- Filter Tabs -->
   <div class="filter-tabs">
-    <button class="filter-tab active" data-type="all">All</button>
-    <button class="filter-tab" data-type="deposit">Deposit</button>
-    <button class="filter-tab" data-type="withdraw">Withdraw</button>
+    <button class="filter-tab active" data-type="all" data-i18n="fund.filterAll">All</button>
+    <button class="filter-tab" data-type="deposit" data-i18n="fund.filterDeposit">Deposit</button>
+    <button class="filter-tab" data-type="withdraw" data-i18n="fund.filterWithdraw">Withdraw</button>
   </div>
 
-  <!-- 加载状态 -->
+  <!-- Loading State -->
   <div id="loadingState" class="loading-state">
     <div class="loading-spinner"></div>
-    <p>Loading fund records...</p>
+    <p data-i18n="fund.loading">Loading fund records...</p>
   </div>
 
-  <!-- 空状态 -->
+  <!-- Empty State -->
   <div id="emptyState" class="empty-state" style="display: none;">
     <i class="fa-solid fa-coins"></i>
-    <p>No fund records found</p>
+    <p data-i18n="fund.empty">No fund records found</p>
   </div>
 
-  <!-- 资金记录列表 -->
+  <!-- Fund List -->
   <div id="fundList" class="fund-list" style="display: none;"></div>
 
-  <!-- 加载更多 -->
+  <!-- Load More -->
   <div id="loadMore" class="load-more" style="display: none;">
-    <button class="load-more-btn" id="loadMoreBtn">Load More</button>
+    <button class="load-more-btn" id="loadMoreBtn" data-i18n="fund.loadMore">Load More</button>
   </div>
 </div>
 
@@ -299,17 +301,111 @@
 (function() {
   'use strict';
 
+  // ==================== i18n Configuration ====================
+  const FUND_I18N = {
+    en: {
+      'fund.mode': 'Current Mode: ',
+      'fund.testMode': 'Test Mode',
+      'fund.totalDeposit': 'Total Deposit',
+      'fund.totalWithdraw': 'Total Withdraw',
+      'fund.netFund': 'Net Fund',
+      'fund.filterAll': 'All',
+      'fund.filterDeposit': 'Deposit',
+      'fund.filterWithdraw': 'Withdraw',
+      'fund.loading': 'Loading fund records...',
+      'fund.empty': 'No fund records found',
+      'fund.loadMore': 'Load More',
+      'fund.typeDeposit': 'Deposit',
+      'fund.typeWithdraw': 'Withdraw',
+      'fund.typeAuthorization': 'Authorization',
+      'fund.typeSettlement': 'Settlement',
+      'fund.typeTestDeposit': 'Test Deposit',
+      'fund.typeTestWithdraw': 'Test Withdraw',
+      'fund.typeIncome': 'Income',
+      'fund.typeExpense': 'Expense',
+      'fund.statusCompleted': 'Completed',
+      'fund.statusProcessing': 'Processing',
+      'fund.statusPending': 'Pending',
+      'fund.statusFailed': 'Failed',
+      'fund.descAuthorization': 'Fund locked for authorization',
+      'fund.descSettlement': 'Match settlement',
+      'fund.descTestDeposit': 'Test deposit',
+      'fund.descTestWithdraw': 'Test withdrawal',
+      'fund.descDeposit': 'Deposit credited',
+      'fund.descWithdraw': 'Withdrawal'
+    },
+    zh: {
+      'fund.mode': '当前模式: ',
+      'fund.testMode': '测试模式',
+      'fund.totalDeposit': '总充值',
+      'fund.totalWithdraw': '总提现',
+      'fund.netFund': '净资金',
+      'fund.filterAll': '全部',
+      'fund.filterDeposit': '充值',
+      'fund.filterWithdraw': '提现',
+      'fund.loading': '加载资金记录中...',
+      'fund.empty': '暂无资金记录',
+      'fund.loadMore': '加载更多',
+      'fund.typeDeposit': '充值',
+      'fund.typeWithdraw': '提现',
+      'fund.typeAuthorization': '授权',
+      'fund.typeSettlement': '结算',
+      'fund.typeTestDeposit': '测试充值',
+      'fund.typeTestWithdraw': '测试提现',
+      'fund.typeIncome': '收入',
+      'fund.typeExpense': '支出',
+      'fund.statusCompleted': '已完成',
+      'fund.statusProcessing': '处理中',
+      'fund.statusPending': '待处理',
+      'fund.statusFailed': '失败',
+      'fund.descAuthorization': '授权锁定资金',
+      'fund.descSettlement': '比赛结算',
+      'fund.descTestDeposit': '测试充值',
+      'fund.descTestWithdraw': '测试提现',
+      'fund.descDeposit': '充值到账',
+      'fund.descWithdraw': '提现'
+    }
+  };
+
+  let fundLang = localStorage.getItem('language') || 'en';
+
+  function fundT(key) {
+    return FUND_I18N[fundLang]?.[key] || FUND_I18N.en[key] || key;
+  }
+
+  function updateFundI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const translation = fundT(key);
+      if (translation && translation !== key) {
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          el.placeholder = translation;
+        } else {
+          el.textContent = translation;
+        }
+      }
+    });
+  }
+
+  window.addEventListener('languagechange', (e) => {
+    if (e.detail?.language) {
+      fundLang = e.detail.language;
+      updateFundI18n();
+      renderRecords(currentCurrency, currentIsTestMode);
+    }
+  });
+
   const pageSize = 20;
   let currentPage = 1;
   let currentType = 'all';
   let hasMore = false;
   let allRecords = [];
+  let currentCurrency = 'USDT';
+  let currentIsTestMode = false;
 
-  // 获取 URL 参数
   const urlParams = new URLSearchParams(window.location.search);
   const targetId = urlParams.get('id');
 
-  // DOM 元素
   const DOM = {
     loadingState: document.getElementById('loadingState'),
     fundList: document.getElementById('fundList'),
@@ -324,7 +420,6 @@
     testModeBadge: document.getElementById('testModeBadge')
   };
 
-  // 格式化日期
   function formatDate(dateStr) {
     if (!dateStr) return '-';
     try {
@@ -340,7 +435,6 @@
     return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
   }
 
-  // 更新模式 UI
   function updateModeUI(isTestMode) {
     if (DOM.currentModeText) {
       DOM.currentModeText.textContent = isTestMode ? 'Sandbox' : 'Live';
@@ -351,47 +445,47 @@
     }
   }
 
-  // 获取类型显示信息（核心修复）
   function getTypeDisplayInfo(record, isTestMode) {
+    const currency = isTestMode ? 'tUSDT' : 'USDT';
+    
     if (isTestMode) {
-      // 测试模式：区分 authorize 和 settle
       switch (record.type) {
         case 'authorize':
           return {
-            typeText: 'Authorization',
+            typeText: fundT('fund.typeAuthorization'),
             icon: 'key',
             amountClass: 'authorization',
             amountPrefix: '-',
-            description: record.description || 'Fund locked for authorization'
+            description: fundT('fund.descAuthorization')
           };
         case 'settle':
           const isProfit = record.amount > 0;
           return {
-            typeText: 'Settlement',
+            typeText: fundT('fund.typeSettlement'),
             icon: 'calculator',
             amountClass: 'settlement',
             amountPrefix: isProfit ? '+' : '',
-            description: record.description || 'Match settlement'
+            description: fundT('fund.descSettlement')
           };
         case 'deposit':
           return {
-            typeText: 'Test Deposit',
+            typeText: fundT('fund.typeTestDeposit'),
             icon: 'arrow-down',
             amountClass: 'deposit',
             amountPrefix: '+',
-            description: record.description || 'Test deposit'
+            description: fundT('fund.descTestDeposit')
           };
         case 'withdraw':
           return {
-            typeText: 'Test Withdraw',
+            typeText: fundT('fund.typeTestWithdraw'),
             icon: 'arrow-up',
             amountClass: 'withdraw',
             amountPrefix: '-',
-            description: record.description || 'Test withdrawal'
+            description: fundT('fund.descTestWithdraw')
           };
         default:
           return {
-            typeText: record.amount > 0 ? 'Income' : 'Expense',
+            typeText: record.amount > 0 ? fundT('fund.typeIncome') : fundT('fund.typeExpense'),
             icon: record.amount > 0 ? 'arrow-down' : 'arrow-up',
             amountClass: record.amount > 0 ? 'deposit' : 'withdraw',
             amountPrefix: record.amount > 0 ? '+' : '-',
@@ -399,27 +493,26 @@
           };
       }
     } else {
-      // 真实模式：deposit 和 withdraw
       switch (record.type) {
         case 'deposit':
           return {
-            typeText: 'Deposit',
+            typeText: fundT('fund.typeDeposit'),
             icon: 'arrow-down',
             amountClass: 'deposit',
             amountPrefix: '+',
-            description: record.reason || 'Deposit credited'
+            description: fundT('fund.descDeposit')
           };
         case 'withdraw':
           return {
-            typeText: 'Withdraw',
+            typeText: fundT('fund.typeWithdraw'),
             icon: 'arrow-up',
             amountClass: 'withdraw',
             amountPrefix: '-',
-            description: record.reason || 'Withdrawal'
+            description: fundT('fund.descWithdraw')
           };
         default:
           return {
-            typeText: record.type || (record.amount > 0 ? 'Credit' : 'Debit'),
+            typeText: record.type || (record.amount > 0 ? fundT('fund.typeIncome') : fundT('fund.typeExpense')),
             icon: record.amount > 0 ? 'arrow-down' : 'arrow-up',
             amountClass: record.amount > 0 ? 'deposit' : 'withdraw',
             amountPrefix: record.amount > 0 ? '+' : '-',
@@ -429,28 +522,26 @@
     }
   }
 
-  // 获取状态文本
   function getStatusText(record, isTestMode) {
-    if (isTestMode) {
-      return 'Completed';
-    }
-    if (record.status === 'completed') return 'Completed';
-    if (record.status === 'processing') return 'Processing';
-    if (record.status === 'pending') return 'Pending';
-    if (record.status === 'failed') return 'Failed';
-    return record.status || 'Processing';
+    if (isTestMode) return fundT('fund.statusCompleted');
+    if (record.status === 'completed') return fundT('fund.statusCompleted');
+    if (record.status === 'processing') return fundT('fund.statusProcessing');
+    if (record.status === 'pending') return fundT('fund.statusPending');
+    if (record.status === 'failed') return fundT('fund.statusFailed');
+    return record.status || fundT('fund.statusProcessing');
   }
 
-  // 加载资金统计
   async function loadFundStats() {
     try {
       const isTestMode = window.ThemeManager ? window.ThemeManager.isTestMode : false;
+      currentIsTestMode = isTestMode;
       const mode = isTestMode ? 'test' : 'live';
       const res = await fetch(`/api/v1/user/stats/fund?mode=${mode}`, { credentials: 'include' });
       const data = await res.json();
       
       if (data.success) {
         const currency = isTestMode ? 'tUSDT' : 'USDT';
+        currentCurrency = currency;
         
         if (isTestMode) {
           if (DOM.totalDeposit) DOM.totalDeposit.innerHTML = '—';
@@ -473,7 +564,6 @@
     }
   }
 
-  // 加载资金记录
   async function loadFundRecords(reset = true) {
     if (reset) {
       currentPage = 1;
@@ -483,7 +573,9 @@
 
     try {
       const isTestMode = window.ThemeManager ? window.ThemeManager.isTestMode : false;
+      currentIsTestMode = isTestMode;
       const currency = isTestMode ? 'tUSDT' : 'USDT';
+      currentCurrency = currency;
       const mode = isTestMode ? 'test' : 'live';
       
       const url = `/api/v1/user/balance/logs?type=${currentType}&mode=${mode}&page=${currentPage}&limit=${pageSize}`;
@@ -493,7 +585,6 @@
       if (data.success) {
         let newRecords = data.data || [];
         
-        // 根据模式过滤记录类型
         if (isTestMode) {
           newRecords = newRecords.filter(record => 
             record.type === 'authorize' || record.type === 'settle' || 
@@ -526,7 +617,6 @@
     }
   }
 
-  // 渲染记录
   function renderRecords(currency, isTestMode) {
     if (allRecords.length === 0) {
       showEmpty();
@@ -565,7 +655,6 @@
     DOM.loadMore.style.display = hasMore ? 'flex' : 'none';
   }
 
-  // 滚动到目标记录并高亮
   function scrollToTarget(id) {
     const targetElement = document.querySelector(`.fund-item[data-id="${id}"]`);
     if (targetElement) {
@@ -603,7 +692,6 @@
     loadFundRecords(true);
   }
 
-  // 绑定事件
   function bindEvents() {
     DOM.tabBtns.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -616,10 +704,8 @@
     }
   }
 
-  // 监听模式切换
   function initModeListener() {
     if (window.ThemeManager) {
-      // 初始更新 UI
       updateModeUI(window.ThemeManager.isTestMode);
       
       window.ThemeManager.addListener(async (state) => {
@@ -629,20 +715,16 @@
         await loadFundRecords(true);
       });
     } else {
-      // 默认沙盒模式
       updateModeUI(true);
     }
   }
 
-  // 全局函数
   window.viewFundDetail = function(id) {
     console.log('查看详情:', id);
-    // 可跳转到详情页
-    // window.location.href = '/shell.html?page=transaction-detail&id=' + id;
   };
 
-  // 初始化
   async function init() {
+    updateFundI18n();
     console.log('🚀 初始化资金明细页面...');
     initModeListener();
     await loadFundStats();
