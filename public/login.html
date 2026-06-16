@@ -207,6 +207,16 @@
     .theme-toggle:hover { transform: scale(1.05); background: var(--badge-soft); }
     .theme-toggle i { font-size: 18px; color: var(--text-secondary); }
 
+    /* Language Switcher */
+    .lang-toggle {
+      position: fixed; top: 20px; left: 20px; width: 40px; height: 40px;
+      background: var(--card-bg); backdrop-filter: blur(12px); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      border: 1px solid var(--glass-border); transition: all var(--duration-fast);
+      z-index: 100; font-size: 14px; font-weight: 600; color: var(--text-secondary);
+    }
+    .lang-toggle:hover { transform: scale(1.05); background: var(--badge-soft); }
+
     @media (max-width: 560px) {
       .login-container { margin: var(--space-4); }
       .login-card { padding: var(--space-5); }
@@ -221,6 +231,7 @@
 <div class="theme-toggle" id="themeToggle">
   <i class="fa-regular fa-moon"></i>
 </div>
+<div class="lang-toggle" id="langToggle">EN</div>
 
 <div class="login-container">
   <div class="logo-area">
@@ -234,7 +245,7 @@
       <div class="form-group">
         <label class="input-label" data-i18n="login.email">Email</label>
         <div class="input-wrapper">
-          <input type="email" id="email" placeholder="Enter your email address" autocomplete="email">
+          <input type="email" id="email" placeholder="Enter your email address" autocomplete="email" data-i18n-placeholder="login.emailPlaceholder">
         </div>
         <div id="email-error" class="error-message" style="display: none;">
           <i class="fas fa-exclamation-circle"></i>
@@ -245,7 +256,7 @@
       <div class="form-group">
         <label class="input-label" data-i18n="login.password">Password</label>
         <div class="input-wrapper">
-          <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
+          <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" data-i18n-placeholder="login.passwordPlaceholder">
           <button type="button" class="toggle-password" id="passwordToggle">
             <i class="fas fa-eye"></i>
           </button>
@@ -285,6 +296,8 @@
       'login.subtitle': 'Sign in to your account',
       'login.email': 'Email',
       'login.password': 'Password',
+      'login.emailPlaceholder': 'Enter your email address',
+      'login.passwordPlaceholder': 'Enter your password',
       'login.remember_me': 'Remember me',
       'login.forgot_password': 'Forgot password?',
       'login.sign_in': 'Sign In',
@@ -303,6 +316,8 @@
       'login.subtitle': '登录您的账户',
       'login.email': '邮箱',
       'login.password': '密码',
+      'login.emailPlaceholder': '请输入您的邮箱地址',
+      'login.passwordPlaceholder': '请输入您的密码',
       'login.remember_me': '记住我',
       'login.forgot_password': '忘记密码？',
       'login.sign_in': '登录',
@@ -330,11 +345,13 @@
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const key = el.getAttribute('data-i18n');
       if (key) {
-        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-          el.placeholder = t(key);
-        } else {
-          el.textContent = t(key);
-        }
+        el.textContent = t(key);
+      }
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (key) {
+        el.placeholder = t(key);
       }
     });
   }
@@ -348,7 +365,8 @@
     passwordToggle: document.getElementById('passwordToggle'),
     emailError: document.getElementById('email-error'),
     passwordError: document.getElementById('password-error'),
-    rememberCheck: document.getElementById('rememberMe')
+    rememberCheck: document.getElementById('rememberMe'),
+    langToggle: document.getElementById('langToggle')
   };
 
   // ==================== App State ====================
@@ -372,6 +390,12 @@
       document.body.classList.remove('dark');
       icon?.classList.remove('fa-sun');
       icon?.classList.add('fa-moon');
+    }
+  }
+
+  function updateLangButton() {
+    if (elements.langToggle) {
+      elements.langToggle.textContent = currentLanguage === 'zh' ? '中' : 'EN';
     }
   }
 
@@ -408,12 +432,12 @@
     return isEmailValid && isPasswordValid;
   }
 
-function checkRedirect() {
-  const token = localStorage.getItem('footradapro_token') || localStorage.getItem('auth_token');
-  if (token) {
-    window.location.href = '/shell.html?page=home';
+  function checkRedirect() {
+    const token = localStorage.getItem('footradapro_token') || localStorage.getItem('auth_token');
+    if (token) {
+      window.location.href = '/shell.html?page=home';
+    }
   }
-}
 
   // ==================== Token Storage ====================
   function storeToken(token) {
@@ -463,9 +487,9 @@ function checkRedirect() {
         }
         
         btn.innerHTML = `<span>✓ ${t('login.success')}</span>`;
-setTimeout(() => {
-  window.location.href = '/shell.html?page=home';
-}, 800);
+        setTimeout(() => {
+          window.location.href = '/shell.html?page=home';
+        }, 800);
       } else {
         let errorMsg = t('error.login_failed');
         if (result.error === 'INVALID_CREDENTIALS') {
@@ -521,27 +545,31 @@ setTimeout(() => {
       elements.loginForm.addEventListener('submit', handleSubmit);
     }
     
+    if (elements.langToggle) {
+      elements.langToggle.addEventListener('click', () => {
+        currentLanguage = currentLanguage === 'zh' ? 'en' : 'zh';
+        localStorage.setItem('language', currentLanguage);
+        updateAllTexts();
+        updateLangButton();
+        validateForm();
+        window.dispatchEvent(new CustomEvent('languagechange', { detail: { language: currentLanguage } }));
+      });
+    }
+    
     window.addEventListener('languagechange', (e) => {
       if (e.detail?.language && e.detail.language !== currentLanguage) {
         currentLanguage = e.detail.language;
         updateAllTexts();
+        updateLangButton();
         validateForm();
       }
     });
   }
 
-  // ==================== Language Change Listener ====================
-  function initLanguage() {
-    const savedLanguage = localStorage.getItem('language');
-    if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'zh')) {
-      currentLanguage = savedLanguage;
-    }
-    updateAllTexts();
-  }
-
   // ==================== Initialization ====================
   function init() {
-    initLanguage();
+    updateAllTexts();
+    updateLangButton();
     checkRedirect();
     updateThemeUI();
     bindEvents();
