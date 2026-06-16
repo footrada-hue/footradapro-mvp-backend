@@ -2,7 +2,7 @@
   transaction-list-content.html - Transaction Records Content Fragment
   Description: Display user authorization records and profit/loss
   i18n Ready: All text wrapped with data-i18n attributes for future multi-language support
-  Version: 2.0.0 - Full English default, i18n ready
+  Version: 2.1.0 - Fixed t() function and ThemeManager safety
 -->
 
 <div class="transaction-list-container">
@@ -437,7 +437,12 @@
   let currentLanguage = localStorage.getItem('language') || 'en';
 
   function t(key) {
-    return I18N[currentLanguage]?.[key] || I18N.en[key] || key;
+    const translation = I18N[currentLanguage]?.[key];
+    if (!translation) {
+      // Fallback to English if key not found
+      return I18N.en[key] || key;
+    }
+    return translation;
   }
 
   function updateI18nElements() {
@@ -446,7 +451,6 @@
       const translation = t(key);
       if (translation && translation !== key) {
         if (el.tagName === 'BUTTON' && el.querySelector('span')) {
-          // Handle nested spans
           const span = el.querySelector('span');
           if (span) span.textContent = translation;
           else el.textContent = translation;
@@ -514,7 +518,7 @@
   }
 
   function updateModeUI() {
-    const isSandbox = window.ThemeManager ? window.ThemeManager.isTestMode : false;
+    const isSandbox = window.ThemeManager ? window.ThemeManager.isTestMode : true;
     if (DOM.currentModeText) {
       DOM.currentModeText.textContent = isSandbox ? 'Sandbox' : 'Live';
       DOM.currentModeText.className = isSandbox ? 'sandbox-mode-text' : 'live-mode-text';
@@ -524,17 +528,17 @@
     }
   }
 
-  function renderTransactionCard(t) {
-    const isSandbox = window.ThemeManager ? window.ThemeManager.isTestMode : false;
+  function renderTransactionCard(tx) {
+    const isSandbox = window.ThemeManager ? window.ThemeManager.isTestMode : true;
     const currency = isSandbox ? 'tUSDT' : 'USDT';
-    const isPending = t.status === 'pending';
-    const isWon = t.status === 'won';
-    const isLost = t.status === 'lost';
+    const isPending = tx.status === 'pending';
+    const isWon = tx.status === 'won';
+    const isLost = tx.status === 'lost';
     
     let profitClass = 'pending';
     let profitText = t('status.pending');
     
-    const profitNum = Number(t.profit) || 0;
+    const profitNum = Number(tx.profit) || 0;
     if (isWon) {
       profitClass = 'positive';
       profitText = `+${formatAmount(profitNum)}`;
@@ -548,20 +552,20 @@
     if (isWon) statusText = t('status.won');
     if (isLost) statusText = t('status.lost');
 
-    const homeLogoUrl = getTeamLogoUrl(t.home_logo);
-    const awayLogoUrl = getTeamLogoUrl(t.away_logo);
+    const homeLogoUrl = getTeamLogoUrl(tx.home_logo);
+    const awayLogoUrl = getTeamLogoUrl(tx.away_logo);
 
     return `
-      <div class="transaction-card" data-auth-id="${t.auth_id}">
+      <div class="transaction-card" data-auth-id="${tx.auth_id}">
         <div class="card-header">
           <div style="display: flex; align-items: center; gap: var(--space-3);">
             <div class="home-team-block">
               <div class="team-badge">${homeLogoUrl ? `<img src="${homeLogoUrl}" onerror="this.onerror=null;this.parentElement.innerHTML='<i class=\\'fas fa-futbol\\'></i>'">` : '<i class="fas fa-futbol"></i>'}</div>
-              <span class="team-name">${escapeHtml(t.home_team || '?')}</span>
+              <span class="team-name">${escapeHtml(tx.home_team || '?')}</span>
             </div>
             <span class="vs-divider">VS</span>
             <div class="away-team-block">
-              <span class="team-name">${escapeHtml(t.away_team || '?')}</span>
+              <span class="team-name">${escapeHtml(tx.away_team || '?')}</span>
               <div class="team-badge">${awayLogoUrl ? `<img src="${awayLogoUrl}" onerror="this.onerror=null;this.parentElement.innerHTML='<i class=\\'fas fa-futbol\\'></i>'">` : '<i class="fas fa-futbol"></i>'}</div>
             </div>
           </div>
@@ -570,18 +574,18 @@
             <div class="status-badge ${statusClass}">${statusText}</div>
           </div>
         </div>
-        <div class="card-body" onclick="viewDetail('${t.auth_id}')">
-          <div class="match-league"><i class="fas fa-trophy"></i> ${escapeHtml(t.league || 'Unknown League')}</div>
+        <div class="card-body" onclick="viewDetail('${tx.auth_id}')">
+          <div class="match-league"><i class="fas fa-trophy"></i> ${escapeHtml(tx.league || 'Unknown League')}</div>
           <div class="amount-info">
-            <div class="auth-amount">${formatAmount(t.amount || 0)} <small>${currency}</small></div>
+            <div class="auth-amount">${formatAmount(tx.amount || 0)} <small>${currency}</small></div>
             <div class="profit-badge ${profitClass}">${profitText}</div>
           </div>
         </div>
         <div class="card-footer">
-          <div class="match-time"><i class="fas fa-clock"></i> ${formatDate(t.match_time || t.created_at)}</div>
+          <div class="match-time"><i class="fas fa-clock"></i> ${formatDate(tx.match_time || tx.created_at)}</div>
           <div class="footer-right">
-            ${!isPending && t.has_report ? `<button class="report-btn" onclick="viewReport('${t.auth_id}', event)"><i class="fas fa-file-alt"></i> Report</button>` : ''}
-            <button class="detail-btn" onclick="viewDetail('${t.auth_id}')"><i class="fas fa-chevron-right"></i></button>
+            ${!isPending && tx.has_report ? `<button class="report-btn" onclick="viewReport('${tx.auth_id}', event)"><i class="fas fa-file-alt"></i> Report</button>` : ''}
+            <button class="detail-btn" onclick="viewDetail('${tx.auth_id}')"><i class="fas fa-chevron-right"></i></button>
           </div>
         </div>
       </div>
@@ -629,11 +633,11 @@
     let html = '';
     if (pending.length > 0) {
       html += '<div class="section-title"><i class="fas fa-hourglass-half" style="margin-right: 8px; color: #f59e0b;"></i>' + t('records.filterActive') + '</div>';
-      pending.forEach(t => { html += renderTransactionCard(t); });
+      pending.forEach(tx => { html += renderTransactionCard(tx); });
     }
     if (settled.length > 0) {
       html += '<div class="section-title"><i class="fas fa-check-circle" style="margin-right: 8px; color: #10b981;"></i>' + t('records.filterSettled') + '</div>';
-      settled.forEach(t => { html += renderTransactionCard(t); });
+      settled.forEach(tx => { html += renderTransactionCard(tx); });
     }
     
     if (filteredTransactions.length === 0) {
@@ -665,7 +669,7 @@
     if (DOM.loadingState) DOM.loadingState.style.display = 'flex';
     
     try {
-      const isSandbox = window.ThemeManager ? window.ThemeManager.isTestMode : false;
+      const isSandbox = window.ThemeManager ? window.ThemeManager.isTestMode : true;
       const mode = isSandbox ? 'test' : 'live';
       
       const response = await fetch(`/api/v1/user/authorize/list?mode=${mode}&limit=100`, {
