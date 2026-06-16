@@ -74,11 +74,11 @@
             contentUrl: '/authorize-content.html',
             scripts: ['/js/user/authorize_controller.js']
         },
-        'register': {
-            title: 'Create Account · FootRadaPro',
-            contentUrl: '/register-content.html',
-            scripts: []
-        },
+'register': {
+    title: 'Create Account · FootRadaPro',
+    contentUrl: '/register.html', // 改为指向完整的独立页面
+    scripts: [] // 通常独立页面不需要额外脚本
+},
         'login': {
             title: 'Sign In · FootRadaPro',
             contentUrl: '/login-content.html',
