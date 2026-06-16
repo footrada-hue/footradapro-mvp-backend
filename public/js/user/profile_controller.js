@@ -1,12 +1,148 @@
 /**
  * FOOTRADAPRO PROFILE CONTROLLER
- * Version: 7.2.0 - 修复余额显示 + Quick Stats 模块 + 充值弹窗+Telegram通知
+ * Version: 7.3.0 - i18n 多语言支持
  */
 
 // 防止重复初始化 - 使用 window 属性避免重复声明
 if (typeof window.__profileInitialized === 'undefined') {
     window.__profileInitialized = false;
 }
+
+// ==================== i18n 多语言配置 ====================
+const PROFILE_I18N = {
+    en: {
+        'profile.title': 'My Profile',
+        'profile.totalAssets': 'Total Assets',
+        'profile.available': 'Available',
+        'profile.locked': 'Locked',
+        'profile.quickStats': 'Quick Stats',
+        'profile.totalTrades': 'Total Trades',
+        'profile.winCount': 'Wins',
+        'profile.winRate': 'Win Rate',
+        'profile.security': 'Security Settings',
+        'profile.payPassword': 'Payment Password',
+        'profile.set': 'Set',
+        'profile.change': 'Change',
+        'profile.na': 'N/A',
+        'profile.setPasswordDesc': 'Set payment password for withdrawals',
+        'profile.fundFlow': 'Fund Flow',
+        'profile.fundFlowDesc': 'View all transactions',
+        'profile.authRecords': 'Authorization Records',
+        'profile.authRecordsDesc': 'View your trading history',
+        'profile.support': 'Customer Support',
+        'profile.supportDesc': '24/7 live chat',
+        'profile.settings': 'Settings',
+        'profile.settingsDesc': 'Theme and preferences',
+        'profile.logout': 'Logout',
+        'profile.testMode': 'Test Mode',
+        'profile.liveMode': 'Live Mode',
+        'profile.deposit': 'Deposit',
+        'profile.withdraw': 'Withdraw',
+        'toast.depositIntent': 'Sending deposit request...',
+        'toast.depositNotified': 'Deposit intent of {amount} USDT notified! Redirecting...',
+        'toast.switchMode': 'Switching to Live Mode...',
+        'toast.switchFailed': 'Failed to switch mode, please try again',
+        'toast.invalidAmount': 'Please enter a valid amount (minimum 10 USDT)',
+        'toast.maxAmount': 'Maximum deposit amount is 100,000 USDT',
+        'toast.paypasswordUpdated': 'Payment password updated successfully!',
+        'modal.deposit.title': 'Enter Deposit Amount',
+        'modal.deposit.min': 'Minimum deposit: 10 USDT',
+        'modal.deposit.continue': 'Continue to Deposit',
+        'modal.deposit.cancel': 'Cancel',
+        'modal.testmode.title': 'Test Mode',
+        'modal.testmode.withdrawMsg': 'You are currently in <strong>Test Mode</strong> using virtual funds (tUSDT).<br>Virtual funds cannot be withdrawn.<br><br><strong>Please switch to Live Mode to withdraw real funds.</strong>',
+        'modal.testmode.depositMsg': 'You are currently in <strong>Test Mode</strong> using virtual funds (tUSDT).<br>No real deposit is needed.<br><br><strong>Switch to Live Mode to deposit real funds.</strong>',
+        'modal.testmode.paypasswordMsg': 'You are in <strong>Test Mode</strong>.<br>Test mode users do not need to set a payment password.',
+        'modal.testmode.understand': 'I Understand',
+        'modal.testmode.switch': 'Switch to Live',
+        'modal.confirm.logout': 'Logout',
+        'modal.confirm.logoutMsg': 'Are you sure you want to logout?',
+        'modal.confirm.confirm': 'Confirm',
+        'modal.confirm.cancel': 'Cancel',
+        'status.set': 'Set',
+        'status.notSet': 'Not Set'
+    },
+    zh: {
+        'profile.title': '个人资料',
+        'profile.totalAssets': '总资产',
+        'profile.available': '可用',
+        'profile.locked': '锁定中',
+        'profile.quickStats': '交易统计',
+        'profile.totalTrades': '总交易',
+        'profile.winCount': '获胜',
+        'profile.winRate': '胜率',
+        'profile.security': '安全设置',
+        'profile.payPassword': '支付密码',
+        'profile.set': '设置',
+        'profile.change': '修改',
+        'profile.na': '无',
+        'profile.setPasswordDesc': '设置提现支付密码',
+        'profile.fundFlow': '资金流水',
+        'profile.fundFlowDesc': '查看所有交易记录',
+        'profile.authRecords': '授权记录',
+        'profile.authRecordsDesc': '查看您的交易历史',
+        'profile.support': '客服支持',
+        'profile.supportDesc': '7x24小时在线',
+        'profile.settings': '系统设置',
+        'profile.settingsDesc': '主题和偏好设置',
+        'profile.logout': '退出登录',
+        'profile.testMode': '沙盒模式',
+        'profile.liveMode': '实盘模式',
+        'profile.deposit': '充值',
+        'profile.withdraw': '提现',
+        'toast.depositIntent': '发送充值请求中...',
+        'toast.depositNotified': '已通知充值 {amount} USDT！正在跳转...',
+        'toast.switchMode': '切换到实盘模式...',
+        'toast.switchFailed': '切换失败，请重试',
+        'toast.invalidAmount': '请输入有效金额（最低10 USDT）',
+        'toast.maxAmount': '最大充值金额为100,000 USDT',
+        'toast.paypasswordUpdated': '支付密码更新成功！',
+        'modal.deposit.title': '输入充值金额',
+        'modal.deposit.min': '最低充值: 10 USDT',
+        'modal.deposit.continue': '继续充值',
+        'modal.deposit.cancel': '取消',
+        'modal.testmode.title': '沙盒模式',
+        'modal.testmode.withdrawMsg': '您当前处于<strong>沙盒模式</strong>，使用虚拟资金(tUSDT)。<br>虚拟资金无法提现。<br><br><strong>请切换到实盘模式进行真实提现。</strong>',
+        'modal.testmode.depositMsg': '您当前处于<strong>沙盒模式</strong>，使用虚拟资金(tUSDT)。<br>无需真实充值。<br><br><strong>切换到实盘模式进行真实充值。</strong>',
+        'modal.testmode.paypasswordMsg': '您处于<strong>沙盒模式</strong>。<br>沙盒模式用户无需设置支付密码。',
+        'modal.testmode.understand': '知道了',
+        'modal.testmode.switch': '切换到实盘',
+        'modal.confirm.logout': '退出登录',
+        'modal.confirm.logoutMsg': '确定要退出登录吗？',
+        'modal.confirm.confirm': '确认',
+        'modal.confirm.cancel': '取消',
+        'status.set': '已设置',
+        'status.notSet': '未设置'
+    }
+};
+
+let profileCurrentLang = localStorage.getItem('language') || 'en';
+
+function profileT(key) {
+    return PROFILE_I18N[profileCurrentLang]?.[key] || PROFILE_I18N.en[key] || key;
+}
+
+function updateProfileI18n() {
+    document.querySelectorAll('[data-i18n-profile]').forEach(el => {
+        const key = el.getAttribute('data-i18n-profile');
+        const translation = profileT(key);
+        if (translation && translation !== key) {
+            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                el.placeholder = translation;
+            } else {
+                el.textContent = translation;
+            }
+        }
+    });
+}
+
+// 监听语言切换
+window.addEventListener('languagechange', (e) => {
+    if (e.detail?.language) {
+        profileCurrentLang = e.detail.language;
+        updateProfileI18n();
+    }
+});
 
 document.addEventListener("DOMContentLoaded", () => {
     if (!window.__profileInitialized) initProfile();
@@ -24,9 +160,11 @@ async function initProfile() {
     
     console.log('🚀 Initializing Profile Controller...');
     
+    updateProfileI18n();
+    
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('refresh') === 'paypassword') {
-        showToast('Payment password updated successfully!', 'success');
+        showToast(profileT('toast.paypasswordUpdated'), 'success');
         window.history.replaceState({}, document.title, '/profile.html');
     }
     
@@ -81,7 +219,7 @@ function showToast(message, type = 'success') {
    ===================================================== */
 function showConfirmModal(options) {
     return new Promise((resolve) => {
-        const { title, message, confirmText = 'Confirm', cancelText = 'Cancel' } = options;
+        const { title, message, confirmText = profileT('modal.confirm.confirm'), cancelText = profileT('modal.confirm.cancel') } = options;
         
         const modal = document.createElement('div');
         modal.className = 'confirm-modal-overlay';
@@ -210,16 +348,14 @@ function showTestModeWithdrawHint() {
                 -webkit-background-clip: text;
                 background-clip: text;
                 color: transparent;
-            ">Test Mode</h2>
+            ">${profileT('modal.testmode.title')}</h2>
             <p style="
                 color: var(--text-secondary, #334155);
                 line-height: 1.6;
                 margin-bottom: 24px;
                 font-size: 14px;
             ">
-                You are currently in <strong>Test Mode</strong> using virtual funds (tUSDT).<br>
-                Virtual funds cannot be withdrawn.<br><br>
-                <strong>Please switch to Live Mode to withdraw real funds.</strong>
+                ${profileT('modal.testmode.withdrawMsg')}
             </p>
             <button id="withdrawConfirmBtn" style="
                 width: 100%;
@@ -230,7 +366,7 @@ function showTestModeWithdrawHint() {
                 color: white;
                 font-weight: 600;
                 cursor: pointer;
-            ">I Understand</button>
+            ">${profileT('modal.testmode.understand')}</button>
         </div>
     `;
     document.body.appendChild(modal);
@@ -309,16 +445,14 @@ function showTestModeDepositHint() {
                 -webkit-background-clip: text;
                 background-clip: text;
                 color: transparent;
-            ">Test Mode</h2>
+            ">${profileT('modal.testmode.title')}</h2>
             <p style="
                 color: var(--text-secondary, #334155);
                 line-height: 1.6;
                 margin-bottom: 24px;
                 font-size: 14px;
             ">
-                You are currently in <strong>Test Mode</strong> using virtual funds (tUSDT).<br>
-                No real deposit is needed.<br><br>
-                <strong>Switch to Live Mode to deposit real funds.</strong>
+                ${profileT('modal.testmode.depositMsg')}
             </p>
             <div style="display: flex; gap: 12px;">
                 <button id="depositCancelBtn" style="
@@ -330,7 +464,7 @@ function showTestModeDepositHint() {
                     color: var(--text-secondary, #334155); 
                     font-weight: 600; 
                     cursor: pointer;
-                ">Cancel</button>
+                ">${profileT('modal.deposit.cancel')}</button>
                 <button id="depositSwitchBtn" style="
                     flex: 1; 
                     padding: 14px; 
@@ -340,7 +474,7 @@ function showTestModeDepositHint() {
                     color: white; 
                     font-weight: 600; 
                     cursor: pointer;
-                ">Switch to Live</button>
+                ">${profileT('modal.testmode.switch')}</button>
             </div>
         </div>
     `;
@@ -350,10 +484,10 @@ function showTestModeDepositHint() {
     document.getElementById('depositSwitchBtn').onclick = async () => {
         modal.remove();
         if (window.ThemeManager && ThemeManager.isTestMode) {
-            showToast('Switching to Live Mode...', 'success');
+            showToast(profileT('toast.switchMode'), 'success');
             const success = await ThemeManager.toggleMode();
             if (success) window.location.href = '/shell.html?page=deposit';
-            else showToast('Failed to switch mode, please try again', 'error');
+            else showToast(profileT('toast.switchFailed'), 'error');
         }
     };
     modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
@@ -386,10 +520,9 @@ function showTestModePayPasswordInfo() {
             border: 1px solid var(--glass-border, rgba(59,130,246,0.18));
         ">
             <i class="fas fa-flask" style="font-size: 48px; color: #8b5cf6; margin-bottom: 16px;"></i>
-            <h3 style="margin-bottom: 8px; font-size: 18px; color: var(--text-primary, #0f172a);">Test Mode</h3>
+            <h3 style="margin-bottom: 8px; font-size: 18px; color: var(--text-primary, #0f172a);">${profileT('modal.testmode.title')}</h3>
             <p style="color: var(--text-muted, #64748b); margin-bottom: 20px; font-size: 14px;">
-                You are in <strong>Test Mode</strong>.<br>
-                Test mode users do not need to set a payment password.
+                ${profileT('modal.testmode.paypasswordMsg')}
             </p>
             <button onclick="this.closest('div').parentElement.remove()" style="
                 background: linear-gradient(135deg, #8b5cf6, #6d28d9);
@@ -400,7 +533,7 @@ function showTestModePayPasswordInfo() {
                 font-weight: 600;
                 cursor: pointer;
                 width: 100%;
-            ">Got it</button>
+            ">${profileT('modal.testmode.understand')}</button>
         </div>
     `;
     document.body.appendChild(modal);
@@ -426,9 +559,9 @@ function bindEvents() {
         const amount = await showDepositAmountModal();
         
         if (amount && amount >= 10) {
-            showToast('Sending deposit request...', 'info');
+            showToast(profileT('toast.depositIntent'), 'info');
             await sendDepositIntentNotification(amount);
-            showToast(`✨ Deposit intent of ${amount} USDT notified! Redirecting...`, 'success');
+            showToast(profileT('toast.depositNotified').replace('{amount}', amount), 'success');
             setTimeout(() => {
                 window.location.href = `/shell.html?page=deposit&amount=${amount}`;
             }, 800);
@@ -523,6 +656,14 @@ function bindEvents() {
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.onclick = async () => {
+            const confirmed = await showConfirmModal({
+                title: profileT('modal.confirm.logout'),
+                message: profileT('modal.confirm.logoutMsg'),
+                confirmText: profileT('modal.confirm.confirm'),
+                cancelText: profileT('modal.confirm.cancel')
+            });
+            if (!confirmed) return;
+            
             try {
                 await fetch('/api/v1/user/logout', {
                     method: 'POST',
@@ -543,7 +684,6 @@ function bindEvents() {
    ===================================================== */
 function animateNumber(element, start, end, duration = 500) {
     if (!element) return;
-    // 确保 start 和 end 是数字
     const startNum = Number(start) || 0;
     const endNum = Number(end) || 0;
     const startTime = performance.now();
@@ -690,15 +830,15 @@ async function loadPayPasswordStatus() {
         
         if (isTestMode) {
             if (statusEl) {
-                statusEl.textContent = 'N/A';
+                statusEl.textContent = profileT('profile.na');
                 statusEl.className = 'status-badge na';
             }
-            if (securityBtnText) securityBtnText.textContent = 'N/A';
+            if (securityBtnText) securityBtnText.textContent = profileT('profile.na');
             if (mobileStatusEl) {
-                mobileStatusEl.textContent = 'N/A';
+                mobileStatusEl.textContent = profileT('profile.na');
                 mobileStatusEl.className = 'status-badge na';
             }
-            if (mobileSecurityBtnText) mobileSecurityBtnText.textContent = 'N/A';
+            if (mobileSecurityBtnText) mobileSecurityBtnText.textContent = profileT('profile.na');
             return;
         }
         
@@ -707,9 +847,9 @@ async function loadPayPasswordStatus() {
         
         if (data.success) {
             const hasPassword = data.data.has_paypassword;
-            const statusText = hasPassword ? 'Set' : 'Not Set';
+            const statusText = hasPassword ? profileT('status.set') : profileT('status.notSet');
             const statusClass = hasPassword ? 'set' : 'not-set';
-            const btnText = hasPassword ? 'Change' : 'Set';
+            const btnText = hasPassword ? profileT('profile.change') : profileT('profile.set');
             
             if (statusEl) {
                 statusEl.textContent = statusText;
@@ -792,7 +932,7 @@ function updateModeUI() {
     const mobileTestBadge = document.getElementById('mobileTestModeBadge');
     
     if (modeText) {
-        modeText.textContent = isTestMode ? 'Sandbox' : 'Live';
+        modeText.textContent = isTestMode ? profileT('profile.testMode') : profileT('profile.liveMode');
         modeText.className = isTestMode ? 'mode-text sandbox' : 'mode-text live';
     }
     if (testBadge) {
@@ -907,10 +1047,10 @@ function showDepositAmountModal() {
                         <i class="fas fa-hand-holding-usd" style="font-size: 28px; color: white;"></i>
                     </div>
                     <h3 style="font-size: 22px; font-weight: 700; margin: 0 0 8px 0; color: #0f172a;">
-                        Enter Deposit Amount
+                        ${profileT('modal.deposit.title')}
                     </h3>
                     <p style="font-size: 13px; color: #64748b; margin: 0;">
-                        Minimum deposit: 10 USDT
+                        ${profileT('modal.deposit.min')}
                     </p>
                 </div>
                 
@@ -935,7 +1075,7 @@ function showDepositAmountModal() {
                             align-items: center;
                             border-right: 1px solid #e2e8f0;
                         ">USDT</span>
-                        <input type="number" id="depositAmountInput" step="10" min="10" placeholder="Enter amount" style="
+                        <input type="number" id="depositAmountInput" step="10" min="10" placeholder="${profileT('modal.deposit.enterAmount') || 'Enter amount'}" style="
                             flex: 1;
                             padding: 0 16px;
                             height: 56px;
@@ -978,7 +1118,7 @@ function showDepositAmountModal() {
                         font-weight: 600;
                         cursor: pointer;
                         transition: all 0.2s;
-                    ">Cancel</button>
+                    ">${profileT('modal.deposit.cancel')}</button>
                     <button id="depositModalConfirm" style="
                         flex: 1;
                         padding: 14px;
@@ -989,7 +1129,7 @@ function showDepositAmountModal() {
                         font-weight: 600;
                         cursor: pointer;
                         transition: all 0.2s;
-                    ">Continue to Deposit</button>
+                    ">${profileT('modal.deposit.continue')}</button>
                 </div>
             </div>
         `;
@@ -1030,13 +1170,13 @@ function showDepositAmountModal() {
         confirmBtn.onclick = async () => {
             const amount = parseFloat(amountInput.value);
             if (isNaN(amount) || amount < 10) {
-                showToast('Please enter a valid amount (minimum 10 USDT)', 'error');
+                showToast(profileT('toast.invalidAmount'), 'error');
                 amountInput.style.border = '1px solid #ef4444';
                 setTimeout(() => { amountInput.style.border = ''; }, 2000);
                 return;
             }
             if (amount > 100000) {
-                showToast('Maximum deposit amount is 100,000 USDT', 'error');
+                showToast(profileT('toast.maxAmount'), 'error');
                 return;
             }
             modal.remove();
@@ -1062,6 +1202,7 @@ function showDepositAmountModal() {
         };
     });
 }
+
 async function sendDepositIntentNotification(amount) {
     try {
         const profileRes = await fetch('/api/v1/user/profile', { credentials: 'include' });
@@ -1097,4 +1238,4 @@ async function sendDepositIntentNotification(amount) {
 
 // 暴露全局函数供 SPA 调用
 window.initProfile = initProfile;
-window.refreshProfileData = refreshAllData;deposit-notify.routes.js
+window.refreshProfileData = refreshAllData;
