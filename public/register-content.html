@@ -104,7 +104,6 @@
       position: relative; z-index:1; width: 100%; max-width: 480px; margin: var(--space-6);
     }
 
-    /* Logo 区域 */
     .logo-area {
       text-align: center; margin-bottom: var(--space-7);
     }
@@ -118,7 +117,6 @@
       -webkit-background-clip: text; background-clip: text; color: transparent;
     }
 
-    /* 卡片 */
     .register-card {
       background: var(--card-bg); backdrop-filter: blur(24px); border-radius: var(--radius-2xl);
       border: 1px solid var(--glass-border); padding: var(--space-7);
@@ -129,7 +127,6 @@
     .header h2 { font-size: var(--font-xl); font-weight: 600; margin-bottom: var(--space-2); }
     .header p { color: var(--text-muted); font-size: var(--font-sm); }
 
-    /* 表单组 */
     .form-group { margin-bottom: var(--space-5); }
     .input-label {
       display: block; font-size: var(--font-sm); font-weight: 500; margin-bottom: var(--space-2);
@@ -148,11 +145,10 @@
       outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
-    /* 图形验证码行 - 方形框设计 */
-.captcha-row {
-  display: flex; gap: var(--space-3); align-items: center;
-  position: relative;
-}
+    .captcha-row {
+      display: flex; gap: var(--space-3); align-items: center;
+      position: relative;
+    }
     .captcha-row .input-wrapper { flex: 1; }
     .captcha-box {
       width: 120px; height: 52px; background: linear-gradient(135deg, #1e293b, #0f172a);
@@ -165,14 +161,13 @@
       letter-spacing: 4px; color: #e2e8f0; text-shadow: 0 0 5px rgba(0,102,255,0.5);
       user-select: none;
     }
-.refresh-icon {
-  margin-left: var(--space-2); color: var(--text-muted); cursor: pointer;
-  transition: all var(--duration-fast); font-size: 18px;
-  display: inline-block;
-}
+    .refresh-icon {
+      margin-left: var(--space-2); color: var(--text-muted); cursor: pointer;
+      transition: all var(--duration-fast); font-size: 18px;
+      display: inline-block;
+    }
     .refresh-icon:hover { color: var(--accent); transform: rotate(15deg); }
 
-    /* 验证码输入框 */
     .code-inputs {
       display: flex; gap: var(--space-3); justify-content: center; margin-bottom: var(--space-6);
     }
@@ -186,7 +181,6 @@
       outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
-    /* 按钮 */
     .btn-primary {
       width: 100%; padding: 14px; border-radius: var(--radius-full); background: var(--accent-gradient);
       color: white; font-weight: 700; font-size: var(--font-base); border: none; cursor: pointer;
@@ -206,7 +200,6 @@
     }
     .resend-link a { color: var(--accent); text-decoration: none; font-size: var(--font-sm); cursor: pointer; }
 
-    /* 密码规则 */
     .password-rules {
       margin-top: var(--space-3); padding: var(--space-3) var(--space-4);
       background: var(--badge-soft); border-radius: var(--radius-xl);
@@ -219,7 +212,6 @@
     .rule-item.valid i { color: var(--success); }
     .rule-item.invalid i { color: var(--text-muted); }
 
-    /* 条款 */
     .terms-box {
       display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-6);
       padding: var(--space-3); background: var(--badge-soft); border-radius: var(--radius-xl);
@@ -228,7 +220,6 @@
     .terms-box label { font-size: var(--font-sm); color: var(--text-secondary); cursor: pointer; }
     .terms-box a { color: var(--accent); text-decoration: none; }
 
-    /* Toast 提示 */
     .toast-container {
       position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 12px;
     }
@@ -240,7 +231,6 @@
     .toast-error { background: var(--danger); color: white; }
     @keyframes slideIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
 
-    /* 模态框 */
     .modal-overlay {
       position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.75);
       backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 2000;
@@ -256,14 +246,12 @@
     .trust-item { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--badge-soft); border-radius: var(--radius-xl); margin-bottom: var(--space-3); }
     .trust-item i { font-size: 24px; color: var(--accent); }
 
-    /* 加载动画 */
     .spinner {
       width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
       border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* 主题切换 */
     .theme-toggle {
       position: fixed; top: 20px; right: 20px; width: 40px; height: 40px;
       background: var(--card-bg); backdrop-filter: blur(12px); border-radius: 50%;
@@ -293,157 +281,238 @@
     <h1>FootRadaPro</h1>
   </div>
 
-  <!-- 注册表单 -->
+  <!-- Register Form -->
   <div class="register-card">
     <div class="header">
-      <h2>Create account</h2>
-      <p>Start your journey with FootRada</p>
+      <h2 data-i18n="register.title">Create account</h2>
+      <p data-i18n="register.subtitle">Start your journey with FootRada</p>
     </div>
 
-    <!-- 邮箱 -->
+    <!-- Email -->
     <div class="form-group">
-      <label class="input-label">Email address</label>
+      <label class="input-label" data-i18n="register.email">Email address</label>
       <div class="input-wrapper">
-        <input type="email" id="email" placeholder="your@email.com" autocomplete="email">
+        <input type="email" id="email" placeholder="your@email.com" autocomplete="email" data-i18n-placeholder="register.emailPlaceholder">
       </div>
     </div>
 
-    <!-- 图形验证码（方形框） -->
+    <!-- Captcha -->
     <div class="form-group">
-      <label class="input-label">Verification code</label>
-<div class="captcha-row">
-  <div class="input-wrapper">
-    <input type="text" id="captchaInput" placeholder="Enter code" autocomplete="off">
-  </div>
-  <div class="captcha-box" id="captchaBox">
-    <span class="captcha-code" id="captchaCode">A3F9</span>
-  </div>
-  <span class="refresh-icon" id="refreshCaptcha"><i class="fas fa-sync-alt"></i> Refresh</span>
-</div>
+      <label class="input-label" data-i18n="register.captcha">Verification code</label>
+      <div class="captcha-row">
+        <div class="input-wrapper">
+          <input type="text" id="captchaInput" placeholder="Enter code" autocomplete="off" data-i18n-placeholder="register.enterCode">
+        </div>
+        <div class="captcha-box" id="captchaBox">
+          <span class="captcha-code" id="captchaCode">A3F9</span>
+        </div>
+        <span class="refresh-icon" id="refreshCaptcha"><i class="fas fa-sync-alt"></i></span>
       </div>
-
     </div>
 
     <button class="btn-primary" id="sendCodeBtn" disabled>
       <i class="fas fa-arrow-right"></i>
-      <span>Create account</span>
+      <span data-i18n="register.createBtn">Create account</span>
     </button>
 
     <div class="secondary-link">
-      Already have an account? <a href="/login.html">Sign in</a>
+      <span data-i18n="register.haveAccount">Already have an account?</span> <a href="/login.html" data-i18n="register.signIn">Sign in</a>
     </div>
   </div>
 
-  <!-- 密码模态框 -->
+  <!-- Password Modal -->
   <div id="passwordModal" class="modal-overlay">
     <div class="modal-content">
-      <h2>Create account</h2>
-      <p style="color: var(--text-muted); margin-bottom: var(--space-5);">Set your password</p>
+      <h2 data-i18n="register.createAccount">Create account</h2>
+      <p style="color: var(--text-muted); margin-bottom: var(--space-5);" data-i18n="register.setPassword">Set your password</p>
 
       <div class="form-group">
-        <label class="input-label">New password</label>
+        <label class="input-label" data-i18n="register.newPassword">New password</label>
         <div class="input-wrapper">
-          <input type="password" id="newPassword" placeholder="Enter password">
+          <input type="password" id="newPassword" placeholder="Enter password" data-i18n-placeholder="register.enterPassword">
         </div>
       </div>
 
       <div class="form-group">
-        <label class="input-label">Confirm password</label>
+        <label class="input-label" data-i18n="register.confirmPassword">Confirm password</label>
         <div class="input-wrapper">
-          <input type="password" id="confirmNewPassword" placeholder="Confirm password">
+          <input type="password" id="confirmNewPassword" placeholder="Confirm password" data-i18n-placeholder="register.confirmPassword">
         </div>
       </div>
 
       <div class="password-rules" id="passwordRules">
-        <div class="rule-item invalid" id="ruleLength"><i class="fas fa-circle"></i><span>At least 8 characters</span></div>
-        <div class="rule-item invalid" id="ruleUppercase"><i class="fas fa-circle"></i><span>At least 1 uppercase letter</span></div>
-        <div class="rule-item invalid" id="ruleLowercase"><i class="fas fa-circle"></i><span>At least 1 lowercase letter</span></div>
-        <div class="rule-item invalid" id="ruleNumber"><i class="fas fa-circle"></i><span>At least 1 number</span></div>
-        <div class="rule-item invalid" id="ruleMatch"><i class="fas fa-circle"></i><span>Passwords match</span></div>
+        <div class="rule-item invalid" id="ruleLength"><i class="fas fa-circle"></i><span data-i18n="register.ruleLength">At least 8 characters</span></div>
+        <div class="rule-item invalid" id="ruleUppercase"><i class="fas fa-circle"></i><span data-i18n="register.ruleUppercase">At least 1 uppercase letter</span></div>
+        <div class="rule-item invalid" id="ruleLowercase"><i class="fas fa-circle"></i><span data-i18n="register.ruleLowercase">At least 1 lowercase letter</span></div>
+        <div class="rule-item invalid" id="ruleNumber"><i class="fas fa-circle"></i><span data-i18n="register.ruleNumber">At least 1 number</span></div>
+        <div class="rule-item invalid" id="ruleMatch"><i class="fas fa-circle"></i><span data-i18n="register.ruleMatch">Passwords match</span></div>
       </div>
 
       <div class="terms-box">
         <input type="checkbox" id="termsCheckbox">
-        <label>I agree to the <a href="/terms.html">Terms of Service</a> and <a href="/privacy.html">Privacy Policy</a></label>
+        <label><span data-i18n="register.agree">I agree to the</span> <a href="/terms.html" data-i18n="register.terms">Terms of Service</a> <span data-i18n="register.and">and</span> <a href="/privacy.html" data-i18n="register.privacy">Privacy Policy</a></label>
       </div>
 
       <button class="btn-primary" id="completeRegistrationBtn" disabled>
         <i class="fas fa-user-plus"></i>
-        <span>Create account</span>
+        <span data-i18n="register.createBtn">Create account</span>
       </button>
     </div>
   </div>
 
-  <!-- 成功模态框 -->
+  <!-- Success Modal -->
   <div id="trustModal" class="modal-overlay">
     <div class="modal-content">
-      <h2>Welcome!</h2>
-      <p>Your account is ready</p>
-      <div class="trust-item"><i class="fas fa-flask"></i><span>Sandbox mode</span></div>
-      <div class="trust-item"><i class="fas fa-coins"></i><span>10,000 tUSDT</span></div>
-      <div class="trust-item"><i class="fas fa-chart-line"></i><span>Test funds</span></div>
-      <button class="btn-primary" id="goToHomeBtn" style="margin-top: var(--space-5);">Start exploring →</button>
-      <p class="auto-redirect" style="margin-top: var(--space-4); font-size: var(--font-xs); color: var(--text-muted);">Redirecting in <span id="countdown">5</span> seconds</p>
+      <h2 data-i18n="register.welcome">Welcome!</h2>
+      <p data-i18n="register.accountReady">Your account is ready</p>
+      <div class="trust-item"><i class="fas fa-flask"></i><span data-i18n="register.sandboxMode">Sandbox mode</span></div>
+      <div class="trust-item"><i class="fas fa-coins"></i><span data-i18n="register.testFunds">10,000 tUSDT</span></div>
+      <div class="trust-item"><i class="fas fa-chart-line"></i><span data-i18n="register.testFundsDesc">Test funds</span></div>
+      <button class="btn-primary" id="goToHomeBtn" style="margin-top: var(--space-5);" data-i18n="register.startExploring">Start exploring →</button>
+      <p class="auto-redirect" style="margin-top: var(--space-4); font-size: var(--font-xs); color: var(--text-muted);">
+        <span data-i18n="register.redirecting">Redirecting in</span> <span id="countdown">5</span> <span data-i18n="register.seconds">s</span>
+      </p>
     </div>
   </div>
 </div>
 
 <script>
-  // ==================== 多语言配置 ====================
-  const I18N = {
+  // ==================== i18n Configuration ====================
+  const REGISTER_I18N = {
     en: {
-      emailInvalid: 'Please enter a valid email address',
-      sending: 'Sending...',
-      emailExists: 'Email already registered',
-      sendFailed: 'Failed to send code',
-      networkError: 'Network error, please try again',
-      codeInvalid: 'Please enter a valid 6-digit code',
-      sessionExpired: 'Session expired, please start over',
-      verifying: 'Verifying...',
-      codeExpired: 'Code expired, please request a new one',
-      codeInvalidMsg: 'Invalid verification code',
-      codeResent: 'New code sent',
-      resendFailed: 'Failed to resend code',
-      captchaRequired: 'Please enter the verification code',
-      captchaInvalid: 'Invalid verification code, please try again',
-      passwordRequired: 'Password is required',
-      passwordLength: 'At least 8 characters',
-      passwordUppercase: 'At least 1 uppercase letter',
-      passwordLowercase: 'At least 1 lowercase letter',
-      passwordNumber: 'At least 1 number',
-      passwordMismatch: 'Passwords do not match',
-      termsRequired: 'You must agree to the Terms of Service',
-      creating: 'Creating account...',
-      registrationFailed: 'Registration failed',
-      verificationExpired: 'Verification expired, please start over',
-      codeAutoFilled: 'Code auto-filled!',
-      resendCode: 'Resend code',
-      resendWithCountdown: 'Resend ({seconds}s)',
-      confirmClose: 'Are you sure? Your progress will be lost.',
-      backToEmail: 'Use different email',
-      createAccountTitle: 'Create account',
-      createAccountDesc: 'Start your journey with FootRada',
-      welcomeTitle: 'Welcome!',
-      welcomeDesc: 'Your account is ready',
-      sandboxMode: 'Sandbox mode',
-      testFunds: '10,000 tUSDT',
-      testFundsDesc: 'Test funds',
-      startExploring: 'Start exploring →',
-      redirecting: 'Redirecting in',
-      seconds: 's'
+      'register.title': 'Create account',
+      'register.subtitle': 'Start your journey with FootRada',
+      'register.email': 'Email address',
+      'register.emailPlaceholder': 'your@email.com',
+      'register.captcha': 'Verification code',
+      'register.enterCode': 'Enter code',
+      'register.createBtn': 'Create account',
+      'register.haveAccount': 'Already have an account?',
+      'register.signIn': 'Sign in',
+      'register.createAccount': 'Create account',
+      'register.setPassword': 'Set your password',
+      'register.newPassword': 'New password',
+      'register.confirmPassword': 'Confirm password',
+      'register.enterPassword': 'Enter password',
+      'register.confirmPasswordPlaceholder': 'Confirm password',
+      'register.ruleLength': 'At least 8 characters',
+      'register.ruleUppercase': 'At least 1 uppercase letter',
+      'register.ruleLowercase': 'At least 1 lowercase letter',
+      'register.ruleNumber': 'At least 1 number',
+      'register.ruleMatch': 'Passwords match',
+      'register.agree': 'I agree to the',
+      'register.terms': 'Terms of Service',
+      'register.and': 'and',
+      'register.privacy': 'Privacy Policy',
+      'register.welcome': 'Welcome!',
+      'register.accountReady': 'Your account is ready',
+      'register.sandboxMode': 'Sandbox mode',
+      'register.testFunds': '10,000 tUSDT',
+      'register.testFundsDesc': 'Test funds',
+      'register.startExploring': 'Start exploring →',
+      'register.redirecting': 'Redirecting in',
+      'register.seconds': 's',
+      'register.emailInvalid': 'Please enter a valid email address',
+      'register.sending': 'Sending...',
+      'register.emailExists': 'Email already registered',
+      'register.sendFailed': 'Failed to send code',
+      'register.networkError': 'Network error, please try again',
+      'register.captchaRequired': 'Please enter the verification code',
+      'register.captchaInvalid': 'Invalid verification code, please try again',
+      'register.passwordRequired': 'Password is required',
+      'register.passwordMismatch': 'Passwords do not match',
+      'register.termsRequired': 'You must agree to the Terms of Service',
+      'register.creating': 'Creating account...',
+      'register.registrationFailed': 'Registration failed',
+      'register.confirmClose': 'Are you sure? Your progress will be lost.'
+    },
+    zh: {
+      'register.title': '创建账户',
+      'register.subtitle': '开始您的 FootRada 之旅',
+      'register.email': '邮箱地址',
+      'register.emailPlaceholder': 'your@email.com',
+      'register.captcha': '验证码',
+      'register.enterCode': '请输入验证码',
+      'register.createBtn': '创建账户',
+      'register.haveAccount': '已有账户？',
+      'register.signIn': '登录',
+      'register.createAccount': '创建账户',
+      'register.setPassword': '设置密码',
+      'register.newPassword': '新密码',
+      'register.confirmPassword': '确认密码',
+      'register.enterPassword': '请输入密码',
+      'register.confirmPasswordPlaceholder': '请确认密码',
+      'register.ruleLength': '至少8个字符',
+      'register.ruleUppercase': '至少1个大写字母',
+      'register.ruleLowercase': '至少1个小写字母',
+      'register.ruleNumber': '至少1个数字',
+      'register.ruleMatch': '密码一致',
+      'register.agree': '我同意',
+      'register.terms': '服务条款',
+      'register.and': '和',
+      'register.privacy': '隐私政策',
+      'register.welcome': '欢迎！',
+      'register.accountReady': '您的账户已准备就绪',
+      'register.sandboxMode': '沙盒模式',
+      'register.testFunds': '10,000 tUSDT',
+      'register.testFundsDesc': '测试资金',
+      'register.startExploring': '开始探索 →',
+      'register.redirecting': '将在',
+      'register.seconds': '秒后跳转',
+      'register.emailInvalid': '请输入有效的邮箱地址',
+      'register.sending': '发送中...',
+      'register.emailExists': '该邮箱已注册',
+      'register.sendFailed': '发送失败',
+      'register.networkError': '网络错误，请重试',
+      'register.captchaRequired': '请输入验证码',
+      'register.captchaInvalid': '验证码错误，请重试',
+      'register.passwordRequired': '请设置密码',
+      'register.passwordMismatch': '密码不一致',
+      'register.termsRequired': '请同意服务条款',
+      'register.creating': '创建账户中...',
+      'register.registrationFailed': '注册失败',
+      'register.confirmClose': '确定要关闭吗？您的进度将丢失。'
     }
   };
 
-  let currentLang = 'en';
+  let currentLang = localStorage.getItem('language') || 'en';
+
+  function registerT(key) {
+    return REGISTER_I18N[currentLang]?.[key] || REGISTER_I18N.en[key] || key;
+  }
+
+  function updateRegisterI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const translation = registerT(key);
+      if (translation && translation !== key) {
+        if (el.tagName === 'INPUT' && el.hasAttribute('data-i18n-placeholder')) {
+          el.placeholder = translation;
+        } else {
+          el.textContent = translation;
+        }
+      }
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      const translation = registerT(key);
+      if (translation && translation !== key) {
+        el.placeholder = translation;
+      }
+    });
+  }
+
+  // Listen for language changes
+  window.addEventListener('languagechange', (e) => {
+    if (e.detail?.language) {
+      currentLang = e.detail.language;
+      updateRegisterI18n();
+    }
+  });
+
   let countdownInterval = null;
   let redirectCountdown = null;
   let currentCaptcha = '';
-
-  function getText(key, args) {
-    let text = I18N[currentLang][key] || I18N.en[key] || key;
-    if (args !== undefined) return text.replace(/{seconds}/g, args);
-    return text;
-  }
 
   function showToast(message, type) {
     let container = document.querySelector('.toast-container');
@@ -459,7 +528,6 @@
     setTimeout(() => toast.remove(), 3000);
   }
 
-  // 生成随机验证码
   function generateCaptcha() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
     let captcha = '';
@@ -470,12 +538,10 @@
     document.getElementById('captchaCode').textContent = captcha;
   }
 
-  // 刷新验证码
   function refreshCaptcha() {
     generateCaptcha();
   }
 
-  // DOM 元素
   const elements = {
     emailInput: document.getElementById('email'),
     sendCodeBtn: document.getElementById('sendCodeBtn'),
@@ -550,7 +616,6 @@
     }, 1000);
   }
 
-  // 密码验证更新
   function updatePasswordValidation() {
     const password = elements.newPassword?.value || '';
     const confirm = elements.confirmNewPassword?.value || '';
@@ -565,18 +630,17 @@
     if (elements.completeRegistrationBtn) elements.completeRegistrationBtn.disabled = !allValid;
   }
 
-  // 发送验证码
   async function sendCode() {
     if (AppState.requestInProgress) return;
     const email = elements.emailInput.value.trim();
-    if (!validateEmail(email)) { showToast(getText('emailInvalid'), 'error'); return; }
+    if (!validateEmail(email)) { showToast(registerT('register.emailInvalid'), 'error'); return; }
     const userCaptcha = elements.captchaInput?.value.trim();
-    if (!userCaptcha) { showToast(getText('captchaRequired'), 'error'); return; }
-    if (userCaptcha.toUpperCase() !== currentCaptcha) { showToast(getText('captchaInvalid'), 'error'); refreshCaptcha(); elements.captchaInput.value = ''; return; }
+    if (!userCaptcha) { showToast(registerT('register.captchaRequired'), 'error'); return; }
+    if (userCaptcha.toUpperCase() !== currentCaptcha) { showToast(registerT('register.captchaInvalid'), 'error'); refreshCaptcha(); elements.captchaInput.value = ''; return; }
 
     AppState.requestInProgress = true;
     elements.sendCodeBtn.disabled = true;
-    elements.sendCodeBtn.innerHTML = `<span class="spinner"></span> ${getText('sending')}`;
+    elements.sendCodeBtn.innerHTML = `<span class="spinner"></span> ${registerT('register.sending')}`;
 
     setTimeout(() => {
       AppState.email = email;
@@ -584,24 +648,23 @@
       setTimeout(() => elements.newPassword?.focus(), 300);
       AppState.requestInProgress = false;
       elements.sendCodeBtn.disabled = false;
-      elements.sendCodeBtn.innerHTML = '<i class="fas fa-arrow-right"></i><span>Create account</span>';
+      elements.sendCodeBtn.innerHTML = `<i class="fas fa-arrow-right"></i><span>${registerT('register.createBtn')}</span>`;
     }, 1000);
   }
 
-  // 完成注册
   async function completeRegistration() {
     if (AppState.requestInProgress) return;
     const password = elements.newPassword?.value || '';
     const confirm = elements.confirmNewPassword?.value || '';
     const termsChecked = elements.termsCheckbox?.checked || false;
     const validation = validatePassword(password);
-    if (!validation.valid) { showToast('Password requirements not met', 'error'); return; }
-    if (password !== confirm) { showToast(getText('passwordMismatch'), 'error'); return; }
-    if (!termsChecked) { showToast(getText('termsRequired'), 'error'); return; }
+    if (!validation.valid) { showToast(registerT('register.passwordRequired'), 'error'); return; }
+    if (password !== confirm) { showToast(registerT('register.passwordMismatch'), 'error'); return; }
+    if (!termsChecked) { showToast(registerT('register.termsRequired'), 'error'); return; }
 
     AppState.requestInProgress = true;
     elements.completeRegistrationBtn.disabled = true;
-    elements.completeRegistrationBtn.innerHTML = `<span class="spinner"></span> ${getText('creating')}`;
+    elements.completeRegistrationBtn.innerHTML = `<span class="spinner"></span> ${registerT('register.creating')}`;
 
     setTimeout(() => {
       closeModal(elements.passwordModal);
@@ -609,11 +672,10 @@
       startRedirectCountdown(5);
       AppState.requestInProgress = false;
       elements.completeRegistrationBtn.disabled = false;
-      elements.completeRegistrationBtn.innerHTML = '<i class="fas fa-user-plus"></i><span>Create account</span>';
+      elements.completeRegistrationBtn.innerHTML = `<i class="fas fa-user-plus"></i><span>${registerT('register.createBtn')}</span>`;
     }, 1000);
   }
 
-  // 事件绑定
   function bindEvents() {
     if (elements.emailInput) elements.emailInput.addEventListener('input', checkFormValidity);
     if (elements.captchaInput) elements.captchaInput.addEventListener('input', checkFormValidity);
@@ -627,14 +689,13 @@
     if (elements.termsCheckbox) elements.termsCheckbox.addEventListener('change', updatePasswordValidation);
     if (elements.passwordModal) {
       elements.passwordModal.addEventListener('click', (e) => {
-        if (e.target === elements.passwordModal && confirm(getText('confirmClose'))) {
+        if (e.target === elements.passwordModal && confirm(registerT('register.confirmClose'))) {
           closeModal(elements.passwordModal);
         }
       });
     }
   }
 
-  // 主题切换
   function getThemeMode() { return localStorage.getItem('theme') || 'light'; }
   function setThemeMode(theme) { localStorage.setItem('theme', theme); updateThemeUI(); }
   function updateThemeUI() {
@@ -655,7 +716,8 @@
     setThemeMode(newTheme);
   });
 
-  // 初始化
+  // Initialize
+  updateRegisterI18n();
   generateCaptcha();
   bindEvents();
   updateThemeUI();
