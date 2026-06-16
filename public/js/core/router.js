@@ -1,13 +1,43 @@
 /**
  * FOOTRADAPRO - SPA Router
  * 实现无刷新页面切换，跑马灯和导航栏固定
- * @version 2.0.0 - 修复页面脚本重新执行问题
+ * @version 2.1.0 - 添加 page-loaded 事件，支持多语言
  */
 
 (function() {
     'use strict';
 
-    // 路由配置
+    // ==================== 多语言配置 ====================
+    const I18N = {
+        en: {
+            loading: 'Loading...',
+            failed: 'Failed to load page. Please try again.'
+        },
+        zh: {
+            loading: '加载中...',
+            failed: '页面加载失败，请重试'
+        }
+    };
+
+    let currentLanguage = localStorage.getItem('language') || 'en';
+
+    function t(key) {
+        return I18N[currentLanguage][key] || I18N.en[key] || key;
+    }
+
+    function updateLanguage(lang) {
+        currentLanguage = lang;
+        localStorage.setItem('language', lang);
+    }
+
+    // 监听语言切换事件
+    window.addEventListener('languagechange', (e) => {
+        if (e.detail?.language) {
+            updateLanguage(e.detail.language);
+        }
+    });
+
+    // ==================== 路由配置 ====================
     const routes = {
         'home': {
             title: 'FootRadaPro · AI Trading Dashboard',
@@ -115,7 +145,7 @@
     let currentPage = 'home';
     let isLoading = false;
     
-    // 存储已加载的脚本（避免重复加载同一脚本）
+    // 存储已加载的脚本
     let loadedScripts = new Set();
 
     // 获取当前页面参数
@@ -140,18 +170,40 @@
     function showLoading() {
         const appContent = document.getElementById('app-content');
         if (appContent) {
-            appContent.innerHTML = '<div class="content-loading"><i class="fas fa-spinner fa-pulse"></i> Loading...</div>';
+            appContent.innerHTML = `<div class="content-loading"><i class="fas fa-spinner fa-pulse"></i> ${t('loading')}</div>`;
         }
+    }
+
+    // 显示错误状态
+    function showError() {
+        const appContent = document.getElementById('app-content');
+        if (appContent) {
+            appContent.innerHTML = `<div class="content-loading" style="color: var(--warning);"><i class="fas fa-exclamation-triangle"></i> ${t('failed')}</div>`;
+        }
+    }
+
+    // 触发页面加载完成事件（关键：让页面控制器知道页面已切换）
+    function emitPageLoaded(page) {
+        console.log(`[Router] 触发 page-loaded 事件: ${page}`);
+        window.dispatchEvent(new CustomEvent('page-loaded', { detail: { page } }));
     }
 
     // 重新初始化页面组件
     function reinitializePageComponents(page) {
-        // 触发页面特定的事件，让控制器重新初始化
-        window.dispatchEvent(new CustomEvent('page-loaded', { detail: { page } }));
+        // 触发页面加载完成事件（SPA 切换时通知各控制器）
+        emitPageLoaded(page);
         
-        // 如果页面有自己的初始化函数，调用它
-        if (page === 'markets' && window.initMatchMarket) {
+        // 如果页面有自己的初始化函数，调用它（兼容旧版）
+        if (page === 'markets' && window.reinitMatchMarket) {
+            console.log('[Router] 调用 reinitMatchMarket');
+            window.reinitMatchMarket();
+        } else if (page === 'markets' && window.initMatchMarket) {
+            console.log('[Router] 调用 initMatchMarket');
             window.initMatchMarket();
+        }
+        
+        if (page === 'profile' && window.initProfile) {
+            window.initProfile();
         }
     }
 
@@ -209,7 +261,7 @@
             // 执行页面脚本
             await executePageScripts(route.scripts, page);
 
-            // 重新初始化页面组件
+            // 重新初始化页面组件（触发 page-loaded 事件）
             reinitializePageComponents(page);
 
             currentPage = page;
@@ -217,10 +269,7 @@
 
         } catch (error) {
             console.error('[Router] 加载失败:', error);
-            const appContent = document.getElementById('app-content');
-            if (appContent) {
-                appContent.innerHTML = '<div class="content-loading" style="color: var(--warning);"><i class="fas fa-exclamation-triangle"></i> Failed to load page. Please try again.</div>';
-            }
+            showError();
         } finally {
             isLoading = false;
         }
@@ -230,9 +279,8 @@
     async function executePageScripts(scripts, page) {
         for (const scriptSrc of scripts) {
             try {
-                // 检查是否已加载过（可选：每次都重新加载以确保状态最新）
+                // 移除旧的脚本实例
                 if (loadedScripts.has(scriptSrc)) {
-                    // 移除旧的脚本实例
                     const oldScript = document.querySelector(`script[src="${scriptSrc}"]`);
                     if (oldScript) {
                         oldScript.remove();
@@ -274,7 +322,7 @@
         const href = link.getAttribute('href');
         if (!href) return;
 
-        // 只处理 shell.html 的链接
+        // 处理 shell.html 的链接
         if (href.includes('/shell.html') || href.includes('?page=')) {
             e.preventDefault();
             let page = null;
@@ -286,6 +334,12 @@
                 loadPage(page);
             }
         }
+        
+        // 处理普通链接（非 SPA 链接）
+        if (href.startsWith('http') || href.startsWith('/') && !href.includes('shell.html')) {
+            // 允许正常跳转
+            return;
+        }
     }
 
     // 处理浏览器前进后退
@@ -296,6 +350,17 @@
         }
     }
 
+    // 监听语言切换，重新加载当前页面
+    function initLanguageListener() {
+        window.addEventListener('languagechange', async (e) => {
+            if (e.detail?.language) {
+                updateLanguage(e.detail.language);
+                // 刷新当前页面以应用新语言
+                await loadPage(currentPage, false);
+            }
+        });
+    }
+
     // 初始化路由
     function initRouter() {
         console.log('[Router] 初始化...');
@@ -303,6 +368,9 @@
         // 绑定事件
         document.addEventListener('click', handleLinkClick);
         window.addEventListener('popstate', handlePopState);
+        
+        // 初始化语言监听
+        initLanguageListener();
         
         // 加载当前页面
         const initialPage = getCurrentPage();
@@ -317,7 +385,8 @@
     window.router = {
         navigate: loadPage,
         getCurrentPage: () => currentPage,
-        refresh: () => loadPage(currentPage, false)
+        refresh: () => loadPage(currentPage, false),
+        setLanguage: updateLanguage
     };
 
     // 页面加载完成后初始化
