@@ -1,69 +1,70 @@
 <!-- 
-  profile-content.html - 个人中心内容
-  最终版：左侧用户信息+余额+按钮+安全，右侧竖状柱状图拉高填充，
-  下方4个长条框垂直排列，Logout按钮
+  profile-content.html - Profile Center Content
+  Description: User profile with balance, security, stats, and quick access
+  i18n Ready: All text wrapped with data-i18n attributes for future multi-language support
+  Version: 2.0.0 - Full English default, i18n ready
 -->
 
 <div class="profile-container">
-  <!-- 桌面端布局 -->
+  <!-- Desktop Layout -->
   <div class="desktop-layout">
-    <!-- 左侧：用户信息 + 余额 + 按钮 + 安全 -->
+    <!-- Left: User Info + Balance + Security -->
     <div class="profile-left">
-      <!-- 用户信息卡片 -->
+      <!-- User Info Card -->
       <div class="info-card">
         <div class="user-info-wrapper">
           <div class="user-avatar">
             <i class="fa-solid fa-user-large"></i>
           </div>
           <div class="user-details">
-            <h3 id="username">Loading...</h3>
-            <p id="uid"><i class="fa-regular fa-id-card"></i> UID: --</p>
+            <h3 id="username" data-i18n="profile.loading">Loading...</h3>
+            <p id="uid"><i class="fa-regular fa-id-card"></i> <span data-i18n="profile.uid">UID:</span> --</p>
             <div id="testModeBadge" class="mode-badge" style="display: none;">
-              <i class="fa-solid fa-flask"></i> Test Mode
+              <i class="fa-solid fa-flask"></i> <span data-i18n="profile.testMode">Test Mode</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 余额卡片 -->
+      <!-- Balance Card -->
       <div class="balance-card">
-        <div class="balance-label">Balance</div>
+        <div class="balance-label" data-i18n="profile.balance">Balance</div>
         <div class="balance-amount" id="totalAssets">0.00</div>
         <div class="balance-currency" id="balanceCurrency">USDT</div>
         <div class="action-buttons">
           <button class="action-btn deposit" id="depositBtn">
             <i class="fa-solid fa-circle-dollar-to-slot"></i>
-            <span>Deposit</span>
+            <span data-i18n="profile.deposit">Deposit</span>
           </button>
           <button class="action-btn withdraw" id="withdrawBtn">
             <i class="fa-solid fa-arrow-up-from-bracket"></i>
-            <span>Withdraw</span>
+            <span data-i18n="profile.withdraw">Withdraw</span>
           </button>
         </div>
       </div>
 
-      <!-- 安全卡片 -->
+      <!-- Security Card -->
       <div class="security-card">
         <div class="security-header">
           <i class="fa-solid fa-shield-haltered"></i>
-          <span>Security</span>
+          <span data-i18n="profile.security">Security</span>
         </div>
         <div class="security-content">
-          <div class="security-label">Payment Password</div>
+          <div class="security-label" data-i18n="profile.paymentPassword">Payment Password</div>
           <button class="security-btn" id="securityCardBtn">
-            <span id="securityBtnText">Set</span>
+            <span id="securityBtnText" data-i18n="profile.set">Set</span>
             <i class="fa-solid fa-chevron-right"></i>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- 右侧：Quick Stats - 竖状柱状图（拉高填充） -->
+    <!-- Right: Quick Stats Chart -->
     <div class="profile-right">
       <div class="stats-card">
         <div class="stats-header">
           <i class="fa-solid fa-chart-simple"></i>
-          <span>Performance</span>
+          <span data-i18n="profile.performance">Performance</span>
         </div>
         <div class="chart-container">
           <div class="chart-bars">
@@ -71,19 +72,19 @@
               <div class="chart-bar" id="tradesBar" style="height: 0%">
                 <span class="chart-value" id="totalTrades">0</span>
               </div>
-              <div class="chart-label">Trades</div>
+              <div class="chart-label" data-i18n="profile.trades">Trades</div>
             </div>
             <div class="chart-bar-wrapper">
               <div class="chart-bar success" id="winsBar" style="height: 0%">
                 <span class="chart-value" id="winCount">0</span>
               </div>
-              <div class="chart-label">Wins</div>
+              <div class="chart-label" data-i18n="profile.wins">Wins</div>
             </div>
             <div class="chart-bar-wrapper">
               <div class="chart-bar accent" id="winRateBar" style="height: 0%">
                 <span class="chart-value" id="winRate">0%</span>
               </div>
-              <div class="chart-label">Win Rate</div>
+              <div class="chart-label" data-i18n="profile.winRate">Win Rate</div>
             </div>
           </div>
         </div>
@@ -91,13 +92,13 @@
     </div>
   </div>
 
-  <!-- 快捷菜单 - 4个长条框垂直排列 -->
+  <!-- Quick Access - 4 items vertical -->
   <div class="quick-access-section">
     <div class="quick-item" id="fundFlowCard">
       <div class="quick-icon"><i class="fa-solid fa-chart-line"></i></div>
       <div class="quick-content">
-<h4>Fund Flow</h4>
-<p>View deposit & withdraw history</p>
+        <h4 data-i18n="profile.fundFlow">Fund Flow</h4>
+        <p data-i18n="profile.fundFlowDesc">View deposit & withdraw history</p>
       </div>
       <i class="fa-solid fa-chevron-right quick-arrow"></i>
     </div>
@@ -105,115 +106,115 @@
     <div class="quick-item" id="authCard">
       <div class="quick-icon"><i class="fa-solid fa-file-signature"></i></div>
       <div class="quick-content">
-<h4>Authorizations</h4>
-<p>Track your authorization records</p>
+        <h4 data-i18n="profile.authorizations">Authorizations</h4>
+        <p data-i18n="profile.authDesc">Track your authorization records</p>
       </div>
       <i class="fa-solid fa-chevron-right quick-arrow"></i>
     </div>
 
-<div class="quick-item" id="settingsCard">
-  <div class="quick-icon"><i class="fa-solid fa-sliders-h"></i></div>
-  <div class="quick-content">
-    <h4>Settings</h4>
-    <p>Account preferences & security</p>
-  </div>
-  <i class="fa-solid fa-chevron-right quick-arrow"></i>
-</div>
+    <div class="quick-item" id="settingsCard">
+      <div class="quick-icon"><i class="fa-solid fa-sliders-h"></i></div>
+      <div class="quick-content">
+        <h4 data-i18n="profile.settings">Settings</h4>
+        <p data-i18n="profile.settingsDesc">Account preferences & security</p>
+      </div>
+      <i class="fa-solid fa-chevron-right quick-arrow"></i>
+    </div>
 
     <div class="quick-item" id="supportCard">
       <div class="quick-icon"><i class="fa-solid fa-headset"></i></div>
       <div class="quick-content">
-        <h4>Support</h4>
-        <p>Get help 24/7</p>
+        <h4 data-i18n="profile.support">Support</h4>
+        <p data-i18n="profile.supportDesc">Get help 24/7</p>
       </div>
       <i class="fa-solid fa-chevron-right quick-arrow"></i>
     </div>
   </div>
 
-  <!-- 退出登录按钮 -->
+  <!-- Logout Button -->
   <button class="logout-btn" id="logoutBtn">
     <i class="fa-solid fa-right-from-bracket"></i>
-    <span>Logout</span>
+    <span data-i18n="profile.logout">Logout</span>
   </button>
 
-  <!-- 移动端布局 -->
+  <!-- Mobile Layout -->
   <div class="mobile-layout">
-    <!-- 用户信息卡片 -->
+    <!-- User Info -->
     <div class="mobile-card">
       <div class="mobile-user-row">
         <div class="user-avatar">
           <i class="fa-solid fa-user-large"></i>
         </div>
         <div class="mobile-user-info">
-          <h3 id="mobileUsername">Loading...</h3>
-          <p id="mobileUid"><i class="fa-regular fa-id-card"></i> UID: --</p>
+          <h3 id="mobileUsername" data-i18n="profile.loading">Loading...</h3>
+          <p id="mobileUid"><i class="fa-regular fa-id-card"></i> <span data-i18n="profile.uid">UID:</span> --</p>
           <div id="mobileTestModeBadge" class="mode-badge" style="display: none;">
-            <i class="fa-solid fa-flask"></i> Test Mode
+            <i class="fa-solid fa-flask"></i> <span data-i18n="profile.testMode">Test Mode</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 余额卡片 -->
+    <!-- Balance -->
     <div class="mobile-card">
-      <div class="mobile-balance-label">Balance</div>
+      <div class="mobile-balance-label" data-i18n="profile.balance">Balance</div>
       <div class="mobile-balance-amount" id="mobileTotalAssets">0.00</div>
       <div class="mobile-balance-currency" id="mobileBalanceCurrency">USDT</div>
       <div class="mobile-actions">
         <button class="mobile-action-btn deposit" id="mobileDepositBtn">
-          <i class="fa-solid fa-circle-dollar-to-slot"></i> Deposit
+          <i class="fa-solid fa-circle-dollar-to-slot"></i> <span data-i18n="profile.deposit">Deposit</span>
         </button>
         <button class="mobile-action-btn withdraw" id="mobileWithdrawBtn">
-          <i class="fa-solid fa-arrow-up-from-bracket"></i> Withdraw
+          <i class="fa-solid fa-arrow-up-from-bracket"></i> <span data-i18n="profile.withdraw">Withdraw</span>
         </button>
       </div>
     </div>
 
-    <!-- 统计卡片 -->
+    <!-- Stats -->
     <div class="mobile-card">
       <div class="mobile-stats-header">
         <i class="fa-solid fa-chart-simple"></i>
-        <span>Performance</span>
+        <span data-i18n="profile.performance">Performance</span>
       </div>
       <div class="mobile-stats-grid">
         <div class="mobile-stat-item">
           <div class="mobile-stat-number" id="mobileTotalTrades">0</div>
-          <div class="mobile-stat-label">Trades</div>
+          <div class="mobile-stat-label" data-i18n="profile.trades">Trades</div>
         </div>
         <div class="mobile-stat-item">
           <div class="mobile-stat-number" id="mobileWinCount">0</div>
-          <div class="mobile-stat-label">Wins</div>
+          <div class="mobile-stat-label" data-i18n="profile.wins">Wins</div>
         </div>
         <div class="mobile-stat-item">
           <div class="mobile-stat-number" id="mobileWinRate">0%</div>
-          <div class="mobile-stat-label">Win Rate</div>
+          <div class="mobile-stat-label" data-i18n="profile.winRate">Win Rate</div>
         </div>
       </div>
     </div>
 
-    <!-- 安全卡片 -->
+    <!-- Security -->
     <div class="mobile-card">
       <div class="mobile-security-header">
         <i class="fa-solid fa-shield-haltered"></i>
-        <span>Security</span>
+        <span data-i18n="profile.security">Security</span>
       </div>
       <div class="mobile-security-row">
-        <div class="mobile-security-label">Payment Password</div>
+        <div class="mobile-security-label" data-i18n="profile.paymentPassword">Payment Password</div>
         <button class="mobile-security-btn" id="mobileSecurityBtn">
-          <span id="mobileSecurityBtnText">Set</span>
+          <span id="mobileSecurityBtnText" data-i18n="profile.set">Set</span>
           <i class="fa-solid fa-chevron-right"></i>
         </button>
       </div>
     </div>
 
-    <!-- 快捷菜单 -->
+    <!-- Quick Menu -->
     <div class="mobile-card menu-list">
       <div class="menu-list-item" id="mobileFundFlowCard">
         <div class="menu-list-left">
           <div class="menu-list-icon"><i class="fa-solid fa-chart-line"></i></div>
           <div class="menu-list-info">
-<h4>Fund Flow</h4>
-<p>History</p>
+            <h4 data-i18n="profile.fundFlow">Fund Flow</h4>
+            <p data-i18n="profile.fundFlowShort">History</p>
           </div>
         </div>
         <i class="fa-solid fa-chevron-right"></i>
@@ -222,40 +223,38 @@
         <div class="menu-list-left">
           <div class="menu-list-icon"><i class="fa-solid fa-file-signature"></i></div>
           <div class="menu-list-info">
-<h4>Authorizations</h4>
-<p>Records</p>
+            <h4 data-i18n="profile.authorizations">Authorizations</h4>
+            <p data-i18n="profile.authShort">Records</p>
           </div>
         </div>
         <i class="fa-solid fa-chevron-right"></i>
       </div>
-<div class="menu-list-item" id="mobileSettingsCard">
-  <div class="menu-list-left">
-    <div class="menu-list-icon"><i class="fa-solid fa-sliders-h"></i></div>
-    <div class="menu-list-info">
-      <h4>Settings</h4>
-      <p>Account preferences & security</p>
-    </div>
-  </div>
-  <i class="fa-solid fa-chevron-right"></i>
-</div>
-
-
+      <div class="menu-list-item" id="mobileSettingsCard">
+        <div class="menu-list-left">
+          <div class="menu-list-icon"><i class="fa-solid fa-sliders-h"></i></div>
+          <div class="menu-list-info">
+            <h4 data-i18n="profile.settings">Settings</h4>
+            <p data-i18n="profile.settingsDesc">Account preferences & security</p>
+          </div>
+        </div>
+        <i class="fa-solid fa-chevron-right"></i>
+      </div>
       <div class="menu-list-item" id="mobileSupportCard">
         <div class="menu-list-left">
           <div class="menu-list-icon"><i class="fa-solid fa-headset"></i></div>
           <div class="menu-list-info">
-            <h4>Support</h4>
-            <p>Get help 24/7</p>
+            <h4 data-i18n="profile.support">Support</h4>
+            <p data-i18n="profile.supportDesc">Get help 24/7</p>
           </div>
         </div>
         <i class="fa-solid fa-chevron-right"></i>
       </div>
     </div>
 
-    <!-- 退出登录按钮（移动端） -->
+    <!-- Mobile Logout -->
     <button class="mobile-logout-btn" id="mobileLogoutBtn">
       <i class="fa-solid fa-right-from-bracket"></i>
-      <span>Logout</span>
+      <span data-i18n="profile.logout">Logout</span>
     </button>
   </div>
 </div>
@@ -973,6 +972,98 @@
 
 <script>
 (function() {
+  // ==================== i18n Configuration ====================
+  const PROFILE_PAGE_I18N = {
+    en: {
+      'profile.loading': 'Loading...',
+      'profile.uid': 'UID:',
+      'profile.testMode': 'Test Mode',
+      'profile.balance': 'Balance',
+      'profile.deposit': 'Deposit',
+      'profile.withdraw': 'Withdraw',
+      'profile.security': 'Security',
+      'profile.paymentPassword': 'Payment Password',
+      'profile.set': 'Set',
+      'profile.change': 'Change',
+      'profile.na': 'N/A',
+      'profile.performance': 'Performance',
+      'profile.trades': 'Trades',
+      'profile.wins': 'Wins',
+      'profile.winRate': 'Win Rate',
+      'profile.fundFlow': 'Fund Flow',
+      'profile.fundFlowDesc': 'View deposit & withdraw history',
+      'profile.fundFlowShort': 'History',
+      'profile.authorizations': 'Authorizations',
+      'profile.authDesc': 'Track your authorization records',
+      'profile.authShort': 'Records',
+      'profile.settings': 'Settings',
+      'profile.settingsDesc': 'Account preferences & security',
+      'profile.support': 'Support',
+      'profile.supportDesc': 'Get help 24/7',
+      'profile.logout': 'Logout',
+      'profile.confirmLogout': 'Are you sure you want to logout?'
+    },
+    zh: {
+      'profile.loading': '加载中...',
+      'profile.uid': '用户ID:',
+      'profile.testMode': '测试模式',
+      'profile.balance': '余额',
+      'profile.deposit': '充值',
+      'profile.withdraw': '提现',
+      'profile.security': '安全设置',
+      'profile.paymentPassword': '支付密码',
+      'profile.set': '设置',
+      'profile.change': '修改',
+      'profile.na': '无',
+      'profile.performance': '交易表现',
+      'profile.trades': '交易数',
+      'profile.wins': '获胜数',
+      'profile.winRate': '胜率',
+      'profile.fundFlow': '资金流水',
+      'profile.fundFlowDesc': '查看充值和提现记录',
+      'profile.fundFlowShort': '记录',
+      'profile.authorizations': '授权记录',
+      'profile.authDesc': '追踪您的授权记录',
+      'profile.authShort': '记录',
+      'profile.settings': '系统设置',
+      'profile.settingsDesc': '账户偏好和安全设置',
+      'profile.support': '客服支持',
+      'profile.supportDesc': '7x24小时在线帮助',
+      'profile.logout': '退出登录',
+      'profile.confirmLogout': '确定要退出登录吗？'
+    }
+  };
+
+  let profilePageLang = localStorage.getItem('language') || 'en';
+
+  function profilePageT(key) {
+    return PROFILE_PAGE_I18N[profilePageLang]?.[key] || PROFILE_PAGE_I18N.en[key] || key;
+  }
+
+  function updateProfilePageI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const translation = profilePageT(key);
+      if (translation && translation !== key) {
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          el.placeholder = translation;
+        } else if (el.tagName === 'BUTTON' && el.querySelector('span')) {
+          const span = el.querySelector('span');
+          if (span) span.textContent = translation;
+        } else {
+          el.textContent = translation;
+        }
+      }
+    });
+  }
+
+  window.addEventListener('languagechange', (e) => {
+    if (e.detail?.language) {
+      profilePageLang = e.detail.language;
+      updateProfilePageI18n();
+    }
+  });
+
   // 数字动画函数
   const animateNumber = (element, start, end, duration = 500) => {
     if (!element) return;
@@ -1038,6 +1129,7 @@
   }
 
   // 等待 profile_controller 加载完成
+  updateProfilePageI18n();
   const initTimer = setInterval(() => {
     if (typeof window.initProfile === 'function') {
       clearInterval(initTimer);
