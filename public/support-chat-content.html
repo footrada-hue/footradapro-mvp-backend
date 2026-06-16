@@ -1,6 +1,8 @@
 <!-- 
-  support-chat-content.html - 在线聊天内容
-  修复版：图片附件正确显示预览
+  support-chat-content.html - Live Chat Support
+  Description: Real-time chat between users and support team
+  i18n Ready: All text wrapped with data-i18n attributes for future multi-language support
+  Version: 2.0.0 - Full English default, i18n ready
 -->
 
 <!DOCTYPE html>
@@ -118,7 +120,12 @@
 
     .support-avatar i { font-size: 22px; color: white; }
 
-    .header-text h2 { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
+    .header-text h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 2px;
+      color: var(--text-primary);
+    }
 
     .status-badge {
       display: flex;
@@ -273,6 +280,10 @@
       max-height: 100px;
     }
 
+    .message-input::placeholder {
+      color: var(--text-muted);
+    }
+
     .send-btn {
       background: var(--accent-gradient);
       border: none;
@@ -389,7 +400,6 @@
       transform: scale(1.1);
     }
 
-    /* 图片附件样式 */
     .image-attachment {
       margin-top: 8px;
       border-radius: 12px;
@@ -460,43 +470,43 @@
     <div class="header-info">
       <div class="support-avatar"><i class="fas fa-headset"></i></div>
       <div class="header-text">
-        <h2>Support Team</h2>
+        <h2 data-i18n="chat.headerTitle">Support Team</h2>
         <div class="status-badge" id="connectionStatus">
           <span class="status-dot"></span>
-          <span>Connecting...</span>
+          <span data-i18n="chat.connecting">Connecting...</span>
         </div>
       </div>
     </div>
     <div class="header-actions">
-      <i class="fas fa-phone-alt" onclick="alert('Call support: +1 888 123 4567')"></i>
-      <i class="fas fa-ellipsis-v" onclick="alert('More options coming soon')"></i>
+      <i class="fas fa-phone-alt" onclick="showCallAlert()"></i>
+      <i class="fas fa-ellipsis-v" onclick="showOptionsAlert()"></i>
     </div>
   </div>
 
   <div class="messages-area" id="messagesContainer">
     <div class="empty-message">
       <span class="empty-icon">💬</span>
-      <p>Loading messages...</p>
+      <p data-i18n="chat.loading">Loading messages...</p>
     </div>
   </div>
 
   <div id="typingIndicator" class="typing-indicator" style="display: none;">
-    <span>Support is typing</span>
+    <span data-i18n="chat.typing">Support is typing</span>
     <div class="typing-dots"><span></span><span></span><span></span></div>
   </div>
 
   <div class="input-area">
     <div class="input-wrapper">
       <div class="input-actions">
-        <button class="action-btn" id="attachBtn" type="button">
+        <button class="action-btn" id="attachBtn" type="button" title="Attach file" data-i18n-title="chat.attach">
           <i class="fas fa-paperclip"></i>
         </button>
-        <button class="action-btn" id="emojiBtn" type="button">
+        <button class="action-btn" id="emojiBtn" type="button" title="Emoji" data-i18n-title="chat.emoji">
           <i class="fas fa-smile"></i>
         </button>
       </div>
-      <textarea id="messageInput" class="message-input" rows="1" placeholder="Type your message..."></textarea>
-      <button class="send-btn" id="sendBtn" type="button">
+      <textarea id="messageInput" class="message-input" rows="1" placeholder="Type your message..." data-i18n-placeholder="chat.inputPlaceholder"></textarea>
+      <button class="send-btn" id="sendBtn" type="button" title="Send message" data-i18n-title="chat.send">
         <i class="fas fa-paper-plane"></i>
       </button>
     </div>
@@ -511,6 +521,94 @@
 <script>
 (function() {
   'use strict';
+
+  // ==================== i18n Configuration ====================
+  const CHAT_I18N = {
+    en: {
+      'chat.headerTitle': 'Support Team',
+      'chat.online': 'Online',
+      'chat.offline': 'Offline',
+      'chat.connecting': 'Connecting...',
+      'chat.loading': 'Loading messages...',
+      'chat.empty': 'No messages yet',
+      'chat.typing': 'Support is typing',
+      'chat.inputPlaceholder': 'Type your message...',
+      'chat.attach': 'Attach file',
+      'chat.emoji': 'Emoji',
+      'chat.send': 'Send message',
+      'chat.sendFailed': 'Send failed, please retry',
+      'chat.disconnected': 'Not connected to server',
+      'chat.uploading': 'Uploading...',
+      'chat.uploadFailed': 'Upload failed',
+      'chat.fileTooLarge': 'File size cannot exceed 10MB',
+      'chat.imageTooLarge': 'Image too large, cannot exceed 10MB',
+      'chat.callSupport': 'Call support: +1 888 123 4567',
+      'chat.moreOptions': 'More options coming soon',
+      'emoji.common': 'Common Emojis'
+    },
+    zh: {
+      'chat.headerTitle': '客服团队',
+      'chat.online': '在线',
+      'chat.offline': '离线',
+      'chat.connecting': '连接中...',
+      'chat.loading': '加载消息中...',
+      'chat.empty': '暂无消息',
+      'chat.typing': '客服正在输入',
+      'chat.inputPlaceholder': '输入消息...',
+      'chat.attach': '添加附件',
+      'chat.emoji': '表情',
+      'chat.send': '发送消息',
+      'chat.sendFailed': '发送失败，请重试',
+      'chat.disconnected': '未连接到服务器',
+      'chat.uploading': '上传中...',
+      'chat.uploadFailed': '上传失败',
+      'chat.fileTooLarge': '文件大小不能超过 10MB',
+      'chat.imageTooLarge': '图片太大，不能超过 10MB',
+      'chat.callSupport': '客服电话: +1 888 123 4567',
+      'chat.moreOptions': '更多选项即将推出',
+      'emoji.common': '常用表情'
+    }
+  };
+
+  let currentLang = localStorage.getItem('language') || 'en';
+
+  function chatT(key) {
+    return CHAT_I18N[currentLang]?.[key] || CHAT_I18N.en[key] || key;
+  }
+
+  function updateChatI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (el.tagName === 'TEXTAREA' && el.hasAttribute('data-i18n-placeholder')) {
+        el.placeholder = chatT(key);
+      } else if (el.hasAttribute('data-i18n-title')) {
+        el.title = chatT(key);
+      } else {
+        el.textContent = chatT(key);
+      }
+    });
+    
+    const statusSpan = document.querySelector('#connectionStatus span:last-child');
+    if (statusSpan && window.chatInstance) {
+      statusSpan.textContent = window.chatInstance.isConnected ? chatT('chat.online') : chatT('chat.offline');
+    }
+  }
+
+  window.addEventListener('languagechange', (e) => {
+    if (e.detail?.language) {
+      currentLang = e.detail.language;
+      updateChatI18n();
+    }
+  });
+
+  // Global alert functions
+  window.showCallAlert = function() {
+    alert(chatT('chat.callSupport'));
+  };
+  
+  window.showOptionsAlert = function() {
+    alert(chatT('chat.moreOptions'));
+  };
 
   class SupportChat {
     constructor() {
@@ -532,7 +630,8 @@
     }
 
     async init() {
-      console.log('[Chat] 初始化...');
+      console.log('[Chat] Initializing...');
+      updateChatI18n();
       this.showLoading();
 
       try {
@@ -551,70 +650,69 @@
           this.connectWebSocket();
           this.bindEvents();
           this.initEmojiPicker();
-          console.log('[Chat] 初始化成功');
+          console.log('[Chat] Initialization successful');
         } else {
-          this.showError('加载失败');
+          this.showError('Failed to load chat');
         }
       } catch (error) {
-        console.error('[Chat] 初始化错误:', error);
-        this.showError('网络错误');
+        console.error('[Chat] Init error:', error);
+        this.showError('Network error');
       }
     }
 
-connectWebSocket() {
-  // 检查 Socket.IO 是否已加载
-  if (typeof io === 'undefined') {
-    console.log('[Chat] Socket.IO not loaded, retrying in 500ms...');
-    setTimeout(() => this.connectWebSocket(), 500);
-    return;
-  }
-  
-  // 检查 userId 是否已设置
-  if (!this.userId) {
-    console.log('[Chat] Waiting for userId...');
-    setTimeout(() => this.connectWebSocket(), 500);
-    return;
-  }
-  
-  console.log('[Chat] 连接 WebSocket...');
-  this.socket = io();
+    connectWebSocket() {
+      if (typeof io === 'undefined') {
+        console.log('[Chat] Socket.IO not loaded, retrying...');
+        setTimeout(() => this.connectWebSocket(), 500);
+        return;
+      }
+      
+      if (!this.userId) {
+        setTimeout(() => this.connectWebSocket(), 500);
+        return;
+      }
+      
+      console.log('[Chat] Connecting WebSocket...');
+      this.socket = io();
 
-  this.socket.on('connect', () => {
-    console.log('[Socket] 已连接');
-    this.isConnected = true;
-    this.updateStatus(true);
-this.socket.emit('join', { 
-  roomId: this.convId || `user_${this.userId}`,
-  userId: this.userId,
-  role: 'user'
-});
-  });
+      this.socket.on('connect', () => {
+        console.log('[Socket] Connected');
+        this.isConnected = true;
+        this.updateStatus(true);
+        this.socket.emit('join', { 
+          roomId: this.convId || `user_${this.userId}`,
+          userId: this.userId,
+          role: 'user'
+        });
+      });
 
-  this.socket.on('disconnect', () => {
-    console.log('[Socket] 断开');
-    this.isConnected = false;
-    this.updateStatus(false);
-  });
+      this.socket.on('disconnect', () => {
+        console.log('[Socket] Disconnected');
+        this.isConnected = false;
+        this.updateStatus(false);
+      });
 
-  this.socket.on('new-message', (message) => {
-    console.log('[Socket] 收到消息:', message);
-    if (message.sender_type === 'user') return;
-    this.addMessage(message);
-  });
-}
+      this.socket.on('new-message', (message) => {
+        console.log('[Socket] New message:', message);
+        if (message.sender_type === 'user') return;
+        this.addMessage(message);
+      });
+    }
+
     updateStatus(online) {
-      const el = document.getElementById('connectionStatus');
-      if (el) {
-        el.innerHTML = online
-          ? '<span class="status-dot"></span><span>Online</span>'
-          : '<span class="status-dot"></span><span>Offline</span>';
+      const statusContainer = document.getElementById('connectionStatus');
+      if (statusContainer) {
+        const dot = statusContainer.querySelector('.status-dot');
+        const textSpan = statusContainer.querySelector('span:last-child');
+        if (dot) dot.style.background = online ? '#00A86B' : 'var(--text-muted)';
+        if (textSpan) textSpan.textContent = online ? chatT('chat.online') : chatT('chat.offline');
       }
     }
 
     renderMessages(messages) {
       if (!this.messagesContainer) return;
       if (!messages || messages.length === 0) {
-        this.messagesContainer.innerHTML = '<div class="empty-message"><span class="empty-icon">💬</span><p>No messages yet</p></div>';
+        this.messagesContainer.innerHTML = `<div class="empty-message"><span class="empty-icon">💬</span><p>${chatT('chat.empty')}</p></div>`;
         return;
       }
       this.messagesContainer.innerHTML = messages.map(m => this.formatMessage(m)).join('');
@@ -627,7 +725,6 @@ this.socket.emit('join', {
       const senderClass = isUser ? 'user-message' : 'admin-message';
       const msgId = msg.id || msg.auth_id || ('msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6));
       
-      // 处理附件显示
       let attachmentsHtml = '';
       if (msg.attachments) {
         try {
@@ -656,7 +753,7 @@ this.socket.emit('join', {
             });
           }
         } catch (e) {
-          console.error('[Chat] 解析附件失败:', e);
+          console.error('[Chat] Parse attachment failed:', e);
         }
       }
       
@@ -678,7 +775,7 @@ this.socket.emit('join', {
 
     async sendMessage() {
       if (this.isSending) {
-        console.log('[Chat] 正在发送中，请稍后');
+        console.log('[Chat] Already sending, please wait');
         return;
       }
 
@@ -688,7 +785,6 @@ this.socket.emit('join', {
       this.isSending = true;
       this.sendBtn.disabled = true;
 
-      // 如果有待发送的文件
       if (this.pendingFile) {
         await this.uploadAndSendFile(this.pendingFile);
         this.pendingFile = null;
@@ -697,7 +793,6 @@ this.socket.emit('join', {
         return;
       }
 
-      // 发送文本消息
       const messageData = {
         convId: this.convId,
         content: content,
@@ -706,7 +801,7 @@ this.socket.emit('join', {
         created_at: new Date().toISOString()
       };
 
-      console.log('[Chat] 发送:', content);
+      console.log('[Chat] Sending:', content);
       this.messageInput.value = '';
       this.autoResizeTextarea();
 
@@ -720,30 +815,30 @@ this.socket.emit('join', {
       this.addMessage(tempMessage);
 
       if (this.isConnected && this.socket) {
-this.socket.emit('send-message', {
-  convId: this.convId,
-  content: content
-}, (response) => {
+        this.socket.emit('send-message', {
+          convId: this.convId,
+          content: content
+        }, (response) => {
           this.isSending = false;
           this.sendBtn.disabled = false;
 
           if (response && response.success) {
-            console.log('[Chat] 发送成功');
+            console.log('[Chat] Send success');
             const tempMsg = document.querySelector(`.message[data-message-id="${tempId}"]`);
             if (tempMsg) tempMsg.remove();
             if (response.data) {
               this.addMessage(response.data);
             }
           } else {
-            console.error('[Chat] 发送失败');
+            console.error('[Chat] Send failed');
             const tempMsg = document.querySelector(`.message[data-message-id="${tempId}"]`);
             if (tempMsg) {
-              tempMsg.querySelector('.message-content').innerHTML = '❌ 发送失败';
+              tempMsg.querySelector('.message-content').innerHTML = '❌ Send failed';
               tempMsg.style.opacity = '0.6';
               setTimeout(() => {
                 if (tempMsg) tempMsg.remove();
                 this.messageInput.value = content;
-                this.showError('发送失败，请重试');
+                this.showError(chatT('chat.sendFailed'));
               }, 2000);
             }
           }
@@ -751,7 +846,7 @@ this.socket.emit('send-message', {
       } else {
         this.isSending = false;
         this.sendBtn.disabled = false;
-        this.showError('未连接到服务器');
+        this.showError(chatT('chat.disconnected'));
         setTimeout(() => {
           const tempMsg = document.querySelector(`.message[data-message-id="${tempId}"]`);
           if (tempMsg) tempMsg.remove();
@@ -763,9 +858,9 @@ this.socket.emit('send-message', {
     async uploadAndSendFile(file) {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('convId', this.convId);  // 添加这一行
+      formData.append('convId', this.convId);
       
-      this.showTemporarySuccess('上传中...');
+      this.showTemporarySuccess(chatT('chat.uploading'));
       
       try {
         const response = await fetch('/api/v1/user/support/upload', {
@@ -792,7 +887,6 @@ this.socket.emit('send-message', {
             }]
           };
           
-          // 显示临时消息
           const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
           const tempMessage = {
             id: tempId,
@@ -806,22 +900,20 @@ this.socket.emit('send-message', {
           if (this.isConnected && this.socket) {
             this.socket.emit('send-message', messageData, (response) => {
               if (response && response.success) {
-                console.log('[Chat] 文件发送成功');
+                console.log('[Chat] File sent successfully');
                 const tempMsg = document.querySelector(`.message[data-message-id="${tempId}"]`);
                 if (tempMsg) tempMsg.remove();
                 if (response.data) {
                   this.addMessage(response.data);
                 }
               } else {
-                console.error('[Chat] 文件发送失败');
+                console.error('[Chat] File send failed');
                 const tempMsg = document.querySelector(`.message[data-message-id="${tempId}"]`);
                 if (tempMsg) tempMsg.remove();
-                this.showError('文件发送失败');
+                this.showError(chatT('chat.uploadFailed'));
               }
             });
           } else {
-           
-            // HTTP 降级
             const httpResponse = await fetch('/api/v1/user/support/message', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -838,15 +930,15 @@ this.socket.emit('send-message', {
               if (tempMsg) tempMsg.remove();
               this.addMessage(httpResult.data);
             } else {
-              this.showError('文件发送失败');
+              this.showError(chatT('chat.uploadFailed'));
             }
           }
         } else {
-          this.showError(result.error || '上传失败');
+          this.showError(result.error || chatT('chat.uploadFailed'));
         }
       } catch (error) {
-        console.error('[Upload] 错误:', error);
-        this.showError('上传失败，请重试');
+        console.error('[Upload] Error:', error);
+        this.showError(chatT('chat.uploadFailed'));
       }
     }
 
@@ -856,7 +948,7 @@ this.socket.emit('send-message', {
       
       const maxSize = 10 * 1024 * 1024;
       if (file.size > maxSize) {
-        this.showError('文件大小不能超过 10MB');
+        this.showError(chatT('chat.fileTooLarge'));
         event.target.value = '';
         return;
       }
@@ -875,7 +967,7 @@ this.socket.emit('send-message', {
             this.pendingFile = file;
             this.sendMessage();
           } else {
-            this.showError('图片太大，不能超过 10MB');
+            this.showError(chatT('chat.imageTooLarge'));
           }
           break;
         }
@@ -895,7 +987,7 @@ this.socket.emit('send-message', {
 
     showLoading() {
       if (this.messagesContainer) {
-        this.messagesContainer.innerHTML = '<div class="empty-message"><div class="typing-dots" style="justify-content: center;"><span></span><span></span><span></span></div><p>Connecting...</p></div>';
+        this.messagesContainer.innerHTML = `<div class="empty-message"><div class="typing-dots" style="justify-content: center;"><span></span><span></span><span></span></div><p>${chatT('chat.connecting')}</p></div>`;
       }
     }
 
@@ -930,7 +1022,7 @@ this.socket.emit('send-message', {
 
       this.emojiPicker.innerHTML = `
         <div class="emoji-category">
-          <div class="emoji-category-title">Common Emojis</div>
+          <div class="emoji-category-title">${chatT('emoji.common')}</div>
           <div class="emoji-list">
             ${emojis.map(e => `<span class="emoji-item" data-emoji="${e}">${e}</span>`).join('')}
           </div>
@@ -970,7 +1062,7 @@ this.socket.emit('send-message', {
         }
       });
 
-      console.log('[Emoji] 初始化完成');
+      console.log('[Emoji] Initialized');
     }
 
     bindEvents() {
@@ -995,7 +1087,7 @@ this.socket.emit('send-message', {
   }
 
   if (document.getElementById('messagesContainer')) {
-    window.chat = new SupportChat();
+    window.chatInstance = new SupportChat();
   }
 })();
 </script>
