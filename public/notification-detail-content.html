@@ -1,17 +1,24 @@
+<!-- 
+  notification-detail-content.html - Notification Detail Page
+  Description: Display single notification details with delete functionality
+  i18n Ready: All text wrapped with data-i18n attributes for future multi-language support
+  Version: 2.0.0 - Full English default, i18n ready
+-->
+
 <div class="notification-detail-container">
   <div class="detail-card">
     <div class="detail-header">
       <a href="/shell.html?page=notifications" class="back-link">
-        <i class="fas fa-arrow-left"></i> Back to List
+        <i class="fas fa-arrow-left"></i> <span data-i18n="notification.backToList">Back to List</span>
       </a>
       <span class="detail-type" id="detailType"></span>
     </div>
-    <h1 class="detail-title" id="detailTitle">Loading...</h1>
+    <h1 class="detail-title" id="detailTitle" data-i18n="notification.loading">Loading...</h1>
     <div class="detail-time" id="detailTime"></div>
     <div class="detail-content" id="detailContent"></div>
     <div class="detail-footer">
       <button class="delete-btn" id="deleteBtn">
-        <i class="fas fa-trash"></i> Delete Notification
+        <i class="fas fa-trash"></i> <span data-i18n="notification.delete">Delete Notification</span>
       </button>
     </div>
   </div>
@@ -60,6 +67,8 @@
   .detail-type.success { background: rgba(16,185,129,0.2); color: #10B981; }
   .detail-type.warning { background: rgba(245,158,11,0.2); color: #F59E0B; }
   .detail-type.danger { background: rgba(239,68,68,0.2); color: #EF4444; }
+  .detail-type.settlement_win { background: rgba(16,185,129,0.2); color: #10B981; }
+  .detail-type.settlement_loss { background: rgba(239,68,68,0.2); color: #EF4444; }
   .detail-title {
     font-size: 1.5rem;
     font-weight: 700;
@@ -112,11 +121,100 @@
 
 <script>
 (function() {
+  'use strict';
+
+  // ==================== i18n Configuration ====================
+  const I18N = {
+    en: {
+      'notification.backToList': 'Back to List',
+      'notification.delete': 'Delete Notification',
+      'notification.loading': 'Loading...',
+      'notification.notFound': 'Notification Not Found',
+      'notification.deleted': 'Notification not found or has been deleted',
+      'notification.loadFailed': 'Load Failed',
+      'notification.deleteConfirm': 'Are you sure you want to delete this notification?',
+      'notification.deleteSuccess': 'Deleted successfully',
+      'notification.deleteFailed': 'Delete failed',
+      'type.info': 'Info',
+      'type.success': 'Success',
+      'type.warning': 'Warning',
+      'type.danger': 'Urgent',
+      'type.settlement_win': 'Win',
+      'type.settlement_loss': 'Loss'
+    },
+    zh: {
+      'notification.backToList': '返回列表',
+      'notification.delete': '删除通知',
+      'notification.loading': '加载中...',
+      'notification.notFound': '通知不存在',
+      'notification.deleted': '通知不存在或已被删除',
+      'notification.loadFailed': '加载失败',
+      'notification.deleteConfirm': '确定要删除这条通知吗？',
+      'notification.deleteSuccess': '删除成功',
+      'notification.deleteFailed': '删除失败',
+      'type.info': '信息',
+      'type.success': '成功',
+      'type.warning': '警告',
+      'type.danger': '紧急',
+      'type.settlement_win': '胜利',
+      'type.settlement_loss': '亏损'
+    }
+  };
+
+  let currentLanguage = localStorage.getItem('language') || 'en';
+
+  function t(key) {
+    return I18N[currentLanguage][key] || I18N.en[key] || key;
+  }
+
+  function updateI18nElements() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const translation = t(key);
+      if (translation && translation !== key) {
+        if (el.tagName === 'INPUT' || el.tagName === 'BUTTON') {
+          // For buttons, keep children but update text nodes if needed
+          if (el.childNodes.length === 1 && el.childNodes[0].nodeType === Node.TEXT_NODE) {
+            el.childNodes[0].textContent = translation;
+          } else if (el.innerHTML.trim() === I18N.en[key]) {
+            // Only replace if it matches the default English text
+            const childSpan = el.querySelector('span:not([data-i18n])');
+            if (childSpan && childSpan.textContent === I18N.en[key]) {
+              childSpan.textContent = translation;
+            } else if (el.textContent.trim() === I18N.en[key]) {
+              el.textContent = translation;
+            }
+          }
+        } else {
+          if (el.textContent === I18N.en[key] || el.textContent === I18N.en[key] + '') {
+            el.textContent = translation;
+          }
+        }
+      }
+    });
+  }
+
+  // Listen for language changes
+  window.addEventListener('languagechange', (e) => {
+    if (e.detail?.language) {
+      currentLanguage = e.detail.language;
+      updateI18nElements();
+      // Re-render notification content to update text
+      loadNotification();
+    }
+  });
+
   const urlParams = new URLSearchParams(window.location.search);
   const notificationId = urlParams.get('id');
   
+  const detailTitle = document.getElementById('detailTitle');
+  const detailType = document.getElementById('detailType');
+  const detailTime = document.getElementById('detailTime');
+  const detailContent = document.getElementById('detailContent');
+  const deleteBtn = document.getElementById('deleteBtn');
+
   if (!notificationId) {
-    document.getElementById('detailTitle').textContent = 'Notification Not Found';
+    if (detailTitle) detailTitle.textContent = t('notification.notFound');
     return;
   }
   
@@ -129,48 +227,59 @@
       
       if (data.success && data.data) {
         const n = data.data;
-        document.getElementById('detailTitle').textContent = n.title || 'Notification';
-        document.getElementById('detailContent').textContent = n.content || '';
-        document.getElementById('detailTime').textContent = new Date(n.created_at).toLocaleString();
         
+        // Title and content come from API - keep as is (already in English)
+        if (detailTitle) detailTitle.textContent = n.title || 'Notification';
+        if (detailContent) detailContent.textContent = n.content || '';
+        if (detailTime) detailTime.textContent = new Date(n.created_at).toLocaleString();
+        
+        // Type mapping with i18n support
         const typeMap = {
-          'info': { class: 'info', text: 'Info' },
-          'success': { class: 'success', text: 'Success' },
-          'warning': { class: 'warning', text: 'Warning' },
-          'danger': { class: 'danger', text: 'Urgent' }
+          'info': { class: 'info', key: 'type.info' },
+          'success': { class: 'success', key: 'type.success' },
+          'warning': { class: 'warning', key: 'type.warning' },
+          'danger': { class: 'danger', key: 'type.danger' },
+          'settlement_win': { class: 'settlement_win', key: 'type.settlement_win' },
+          'settlement_loss': { class: 'settlement_loss', key: 'type.settlement_loss' }
         };
+        
         const typeInfo = typeMap[n.type] || typeMap.info;
-        document.getElementById('detailType').textContent = typeInfo.text;
-        document.getElementById('detailType').className = `detail-type ${typeInfo.class}`;
+        if (detailType) {
+          detailType.textContent = t(typeInfo.key);
+          detailType.className = `detail-type ${typeInfo.class}`;
+        }
       } else {
-        document.getElementById('detailTitle').textContent = 'Notification not found or has been deleted';
+        if (detailTitle) detailTitle.textContent = t('notification.deleted');
       }
     } catch (err) {
       console.error('Failed to load notification:', err);
-      document.getElementById('detailTitle').textContent = 'Load Failed';
+      if (detailTitle) detailTitle.textContent = t('notification.loadFailed');
     }
   }
   
-  document.getElementById('deleteBtn')?.addEventListener('click', async () => {
-    if (!confirm('Are you sure you want to delete this notification?')) return;
-    try {
-      const response = await fetch(`/api/v1/user/notifications/${notificationId}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-      const data = await response.json();
-      if (data.success) {
-        alert('Deleted successfully');
-        window.location.href = '/shell.html?page=notifications';
-      } else {
-        alert('Delete failed');
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', async () => {
+      if (!confirm(t('notification.deleteConfirm'))) return;
+      try {
+        const response = await fetch(`/api/v1/user/notifications/${notificationId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (data.success) {
+          alert(t('notification.deleteSuccess'));
+          window.location.href = '/shell.html?page=notifications';
+        } else {
+          alert(t('notification.deleteFailed'));
+        }
+      } catch (err) {
+        console.error('Delete failed:', err);
+        alert(t('notification.deleteFailed'));
       }
-    } catch (err) {
-      console.error('Delete failed:', err);
-      alert('Delete failed');
-    }
-  });
+    });
+  }
   
+  // Initial load
   loadNotification();
 })();
 </script>
