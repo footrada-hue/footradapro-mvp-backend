@@ -1,8 +1,7 @@
 /**
  * FOOTRADAPRO - Match Market Controller
- * @version 3.6.0
+ * @version 3.7.0 - 添加 SPA 页面切换重新初始化支持
  * 統一排序邏輯：今天比賽優先 → 聯賽優先級 → 時間排序
- * 队徽显示：直接使用数据库路径
  */
 
 (function() {
@@ -118,20 +117,15 @@
         setTimeout(() => toast.remove(), 3000);
     }
 
-    /**
-     * 获取球队队徽 URL（直接使用数据库路径）
-     */
-function getTeamLogoUrl(logoUrl) {
-    // 如果有队徽数据（URL 或 Base64），直接返回
-    if (logoUrl && logoUrl !== '/uploads/teams/default.png' && logoUrl !== 'NULL') {
-        // 如果是 Base64 格式（以 data:image 开头），不添加时间戳
-        if (logoUrl.startsWith('data:image')) {
-            return logoUrl;
+    function getTeamLogoUrl(logoUrl) {
+        if (logoUrl && logoUrl !== '/uploads/teams/default.png' && logoUrl !== 'NULL') {
+            if (logoUrl.startsWith('data:image')) {
+                return logoUrl;
+            }
+            return logoUrl + '?t=' + Date.now();
         }
-        return logoUrl + '?t=' + Date.now();
+        return '/uploads/teams/default.png';
     }
-    return '/uploads/teams/default.png';
-}
 
     // ==================== 筛选逻辑 ====================
     function filterByTime(match) {
@@ -152,7 +146,6 @@ function getTeamLogoUrl(logoUrl) {
         return true;
     }
 
-    // ==================== 統一排序函數 ====================
     function sortMatches(matches) {
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -177,7 +170,6 @@ function getTeamLogoUrl(logoUrl) {
         });
     }
 
-    // ==================== 智能推薦比賽邏輯 ====================
     function getFeaturedMatches(matches) {
         if (!matches || matches.length === 0) return [];
         
@@ -186,7 +178,7 @@ function getTeamLogoUrl(logoUrl) {
         const sortedMatches = sortMatches(upcomingMatches);
         const featured = sortedMatches.slice(0, 4);
         
-        console.log(`推薦統計: 總共 ${upcomingMatches.length} 場未開始比賽，推薦前 ${featured.length} 場`);
+        console.log(`推荐统计: 总共 ${upcomingMatches.length} 场未开始比赛，推荐前 ${featured.length} 场`);
         return featured;
     }
 
@@ -213,14 +205,12 @@ function getTeamLogoUrl(logoUrl) {
         render();
     }
 
-    // ==================== 渲染卡片 ====================
     function renderMatchCard(match) {
         const time = formatMatchTime(match.match_time);
         const relativeTime = getRelativeTime(match.match_time);
         const leagueName = match.league || 'Unknown';
         const confidence = LEAGUE_PRIORITY[match.league] <= 10 ? 92 : 75;
         
-        // 直接使用数据库队徽
         const homeLogo = getTeamLogoUrl(match.home_logo);
         const awayLogo = getTeamLogoUrl(match.away_logo);
         
@@ -402,7 +392,6 @@ function getTeamLogoUrl(logoUrl) {
         }
     }
 
-    // ==================== 事件绑定 ====================
     function bindEvents() {
         document.querySelectorAll('[data-status]').forEach(btn => {
             btn.onclick = () => {
@@ -459,6 +448,29 @@ function getTeamLogoUrl(logoUrl) {
         }
     }
 
+    // ==================== 重新初始化函数（SPA 页面切换时调用） ====================
+    async function reinitMatchMarket() {
+        console.log('🔄 重新初始化比赛市场...');
+        
+        // 重置状态
+        AppState.matches = [];
+        AppState.filteredMatches = [];
+        AppState.featuredMatches = [];
+        AppState.selectedLeague = 'all';
+        AppState.timeFilter = 'all';
+        AppState.currentDisplayCount = 24;
+        AppState.hasMore = true;
+        AppState.leagues.clear();
+        
+        // 重新绑定事件
+        bindEvents();
+        
+        // 重新加载数据
+        await loadMatches();
+        
+        console.log('✅ 比赛市场重新初始化完成');
+    }
+
     // ==================== 初始化 ====================
     async function init() {
         await ThemeManager.init();
@@ -473,6 +485,16 @@ function getTeamLogoUrl(logoUrl) {
         console.log('Match Market Controller initialized');
     }
     
+    // 监听 SPA 页面切换事件（由 router.js 触发）
+    window.addEventListener('page-loaded', (e) => {
+        if (e.detail && e.detail.page === 'markets') {
+            console.log('📄 检测到 markets 页面加载，重新初始化');
+            setTimeout(() => {
+                reinitMatchMarket();
+            }, 100);
+        }
+    });
+    
     document.addEventListener('DOMContentLoaded', init);
     
     // ==================== 暴露全局变量 ====================
@@ -484,5 +506,6 @@ function getTeamLogoUrl(logoUrl) {
     window.updateLeagueSelect = updateLeagueSelect;
     window.render = render;
     window.getTeamLogoUrl = getTeamLogoUrl;
+    window.reinitMatchMarket = reinitMatchMarket;
     
 })();
