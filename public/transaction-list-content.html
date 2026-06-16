@@ -1,60 +1,61 @@
 <!-- 
-  transaction-list-content.html - 交易记录内容片段
-  用于 SPA 架构，显示用户的投注记录和盈亏
-  通过 shell.html 的 #app-content 区域加载
+  transaction-list-content.html - Transaction Records Content Fragment
+  Description: Display user authorization records and profit/loss
+  i18n Ready: All text wrapped with data-i18n attributes for future multi-language support
+  Version: 2.0.0 - Full English default, i18n ready
 -->
 
 <div class="transaction-list-container">
 
-  <!-- 模式指示器 -->
+  <!-- Mode Indicator -->
   <div class="mode-indicator">
     <i class="fa-solid fa-info-circle"></i>
-    <span>Current Mode: </span>
+    <span data-i18n="records.mode">Current Mode: </span>
     <span id="currentModeText" class="sandbox-mode-text">Sandbox</span>
-    <span id="testModeBadge" class="test-badge-mode" style="display: none;"><i class="fa-solid fa-flask"></i> Test Mode</span>
+    <span id="testModeBadge" class="test-badge-mode" style="display: none;"><i class="fa-solid fa-flask"></i> <span data-i18n="records.testMode">Test Mode</span></span>
   </div>
 
-  <!-- 筛选标签 -->
+  <!-- Filter Tabs -->
   <div class="filter-tabs">
-    <button class="filter-tab active" data-status="all">All</button>
-    <button class="filter-tab" data-status="pending">Active</button>
-    <button class="filter-tab" data-status="settled">Settled</button>
+    <button class="filter-tab active" data-status="all" data-i18n="records.filterAll">All</button>
+    <button class="filter-tab" data-status="pending" data-i18n="records.filterActive">Active</button>
+    <button class="filter-tab" data-status="settled" data-i18n="records.filterSettled">Settled</button>
   </div>
 
-  <!-- 统计卡片 -->
+  <!-- Stats Cards -->
   <div class="stats-row">
     <div class="stat-card">
       <div class="stat-number" id="totalCount">0</div>
-      <div class="stat-label">Total</div>
+      <div class="stat-label" data-i18n="records.total">Total</div>
     </div>
     <div class="stat-card">
       <div class="stat-number" id="winCount">0</div>
-      <div class="stat-label">Won</div>
+      <div class="stat-label" data-i18n="records.won">Won</div>
     </div>
     <div class="stat-card">
       <div class="stat-number" id="lossCount">0</div>
-      <div class="stat-label">Loss</div>
+      <div class="stat-label" data-i18n="records.loss">Loss</div>
     </div>
   </div>
 
-  <!-- 加载状态 -->
+  <!-- Loading State -->
   <div id="loadingState" class="loading-state">
     <div class="loading-spinner"></div>
-    <p>Loading transactions...</p>
+    <p data-i18n="records.loading">Loading transactions...</p>
   </div>
 
-  <!-- 空状态 -->
+  <!-- Empty State -->
   <div id="emptyState" class="empty-state" style="display: none;">
     <i class="fa-solid fa-receipt"></i>
-    <p>No transactions found</p>
+    <p data-i18n="records.empty">No transactions found</p>
   </div>
 
-  <!-- 交易记录列表 -->
+  <!-- Transaction List -->
   <div id="transactionList"></div>
 
-  <!-- 加载更多 -->
+  <!-- Load More -->
   <div id="loadMore" class="load-more" style="display: none;">
-    <button class="load-more-btn" id="loadMoreBtn">Load More</button>
+    <button class="load-more-btn" id="loadMoreBtn" data-i18n="records.loadMore">Load More</button>
   </div>
 </div>
 
@@ -397,6 +398,75 @@
 (function() {
   'use strict';
 
+  // ==================== i18n Configuration ====================
+  const I18N = {
+    en: {
+      'records.mode': 'Current Mode: ',
+      'records.testMode': 'Test Mode',
+      'records.filterAll': 'All',
+      'records.filterActive': 'Active',
+      'records.filterSettled': 'Settled',
+      'records.total': 'Total',
+      'records.won': 'Won',
+      'records.loss': 'Loss',
+      'records.loading': 'Loading transactions...',
+      'records.empty': 'No transactions found',
+      'records.loadMore': 'Load More',
+      'status.pending': 'Pending',
+      'status.won': 'Won',
+      'status.lost': 'Lost'
+    },
+    zh: {
+      'records.mode': '当前模式: ',
+      'records.testMode': '测试模式',
+      'records.filterAll': '全部',
+      'records.filterActive': '进行中',
+      'records.filterSettled': '已结算',
+      'records.total': '总计',
+      'records.won': '获胜',
+      'records.loss': '亏损',
+      'records.loading': '加载交易记录中...',
+      'records.empty': '暂无交易记录',
+      'records.loadMore': '加载更多',
+      'status.pending': '待处理',
+      'status.won': '获胜',
+      'status.lost': '亏损'
+    }
+  };
+
+  let currentLanguage = localStorage.getItem('language') || 'en';
+
+  function t(key) {
+    return I18N[currentLanguage]?.[key] || I18N.en[key] || key;
+  }
+
+  function updateI18nElements() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const translation = t(key);
+      if (translation && translation !== key) {
+        if (el.tagName === 'BUTTON' && el.querySelector('span')) {
+          // Handle nested spans
+          const span = el.querySelector('span');
+          if (span) span.textContent = translation;
+          else el.textContent = translation;
+        } else {
+          el.textContent = translation;
+        }
+      }
+    });
+  }
+
+  // Listen for language changes
+  window.addEventListener('languagechange', (e) => {
+    if (e.detail?.language) {
+      currentLanguage = e.detail.language;
+      updateI18nElements();
+      // Re-render to update status texts
+      if (typeof applyFilters === 'function') applyFilters();
+    }
+  });
+
   let allTransactions = [];
   let filteredTransactions = [];
   let currentFilter = 'all';
@@ -462,19 +532,21 @@
     const isLost = t.status === 'lost';
     
     let profitClass = 'pending';
-    let profitText = 'Pending';
+    let profitText = t('status.pending');
     
-const profitNum = Number(t.profit) || 0;
-if (isWon) {
-  profitClass = 'positive';
-  profitText = `+${formatAmount(profitNum)}`;
-} else if (isLost) {
-  profitClass = 'negative';
-  profitText = formatAmount(profitNum);
-}
+    const profitNum = Number(t.profit) || 0;
+    if (isWon) {
+      profitClass = 'positive';
+      profitText = `+${formatAmount(profitNum)}`;
+    } else if (isLost) {
+      profitClass = 'negative';
+      profitText = formatAmount(profitNum);
+    }
     
     const statusClass = isPending ? 'pending' : (isWon ? 'won' : 'lost');
-    const statusText = isPending ? 'Pending' : (isWon ? 'Won' : 'Lost');
+    let statusText = t('status.pending');
+    if (isWon) statusText = t('status.won');
+    if (isLost) statusText = t('status.lost');
 
     const homeLogoUrl = getTeamLogoUrl(t.home_logo);
     const awayLogoUrl = getTeamLogoUrl(t.away_logo);
@@ -556,11 +628,11 @@ if (isWon) {
     
     let html = '';
     if (pending.length > 0) {
-      html += '<div class="section-title"><i class="fas fa-hourglass-half" style="margin-right: 8px; color: #f59e0b;"></i>Active</div>';
+      html += '<div class="section-title"><i class="fas fa-hourglass-half" style="margin-right: 8px; color: #f59e0b;"></i>' + t('records.filterActive') + '</div>';
       pending.forEach(t => { html += renderTransactionCard(t); });
     }
     if (settled.length > 0) {
-      html += '<div class="section-title"><i class="fas fa-check-circle" style="margin-right: 8px; color: #10b981;"></i>Settled</div>';
+      html += '<div class="section-title"><i class="fas fa-check-circle" style="margin-right: 8px; color: #10b981;"></i>' + t('records.filterSettled') + '</div>';
       settled.forEach(t => { html += renderTransactionCard(t); });
     }
     
@@ -614,7 +686,7 @@ if (isWon) {
       if (DOM.emptyState) {
         DOM.emptyState.style.display = 'flex';
         const p = DOM.emptyState.querySelector('p');
-        if (p) p.textContent = 'Failed to load transactions';
+        if (p) p.textContent = t('records.empty');
       }
     } finally {
       isLoading = false;
@@ -654,7 +726,7 @@ if (isWon) {
   };
 
   async function init() {
-    console.log('📋 交易记录页面初始化...');
+    updateI18nElements();
     updateModeUI();
     bindEvents();
     await loadTransactions();
