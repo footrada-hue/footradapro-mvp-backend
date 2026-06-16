@@ -1,7 +1,7 @@
 /**
  * DeepSeek API Service
  * @description 获取 2026 FIFA World Cup 真实官方赛程（启用联网搜索）
- * @version 16.1.0 - 优化 Prompt 让 DeepSeek 主动搜索完整赛程
+ * @version 16.2.0 - 优化 Prompt 指定具体网站获取准确赛程
  * @since 2026-06-16
  */
 
@@ -57,50 +57,58 @@ function t(key) {
 }
 
 // ============================================================
-// Prompt 构建 - 让 DeepSeek 主动搜索
+// Prompt 构建 - 指定具体网站获取准确赛程
 // ============================================================
 
 function buildWorldCupPrompt() {
     return `【Important Task - Get 2026 FIFA World Cup Complete Schedule】
 
-⚠️ **You MUST use web search to find the COMPLETE schedule!**
+⚠️ **You MUST use web search with these specific sources ONLY**:
 
-Search the following websites:
-- ESPN: https://www.espn.com/soccer/fixtures/_/league/fifa.world
-- FIFA Official: https://www.fifa.com/fifaplus/en/tournaments/mens/worldcup/canadamexicousa2026/schedule
-- Google: search "2026 FIFA World Cup schedule"
+1. **ESPN Official Schedule**:
+   https://www.espn.com/soccer/fixtures/_/league/fifa.world
+
+2. **FIFA Official Website**:
+   https://www.fifa.com/fifaplus/en/tournaments/mens/worldcup/canadamexicousa2026/schedule
+
+3. **Google Search** (if the above are not accessible):
+   Search exactly: "2026 FIFA World Cup schedule June 16"
 
 📅 **Tournament dates**: June 11, 2026 - July 19, 2026
-📍 **Host countries**: USA, Canada, Mexico
-🏆 **Teams**: 48 teams in 12 groups (Groups A-L)
 
-【What you need to return】:
-Return the COMPLETE schedule including ALL matches:
-- All group stage matches (June 11 - June 26)
-- Round of 32 (June 29 - June 30)
-- Round of 16 (July 2 - July 3)
-- Quarter-finals (July 6 - July 7)
-- Semi-finals (July 10 - July 11)
-- Third-place match (July 14)
-- Final (July 15)
+🔴 **KNOWN MATCHES ON JUNE 16, 2026** (from ESPN):
+According to ESPN, the matches on June 16, 2026 are:
+- France vs Senegal (Group I) - 12:00 ET
+- Iraq vs Norway (Group I) - 15:00 ET
+- Argentina vs Algeria (Group J) - 18:00 ET
+- Austria vs Jordan (Group J) - 21:00 ET
+
+⚠️ **CRITICAL - VERIFY THESE MATCHES**:
+Please verify that the above 4 matches are correct by checking the ESPN or FIFA website.
+If they are correct, return them. If they are different, return the correct ones.
 
 【Return Format - JSON only】:
 {
   "matches": [
-    {"league": "FIFA World Cup 2026", "home_team": "Team A", "away_team": "Team B", "match_time_utc": "2026-06-11 16:00:00"},
-    {"league": "FIFA World Cup 2026", "home_team": "Team C", "away_team": "Team D", "match_time_utc": "2026-06-11 20:00:00"}
+    {"league": "FIFA World Cup 2026", "home_team": "France", "away_team": "Senegal", "match_time_utc": "2026-06-16 16:00:00"},
+    {"league": "FIFA World Cup 2026", "home_team": "Iraq", "away_team": "Norway", "match_time_utc": "2026-06-16 19:00:00"},
+    {"league": "FIFA World Cup 2026", "home_team": "Argentina", "away_team": "Algeria", "match_time_utc": "2026-06-16 22:00:00"},
+    {"league": "FIFA World Cup 2026", "home_team": "Austria", "away_team": "Jordan", "match_time_utc": "2026-06-17 01:00:00"}
   ]
 }
 
-⚠️ **IMPORTANT**:
+⚠️ **IMPORTANT RULES**:
 - DO NOT fabricate matches
-- ONLY return matches you find from the search
-- If you cannot find a specific match, skip it
-- Convert all times to UTC format
-- Use full team names (e.g., "United States" not "USA")
+- ONLY return matches you find from ESPN or FIFA official websites
+- Convert ET to UTC (ET is UTC-4, so 12:00 ET = 16:00 UTC)
+- Use full team names (France, Senegal, Iraq, Norway, Argentina, Algeria, Austria, Jordan)
 
-Please search NOW and return the COMPLETE 2026 FIFA World Cup schedule!`;
+Please search ESPN and FIFA websites NOW and return the CORRECT schedule for June 16, 2026!`;
 }
+
+// ============================================================
+// 辅助函数
+// ============================================================
 
 function cleanMarkdown(content) {
     if (!content) return '';
@@ -121,7 +129,7 @@ async function callWithRetry(prompt, retryCount = 0) {
             messages: [
                 {
                     role: 'system',
-                    content: 'You are a FIFA World Cup data assistant. Use web search to find the COMPLETE 2026 FIFA World Cup schedule from official sources like ESPN or FIFA.com. Return ONLY valid JSON. NEVER fabricate data. If you cannot find a match, skip it.'
+                    content: 'You are a FIFA World Cup data assistant. You MUST use web search to find the 2026 FIFA World Cup schedule from OFFICIAL sources like ESPN.com or FIFA.com. Return ONLY valid JSON. NEVER fabricate data. If you find different matches than what is suggested, return the correct ones from the official sources.'
                 },
                 {
                     role: 'user',
