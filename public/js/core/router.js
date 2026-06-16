@@ -1,6 +1,7 @@
 /**
  * FOOTRADAPRO - SPA Router
  * 实现无刷新页面切换，跑马灯和导航栏固定
+ * @version 2.0.0 - 修复页面脚本重新执行问题
  */
 
 (function() {
@@ -16,119 +17,106 @@
         'markets': {
             title: 'Match Market · FootRadaPro',
             contentUrl: '/match-market-content.html',
+            scripts: ['/js/user/match-market_controller.js']
+        },
+        'records': {
+            title: 'Records · FootRadaPro',
+            contentUrl: '/transaction-list-content.html',
             scripts: []
         },
-'records': {
-    title: 'Records · FootRadaPro',
-    contentUrl: '/transaction-list-content.html',
-    scripts: []
-},
         'support': {
             title: 'Support · FootRadaPro',
             contentUrl: '/support-content.html',
             scripts: []
         },
         'profile': {
-    title: 'Profile · FootRadaPro',
-    contentUrl: '/profile-content.html',
-    scripts: ['/js/user/profile_controller.js']
-
-    
-},
+            title: 'Profile · FootRadaPro',
+            contentUrl: '/profile-content.html',
+            scripts: ['/js/user/profile_controller.js']
+        },
         'transaction-detail': {
             title: 'Transaction Detail · FootRadaPro',
             contentUrl: '/transaction-detail-content.html',
             scripts: []
         },
-
-                'authorize': {
+        'authorize': {
             title: 'Authorize · FootRadaPro',
             contentUrl: '/authorize-content.html',
             scripts: ['/js/user/authorize_controller.js']
         },
-
-                'register': {
+        'register': {
             title: 'Create Account · FootRadaPro',
             contentUrl: '/register-content.html',
             scripts: []
         },
-
         'login': {
-    title: 'Sign In · FootRadaPro',
-    contentUrl: '/login-content.html',
-    scripts: []
-},
-
-'deposit': {
-    title: 'Deposit · FootRadaPro',
-    contentUrl: '/deposit-content.html',
-    scripts: []
-},
-
-'withdraw': {
-    title: 'Withdraw · FootRadaPro',
-    contentUrl: '/withdraw-content.html',
-    scripts: []
-},
-
-'report-detail': {
-    title: 'AI Analysis Report · FootRadaPro',
-    contentUrl: '/report-detail-content.html',
-    scripts: []
-},
-
-'support-chat': {
-    title: 'Live Support · FootRadaPro',
-    contentUrl: '/support-chat-content.html',
-    scripts: []
-},
-
-'set-paypassword': {
-    title: 'Set Payment Password · FootRadaPro',
-    contentUrl: '/set-paypassword-content.html',
-    scripts: []
-},
-
-'settings': {
-    title: 'Settings · FootRadaPro',
-    contentUrl: '/settings-content.html',
-    scripts: []
-},
-
-'fund-detail': {
-    title: 'Fund Details · FootRadaPro',
-    contentUrl: '/fund-detail-content.html',
-    scripts: ['/js/user/fund-detail.js']
-},
-
-'authorizations': {
-    title: 'My Authorizations · FootRadaPro',
-    contentUrl: '/records-content.html',  // ← 指向 records 的内容文件
-    scripts: []
-},
-
-'change-password': {
-    title: 'Change Password · FootRadaPro',
-    contentUrl: '/change-password-content.html',
-    scripts: []
-},
-'notifications': {
-    title: '我的通知 · FootRadaPro',
-    contentUrl: '/notifications-content.html',
-    scripts: []
-},
-'notification-detail': {
-    title: '通知详情 · FootRadaPro',
-    contentUrl: '/notification-detail-content.html',
-    scripts: []
-},
+            title: 'Sign In · FootRadaPro',
+            contentUrl: '/login-content.html',
+            scripts: []
+        },
+        'deposit': {
+            title: 'Deposit · FootRadaPro',
+            contentUrl: '/deposit-content.html',
+            scripts: []
+        },
+        'withdraw': {
+            title: 'Withdraw · FootRadaPro',
+            contentUrl: '/withdraw-content.html',
+            scripts: []
+        },
+        'report-detail': {
+            title: 'AI Analysis Report · FootRadaPro',
+            contentUrl: '/report-detail-content.html',
+            scripts: []
+        },
+        'support-chat': {
+            title: 'Live Support · FootRadaPro',
+            contentUrl: '/support-chat-content.html',
+            scripts: []
+        },
+        'set-paypassword': {
+            title: 'Set Payment Password · FootRadaPro',
+            contentUrl: '/set-paypassword-content.html',
+            scripts: []
+        },
+        'settings': {
+            title: 'Settings · FootRadaPro',
+            contentUrl: '/settings-content.html',
+            scripts: []
+        },
+        'fund-detail': {
+            title: 'Fund Details · FootRadaPro',
+            contentUrl: '/fund-detail-content.html',
+            scripts: ['/js/user/fund-detail.js']
+        },
+        'authorizations': {
+            title: 'My Authorizations · FootRadaPro',
+            contentUrl: '/records-content.html',
+            scripts: []
+        },
+        'change-password': {
+            title: 'Change Password · FootRadaPro',
+            contentUrl: '/change-password-content.html',
+            scripts: []
+        },
+        'notifications': {
+            title: 'Notifications · FootRadaPro',
+            contentUrl: '/notifications-content.html',
+            scripts: []
+        },
+        'notification-detail': {
+            title: 'Notification Details · FootRadaPro',
+            contentUrl: '/notification-detail-content.html',
+            scripts: []
+        }
     };
-    
-    
 
     // 当前页面
     let currentPage = 'home';
     let isLoading = false;
+    
+    // 存储已加载的脚本（避免重复加载同一脚本）
+    let loadedScripts = new Set();
 
     // 获取当前页面参数
     function getCurrentPage() {
@@ -156,6 +144,17 @@
         }
     }
 
+    // 重新初始化页面组件
+    function reinitializePageComponents(page) {
+        // 触发页面特定的事件，让控制器重新初始化
+        window.dispatchEvent(new CustomEvent('page-loaded', { detail: { page } }));
+        
+        // 如果页面有自己的初始化函数，调用它
+        if (page === 'markets' && window.initMatchMarket) {
+            window.initMatchMarket();
+        }
+    }
+
     // 加载页面内容
     async function loadPage(page, pushState = true) {
         if (isLoading) return;
@@ -176,24 +175,24 @@
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const html = await response.text();
 
-// 更新内容区域
-const appContent = document.getElementById('app-content');
-if (appContent) {
-    appContent.innerHTML = html;
-    
-    // 执行 HTML 中的内联脚本
-    const scripts = appContent.querySelectorAll('script');
-    scripts.forEach(oldScript => {
-        const newScript = document.createElement('script');
-        if (oldScript.src) {
-            newScript.src = oldScript.src;
-        } else {
-            newScript.textContent = oldScript.textContent;
-        }
-        document.body.appendChild(newScript);
-        oldScript.remove();
-    });
-}
+            // 更新内容区域
+            const appContent = document.getElementById('app-content');
+            if (appContent) {
+                appContent.innerHTML = html;
+                
+                // 执行 HTML 中的内联脚本
+                const scripts = appContent.querySelectorAll('script');
+                scripts.forEach(oldScript => {
+                    const newScript = document.createElement('script');
+                    if (oldScript.src) {
+                        newScript.src = oldScript.src;
+                    } else {
+                        newScript.textContent = oldScript.textContent;
+                    }
+                    document.body.appendChild(newScript);
+                    oldScript.remove();
+                });
+            }
 
             // 更新页面标题
             document.title = route.title;
@@ -207,15 +206,11 @@ if (appContent) {
             // 更新导航高亮
             updateNavHighlight(page);
 
-// 重新执行页面脚本
-await executePageScripts(route.scripts);
+            // 执行页面脚本
+            await executePageScripts(route.scripts, page);
 
-// ========== 添加这两行 ==========
-if (page === 'profile' && typeof window.initProfile === 'function') {
-    window.initProfile();
-}
-            // 触发页面加载完成事件
-            window.dispatchEvent(new CustomEvent('page-loaded', { detail: { page } }));
+            // 重新初始化页面组件
+            reinitializePageComponents(page);
 
             currentPage = page;
             console.log(`[Router] 页面切换成功: ${page}`);
@@ -232,19 +227,22 @@ if (page === 'profile' && typeof window.initProfile === 'function') {
     }
 
     // 执行页面脚本
-    async function executePageScripts(scripts) {
-        // 移除旧的页面控制器（避免重复）
-        scripts.forEach(script => {
-            const oldScript = document.querySelector(`script[src="${script}"]`);
-            if (oldScript) {
-                oldScript.remove();
-            }
-        });
-
-        // 重新加载脚本
+    async function executePageScripts(scripts, page) {
         for (const scriptSrc of scripts) {
             try {
+                // 检查是否已加载过（可选：每次都重新加载以确保状态最新）
+                if (loadedScripts.has(scriptSrc)) {
+                    // 移除旧的脚本实例
+                    const oldScript = document.querySelector(`script[src="${scriptSrc}"]`);
+                    if (oldScript) {
+                        oldScript.remove();
+                    }
+                    loadedScripts.delete(scriptSrc);
+                }
+                
                 await loadScript(scriptSrc);
+                loadedScripts.add(scriptSrc);
+                console.log(`[Router] 脚本加载成功: ${scriptSrc}`);
             } catch (err) {
                 console.warn(`[Router] 脚本加载失败: ${scriptSrc}`, err);
             }
@@ -254,6 +252,12 @@ if (page === 'profile' && typeof window.initProfile === 'function') {
     // 动态加载脚本
     function loadScript(src) {
         return new Promise((resolve, reject) => {
+            // 检查是否已存在相同脚本
+            const existingScript = document.querySelector(`script[src="${src}"]`);
+            if (existingScript) {
+                existingScript.remove();
+            }
+            
             const script = document.createElement('script');
             script.src = src;
             script.onload = () => resolve();
@@ -271,11 +275,14 @@ if (page === 'profile' && typeof window.initProfile === 'function') {
         if (!href) return;
 
         // 只处理 shell.html 的链接
-        const url = new URL(href, window.location.origin);
-        if (url.pathname === '/shell.html' && url.searchParams.has('page')) {
+        if (href.includes('/shell.html') || href.includes('?page=')) {
             e.preventDefault();
-            const page = url.searchParams.get('page');
-            if (routes[page]) {
+            let page = null;
+            if (href.includes('?page=')) {
+                const match = href.match(/[?&]page=([^&]+)/);
+                if (match) page = match[1];
+            }
+            if (page && routes[page]) {
                 loadPage(page);
             }
         }
@@ -309,7 +316,8 @@ if (page === 'profile' && typeof window.initProfile === 'function') {
     // 导出全局方法
     window.router = {
         navigate: loadPage,
-        getCurrentPage: () => currentPage
+        getCurrentPage: () => currentPage,
+        refresh: () => loadPage(currentPage, false)
     };
 
     // 页面加载完成后初始化
