@@ -1,34 +1,35 @@
 <!-- 
-  report-detail-content.html - AI分析报告详情
-  SPA 架构：只包含主内容区，样式与首页统一
-  功能：显示AI生成的比赛分析报告
+  report-detail-content.html - AI Analysis Report Detail
+  Description: Display AI-generated match analysis report
+  i18n Ready: All text wrapped with data-i18n attributes for future multi-language support
+  Version: 2.0.0 - Full English default, i18n ready
 -->
 
 <div class="report-detail-container">
-  <!-- 模式指示器 -->
+  <!-- Mode Indicator -->
   <div class="mode-indicator">
     <i class="fa-solid fa-info-circle"></i>
-    <span>Current Mode: </span>
+    <span data-i18n="report.mode">Current Mode: </span>
     <span id="currentModeText" class="sandbox-mode-text">Sandbox</span>
-    <span id="testModeBadge" class="test-badge-mode" style="display: none;">🧪 Test Mode</span>
+    <span id="testModeBadge" class="test-badge-mode" style="display: none;">🧪 <span data-i18n="report.testMode">Test Mode</span></span>
   </div>
 
-  <!-- 加载状态 -->
+  <!-- Loading State -->
   <div id="loadingState" class="loading-state">
     <div class="loading-spinner"></div>
-    <p>Loading AI analysis report...</p>
+    <p data-i18n="report.loading">Loading AI analysis report...</p>
   </div>
 
-  <!-- 错误状态 -->
+  <!-- Error State -->
   <div id="errorState" class="error-state" style="display: none;">
     <i class="fa-solid fa-circle-exclamation"></i>
-    <p id="errorMessage">Failed to load report</p>
-    <button class="retry-btn" onclick="location.reload()">Retry</button>
+    <p id="errorMessage" data-i18n="report.error">Failed to load report</p>
+    <button class="retry-btn" onclick="location.reload()" data-i18n="report.retry">Retry</button>
   </div>
 
-  <!-- 报告内容 -->
+  <!-- Report Content -->
   <div id="reportContent" style="display: none;">
-    <!-- 比赛信息卡片 -->
+    <!-- Match Info Card -->
     <div class="card">
       <div class="match-header">
         <div class="teams-container">
@@ -37,11 +38,11 @@
               <i class="fas fa-futbol"></i>
               <img id="homeImg" style="display: none;">
             </div>
-            <span class="team-name" id="homeName">Home Team</span>
+            <span class="team-name" id="homeName" data-i18n="report.homeTeam">Home Team</span>
           </div>
           <span class="vs-divider">VS</span>
           <div class="team-block away-team-block">
-            <span class="team-name" id="awayName">Away Team</span>
+            <span class="team-name" id="awayName" data-i18n="report.awayTeam">Away Team</span>
             <div class="team-badge" id="awayCrest">
               <i class="fas fa-futbol"></i>
               <img id="awayImg" style="display: none;">
@@ -49,7 +50,7 @@
           </div>
         </div>
         <div class="match-score" id="matchScore">0 : 0</div>
-        <div><span class="match-result win" id="matchResult" style="display: none;">WIN</span></div>
+        <div><span class="match-result win" id="matchResult" style="display: none;" data-i18n="report.win">WIN</span></div>
         <div class="match-meta">
           <span id="matchLeague"><i class="fas fa-trophy"></i> —</span>
           <span id="matchTime"><i class="far fa-calendar"></i> —</span>
@@ -58,17 +59,17 @@
       </div>
     </div>
 
-    <!-- AI 分析报告卡片 -->
+    <!-- AI Analysis Report Card -->
     <div class="card">
       <div class="card-header">
-        <div class="card-title"><i class="fa-solid fa-file-alt"></i> AI Analysis Report</div>
+        <div class="card-title"><i class="fa-solid fa-file-alt"></i> <span data-i18n="report.aiReport">AI Analysis Report</span></div>
       </div>
-      <div class="report-text" id="reportText">
+      <div class="report-text" id="reportText" data-i18n="report.loadingContent">
         Loading report content...
       </div>
       <div class="action-buttons">
-        <button class="action-btn copy" id="copyBtn"><i class="fa-regular fa-copy"></i> Copy</button>
-        <button class="action-btn download" id="downloadBtn"><i class="fa-solid fa-download"></i> Download</button>
+        <button class="action-btn copy" id="copyBtn"><i class="fa-regular fa-copy"></i> <span data-i18n="report.copy">Copy</span></button>
+        <button class="action-btn download" id="downloadBtn"><i class="fa-solid fa-download"></i> <span data-i18n="report.download">Download</span></button>
       </div>
     </div>
   </div>
@@ -468,6 +469,90 @@
 (function() {
   'use strict';
 
+  // ==================== i18n Configuration ====================
+  const REPORT_I18N = {
+    en: {
+      'report.mode': 'Current Mode: ',
+      'report.testMode': 'Test Mode',
+      'report.loading': 'Loading AI analysis report...',
+      'report.error': 'Failed to load report',
+      'report.retry': 'Retry',
+      'report.homeTeam': 'Home Team',
+      'report.awayTeam': 'Away Team',
+      'report.win': 'WIN',
+      'report.loss': 'LOSS',
+      'report.draw': 'DRAW',
+      'report.aiReport': 'AI Analysis Report',
+      'report.loadingContent': 'Loading report content...',
+      'report.copy': 'Copy',
+      'report.download': 'Download',
+      'report.copied': 'Report copied',
+      'report.copyFailed': 'Copy failed',
+      'report.noContent': 'No content to copy',
+      'report.downloaded': 'Report downloaded',
+      'report.noContentDownload': 'No content to download',
+      'report.completed': 'Completed',
+      'report.unknown': 'Unknown',
+      'report.leagueUnknown': 'Unknown League'
+    },
+    zh: {
+      'report.mode': '当前模式: ',
+      'report.testMode': '测试模式',
+      'report.loading': '加载 AI 分析报告中...',
+      'report.error': '加载报告失败',
+      'report.retry': '重试',
+      'report.homeTeam': '主队',
+      'report.awayTeam': '客队',
+      'report.win': '胜利',
+      'report.loss': '亏损',
+      'report.draw': '平局',
+      'report.aiReport': 'AI 分析报告',
+      'report.loadingContent': '加载报告内容中...',
+      'report.copy': '复制',
+      'report.download': '下载',
+      'report.copied': '报告已复制',
+      'report.copyFailed': '复制失败',
+      'report.noContent': '没有内容可复制',
+      'report.downloaded': '报告已下载',
+      'report.noContentDownload': '没有内容可下载',
+      'report.completed': '已完成',
+      'report.unknown': '未知',
+      'report.leagueUnknown': '未知联赛'
+    }
+  };
+
+  let reportLang = localStorage.getItem('language') || 'en';
+
+  function reportT(key) {
+    return REPORT_I18N[reportLang]?.[key] || REPORT_I18N.en[key] || key;
+  }
+
+  function updateReportI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const translation = reportT(key);
+      if (translation && translation !== key) {
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          el.placeholder = translation;
+        } else if (el.tagName === 'BUTTON' && el.querySelector('span')) {
+          const span = el.querySelector('span');
+          if (span) span.textContent = translation;
+        } else {
+          el.textContent = translation;
+        }
+      }
+    });
+  }
+
+  window.addEventListener('languagechange', (e) => {
+    if (e.detail?.language) {
+      reportLang = e.detail.language;
+      updateReportI18n();
+      // Re-render dynamic content
+      if (currentData) renderReport(currentData);
+    }
+  });
+
   const urlParams = new URLSearchParams(window.location.search);
   const matchId = urlParams.get('match_id');
   const authId = urlParams.get('auth_id');
@@ -498,7 +583,6 @@
   const copyBtn = document.getElementById('copyBtn');
   const downloadBtn = document.getElementById('downloadBtn');
 
-  // 工具函数
   const escapeHtml = (str) => {
     if (!str) return '';
     return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
@@ -527,7 +611,6 @@
     setTimeout(() => toast.remove(), 2000);
   };
 
-  // 更新模式 UI
   const updateModeUI = () => {
     if (!currentModeText) return;
     const isSandbox = window.ThemeManager ? window.ThemeManager.isTestMode : true;
@@ -538,7 +621,6 @@
     }
   };
 
-  // 渲染队徽
   const renderTeamLogo = (containerId, imgId, logoUrl) => {
     const container = document.getElementById(containerId);
     const img = document.getElementById(imgId);
@@ -560,40 +642,37 @@
     }
   };
 
-  // 渲染报告
   const renderReport = (data) => {
     currentData = data;
     
-    homeName.textContent = data.home_team || 'Home';
-    awayName.textContent = data.away_team || 'Away';
+    homeName.textContent = data.home_team || reportT('report.homeTeam');
+    awayName.textContent = data.away_team || reportT('report.awayTeam');
     
-    // 队徽
     renderTeamLogo('homeCrest', 'homeImg', data.home_logo);
     renderTeamLogo('awayCrest', 'awayImg', data.away_logo);
     
-    // 比分
     matchScore.textContent = `${data.home_score || 0} : ${data.away_score || 0}`;
     
-    // 结果徽章
     if (data.home_score > data.away_score) {
-      matchResult.textContent = 'WIN';
+      matchResult.textContent = reportT('report.win');
       matchResult.className = 'match-result win';
       matchResult.style.display = 'inline-block';
     } else if (data.home_score < data.away_score) {
-      matchResult.textContent = 'LOSS';
+      matchResult.textContent = reportT('report.loss');
       matchResult.className = 'match-result loss';
       matchResult.style.display = 'inline-block';
     } else if (data.home_score === data.away_score && data.home_score > 0) {
-      matchResult.textContent = 'DRAW';
+      matchResult.textContent = reportT('report.draw');
       matchResult.className = 'match-result draw';
       matchResult.style.display = 'inline-block';
     } else {
       matchResult.style.display = 'none';
     }
     
-    matchLeague.innerHTML = `<i class="fas fa-trophy"></i> ${escapeHtml(data.league || 'Unknown League')}`;
+    matchLeague.innerHTML = `<i class="fas fa-trophy"></i> ${escapeHtml(data.league || reportT('report.leagueUnknown'))}`;
     matchTime.innerHTML = `<i class="far fa-calendar"></i> ${formatDateTime(data.match_time)}`;
-    matchStatus.innerHTML = `<i class="fas fa-flag-checkered"></i> ${data.status === 'completed' ? 'Completed' : (data.status || 'Unknown')}`;
+    const statusText = data.status === 'completed' ? reportT('report.completed') : (data.status || reportT('report.unknown'));
+    matchStatus.innerHTML = `<i class="fas fa-flag-checkered"></i> ${statusText}`;
     
     reportText.textContent = data.report_text || 'No report content available.';
   };
@@ -604,25 +683,23 @@
     if (errorState) errorState.style.display = 'block';
   };
 
-  // 复制报告
   const copyReport = () => {
     const text = reportText?.textContent;
     if (!text || text === 'Loading report content...') {
-      showToast('No content to copy');
+      showToast(reportT('report.noContent'));
       return;
     }
     navigator.clipboard.writeText(text).then(() => {
-      showToast('Report copied');
+      showToast(reportT('report.copied'));
     }).catch(() => {
-      showToast('Copy failed');
+      showToast(reportT('report.copyFailed'));
     });
   };
 
-  // 下载报告
   const downloadReport = () => {
     const text = reportText?.textContent;
     if (!text || text === 'Loading report content...') {
-      showToast('No content to download');
+      showToast(reportT('report.noContentDownload'));
       return;
     }
     const blob = new Blob([text], { type: 'text/plain' });
@@ -631,10 +708,9 @@
     link.download = `footrada_report_${matchId || authId || 'report'}.txt`;
     link.click();
     URL.revokeObjectURL(link.href);
-    showToast('Report downloaded');
+    showToast(reportT('report.downloaded'));
   };
 
-  // 加载报告数据
   const loadReport = async () => {
     if (!matchId && !authId) {
       showError('Missing match or authorization ID');
@@ -670,7 +746,6 @@
     }
   };
 
-  // 监听模式切换
   const initModeListener = () => {
     if (window.ThemeManager) {
       ThemeManager.addListener(() => {
@@ -679,14 +754,13 @@
     }
   };
 
-  // 绑定事件
   const bindEvents = () => {
     if (copyBtn) copyBtn.addEventListener('click', copyReport);
     if (downloadBtn) downloadBtn.addEventListener('click', downloadReport);
   };
 
-  // 初始化
   const init = async () => {
+    updateReportI18n();
     console.log('📋 Report Detail page initialized');
     
     if (window.ThemeManager) {
