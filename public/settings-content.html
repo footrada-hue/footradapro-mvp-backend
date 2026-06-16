@@ -1,45 +1,45 @@
 <!-- 
-  settings-content.html - 设置页面内容片段
-  用于 SPA 架构，通过 shell.html 的 #app-content 区域加载
-  版本: 2.0 - 添加模式监听 + 样式优化
+  settings-content.html - Settings Page Content Fragment
+  Description: User account settings, appearance, preferences, and security
+  i18n Ready: All text wrapped with data-i18n attributes for future multi-language support
+  Version: 2.1.0 - Full English default, i18n ready
 -->
 
 <div class="settings-container">
-  <!-- 头部 -->
+  <!-- Header -->
   <div class="settings-header">
     <div class="mode-badge sandbox" id="modeBadge">
       <i class="fas fa-flask"></i>
-      <span>Sandbox Mode</span>
+      <span data-i18n="settings.modeSandbox">Sandbox Mode</span>
     </div>
-    <h1>Settings</h1>
-    <p>Manage your account preferences and security</p>
+    <h1 data-i18n="settings.title">Settings</h1>
+    <p data-i18n="settings.subtitle">Manage your account preferences and security</p>
   </div>
 
-  <!-- 外观设置 -->
+  <!-- Appearance Settings -->
   <div class="settings-section">
     <div class="section-header">
       <i class="fas fa-palette"></i>
       <div>
-        <h2>Appearance</h2>
-        <p>Customize how FootRadaPro looks</p>
+        <h2 data-i18n="settings.appearance">Appearance</h2>
+        <p data-i18n="settings.appearanceDesc">Customize how FootRadaPro looks</p>
       </div>
     </div>
-
   </div>
 
-  <!-- 偏好设置 -->
+  <!-- Preferences -->
   <div class="settings-section">
     <div class="section-header">
       <i class="fas fa-sliders-h"></i>
       <div>
-        <h2>Preferences</h2>
-        <p>Control your experience</p>
+        <h2 data-i18n="settings.preferences">Preferences</h2>
+        <p data-i18n="settings.preferencesDesc">Control your experience</p>
       </div>
     </div>
     <div class="settings-item">
       <div class="item-info">
-        <div class="item-title">Privacy Mode</div>
-        <div class="item-desc">Hide sensitive information on screen</div>
+        <div class="item-title" data-i18n="settings.privacyMode">Privacy Mode</div>
+        <div class="item-desc" data-i18n="settings.privacyModeDesc">Hide sensitive information on screen</div>
       </div>
       <div class="item-action">
         <label class="toggle">
@@ -50,8 +50,8 @@
     </div>
     <div class="settings-item">
       <div class="item-info">
-        <div class="item-title">Push Notifications</div>
-        <div class="item-desc">Receive alerts about trades and updates</div>
+        <div class="item-title" data-i18n="settings.pushNotifications">Push Notifications</div>
+        <div class="item-desc" data-i18n="settings.pushNotificationsDesc">Receive alerts about trades and updates</div>
       </div>
       <div class="item-action">
         <label class="toggle">
@@ -62,76 +62,76 @@
     </div>
     <div class="settings-item">
       <div class="item-info">
-        <div class="item-title">Language</div>
-        <div class="item-desc">Select your preferred language</div>
+        <div class="item-title" data-i18n="settings.language">Language</div>
+        <div class="item-desc" data-i18n="settings.languageDesc">Select your preferred language</div>
       </div>
       <div class="item-action">
         <div class="lang-selector" id="currentLang">
           <i class="fas fa-globe"></i>
-          <span>English</span>
+          <span data-i18n="settings.langEnglish">English</span>
           <i class="fas fa-chevron-down"></i>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 安全设置 -->
+  <!-- Security -->
   <div class="settings-section">
     <div class="section-header">
       <i class="fas fa-shield-alt"></i>
       <div>
-        <h2>Security</h2>
-        <p>Protect your account</p>
+        <h2 data-i18n="settings.security">Security</h2>
+        <p data-i18n="settings.securityDesc">Protect your account</p>
       </div>
     </div>
     <div class="settings-item">
       <div class="item-info">
-        <div class="item-title">Change Password</div>
-        <div class="item-desc">Update your login password</div>
+        <div class="item-title" data-i18n="settings.changePassword">Change Password</div>
+        <div class="item-desc" data-i18n="settings.changePasswordDesc">Update your login password</div>
       </div>
       <div class="item-action">
-        <button class="link-btn" id="changePasswordBtn">Update →</button>
+        <button class="link-btn" id="changePasswordBtn" data-i18n="settings.update">Update →</button>
       </div>
     </div>
     <div class="settings-item">
       <div class="item-info">
-        <div class="item-title">Payment Password</div>
-        <div class="item-desc" id="payPasswordDesc">Required for withdrawals</div>
+        <div class="item-title" data-i18n="settings.paymentPassword">Payment Password</div>
+        <div class="item-desc" id="payPasswordDesc" data-i18n="settings.paymentPasswordDesc">Required for withdrawals</div>
       </div>
       <div class="item-action">
-        <span class="badge warning" id="payPasswordStatus">Not Set</span>
-        <button class="link-btn" id="setPayPasswordBtn">Set →</button>
+        <span class="badge warning" id="payPasswordStatus" data-i18n="settings.notSet">Not Set</span>
+        <button class="link-btn" id="setPayPasswordBtn" data-i18n="settings.set">Set →</button>
       </div>
     </div>
     <div class="settings-item">
       <div class="item-info">
-        <div class="item-title">Two-Factor Authentication</div>
-        <div class="item-desc">Add an extra layer of security</div>
+        <div class="item-title" data-i18n="settings.twoFactor">Two-Factor Authentication</div>
+        <div class="item-desc" data-i18n="settings.twoFactorDesc">Add an extra layer of security</div>
       </div>
       <div class="item-action">
-        <span class="badge neutral">Coming Soon</span>
+        <span class="badge neutral" data-i18n="settings.comingSoon">Coming Soon</span>
       </div>
     </div>
   </div>
 
-  <!-- 账户操作 -->
+  <!-- Account -->
   <div class="settings-section">
     <div class="section-header">
       <i class="fas fa-user-circle"></i>
       <div>
-        <h2>Account</h2>
-        <p>Manage your account</p>
+        <h2 data-i18n="settings.account">Account</h2>
+        <p data-i18n="settings.accountDesc">Manage your account</p>
       </div>
     </div>
     <div class="settings-item logout-item">
       <div class="item-info">
-        <div class="item-title">Logout</div>
-        <div class="item-desc">Sign out of your account</div>
+        <div class="item-title" data-i18n="settings.logout">Logout</div>
+        <div class="item-desc" data-i18n="settings.logoutDesc">Sign out of your account</div>
       </div>
       <div class="item-action">
         <button class="logout-btn" id="logoutBtn">
           <i class="fas fa-sign-out-alt"></i>
-          <span>Logout</span>
+          <span data-i18n="settings.logout">Logout</span>
         </button>
       </div>
     </div>
@@ -279,7 +279,6 @@
     gap: var(--space-3);
   }
 
-  /* 优化开关样式 */
   .toggle {
     position: relative;
     width: 52px;
@@ -477,6 +476,126 @@
 
 <script>
 (function() {
+  // ==================== i18n Configuration ====================
+  const SETTINGS_I18N = {
+    en: {
+      'settings.modeSandbox': 'Sandbox Mode',
+      'settings.modeLive': 'Live Mode',
+      'settings.title': 'Settings',
+      'settings.subtitle': 'Manage your account preferences and security',
+      'settings.appearance': 'Appearance',
+      'settings.appearanceDesc': 'Customize how FootRadaPro looks',
+      'settings.preferences': 'Preferences',
+      'settings.preferencesDesc': 'Control your experience',
+      'settings.privacyMode': 'Privacy Mode',
+      'settings.privacyModeDesc': 'Hide sensitive information on screen',
+      'settings.pushNotifications': 'Push Notifications',
+      'settings.pushNotificationsDesc': 'Receive alerts about trades and updates',
+      'settings.language': 'Language',
+      'settings.languageDesc': 'Select your preferred language',
+      'settings.langEnglish': 'English',
+      'settings.langChinese': '中文',
+      'settings.langSpanish': 'Español',
+      'settings.langJapanese': '日本語',
+      'settings.security': 'Security',
+      'settings.securityDesc': 'Protect your account',
+      'settings.changePassword': 'Change Password',
+      'settings.changePasswordDesc': 'Update your login password',
+      'settings.update': 'Update →',
+      'settings.paymentPassword': 'Payment Password',
+      'settings.paymentPasswordDesc': 'Required for withdrawals',
+      'settings.notSet': 'Not Set',
+      'settings.set': 'Set →',
+      'settings.twoFactor': 'Two-Factor Authentication',
+      'settings.twoFactorDesc': 'Add an extra layer of security',
+      'settings.comingSoon': 'Coming Soon',
+      'settings.account': 'Account',
+      'settings.accountDesc': 'Manage your account',
+      'settings.logout': 'Logout',
+      'settings.logoutDesc': 'Sign out of your account',
+      'settings.statusSet': 'Set',
+      'settings.statusNotSet': 'Not Set',
+      'settings.statusNA': 'N/A',
+      'settings.testModeNote': 'Not required in test mode',
+      'settings.usedForWithdrawals': 'Used for withdrawals',
+      'settings.confirmLogout': 'Are you sure you want to logout?',
+      'settings.selectLanguage': 'Select Language',
+      'settings.cancel': 'Cancel'
+    },
+    zh: {
+      'settings.modeSandbox': '沙盒模式',
+      'settings.modeLive': '实盘模式',
+      'settings.title': '设置',
+      'settings.subtitle': '管理您的账户偏好和安全',
+      'settings.appearance': '外观',
+      'settings.appearanceDesc': '自定义 FootRadaPro 的外观',
+      'settings.preferences': '偏好设置',
+      'settings.preferencesDesc': '控制您的使用体验',
+      'settings.privacyMode': '隐私模式',
+      'settings.privacyModeDesc': '隐藏屏幕上的敏感信息',
+      'settings.pushNotifications': '推送通知',
+      'settings.pushNotificationsDesc': '接收交易和更新提醒',
+      'settings.language': '语言',
+      'settings.languageDesc': '选择您的首选语言',
+      'settings.langEnglish': 'English',
+      'settings.langChinese': '中文',
+      'settings.langSpanish': 'Español',
+      'settings.langJapanese': '日本語',
+      'settings.security': '安全设置',
+      'settings.securityDesc': '保护您的账户',
+      'settings.changePassword': '修改密码',
+      'settings.changePasswordDesc': '更新您的登录密码',
+      'settings.update': '修改 →',
+      'settings.paymentPassword': '支付密码',
+      'settings.paymentPasswordDesc': '提现时需要使用',
+      'settings.notSet': '未设置',
+      'settings.set': '设置 →',
+      'settings.twoFactor': '双重验证',
+      'settings.twoFactorDesc': '增加账户安全层',
+      'settings.comingSoon': '即将推出',
+      'settings.account': '账户',
+      'settings.accountDesc': '管理您的账户',
+      'settings.logout': '退出登录',
+      'settings.logoutDesc': '退出您的账户',
+      'settings.statusSet': '已设置',
+      'settings.statusNotSet': '未设置',
+      'settings.statusNA': '无',
+      'settings.testModeNote': '测试模式无需设置',
+      'settings.usedForWithdrawals': '用于提现',
+      'settings.confirmLogout': '确定要退出登录吗？',
+      'settings.selectLanguage': '选择语言',
+      'settings.cancel': '取消'
+    }
+  };
+
+  let settingsLang = localStorage.getItem('language') || 'en';
+
+  function settingsT(key) {
+    return SETTINGS_I18N[settingsLang]?.[key] || SETTINGS_I18N.en[key] || key;
+  }
+
+  function updateSettingsI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const translation = settingsT(key);
+      if (translation && translation !== key) {
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          el.placeholder = translation;
+        } else {
+          el.textContent = translation;
+        }
+      }
+    });
+  }
+
+  window.addEventListener('languagechange', (e) => {
+    if (e.detail?.language) {
+      settingsLang = e.detail.language;
+      updateSettingsI18n();
+      updateModeUI();
+    }
+  });
+
   const elements = {
     themeToggle: document.getElementById('themeToggle'),
     privacyToggle: document.getElementById('privacyToggle'),
@@ -490,17 +609,15 @@
     setPayPasswordBtn: document.getElementById('setPayPasswordBtn')
   };
 
-// 请求浏览器通知权限
-function requestNotificationPermission() {
+  function requestNotificationPermission() {
     if ('Notification' in window) {
-        if (Notification.permission === 'default') {
-            Notification.requestPermission();
-        }
+      if (Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
     }
-}
+  }
 
-// 显示浏览器通知
-function showBrowserNotification(title, body, icon = '/favicon.ico') {
+  function showBrowserNotification(title, body, icon = '/favicon.ico') {
     if (!('Notification' in window)) return;
     if (Notification.permission !== 'granted') return;
     
@@ -508,70 +625,62 @@ function showBrowserNotification(title, body, icon = '/favicon.ico') {
     if (!enabled) return;
     
     new Notification(title, { body, icon });
-}
+  }
 
-// 监听 WebSocket 通知
-function initNotificationSocket() {
+  function initNotificationSocket() {
     if (!window.socket) return;
     
     window.socket.on('new-notification', (notification) => {
-        console.log('收到新通知:', notification);
-        
-        // 显示浏览器通知
-        showBrowserNotification(notification.title, notification.content);
-        
-        // 显示 Toast
-        showToast(notification.title, notification.content);
-        
-        // 更新未读数量
-        updateUnreadBadge();
+      console.log('收到新通知:', notification);
+      showBrowserNotification(notification.title, notification.content);
+      showToast(notification.title, notification.content);
+      updateUnreadBadge();
     });
-}
+  }
 
-// 显示 Toast 提示
-function showToast(title, message) {
+  function showToast(title, message) {
     const toast = document.createElement('div');
     toast.className = 'notification-toast';
     toast.innerHTML = `
-        <div class="toast-icon"><i class="fas fa-bell"></i></div>
-        <div class="toast-content">
-            <div class="toast-title">${title}</div>
-            <div class="toast-message">${message}</div>
-        </div>
+      <div class="toast-icon"><i class="fas fa-bell"></i></div>
+      <div class="toast-content">
+        <div class="toast-title">${title}</div>
+        <div class="toast-message">${message}</div>
+      </div>
     `;
     toast.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: var(--card-bg);
-        backdrop-filter: blur(20px);
-        border-radius: 12px;
-        padding: 12px 16px;
-        min-width: 280px;
-        max-width: 360px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        border: 1px solid var(--accent);
-        z-index: 10000;
-        display: flex;
-        gap: 12px;
-        animation: slideInRight 0.3s ease;
-        cursor: pointer;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border-radius: 12px;
+      padding: 12px 16px;
+      min-width: 280px;
+      max-width: 360px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border: 1px solid var(--accent);
+      z-index: 10000;
+      display: flex;
+      gap: 12px;
+      animation: slideInRight 0.3s ease;
+      cursor: pointer;
     `;
     document.body.appendChild(toast);
     setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
+      toast.style.opacity = '0';
+      setTimeout(() => toast.remove(), 300);
     }, 5000);
     toast.onclick = () => toast.remove();
-}
+  }
 
   function getAppMode() { 
-    // 优先从 ThemeManager 获取，否则从 localStorage
     if (window.ThemeManager) {
       return window.ThemeManager.isTestMode ? 'sandbox' : 'live';
     }
     return localStorage.getItem('appMode') || 'sandbox'; 
   }
+  
   function getThemeMode() { return localStorage.getItem('theme') || 'light'; }
   function setThemeMode(theme) { localStorage.setItem('theme', theme); updateThemeUI(); }
 
@@ -584,9 +693,6 @@ function showToast(title, message) {
     } else {
       document.body.classList.remove('dark');
       if (elements.themeToggle) elements.themeToggle.checked = true;
-    }
-    if (window.ThemeManager) {
-      
     }
   }
 
@@ -603,34 +709,31 @@ function showToast(title, message) {
     return false;
   }
 
-async function updateModeUI() {
-  const isSandbox = getAppMode() === 'sandbox';
-  console.log('[Settings] updateModeUI - isSandbox:', isSandbox);
-  
-  if (elements.modeBadge) {
-    elements.modeBadge.className = `mode-badge ${isSandbox ? 'sandbox' : 'live'}`;
-    elements.modeBadge.innerHTML = isSandbox 
-      ? '<i class="fas fa-flask"></i><span>Sandbox Mode</span>'
-      : '<i class="fas fa-bolt"></i><span>Live Mode</span>';
-  }
-  if (elements.payPasswordStatus && elements.payPasswordDesc) {
-    if (isSandbox) {
-      elements.payPasswordStatus.textContent = 'N/A';
-      elements.payPasswordStatus.className = 'badge neutral';
-      elements.payPasswordDesc.textContent = 'Not required in test mode';
-    } else {
-      const hasPayPassword = await fetchPayPasswordStatus();
-      console.log('[Settings] 支付密码状态:', hasPayPassword);  // ← 添加这一行
-      elements.payPasswordStatus.textContent = hasPayPassword ? 'Set' : 'Not Set';
-      elements.payPasswordStatus.className = hasPayPassword ? 'badge success' : 'badge warning';
-      elements.payPasswordDesc.textContent = hasPayPassword ? 'Used for withdrawals' : 'Required for withdrawals';
+  async function updateModeUI() {
+    const isSandbox = getAppMode() === 'sandbox';
+    
+    if (elements.modeBadge) {
+      elements.modeBadge.className = `mode-badge ${isSandbox ? 'sandbox' : 'live'}`;
+      elements.modeBadge.innerHTML = isSandbox 
+        ? `<i class="fas fa-flask"></i><span>${settingsT('settings.modeSandbox')}</span>`
+        : `<i class="fas fa-bolt"></i><span>${settingsT('settings.modeLive')}</span>`;
+    }
+    
+    if (elements.payPasswordStatus && elements.payPasswordDesc) {
+      if (isSandbox) {
+        elements.payPasswordStatus.textContent = settingsT('settings.statusNA');
+        elements.payPasswordStatus.className = 'badge neutral';
+        elements.payPasswordDesc.textContent = settingsT('settings.testModeNote');
+      } else {
+        const hasPayPassword = await fetchPayPasswordStatus();
+        elements.payPasswordStatus.textContent = hasPayPassword ? settingsT('settings.statusSet') : settingsT('settings.statusNotSet');
+        elements.payPasswordStatus.className = hasPayPassword ? 'badge success' : 'badge warning';
+        elements.payPasswordDesc.textContent = hasPayPassword ? settingsT('settings.usedForWithdrawals') : settingsT('settings.paymentPasswordDesc');
+      }
     }
   }
-}
 
-  // 重新绑定所有事件（模式切换时调用）
   function reBindEvents() {
-    // 重新绑定主题切换
     if (elements.themeToggle) {
       const newToggle = elements.themeToggle.cloneNode(true);
       elements.themeToggle.parentNode.replaceChild(newToggle, elements.themeToggle);
@@ -641,7 +744,6 @@ async function updateModeUI() {
       });
     }
     
-    // 重新绑定隐私模式
     if (elements.privacyToggle) {
       const isPrivacyMode = localStorage.getItem('privacy_mode') === 'true';
       elements.privacyToggle.checked = isPrivacyMode;
@@ -653,7 +755,6 @@ async function updateModeUI() {
       });
     }
     
-    // 重新绑定通知开关
     if (elements.notificationToggle) {
       const notificationsEnabled = localStorage.getItem('notifications_enabled') !== 'false';
       elements.notificationToggle.checked = notificationsEnabled;
@@ -665,19 +766,22 @@ async function updateModeUI() {
       });
     }
     
-    // 重新绑定语言选择器
     if (elements.currentLang) {
       const newLangSelector = elements.currentLang.cloneNode(true);
       elements.currentLang.parentNode.replaceChild(newLangSelector, elements.currentLang);
       elements.currentLang = newLangSelector;
       const savedLang = localStorage.getItem('preferred_lang') || 'en';
-      const langMap = { 'en': 'English', 'zh': '中文', 'es': 'Español', 'ja': '日本語' };
+      const langMap = { 
+        'en': settingsT('settings.langEnglish'), 
+        'zh': settingsT('settings.langChinese'), 
+        'es': settingsT('settings.langSpanish'), 
+        'ja': settingsT('settings.langJapanese') 
+      };
       const span = elements.currentLang.querySelector('span');
       if (span) span.textContent = langMap[savedLang] || 'English';
       elements.currentLang.addEventListener('click', showLanguageModal);
     }
     
-    // 重新绑定退出登录
     if (elements.logoutBtn) {
       const newLogoutBtn = elements.logoutBtn.cloneNode(true);
       elements.logoutBtn.parentNode.replaceChild(newLogoutBtn, elements.logoutBtn);
@@ -685,7 +789,6 @@ async function updateModeUI() {
       elements.logoutBtn.addEventListener('click', handleLogout);
     }
     
-    // 重新绑定按钮
     if (elements.changePasswordBtn) {
       const newBtn = elements.changePasswordBtn.cloneNode(true);
       elements.changePasswordBtn.parentNode.replaceChild(newBtn, elements.changePasswordBtn);
@@ -694,6 +797,7 @@ async function updateModeUI() {
         window.location.href = '/shell.html?page=change-password';
       };
     }
+    
     if (elements.setPayPasswordBtn) {
       const newBtn = elements.setPayPasswordBtn.cloneNode(true);
       elements.setPayPasswordBtn.parentNode.replaceChild(newBtn, elements.setPayPasswordBtn);
@@ -705,7 +809,7 @@ async function updateModeUI() {
   }
 
   async function handleLogout() {
-    const confirmed = confirm('Are you sure you want to logout?');
+    const confirmed = confirm(settingsT('settings.confirmLogout'));
     if (confirmed) {
       try {
         await fetch('/api/v1/user/logout', { method: 'POST', credentials: 'include' });
@@ -718,23 +822,23 @@ async function updateModeUI() {
 
   function showLanguageModal() {
     const languages = [
-      { code: 'en', name: 'English', flag: '🇬🇧' },
-      { code: 'zh', name: '中文', flag: '🇨🇳' },
-      { code: 'es', name: 'Español', flag: '🇪🇸' },
-      { code: 'ja', name: '日本語', flag: '🇯🇵' }
+      { code: 'en', name: settingsT('settings.langEnglish'), flag: '🇬🇧' },
+      { code: 'zh', name: settingsT('settings.langChinese'), flag: '🇨🇳' },
+      { code: 'es', name: settingsT('settings.langSpanish'), flag: '🇪🇸' },
+      { code: 'ja', name: settingsT('settings.langJapanese'), flag: '🇯🇵' }
     ];
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.innerHTML = `
       <div class="modal-content">
-        <h3>Select Language</h3>
+        <h3>${settingsT('settings.selectLanguage')}</h3>
         ${languages.map(lang => `
           <button class="lang-option" data-lang="${lang.code}">
             <span style="font-size: 20px;">${lang.flag}</span>
             <span>${lang.name}</span>
           </button>
         `).join('')}
-        <button class="lang-option" style="justify-content: center; margin-top: 8px;" id="closeModalBtn">Cancel</button>
+        <button class="lang-option" style="justify-content: center; margin-top: 8px;" id="closeModalBtn">${settingsT('settings.cancel')}</button>
       </div>
     `;
     document.body.appendChild(modal);
@@ -744,8 +848,13 @@ async function updateModeUI() {
       } else {
         btn.addEventListener('click', () => {
           const langCode = btn.dataset.lang;
-          const langMap = { 'en': 'English', 'zh': '中文', 'es': 'Español', 'ja': '日本語' };
           localStorage.setItem('preferred_lang', langCode);
+          const langMap = { 
+            'en': settingsT('settings.langEnglish'), 
+            'zh': settingsT('settings.langChinese'), 
+            'es': settingsT('settings.langSpanish'), 
+            'ja': settingsT('settings.langJapanese') 
+          };
           const span = elements.currentLang?.querySelector('span');
           if (span) span.textContent = langMap[langCode] || 'English';
           modal.remove();
@@ -755,7 +864,6 @@ async function updateModeUI() {
     modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
   }
 
-  // ========== 监听模式切换 ==========
   function initModeListener() {
     if (window.ThemeManager) {
       window.ThemeManager.addListener(async () => {
@@ -766,8 +874,8 @@ async function updateModeUI() {
     }
   }
 
-  // 初始化
   async function init() {
+    updateSettingsI18n();
     updateThemeUI();
     await updateModeUI();
     reBindEvents();
