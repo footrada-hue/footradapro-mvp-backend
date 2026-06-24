@@ -1,7 +1,7 @@
 /**
  * DeepSeek API Service
  * @description 获取 2026 FIFA World Cup 真实官方赛程（启用联网搜索）
- * @version 18.0.0 - 全新稳定版：多策略获取比赛数据
+ * @version 19.0.0 - 自由搜索模式：DeepSeek 可搜索任何网站获取数据
  * @since 2026-06-24
  */
 
@@ -66,7 +66,6 @@ function t(key, params = {}) {
 
 function getDateRange() {
     const today = new Date();
-    // 使用 UTC 时间避免时区问题
     const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
     const todayStr = todayUTC.toISOString().split('T')[0];
     
@@ -84,57 +83,52 @@ function getDateRange() {
 }
 
 // ============================================================
-// Prompt 构建 - 多策略获取
+// Prompt 构建 - 自由搜索模式
 // ============================================================
 
 function buildWorldCupPrompt() {
     const { todayStr, startDateStr, endDateStr } = getDateRange();
     
-    return `【Critical Task - Get 2026 FIFA World Cup Real Schedule】
+    return `【Important Task - Get 2026 FIFA World Cup schedule】
 
-⚠️ **Today's date (UTC)**: ${todayStr}
+⚠️ **Today's date is ${todayStr}. Please search for matches from ${startDateStr} to ${endDateStr}.**
 
-📅 **Search Date Range**: ${startDateStr} to ${endDateStr}
+🔍 **Search Instructions**:
+Use web search to find the 2026 FIFA World Cup schedule.
 
-🔍 **MULTI-STEP SEARCH STRATEGY**:
+You can search ANY website, including but not limited to:
+- ESPN
+- FIFA Official
+- Google Sports
+- BBC Sport
+- Sky Sports
+- Any sports news website
 
-**Step 1 - ESPN Search**:
-Go to: https://www.espn.com/soccer/fixtures/_/league/fifa.world
-Find matches from ${startDateStr} to ${endDateStr}.
+Try these search queries:
+"2026 FIFA World Cup schedule ${startDateStr}"
+"2026 World Cup fixtures ${startDateStr}"
+"2026世界杯赛程 ${startDateStr}"
+"FIFA World Cup 2026 match list"
 
-**Step 2 - FIFA Official Search**:
-Go to: https://www.fifa.com/fifaplus/en/tournaments/mens/worldcup/canadamexicousa2026/schedule
-Find matches from ${startDateStr} to ${endDateStr}.
-
-**Step 3 - Google Search**:
-Search: "2026 FIFA World Cup schedule ${startDateStr}"
+【Return Format - JSON only】:
+{
+  "matches": [
+    {"league": "FIFA World Cup 2026", "home_team": "Team A", "away_team": "Team B", "match_time_utc": "2026-06-25 16:00:00"}
+  ]
+}
 
 ⚠️ **CRITICAL RULES**:
-1. ONLY return matches that are on or after ${startDateStr}
-2. DO NOT return matches before ${todayStr} (they already happened)
+1. ONLY return matches that are on or after ${todayStr}
+2. DO NOT return matches that have already happened
 3. If you find matches for a date, return ALL of them
 4. If a date has no matches, skip it
 5. DO NOT fabricate any matches
 6. Use REAL team names (e.g., "France" not "FRA")
 7. Convert all times to UTC format
 
-✅ **VALID MATCH EXAMPLE**:
-{"league": "FIFA World Cup 2026", "home_team": "France", "away_team": "Senegal", "match_time_utc": "2026-06-25 16:00:00"}
-
-❌ **INVALID MATCH EXAMPLE** (DO NOT RETURN):
-{"league": "FIFA World Cup 2026", "home_team": "Winner Group A", "away_team": "Runner-up Group B", "match_time_utc": "2026-06-29 20:00:00"}
-
-【Return Format - JSON only】:
-{
-  "matches": [
-    {"league": "FIFA World Cup 2026", "home_team": "Team A", "away_team": "Team B", "match_time_utc": "2026-06-25 16:00:00"},
-    {"league": "FIFA World Cup 2026", "home_team": "Team C", "away_team": "Team D", "match_time_utc": "2026-06-25 20:00:00"}
-  ]
-}
-
 If you cannot find any matches, return {"matches": []}.
 
-Please search NOW and return REAL matches from ${startDateStr} to ${endDateStr}!`;
+Please search now!`;
 }
 
 // ============================================================
@@ -144,10 +138,19 @@ Please search NOW and return REAL matches from ${startDateStr} to ${endDateStr}!
 function buildDateSpecificPrompt(dateStr) {
     return `【Search 2026 FIFA World Cup for ${dateStr}】
 
-Search these sources for matches on ${dateStr}:
-1. ESPN: https://www.espn.com/soccer/fixtures/_/league/fifa.world
-2. FIFA Official: https://www.fifa.com/fifaplus/en/tournaments/mens/worldcup/canadamexicousa2026/schedule
-3. Google: "2026 FIFA World Cup ${dateStr}"
+Use web search to find matches for ${dateStr}.
+
+Search ANY website:
+- ESPN
+- FIFA Official
+- Google Sports
+- BBC Sport
+- Any sports news
+
+Search queries:
+"2026 FIFA World Cup ${dateStr}"
+"2026 World Cup ${dateStr} schedule"
+"2026世界杯 ${dateStr} 赛程"
 
 Return ALL matches for ${dateStr} in JSON format:
 {
@@ -182,7 +185,7 @@ async function callWithRetry(prompt, retryCount = 0) {
             messages: [
                 {
                     role: 'system',
-                    content: 'You are a FIFA World Cup data assistant. Use web search to find REAL 2026 FIFA World Cup matches from official sources. Only return matches that are actually scheduled. NEVER fabricate data. Return only valid JSON.'
+                    content: 'You are a FIFA World Cup data assistant. Use web search to find REAL 2026 FIFA World Cup matches. Search ANY website to find the data. Only return matches that are actually scheduled. NEVER fabricate data. Return only valid JSON.'
                 },
                 {
                     role: 'user',
@@ -278,7 +281,7 @@ export async function fetchUpcomingMatches(lang = 'en') {
 
     console.log(`\n🏆 ========== ${t('fetching')} ==========`);
     console.log(`📅 ${t('worldCupRange', { start: startDateStr, end: endDateStr })}`);
-    console.log(`📌 策略: 多源搜索 + 日期过滤`);
+    console.log(`📌 策略: 自由搜索（任何网站）`);
     
     const prompt = buildWorldCupPrompt();
     
