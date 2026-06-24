@@ -1,8 +1,8 @@
 /**
  * DeepSeek API Service
  * @description 获取 2026 FIFA World Cup 真实官方赛程（启用联网搜索）
- * @version 16.2.0 - 优化 Prompt 指定具体网站获取准确赛程
- * @since 2026-06-16
+ * @version 17.0.0 - 动态获取未来比赛，不再硬编码日期
+ * @since 2026-06-24
  */
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
@@ -20,27 +20,27 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const I18N = {
     en: {
         fetching: 'Fetching 2026 FIFA World Cup schedule...',
-        noData: '2026 FIFA World Cup official schedule has not been announced yet',
-        waitAnnouncement: 'Waiting for FIFA official announcement',
+        noData: 'No upcoming matches found in the schedule',
+        waitAnnouncement: 'No matches available for the selected date range',
         invalidDate: 'Date out of range',
         apiSuccess: 'API response successful',
         apiError: 'API response invalid',
         emptyContent: 'Empty response content',
         fetchFailed: 'Failed to fetch matches',
         authFailed: 'DEEPSEEK_API_KEY not configured',
-        worldCupRange: 'Match date range: 2026-06-11 to 2026-07-19'
+        worldCupRange: 'Match date range: {start} to {end}'
     },
     zh: {
         fetching: '正在获取 2026 世界杯赛程...',
-        noData: '2026 世界杯官方赛程尚未公布',
-        waitAnnouncement: '等待 FIFA 官方公布后会自动获取',
+        noData: '未找到即将到来的比赛',
+        waitAnnouncement: '所选日期范围内没有比赛',
         invalidDate: '日期超出范围',
         apiSuccess: 'API 响应成功',
         apiError: 'API 响应无效',
         emptyContent: '返回内容为空',
         fetchFailed: '获取比赛失败',
         authFailed: 'DEEPSEEK_API_KEY 未配置',
-        worldCupRange: '比赛日期范围: 2026-06-11 至 2026-07-19'
+        worldCupRange: '比赛日期范围: {start} 至 {end}'
     }
 };
 
@@ -52,58 +52,58 @@ export function setLanguage(lang) {
     }
 }
 
-function t(key) {
-    return I18N[currentLanguage][key] || I18N.en[key] || key;
+function t(key, params = {}) {
+    let text = I18N[currentLanguage][key] || I18N.en[key] || key;
+    Object.keys(params).forEach(k => {
+        text = text.replace(`{${k}}`, params[k]);
+    });
+    return text;
 }
 
 // ============================================================
-// Prompt 构建 - 指定具体网站获取准确赛程
+// Prompt 构建 - 动态获取未来比赛
 // ============================================================
 
 function buildWorldCupPrompt() {
-    return `【Important Task - Get 2026 FIFA World Cup Complete Schedule】
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const endDate = new Date(today);
+    endDate.setDate(endDate.getDate() + 30);
+    const endDateStr = endDate.toISOString().split('T')[0];
+    
+    return `【Important Task - Get 2026 FIFA World Cup Upcoming Schedule】
 
-⚠️ **You MUST use web search with these specific sources ONLY**:
-
-1. **ESPN Official Schedule**:
-   https://www.espn.com/soccer/fixtures/_/league/fifa.world
-
-2. **FIFA Official Website**:
-   https://www.fifa.com/fifaplus/en/tournaments/mens/worldcup/canadamexicousa2026/schedule
-
-3. **Google Search** (if the above are not accessible):
-   Search exactly: "2026 FIFA World Cup schedule June 16"
+⚠️ **Today's date is ${todayStr}. You MUST find matches from ${todayStr} to ${endDateStr}.**
 
 📅 **Tournament dates**: June 11, 2026 - July 19, 2026
 
-🔴 **KNOWN MATCHES ON JUNE 16, 2026** (from ESPN):
-According to ESPN, the matches on June 16, 2026 are:
-- France vs Senegal (Group I) - 12:00 ET
-- Iraq vs Norway (Group I) - 15:00 ET
-- Argentina vs Algeria (Group J) - 18:00 ET
-- Austria vs Jordan (Group J) - 21:00 ET
+🔍 **Search Instructions**:
+Please use web search to find the COMPLETE 2026 FIFA World Cup schedule from these sources:
+1. ESPN: https://www.espn.com/soccer/fixtures/_/league/fifa.world
+2. FIFA Official: https://www.fifa.com/fifaplus/en/tournaments/mens/worldcup/canadamexicousa2026/schedule
 
-⚠️ **CRITICAL - VERIFY THESE MATCHES**:
-Please verify that the above 4 matches are correct by checking the ESPN or FIFA website.
-If they are correct, return them. If they are different, return the correct ones.
+⚠️ **CRITICAL REQUIREMENTS**:
+- ONLY return matches scheduled for TODAY (${todayStr}) or LATER
+- DO NOT return matches that have already happened
+- If a match date is in the past, SKIP it
+- Return ALL upcoming matches within the date range
 
 【Return Format - JSON only】:
 {
   "matches": [
-    {"league": "FIFA World Cup 2026", "home_team": "France", "away_team": "Senegal", "match_time_utc": "2026-06-16 16:00:00"},
-    {"league": "FIFA World Cup 2026", "home_team": "Iraq", "away_team": "Norway", "match_time_utc": "2026-06-16 19:00:00"},
-    {"league": "FIFA World Cup 2026", "home_team": "Argentina", "away_team": "Algeria", "match_time_utc": "2026-06-16 22:00:00"},
-    {"league": "FIFA World Cup 2026", "home_team": "Austria", "away_team": "Jordan", "match_time_utc": "2026-06-17 01:00:00"}
+    {"league": "FIFA World Cup 2026", "home_team": "Team A", "away_team": "Team B", "match_time_utc": "2026-06-24 16:00:00"},
+    {"league": "FIFA World Cup 2026", "home_team": "Team C", "away_team": "Team D", "match_time_utc": "2026-06-25 16:00:00"}
   ]
 }
 
 ⚠️ **IMPORTANT RULES**:
 - DO NOT fabricate matches
 - ONLY return matches you find from ESPN or FIFA official websites
-- Convert ET to UTC (ET is UTC-4, so 12:00 ET = 16:00 UTC)
-- Use full team names (France, Senegal, Iraq, Norway, Argentina, Algeria, Austria, Jordan)
+- Convert ET to UTC (ET is UTC-4)
+- Use full team names
+- If there are no upcoming matches, return {"matches": []}
 
-Please search ESPN and FIFA websites NOW and return the CORRECT schedule for June 16, 2026!`;
+Please search NOW and return the UPCOMING 2026 FIFA World Cup schedule from ${todayStr} onward!`;
 }
 
 // ============================================================
@@ -129,7 +129,7 @@ async function callWithRetry(prompt, retryCount = 0) {
             messages: [
                 {
                     role: 'system',
-                    content: 'You are a FIFA World Cup data assistant. You MUST use web search to find the 2026 FIFA World Cup schedule from OFFICIAL sources like ESPN.com or FIFA.com. Return ONLY valid JSON. NEVER fabricate data. If you find different matches than what is suggested, return the correct ones from the official sources.'
+                    content: 'You are a FIFA World Cup data assistant. You MUST use web search to find upcoming 2026 FIFA World Cup matches from OFFICIAL sources like ESPN.com or FIFA.com. Return ONLY valid JSON. NEVER fabricate data. Only return matches that are scheduled for today or in the future.'
                 },
                 {
                     role: 'user',
@@ -182,6 +182,13 @@ function validateMatch(match, lang = 'en') {
     }
     
     const matchDate = match.match_time_utc.split(' ')[0];
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 只返回今天及未来的比赛
+    if (matchDate < today) {
+        return { valid: false, reason: `Match already passed: ${matchDate}` };
+    }
+    
     if (matchDate < '2026-06-11' || matchDate > '2026-07-19') {
         return { valid: false, reason: `${t('invalidDate')}: ${matchDate}` };
     }
@@ -213,8 +220,14 @@ export async function fetchUpcomingMatches(lang = 'en') {
         return [];
     }
 
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const endDate = new Date(today);
+    endDate.setDate(endDate.getDate() + 30);
+    const endDateStr = endDate.toISOString().split('T')[0];
+
     console.log(`\n🏆 ========== ${t('fetching')} ==========`);
-    console.log(`📅 ${t('worldCupRange')}`);
+    console.log(`📅 ${t('worldCupRange', { start: todayStr, end: endDateStr })}`);
     
     const prompt = buildWorldCupPrompt();
     
