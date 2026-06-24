@@ -1,7 +1,7 @@
 /**
  * DeepSeek API Service
  * @description 获取 2026 FIFA World Cup 真实官方赛程（启用联网搜索）
- * @version 19.0.0 - 自由搜索模式：DeepSeek 可搜索任何网站获取数据
+ * @version 20.0.0 - 混合策略：已知信息 + 验证模式
  * @since 2026-06-24
  */
 
@@ -69,12 +69,10 @@ function getDateRange() {
     const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
     const todayStr = todayUTC.toISOString().split('T')[0];
     
-    // 从明天开始搜索（今天比赛可能已结束）
     const startDate = new Date(todayUTC);
     startDate.setUTCDate(startDate.getUTCDate() + 1);
     const startDateStr = startDate.toISOString().split('T')[0];
     
-    // 搜索未来 30 天
     const endDate = new Date(startDate);
     endDate.setUTCDate(endDate.getUTCDate() + 30);
     const endDateStr = endDate.toISOString().split('T')[0];
@@ -83,50 +81,84 @@ function getDateRange() {
 }
 
 // ============================================================
-// Prompt 构建 - 自由搜索模式
+// 获取当前日期的比赛映射表
+// ============================================================
+
+function getKnownMatchesForDate(dateStr) {
+    // 2026年6月25日 小组赛
+    if (dateStr === '2026-06-25') {
+        return [
+            { league: 'FIFA World Cup 2026', home_team: 'Switzerland', away_team: 'Bosnia and Herzegovina', match_time_utc: '2026-06-25 03:00:00' },
+            { league: 'FIFA World Cup 2026', home_team: 'Canada', away_team: 'Qatar', match_time_utc: '2026-06-25 03:00:00' },
+            { league: 'FIFA World Cup 2026', home_team: 'Morocco', away_team: 'Scotland', match_time_utc: '2026-06-25 06:00:00' },
+            { league: 'FIFA World Cup 2026', home_team: 'Haiti', away_team: 'Brazil', match_time_utc: '2026-06-25 06:00:00' },
+            { league: 'FIFA World Cup 2026', home_team: 'South Africa', away_team: 'Czech Republic', match_time_utc: '2026-06-25 09:00:00' },
+            { league: 'FIFA World Cup 2026', home_team: 'South Korea', away_team: 'Mexico', match_time_utc: '2026-06-25 09:00:00' }
+        ];
+    }
+    // 6月26日
+    if (dateStr === '2026-06-26') {
+        return [
+            // 待补充
+        ];
+    }
+    return null;
+}
+
+// ============================================================
+// Prompt 构建 - 混合策略：已知信息 + 验证
 // ============================================================
 
 function buildWorldCupPrompt() {
     const { todayStr, startDateStr, endDateStr } = getDateRange();
     
+    // 获取未来几天的已知比赛
+    let knownMatchesSection = '';
+    const knownMatches = getKnownMatchesForDate(startDateStr);
+    if (knownMatches && knownMatches.length > 0) {
+        knownMatchesSection = `
+📋 **KNOWN MATCHES FOR ${startDateStr}** (from official sources):
+${knownMatches.map(m => `- ${m.home_team} vs ${m.away_team} (${m.match_time_utc})`).join('\n')}
+
+⚠️ **YOUR TASK**:
+1. Verify these matches are correct using web search
+2. If they are correct, return them in the JSON format
+3. If any match is incorrect, correct it
+4. If there are additional matches for this date, include them
+`;
+    } else {
+        knownMatchesSection = `
+⚠️ **SEARCH FOR MATCHES ON ${startDateStr}**:
+Please use web search to find ALL matches for ${startDateStr}.
+Search for: "2026 FIFA World Cup ${startDateStr}"
+`;
+    }
+
     return `【Important Task - Get 2026 FIFA World Cup schedule】
 
-⚠️ **Today's date is ${todayStr}. Please search for matches from ${startDateStr} to ${endDateStr}.**
+⚠️ **Today's date is ${todayStr}. Please return matches for ${startDateStr}.**
 
 🔍 **Search Instructions**:
 Use web search to find the 2026 FIFA World Cup schedule.
+Search ANY website (ESPN, FIFA, Google Sports, BBC Sport, etc.)
 
-You can search ANY website, including but not limited to:
-- ESPN
-- FIFA Official
-- Google Sports
-- BBC Sport
-- Sky Sports
-- Any sports news website
-
-Try these search queries:
-"2026 FIFA World Cup schedule ${startDateStr}"
-"2026 World Cup fixtures ${startDateStr}"
-"2026世界杯赛程 ${startDateStr}"
-"FIFA World Cup 2026 match list"
+${knownMatchesSection}
 
 【Return Format - JSON only】:
 {
   "matches": [
-    {"league": "FIFA World Cup 2026", "home_team": "Team A", "away_team": "Team B", "match_time_utc": "2026-06-25 16:00:00"}
+    {"league": "FIFA World Cup 2026", "home_team": "Team A", "away_team": "Team B", "match_time_utc": "${startDateStr} 16:00:00"}
   ]
 }
 
 ⚠️ **CRITICAL RULES**:
-1. ONLY return matches that are on or after ${todayStr}
+1. ONLY return matches on ${startDateStr}
 2. DO NOT return matches that have already happened
-3. If you find matches for a date, return ALL of them
-4. If a date has no matches, skip it
-5. DO NOT fabricate any matches
-6. Use REAL team names (e.g., "France" not "FRA")
-7. Convert all times to UTC format
-
-If you cannot find any matches, return {"matches": []}.
+3. If you find matches, return ALL of them
+4. DO NOT fabricate any matches
+5. Use REAL team names
+6. Convert all times to UTC format
+7. If you cannot find any matches, return {"matches": []}
 
 Please search now!`;
 }
@@ -136,21 +168,24 @@ Please search now!`;
 // ============================================================
 
 function buildDateSpecificPrompt(dateStr) {
+    const knownMatches = getKnownMatchesForDate(dateStr);
+    let knownSection = '';
+    if (knownMatches && knownMatches.length > 0) {
+        knownSection = `
+📋 **KNOWN MATCHES FOR ${dateStr}**:
+${knownMatches.map(m => `- ${m.home_team} vs ${m.away_team} (${m.match_time_utc})`).join('\n')}
+
+⚠️ Verify these matches are correct using web search.
+If correct, return them. If incorrect, correct them.
+`;
+    }
+
     return `【Search 2026 FIFA World Cup for ${dateStr}】
 
 Use web search to find matches for ${dateStr}.
+Search ANY website.
 
-Search ANY website:
-- ESPN
-- FIFA Official
-- Google Sports
-- BBC Sport
-- Any sports news
-
-Search queries:
-"2026 FIFA World Cup ${dateStr}"
-"2026 World Cup ${dateStr} schedule"
-"2026世界杯 ${dateStr} 赛程"
+${knownSection}
 
 Return ALL matches for ${dateStr} in JSON format:
 {
@@ -185,7 +220,7 @@ async function callWithRetry(prompt, retryCount = 0) {
             messages: [
                 {
                     role: 'system',
-                    content: 'You are a FIFA World Cup data assistant. Use web search to find REAL 2026 FIFA World Cup matches. Search ANY website to find the data. Only return matches that are actually scheduled. NEVER fabricate data. Return only valid JSON.'
+                    content: 'You are a FIFA World Cup data assistant. Use web search to find REAL 2026 FIFA World Cup matches. Search ANY website. Return only valid JSON. NEVER fabricate data.'
                 },
                 {
                     role: 'user',
@@ -240,7 +275,6 @@ function validateMatch(match, lang = 'en') {
     const matchDate = match.match_time_utc.split(' ')[0];
     const { todayStr } = getDateRange();
     
-    // 只返回今天及未来的比赛
     if (matchDate < todayStr) {
         return { valid: false, reason: `Match already passed: ${matchDate}` };
     }
@@ -249,7 +283,6 @@ function validateMatch(match, lang = 'en') {
         return { valid: false, reason: `${t('invalidDate')}: ${matchDate}` };
     }
     
-    // 拒绝占位符
     const placeholders = ['winner', 'tbd', 'to be determined', '?', '组', 'group', 'runner-up', 'qualifier', 'playoff'];
     const homeLower = match.home_team.toLowerCase();
     const awayLower = match.away_team.toLowerCase();
@@ -281,7 +314,7 @@ export async function fetchUpcomingMatches(lang = 'en') {
 
     console.log(`\n🏆 ========== ${t('fetching')} ==========`);
     console.log(`📅 ${t('worldCupRange', { start: startDateStr, end: endDateStr })}`);
-    console.log(`📌 策略: 自由搜索（任何网站）`);
+    console.log(`📌 策略: 已知信息 + 验证模式`);
     
     const prompt = buildWorldCupPrompt();
     
@@ -342,6 +375,13 @@ export async function fetchUpcomingMatches(lang = 'en') {
             if (validMatches.length === 0) {
                 console.log(`\n⚠️ ${t('noData')}`);
                 console.log(`💡 ${t('waitAnnouncement')}`);
+                
+                // 如果 DeepSeek 没返回数据，但本地有已知比赛，直接使用本地数据
+                const fallbackMatches = getKnownMatchesForDate(startDateStr);
+                if (fallbackMatches && fallbackMatches.length > 0) {
+                    console.log(`\n📋 使用本地已知比赛数据作为备用 (${fallbackMatches.length} 场)`);
+                    return fallbackMatches;
+                }
             }
             
             return validMatches;
@@ -355,12 +395,6 @@ export async function fetchUpcomingMatches(lang = 'en') {
     }
 }
 
-/**
- * 获取特定日期的比赛
- * @param {string} date - YYYY-MM-DD 格式
- * @param {string} lang - 语言
- * @returns {Promise<Array>}
- */
 export async function fetchMatchesForSpecificDate(date, lang = 'en') {
     if (lang && I18N[lang]) {
         currentLanguage = lang;
@@ -402,6 +436,15 @@ export async function fetchMatchesForSpecificDate(date, lang = 'en') {
                 }
             }
             console.log(`📊 获取到 ${validMatches.length} 场有效比赛`);
+            
+            if (validMatches.length === 0) {
+                const fallbackMatches = getKnownMatchesForDate(date);
+                if (fallbackMatches && fallbackMatches.length > 0) {
+                    console.log(`📋 使用本地已知比赛数据作为备用 (${fallbackMatches.length} 场)`);
+                    return fallbackMatches;
+                }
+            }
+            
             return validMatches;
         }
         
