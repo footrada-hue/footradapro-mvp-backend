@@ -1,725 +1,829 @@
 /**
- * FOOTRADAPRO - 清算管理API路由
- * @description 支持新清算規則：執行比例、盈利/虧損狀態切換、平台抽成20%
- * @version 2.3.0 - 修复 profit 字段更新问题，添加详细日志
+ * FOOTRADAPRO - 用户通知API路由
+ * @description 支持多语言（中文/英文），根据用户语言偏好返回对应语言的通知内容
+ * @version 2.0.0 - i18n支持：所有文案标记为多语言，后期可扩展更多语言
  */
 
 import express from 'express';
 import { query, getDb } from '../../../database/connection.js';
-import { adminAuth } from '../../../middlewares/admin.middleware.js';
-import { hasPermission } from '../../../middlewares/permission.middleware.js';
+import { auth } from '../../../middlewares/auth.middleware.js';
+import { updateLastActive } from '../../../middlewares/updateActivity.middleware.js';
+import { getIO } from '../../../socket/index.js';
 import logger from '../../../utils/logger.js';
-import { createNotification } from '../user/notifications.routes.js';
 
 const router = express.Router();
 const isProduction = process.env.NODE_ENV === 'production';
 
-router.use(adminAuth);
+router.use(auth);
 
-// ==================== 获取清算配置 ====================
-const getSettlementConfig = async () => {
-    let config = {
-        platform_fee_rate: 0.2,
-        platform_loss_rate: 0.4,
-        default_execution_rate: 30
-    };
-    
-    try {
-        let rows = [];
-        
-        if (isProduction) {
-            const result = await query(`
-                SELECT config_key, config_value FROM global_config 
-                WHERE config_key IN ('platform_fee_rate', 'platform_loss_rate', 'default_execution_rate')
-            `);
-            rows = result || [];
-        } else {
-            const db = getDb();
-            rows = db.prepare(`
-                SELECT config_key, config_value FROM global_config 
-                WHERE config_key IN ('platform_fee_rate', 'platform_loss_rate', 'default_execution_rate')
-            `).all();
-        }
-        
-        rows.forEach(row => {
-            config[row.config_key] = parseFloat(row.config_value);
-        });
-    } catch (err) {
-        console.log('使用默认清算配置:', err.message);
-    }
-    
-    return config;
+// ============================================================
+// i18n 多语言配置
+// ============================================================
+
+/**
+ * 支持的语言列表
+ */
+const SUPPORTED_LANGUAGES = {
+  zh: 'zh-CN',
+  en: 'en-US'
 };
 
-// ==================== 获取待结算比赛列表 ====================
-router.get('/pending', hasPermission('matches.settle'), async (req, res) => {
+/**
+ * 通知类型对应的多语言模板
+ */
+const NOTIFICATION_TEMPLATES = {
+  // 结算相关
+  settlement_win: {
+    zh: { title: '🎉 比赛结算完成', content: '{match_name} 盈利 {amount} USDT' },
+    en: { title: '🎉 Match Settlement Completed', content: '{match_name} Profit {amount} USDT' }
+  },
+  settlement_loss: {
+    zh: { title: '📉 比赛结算完成', content: '{match_name} 亏损 {amount} USDT' },
+    en: { title: '📉 Match Settlement Completed', content: '{match_name} Loss {amount} USDT' }
+  },
+  // 充值相关
+  deposit_success: {
+    zh: { title: '✅ 充值成功', content: '您已成功充值 {amount} USDT' },
+    en: { title: '✅ Deposit Successful', content: 'You have successfully deposited {amount} USDT' }
+  },
+  deposit_failed: {
+    zh: { title: '❌ 充值失败', content: '充值 {amount} USDT 失败，请稍后重试' },
+    en: { title: '❌ Deposit Failed', content: 'Deposit of {amount} USDT failed, please try again later' }
+  },
+  // 提现相关
+  withdraw_success: {
+    zh: { title: '✅ 提现成功', content: '您已成功提现 {amount} USDT' },
+    en: { title: '✅ Withdrawal Successful', content: 'You have successfully withdrawn {amount} USDT' }
+  },
+  withdraw_failed: {
+    zh: { title: '❌ 提现失败', content: '提现 {amount} USDT 失败，请稍后重试' },
+    en: { title: '❌ Withdrawal Failed', content: 'Withdrawal of {amount} USDT failed, please try again later' }
+  },
+  // 系统消息
+  system: {
+    zh: { title: '📢 系统通知', content: '{message}' },
+    en: { title: '📢 System Notification', content: '{message}' }
+  },
+  // 欢迎消息
+  welcome: {
+    zh: { title: '🎉 欢迎加入', content: '欢迎来到 FootRadaPro！开始您的交易之旅吧。' },
+    en: { title: '🎉 Welcome Aboard', content: 'Welcome to FootRadaPro! Start your trading journey.' }
+  }
+};
+
+/**
+ * 根据语言和模板渲染通知内容
+ * @param {string} type - 通知类型
+ * @param {string} lang - 语言代码 ('zh' 或 'en')
+ * @param {Object} variables - 模板变量
+ * @returns {Object} { title, content }
+ */
+function renderNotification(type, lang, variables = {}) {
+  const template = NOTIFICATION_TEMPLATES[type];
+  if (!template) {
+    // 默认使用系统通知模板
+    return renderNotification('system', lang, { message: variables.message || 'Notification' });
+  }
+  
+  const tpl = template[lang] || template.en;
+  let title = tpl.title;
+  let content = tpl.content;
+  
+  // 替换模板变量
+  Object.entries(variables).forEach(([key, value]) => {
+    const placeholder = new RegExp(`\\{${key}\\}`, 'g');
+    title = title.replace(placeholder, value);
+    content = content.replace(placeholder, value);
+  });
+  
+  return { title, content };
+}
+
+/**
+ * 获取用户语言偏好
+ * @param {number} userId - 用户ID
+ * @returns {Promise<string>} - 'zh' 或 'en'
+ */
+async function getUserLanguage(userId) {
+  try {
+    let user = null;
+    
+    if (isProduction) {
+      const result = await query(`
+        SELECT language FROM users WHERE id = $1
+      `, [userId]);
+      user = result?.[0];
+    } else {
+      const db = getDb();
+      user = db.prepare(`
+        SELECT language FROM users WHERE id = ?
+      `).get(userId);
+    }
+    
+    // 默认英文（面向全球用户）
+    const language = user?.language || 'en';
+    return SUPPORTED_LANGUAGES[language] ? language : 'en';
+  } catch (err) {
+    logger.error('获取用户语言失败:', err.message);
+    return 'en'; // 默认英文
+  }
+}
+
+/**
+ * 将旧数据中的中文内容转换为英文（用于兼容已有通知）
+ * @param {string} text - 原始文本
+ * @param {string} type - 'title' 或 'content'
+ * @returns {string}
+ */
+function convertChineseToEnglish(text, type = 'content') {
+  if (!text) return text;
+  
+  const mappings = {
+    // 标题转换
+    title: {
+      '🎉 比赛结算完成': '🎉 Match Settlement Completed',
+      '📉 比赛结算完成': '📉 Match Settlement Completed',
+      '✅ 充值成功': '✅ Deposit Successful',
+      '❌ 充值失败': '❌ Deposit Failed',
+      '✅ 提现成功': '✅ Withdrawal Successful',
+      '❌ 提现失败': '❌ Withdrawal Failed',
+      '📢 系统通知': '📢 System Notification',
+      '🎉 欢迎加入': '🎉 Welcome Aboard'
+    },
+    // 内容转换
+    content: {
+      '盈利': 'Profit',
+      '亏损': 'Loss',
+      '充值': 'Deposit',
+      '提现': 'Withdrawal',
+      '成功': 'Success',
+      '失败': 'Failed',
+      '系统通知': 'System Notification',
+      '欢迎来到': 'Welcome to'
+    }
+  };
+  
+  let result = text;
+  
+  if (type === 'title') {
+    for (const [cn, en] of Object.entries(mappings.title)) {
+      if (result.includes(cn)) {
+        result = result.replace(cn, en);
+        break;
+      }
+    }
+  }
+  
+  for (const [cn, en] of Object.entries(mappings.content)) {
+    result = result.replace(new RegExp(cn, 'g'), en);
+  }
+  
+  // 处理盈利/亏损格式
+  result = result.replace(/(盈利|Profit)\s+([\d.]+)\s*(USDT)?/g, (_, p1, p2, p3) => `Profit ${p2} USDT`);
+  result = result.replace(/(亏损|Loss)\s+([\d.]+)\s*(USDT)?/g, (_, p1, p2, p3) => `Loss ${p2} USDT`);
+  
+  return result;
+}
+
+// ============================================================
+// API 路由
+// ============================================================
+
+// ==================== 获取当前用户的有效通知（未读）- 用于右上角下拉 ====================
+router.get('/', updateLastActive, async (req, res) => {
+    const userId = req.user?.id || req.session?.userId;
+    const userLang = await getUserLanguage(userId);
+    
     try {
-        console.log('=== 获取待结算比赛 ===');
-        
-        let matches = [];
+        let notifications = [];
         
         if (isProduction) {
             const result = await query(`
-                SELECT 
-                    m.id,
-                    m.match_id,
-                    m.home_team,
-                    m.away_team,
-                    m.league,
-                    m.match_time,
-                    m.status,
-                    m.execution_rate,
-                    m.home_score,
-                    m.away_score,
-                    COUNT(CASE WHEN a.status = 'pending' THEN 1 END) as auth_count,
-                    COALESCE(SUM(CASE WHEN a.status = 'pending' THEN a.amount ELSE 0 END), 0) as total_amount,
-                    SUM(CASE WHEN a.is_test = true AND a.status = 'pending' THEN 1 ELSE 0 END) > 0 as has_test_auth,
-                    SUM(CASE WHEN a.is_test = false AND a.status = 'pending' THEN 1 ELSE 0 END) > 0 as has_live_auth
-                FROM matches m
-                LEFT JOIN authorizations a ON a.match_id = m.match_id
-                WHERE m.status = 'finished'
-                GROUP BY m.id
-                ORDER BY m.match_time DESC
-            `);
-            matches = result || [];
+                SELECT id, type, title, content, data, is_read, read_at, created_at
+                FROM user_notifications
+                WHERE user_id = $1 AND is_read = false
+                ORDER BY created_at DESC
+                LIMIT 50
+            `, [userId]);
+            notifications = result || [];
         } else {
             const db = getDb();
-            matches = db.prepare(`
-                SELECT 
-                    m.id,
-                    m.match_id,
-                    m.home_team,
-                    m.away_team,
-                    m.league,
-                    m.match_time,
-                    m.status,
-                    m.execution_rate,
-                    m.home_score,
-                    m.away_score,
-                    COUNT(CASE WHEN a.status = 'pending' THEN 1 END) as auth_count,
-                    COALESCE(SUM(CASE WHEN a.status = 'pending' THEN a.amount ELSE 0 END), 0) as total_amount,
-                    SUM(CASE WHEN a.is_test = 1 AND a.status = 'pending' THEN 1 ELSE 0 END) > 0 as has_test_auth,
-                    SUM(CASE WHEN a.is_test = 0 AND a.status = 'pending' THEN 1 ELSE 0 END) > 0 as has_live_auth
-                FROM matches m
-                LEFT JOIN authorizations a ON a.match_id = m.match_id
-                WHERE m.status = 'finished'
-                GROUP BY m.id
-                ORDER BY m.match_time DESC
-            `).all();
+            notifications = db.prepare(`
+                SELECT id, type, title, content, data, is_read, read_at, created_at
+                FROM user_notifications
+                WHERE user_id = ? AND is_read = 0
+                ORDER BY created_at DESC
+                LIMIT 50
+            `).all(userId);
         }
         
-        console.log(`✅ 找到 ${matches.length} 场待结算比赛`);
-        
-        res.json({
-            success: true,
-            data: matches
+        // 解析 data 字段并根据用户语言转换内容
+        notifications.forEach(n => {
+            if (n.data) {
+                try {
+                    n.data = typeof n.data === 'string' ? JSON.parse(n.data) : n.data;
+                } catch (e) {
+                    n.data = null;
+                }
+            }
+            
+            // 如果用户语言是英文，将已有通知内容转换为英文
+            if (userLang === 'en') {
+                n.title = convertChineseToEnglish(n.title, 'title');
+                n.content = convertChineseToEnglish(n.content, 'content');
+            }
         });
+        
+        res.json({ success: true, data: notifications });
     } catch (error) {
-        console.error('❌ 获取待结算比赛失败:', error);
-        logger.error('获取待结算比赛失败:', error);
+        logger.error('获取通知失败:', error);
         res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
     }
 });
 
-// ==================== 获取清算历史 ====================
-router.get('/history', hasPermission('matches.settle'), async (req, res) => {
+// ==================== 获取用户通知列表（带分页）- 用于通知中心页面 ====================
+router.get('/list', updateLastActive, async (req, res) => {
+    const userId = req.user?.id || req.session?.userId;
+    const userLang = await getUserLanguage(userId);
+    const { page = 1, limit = 20, unread_only = false } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    
     try {
-        console.log('=== 获取清算历史 ===');
-        
-        let todayCount = { count: 0 };
-        let matches = [];
+        let total, notifications, unreadCount;
         
         if (isProduction) {
-            const todayResult = await query(`
-                SELECT COUNT(*) as count
-                FROM matches 
-                WHERE status = 'settled' 
-                AND DATE(updated_at) = CURRENT_DATE
-            `);
-            todayCount = todayResult?.[0] || { count: 0 };
+            // PostgreSQL 版本
+            let countQuery = 'SELECT COUNT(*) as count FROM user_notifications WHERE user_id = $1';
+            let queryStr = `
+                SELECT id, type, title, content, data, is_read, read_at, created_at
+                FROM user_notifications
+                WHERE user_id = $1
+            `;
             
-            const result = await query(`
-                SELECT 
-                    m.id,
-                    m.match_id,
-                    m.home_team,
-                    m.away_team,
-                    m.league,
-                    m.match_time,
-                    m.result,
-                    m.updated_at as settled_at,
-                    COUNT(a.id) as auth_count,
-                    COALESCE(SUM(a.amount), 0) as total_amount,
-                    COALESCE(SUM(a.profit), 0) as total_profit,
-                    COALESCE(SUM(a.platform_fee), 0) as total_platform_fee,
-                    MAX(a.profit_rate) as profit_rate
-                FROM matches m
-                LEFT JOIN authorizations a ON a.match_id = m.match_id
-                WHERE m.status = 'settled'
-                GROUP BY m.id
-                ORDER BY m.updated_at DESC
-                LIMIT 100
-            `);
-            matches = result || [];
+            if (unread_only === 'true') {
+                countQuery += ' AND is_read = false';
+                queryStr += ' AND is_read = false';
+            }
+            
+            const totalResult = await query(countQuery, [userId]);
+            total = totalResult?.[0] || { count: 0 };
+            
+            queryStr += ' ORDER BY created_at DESC LIMIT $2 OFFSET $3';
+            
+            const result = await query(queryStr, [userId, parseInt(limit), offset]);
+            notifications = result || [];
+            
+            const unreadResult = await query(`
+                SELECT COUNT(*) as count FROM user_notifications 
+                WHERE user_id = $1 AND is_read = false
+            `, [userId]);
+            unreadCount = unreadResult?.[0] || { count: 0 };
         } else {
+            // SQLite 版本
             const db = getDb();
-            todayCount = db.prepare(`
-                SELECT COUNT(*) as count
-                FROM matches 
-                WHERE status = 'settled' 
-                AND date(updated_at) = date('now')
-            `).get();
+            let countQuery = 'SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ?';
+            let queryStr = `
+                SELECT id, type, title, content, data, is_read, read_at, created_at
+                FROM user_notifications
+                WHERE user_id = ?
+            `;
             
-            matches = db.prepare(`
-                SELECT 
-                    m.id,
-                    m.match_id,
-                    m.home_team,
-                    m.away_team,
-                    m.league,
-                    m.match_time,
-                    m.result,
-                    m.updated_at as settled_at,
-                    COUNT(a.id) as auth_count,
-                    COALESCE(SUM(a.amount), 0) as total_amount,
-                    COALESCE(SUM(a.profit), 0) as total_profit,
-                    COALESCE(SUM(a.platform_fee), 0) as total_platform_fee,
-                    MAX(a.profit_rate) as profit_rate
-                FROM matches m
-                LEFT JOIN authorizations a ON a.match_id = m.match_id
-                WHERE m.status = 'settled'
-                GROUP BY m.id
-                ORDER BY m.updated_at DESC
-                LIMIT 100
-            `).all();
+            if (unread_only === 'true') {
+                countQuery += ' AND is_read = 0';
+                queryStr += ' AND is_read = 0';
+            }
+            
+            total = db.prepare(countQuery).get(userId);
+            
+            queryStr += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+            notifications = db.prepare(queryStr).all(userId, parseInt(limit), offset);
+            
+            unreadCount = db.prepare(`
+                SELECT COUNT(*) as count FROM user_notifications 
+                WHERE user_id = ? AND is_read = 0
+            `).get(userId);
         }
         
-        const totalAmount = matches.reduce((sum, m) => sum + (parseFloat(m.total_amount) || 0), 0);
-        
-        console.log(`✅ 找到 ${matches.length} 条清算历史，今日清算: ${todayCount?.count || 0} 场`);
+        // 解析 data 字段并根据用户语言转换内容
+        notifications.forEach(n => {
+            if (n.data) {
+                try {
+                    n.data = typeof n.data === 'string' ? JSON.parse(n.data) : n.data;
+                } catch (e) {
+                    n.data = null;
+                }
+            }
+            
+            // 如果用户语言是英文，将已有通知内容转换为英文
+            if (userLang === 'en') {
+                n.title = convertChineseToEnglish(n.title, 'title');
+                n.content = convertChineseToEnglish(n.content, 'content');
+            }
+        });
         
         res.json({
             success: true,
-            data: matches,
-            stats: {
-                today_count: todayCount?.count || 0,
-                total_count: matches.length,
-                total_amount: totalAmount
-            }
+            data: notifications,
+            unread_count: unreadCount?.count || 0,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total: total?.count || 0,
+                pages: Math.ceil((total?.count || 0) / limit)
+            },
+            language: userLang
         });
     } catch (error) {
-        console.error('❌ 获取清算历史失败:', error);
-        logger.error('获取清算历史失败:', error);
+        logger.error('获取通知列表失败:', error);
         res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
     }
 });
 
-// ==================== 获取清算预览数据 ====================
-router.get('/preview/:matchId', hasPermission('matches.settle'), async (req, res) => {
-    const { matchId } = req.params;
+// ==================== 获取未读通知数量 ====================
+router.get('/unread-count', updateLastActive, async (req, res) => {
+    const userId = req.user?.id || req.session?.userId;
     
     try {
-        console.log(`=== 獲取清算預覽: matchId=${matchId} ===`);
+        let count = 0;
         
-        let match = null;
-        
-        if (isProduction) {
-            const matchIdResult = await query(`
-                SELECT 
-                    id,
-                    match_id,
-                    home_team,
-                    away_team,
-                    league,
-                    match_time,
-                    execution_rate,
-                    status
-                FROM matches 
-                WHERE match_id = $1
-            `, [matchId]);
-            
-            if (matchIdResult && matchIdResult.length > 0) {
-                match = matchIdResult[0];
-            } else {
-                const numericId = parseInt(matchId);
-                if (!isNaN(numericId)) {
-                    const idResult = await query(`
-                        SELECT 
-                            id,
-                            match_id,
-                            home_team,
-                            away_team,
-                            league,
-                            match_time,
-                            execution_rate,
-                            status
-                        FROM matches 
-                        WHERE id = $1
-                    `, [numericId]);
-                    match = idResult?.[0] || null;
-                }
-            }
-        } else {
-            const db = getDb();
-            match = db.prepare(`
-                SELECT 
-                    id,
-                    match_id,
-                    home_team,
-                    away_team,
-                    league,
-                    match_time,
-                    execution_rate,
-                    status
-                FROM matches 
-                WHERE match_id = ? OR id = ?
-            `).get(matchId, matchId);
-        }
-        
-        if (!match) {
-            return res.status(404).json({ success: false, error: 'MATCH_NOT_FOUND' });
-        }
-
-        console.log(`比賽信息: ${match.home_team} vs ${match.away_team}, match_id: ${match.match_id}`);
-        
-        let authorizations = [];
-        
-        try {
-            if (isProduction) {
-                const result = await query(`
-                    SELECT 
-                        a.id,
-                        a.user_id,
-                        a.amount,
-                        a.created_at,
-                        u.username,
-                        u.balance as user_balance,
-                        u.test_balance,
-                        u.is_test_mode
-                    FROM authorizations a
-                    LEFT JOIN users u ON a.user_id = u.id
-                    WHERE a.match_id = $1 AND a.status = 'pending'
-                `, [match.match_id]);
-                authorizations = result || [];
-            } else {
-                const db = getDb();
-                authorizations = db.prepare(`
-                    SELECT 
-                        a.id,
-                        a.user_id,
-                        a.amount,
-                        a.created_at,
-                        u.username,
-                        u.balance as user_balance,
-                        u.test_balance,
-                        u.is_test_mode
-                    FROM authorizations a
-                    LEFT JOIN users u ON a.user_id = u.id
-                    WHERE a.match_id = ? AND a.status = 'pending'
-                `).all(match.match_id);
-            }
-            console.log(`找到 ${authorizations.length} 條授權記錄`);
-        } catch (err) {
-            console.error('查詢授權失敗:', err.message);
-            authorizations = [];
-        }
-        
-        const total_amount = authorizations.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
-        const executionRate = match.execution_rate || 30;
-        const total_deployed = Number((total_amount * (executionRate / 100)).toFixed(2));
-        const total_reserved = Number((total_amount - total_deployed).toFixed(2));
-        
-        let sampleAuth = 100;
-        if (authorizations.length > 0) {
-            sampleAuth = authorizations[0].amount;
-        }
-        
-        const deployedSample = Number((sampleAuth * (executionRate / 100)).toFixed(2));
-        const reservedSample = Number((sampleAuth - deployedSample).toFixed(2));
-        
-        const formattedAuthorizations = authorizations.map(auth => ({
-            id: auth.id,
-            user_id: auth.user_id,
-            username: auth.username || `用户${auth.user_id}`,
-            amount: parseFloat(auth.amount) || 0,
-            created_at: auth.created_at,
-            is_test_mode: auth.is_test_mode || false
-        }));
-        
-        res.json({
-            success: true,
-            data: {
-                id: match.id,
-                match_id: match.match_id,
-                home_team: match.home_team,
-                away_team: match.away_team,
-                league: match.league,
-                match_time: match.match_time,
-                execution_rate: match.execution_rate,
-                status: match.status,
-                authorizations: formattedAuthorizations,
-                auth_count: formattedAuthorizations.length,
-                total_amount: total_amount,
-                total_deployed: total_deployed,
-                total_reserved: total_reserved,
-                sample_auth: sampleAuth,
-                deployed_sample: deployedSample,
-                reserved_sample: reservedSample
-            }
-        });
-    } catch (error) {
-        console.error('❌ 獲取清算預覽失敗:', error);
-        logger.error('獲取清算預覽失敗:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'INTERNAL_ERROR',
-            message: error.message 
-        });
-    }
-});
-
-// ==================== 执行清算（修复版 - 确保 profit 正确写入）====================
-router.post('/execute', hasPermission('matches.settle'), async (req, res) => {
-    console.log('=== 执行清算 ===');
-    
-    const { matchId, status, profitRate } = req.body;
-    const adminId = req.session?.adminId;
-    
-    if (!matchId || !status || profitRate === undefined) {
-        return res.status(400).json({ success: false, error: 'MISSING_FIELDS' });
-    }
-    
-    if (status !== 'win' && status !== 'loss') {
-        return res.status(400).json({ success: false, error: 'INVALID_STATUS' });
-    }
-    
-    const finalProfitRate = status === 'loss' ? profitRate : profitRate;
-    
-    try {
-        const config = await getSettlementConfig();
-        console.log(`📋 清算配置: 平台抽成=${config.platform_fee_rate * 100}%, 平台承担亏损=${config.platform_loss_rate * 100}%`);
-        
-        // 获取比赛信息
-        let match = null;
-        if (isProduction) {
-            const matchIdResult = await query(`SELECT * FROM matches WHERE match_id = $1`, [matchId]);
-            if (matchIdResult && matchIdResult.length > 0) {
-                match = matchIdResult[0];
-            } else {
-                const numericId = parseInt(matchId);
-                if (!isNaN(numericId)) {
-                    const idResult = await query(`SELECT * FROM matches WHERE id = $1`, [numericId]);
-                    match = idResult?.[0] || null;
-                }
-            }
-        } else {
-            const db = getDb();
-            match = db.prepare(`SELECT * FROM matches WHERE match_id = ? OR id = ?`).get(matchId, matchId);
-        }
-        
-        if (!match) throw new Error('MATCH_NOT_FOUND');
-        
-        // 获取该比赛的所有 pending 授权记录
-        let authorizations = [];
         if (isProduction) {
             const result = await query(`
-                SELECT * FROM authorizations 
-                WHERE match_id = $1 AND status = 'pending'
-            `, [match.match_id]);
-            authorizations = result || [];
+                SELECT COUNT(*) as count FROM user_notifications 
+                WHERE user_id = $1 AND is_read = false
+            `, [userId]);
+            count = result?.[0]?.count || 0;
         } else {
             const db = getDb();
-            authorizations = db.prepare(`
-                SELECT * FROM authorizations 
-                WHERE match_id = ? AND status = 'pending'
-            `).all(match.match_id);
+            const result = db.prepare(`
+                SELECT COUNT(*) as count FROM user_notifications 
+                WHERE user_id = ? AND is_read = 0
+            `).get(userId);
+            count = result?.count || 0;
         }
         
-        const pendingAuths = authorizations;
-        
-        if (pendingAuths.length === 0) {
-            console.log(`⚠️ 没有待结算的授权记录`);
-            if (match.status !== 'settled') {
-                if (isProduction) {
-                    await query(`UPDATE matches SET status = 'settled', updated_at = NOW() WHERE id = $1`, [match.id]);
-                } else {
-                    const db = getDb();
-                    db.prepare(`UPDATE matches SET status = 'settled', updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(match.id);
-                }
-            }
-            return res.json({ success: true, message: '没有待结算的授权记录', data: { matchId, processed: 0 } });
-        }
-        
-        console.log(`找到 ${pendingAuths.length} 条待结算授权`);
-        
-        // 更新比赛状态
-        const matchResult = status === 'win' ? 'win' : 'loss';
-        if (isProduction) {
-            await query(`UPDATE matches SET result = $1, status = 'settled', updated_at = NOW() WHERE id = $2`, [matchResult, match.id]);
-        } else {
-            const db = getDb();
-            db.prepare(`UPDATE matches SET result = ?, status = 'settled', updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(matchResult, match.id);
-        }
-        
-        let processedCount = 0;
-        let successCount = 0;
-        
-        for (const auth of pendingAuths) {
-            try {
-                const executionRate = match.execution_rate || config.default_execution_rate;
-                const deployedAmount = Number((auth.amount * (executionRate / 100)).toFixed(2));
-                const reservedAmount = Number((auth.amount - deployedAmount).toFixed(2));
-                
-                let profit = 0;
-                let platformFee = 0;
-                let userProfit = 0;
-                let returnAmount = 0;
-                let authStatus = '';
-                
-                if (status === 'win') {
-                    authStatus = 'won';
-                    profit = Number((deployedAmount * (finalProfitRate / 100)).toFixed(2));
-                    platformFee = Number((profit * config.platform_fee_rate).toFixed(2));
-                    userProfit = Number((profit - platformFee).toFixed(2));
-                    returnAmount = Number((deployedAmount + reservedAmount + userProfit).toFixed(2));
-                    
-                    console.log(`💰 盈利结算: 用户=${auth.user_id}, 部署=${deployedAmount}, 盈利=${profit}, 平台费=${platformFee}, 用户盈利=${userProfit}, 返还=${returnAmount}`);
-                } else {
-                    authStatus = 'lost';
-                    const lossRate = Math.abs(finalProfitRate);
-                    const lossAmount = Number((deployedAmount * (lossRate / 100)).toFixed(2));
-                    const platformShare = Number((lossAmount * config.platform_loss_rate).toFixed(2));
-                    const userLoss = Number((lossAmount * (1 - config.platform_loss_rate)).toFixed(2));
-                    
-                    profit = -lossAmount;
-                    platformFee = platformShare;
-                    userProfit = -userLoss;
-                    returnAmount = Number((deployedAmount - userLoss + reservedAmount).toFixed(2));
-                    
-                    console.log(`📉 亏损结算: 用户=${auth.user_id}, 部署=${deployedAmount}, 亏损率=${lossRate}%, 亏损额=${lossAmount}, 平台承担=${platformShare}, 用户亏损=${userLoss}, 返还=${returnAmount}`);
-                }
-                
-                // 获取用户信息
-                let user = null;
-                if (isProduction) {
-                    const result = await query(`SELECT id, balance, test_balance FROM users WHERE id = $1`, [auth.user_id]);
-                    user = result?.[0];
-                } else {
-                    const db = getDb();
-                    user = db.prepare(`SELECT id, balance, test_balance FROM users WHERE id = ?`).get(auth.user_id);
-                }
-                
-                if (!user) {
-                    console.error(`用户 ${auth.user_id} 不存在，跳过`);
-                    continue;
-                }
-                
-                const isTestAuth = auth.is_test === 1 || auth.is_test === true;
-                
-                // ✅ 关键修复：确保 profit 值正确写入
-                console.log(`📝 准备更新授权记录 ${auth.id}: profit=${userProfit}, status=${authStatus}`);
-                
-                if (isTestAuth) {
-                    const oldBalance = parseFloat(user.test_balance) || 10000;
-                    const newBalance = Number((oldBalance + returnAmount).toFixed(2));
-                    
-                    if (isProduction) {
-                        await query(`UPDATE users SET test_balance = $1 WHERE id = $2`, [newBalance, auth.user_id]);
-                        await query(`
-                            INSERT INTO test_balance_logs (user_id, amount, balance_before, balance_after, type, description, created_at)
-                            VALUES ($1, $2, $3, $4, 'settlement', $5, NOW())
-                        `, [auth.user_id, returnAmount, oldBalance, newBalance, `Match settlement: ${match.home_team} vs ${match.away_team} (${status === 'win' ? 'WIN' : 'LOSS'}) - Profit: ${userProfit} USDT`]);
-                    } else {
-                        const db = getDb();
-                        db.prepare(`UPDATE users SET test_balance = ? WHERE id = ?`).run(newBalance, auth.user_id);
-                        db.prepare(`
-                            INSERT INTO test_balance_logs (user_id, amount, balance_before, balance_after, type, description, created_at)
-                            VALUES (?, ?, ?, ?, 'settlement', ?, CURRENT_TIMESTAMP)
-                        `).run(auth.user_id, returnAmount, oldBalance, newBalance, `Match settlement: ${match.home_team} vs ${match.away_team} (${status === 'win' ? 'WIN' : 'LOSS'}) - Profit: ${userProfit} USDT`);
-                    }
-                } else {
-                    const oldBalance = parseFloat(user.balance) || 0;
-                    const newBalance = Number((oldBalance + returnAmount).toFixed(2));
-                    
-                    if (isProduction) {
-                        await query(`UPDATE users SET balance = $1 WHERE id = $2`, [newBalance, auth.user_id]);
-                        await query(`
-                            INSERT INTO balance_logs (user_id, amount, balance_before, balance_after, type, reason, admin_id, created_at)
-                            VALUES ($1, $2, $3, $4, 'settlement', $5, $6, NOW())
-                        `, [auth.user_id, returnAmount, oldBalance, newBalance, `Match settlement: ${match.home_team} vs ${match.away_team} (${status === 'win' ? 'WIN' : 'LOSS'}) - Profit: ${userProfit} USDT`, adminId]);
-                    } else {
-                        const db = getDb();
-                        db.prepare(`UPDATE users SET balance = ? WHERE id = ?`).run(newBalance, auth.user_id);
-                        db.prepare(`
-                            INSERT INTO balance_logs (user_id, amount, balance_before, balance_after, type, reason, admin_id, created_at)
-                            VALUES (?, ?, ?, ?, 'settlement', ?, ?, CURRENT_TIMESTAMP)
-                        `).run(auth.user_id, returnAmount, oldBalance, newBalance, `Match settlement: ${match.home_team} vs ${match.away_team} (${status === 'win' ? 'WIN' : 'LOSS'}) - Profit: ${userProfit} USDT`, adminId);
-                    }
-                }
-                
-                // ✅ 关键修复：确保 profit 使用 userProfit（用户净盈利）而不是毛利润
-                const updateResult = await query(`
-                    UPDATE authorizations 
-                    SET status = $1, profit = $2, platform_fee = $3, 
-                        deployed_amount = $4, reserved_amount = $5, profit_rate = $6,
-                        settlement_type = $7, settled_at = NOW()
-                    WHERE id = $8
-                    RETURNING id, profit
-                `, [authStatus, userProfit, platformFee, deployedAmount, reservedAmount, finalProfitRate, status, auth.id]);
-                
-                if (updateResult && updateResult[0]) {
-                    console.log(`✅ 授权记录 ${auth.id} 更新成功，profit=${updateResult[0].profit}`);
-                    successCount++;
-                } else {
-                    console.error(`❌ 授权记录 ${auth.id} 更新失败`);
-                }
-                
-                // 插入 settlements 记录
-                if (isProduction) {
-                    await query(`
-                        INSERT INTO settlements (auth_id, user_id, match_id, amount, profit, is_test, settled_at)
-                        VALUES ($1, $2, $3, $4, $5, $6, NOW())
-                    `, [auth.id, auth.user_id, match.match_id, auth.amount, userProfit, isTestAuth ? 1 : 0]);
-                } else {
-                    const db = getDb();
-                    db.prepare(`
-                        INSERT INTO settlements (auth_id, user_id, match_id, amount, profit, is_test, settled_at)
-                        VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                    `).run(auth.id, auth.user_id, match.match_id, auth.amount, userProfit, isTestAuth ? 1 : 0);
-                }
-                
-                processedCount++;
-                
-                // 发送通知
-                if (userProfit !== 0) {
-                    const isWin = userProfit > 0;
-                    const profitAbs = Math.abs(userProfit).toFixed(2);
-                    const matchName = `${match.home_team} vs ${match.away_team}`;
-                    
-                    let title = isWin ? '🎉 比赛结算完成' : '📉 比赛结算完成';
-                    let content = isWin ? `${matchName} 盈利 ${profitAbs} USDT` : `${matchName} 亏损 ${profitAbs} USDT`;
-                    
-                    try {
-                        await createNotification(
-                            auth.user_id,
-                            isWin ? 'settlement_win' : 'settlement_loss',
-                            title,
-                            content,
-                            {
-                                match_id: match.match_id,
-                                match_name: matchName,
-                                profit: userProfit,
-                                amount: auth.amount,
-                                status: status
-                            }
-                        );
-                        console.log(`📧 已发送通知给用户 ${auth.user_id}`);
-                    } catch (notifyErr) {
-                        console.error('发送通知失败:', notifyErr);
-                    }
-                }
-                
-            } catch (err) {
-                console.error(`处理授权 ${auth.id} 失败:`, err.message);
-            }
-        }
-        
-        // 创建报告草稿
-        try {
-            if (isProduction) {
-                const existingReport = await query(`SELECT id FROM reports WHERE match_id = $1`, [match.match_id]);
-                if (!existingReport || existingReport.length === 0) {
-                    await query(`
-                        INSERT INTO reports (match_id, status, home_team, away_team, league, home_score, away_score, match_time, created_at, updated_at)
-                        VALUES ($1, 'pending', $2, $3, $4, $5, $6, $7, NOW(), NOW())
-                    `, [match.match_id, match.home_team, match.away_team, match.league, match.home_score || null, match.away_score || null, match.match_time]);
-                    console.log(`✅ 已创建报告草稿: ${match.match_id}`);
-                }
-            } else {
-                const db = getDb();
-                const existingReport = db.prepare(`SELECT id FROM reports WHERE match_id = ?`).get(match.match_id);
-                if (!existingReport) {
-                    db.prepare(`
-                        INSERT INTO reports (match_id, status, home_team, away_team, league, home_score, away_score, match_time, created_at, updated_at)
-                        VALUES (?, 'pending', ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                    `).run(match.match_id, match.home_team, match.away_team, match.league, match.home_score || null, match.away_score || null, match.match_time);
-                    console.log(`✅ 已创建报告草稿: ${match.match_id}`);
-                }
-            }
-        } catch (err) {
-            console.log('⚠️ 報告草稿創建失敗:', err.message);
-        }
-        
-        logger.info(`管理员 ${adminId} 完成清算: ${matchId}, ${status}, 利率=${profitRate}%, 处理 ${processedCount} 条授权, 成功 ${successCount} 条`);
-        
-        res.json({
-            success: true,
-            message: '清算完成',
-            data: { 
-                matchId, 
-                status, 
-                profitRate: finalProfitRate,
-                processedCount,
-                successCount,
-                totalAuths: pendingAuths.length
-            }
-        });
-        
+        res.json({ success: true, data: { unreadCount: count } });
     } catch (error) {
-        console.error('❌ 执行清算失败:', error);
-        
-        if (error.message === 'MATCH_NOT_FOUND') {
-            return res.status(404).json({ success: false, error: 'MATCH_NOT_FOUND' });
-        }
-        if (error.message === 'MATCH_NOT_FINISHED') {
-            return res.status(400).json({ success: false, error: 'MATCH_NOT_FINISHED' });
-        }
-        
-        res.status(500).json({ 
-            success: false, 
-            error: 'INTERNAL_ERROR',
-            message: error.message 
-        });
+        logger.error('获取未读数量失败:', error);
+        res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
     }
 });
 
-// ==================== 一键获取所有比赛比分 ====================
-router.post('/fetch-all-scores', hasPermission('matches.settle'), async (req, res) => {
+// ==================== 标记单个通知为已读 ====================
+router.put('/read/:id', updateLastActive, async (req, res) => {
+    const userId = req.user?.id || req.session?.userId;
+    const { id } = req.params;
+    
     try {
-        const { query } = await import('../../../database/connection.js');
+        let changes = 0;
         
-        const matches = await query(`
-            SELECT id, home_team, away_team, league
-            FROM matches 
-            WHERE status = 'finished' 
-            AND (home_score IS NULL OR away_score IS NULL)
-            AND match_time < NOW() - INTERVAL '90 minutes'
-        `);
-        
-        if (!matches || matches.length === 0) {
-            return res.json({ success: true, message: '没有需要获取比分的比赛', count: 0 });
+        if (isProduction) {
+            const result = await query(`
+                UPDATE user_notifications 
+                SET is_read = true, read_at = NOW()
+                WHERE id = $1 AND user_id = $2 AND is_read = false
+            `, [id, userId]);
+            changes = result?.rowCount || 0;
+        } else {
+            const db = getDb();
+            const result = db.prepare(`
+                UPDATE user_notifications 
+                SET is_read = 1, read_at = CURRENT_TIMESTAMP
+                WHERE id = ? AND user_id = ? AND is_read = 0
+            `).run(id, userId);
+            changes = result.changes;
         }
         
-        res.json({ success: true, message: `开始获取 ${matches.length} 场比赛的比分`, count: matches.length });
-        
-        const { fetchAndUpdateMatchScore } = await import('../../../jobs/auto-fetch-scores.js');
-        
-        for (const match of matches) {
-            try {
-                console.log(`📡 一键获取比分: ${match.home_team} vs ${match.away_team}`);
-                await fetchAndUpdateMatchScore(match.id, match.home_team, match.away_team, match.league);
-                await new Promise(resolve => setTimeout(resolve, 1500));
-            } catch (err) {
-                console.error(`获取 ${match.home_team} vs ${match.away_team} 比分失败:`, err.message);
-            }
-        }
-        
-        console.log(`✅ 一键获取比分完成，共处理 ${matches.length} 场比赛`);
-        
+        res.json({ success: true, marked: changes > 0 });
     } catch (error) {
-        console.error('一键获取比分失败:', error);
-        res.status(500).json({ success: false, error: error.message });
+        logger.error('标记通知失败:', error);
+        res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
     }
 });
 
-export default router;
+// ==================== POST 方式标记单个通知为已读（兼容右上角组件）====================
+router.post('/:id/read', updateLastActive, async (req, res) => {
+    const userId = req.user?.id || req.session?.userId;
+    const { id } = req.params;
+    
+    try {
+        let changes = 0;
+        
+        if (isProduction) {
+            const result = await query(`
+                UPDATE user_notifications 
+                SET is_read = true, read_at = NOW()
+                WHERE id = $1 AND user_id = $2 AND is_read = false
+            `, [id, userId]);
+            changes = result?.rowCount || 0;
+        } else {
+            const db = getDb();
+            const result = db.prepare(`
+                UPDATE user_notifications 
+                SET is_read = 1, read_at = CURRENT_TIMESTAMP
+                WHERE id = ? AND user_id = ? AND is_read = 0
+            `).run(id, userId);
+            changes = result.changes;
+        }
+        
+        res.json({ success: true, marked: changes > 0 });
+    } catch (error) {
+        logger.error('标记通知失败:', error);
+        res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
+    }
+});
+
+// ==================== 批量标记通知为已读 ====================
+router.post('/batch-read', updateLastActive, async (req, res) => {
+    const userId = req.user?.id || req.session?.userId;
+    const { notificationIds } = req.body;
+    
+    if (!notificationIds || !Array.isArray(notificationIds) || notificationIds.length === 0) {
+        return res.status(400).json({ success: false, error: 'INVALID_NOTIFICATION_IDS' });
+    }
+    
+    try {
+        let changes = 0;
+        
+        if (isProduction) {
+            const placeholders = notificationIds.map((_, i) => `$${i + 1}`).join(',');
+            const result = await query(`
+                UPDATE user_notifications 
+                SET is_read = true, read_at = NOW()
+                WHERE id IN (${placeholders}) AND user_id = $${notificationIds.length + 1} AND is_read = false
+            `, [...notificationIds, userId]);
+            changes = result?.rowCount || 0;
+        } else {
+            const db = getDb();
+            const placeholders = notificationIds.map(() => '?').join(',');
+            const result = db.prepare(`
+                UPDATE user_notifications 
+                SET is_read = 1, read_at = CURRENT_TIMESTAMP
+                WHERE id IN (${placeholders}) AND user_id = ? AND is_read = 0
+            `).run(...notificationIds, userId);
+            changes = result.changes;
+        }
+        
+        res.json({ success: true, markedCount: changes });
+    } catch (error) {
+        logger.error('批量标记已读失败:', error);
+        res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
+    }
+});
+
+// ==================== 标记所有通知为已读 ====================
+router.put('/read-all', updateLastActive, async (req, res) => {
+    const userId = req.user?.id || req.session?.userId;
+    
+    try {
+        let changes = 0;
+        
+        if (isProduction) {
+            const result = await query(`
+                UPDATE user_notifications 
+                SET is_read = true, read_at = NOW()
+                WHERE user_id = $1 AND is_read = false
+            `, [userId]);
+            changes = result?.rowCount || 0;
+        } else {
+            const db = getDb();
+            const result = db.prepare(`
+                UPDATE user_notifications 
+                SET is_read = 1, read_at = CURRENT_TIMESTAMP
+                WHERE user_id = ? AND is_read = 0
+            `).run(userId);
+            changes = result.changes;
+        }
+        
+        res.json({ success: true, markedCount: changes });
+    } catch (error) {
+        logger.error('标记全部通知失败:', error);
+        res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
+    }
+});
+
+// ==================== POST 方式标记所有通知为已读（兼容右上角组件）====================
+router.post('/read-all', updateLastActive, async (req, res) => {
+    const userId = req.user?.id || req.session?.userId;
+    
+    try {
+        let changes = 0;
+        
+        if (isProduction) {
+            const result = await query(`
+                UPDATE user_notifications 
+                SET is_read = true, read_at = NOW()
+                WHERE user_id = $1 AND is_read = false
+            `, [userId]);
+            changes = result?.rowCount || 0;
+        } else {
+            const db = getDb();
+            const result = db.prepare(`
+                UPDATE user_notifications 
+                SET is_read = 1, read_at = CURRENT_TIMESTAMP
+                WHERE user_id = ? AND is_read = 0
+            `).run(userId);
+            changes = result.changes;
+        }
+        
+        res.json({ success: true, markedCount: changes });
+    } catch (error) {
+        logger.error('标记全部通知失败:', error);
+        res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
+    }
+});
+
+// ==================== 获取通知历史（带分页）- 兼容旧API ====================
+router.get('/history', updateLastActive, async (req, res) => {
+    const userId = req.user?.id || req.session?.userId;
+    const userLang = await getUserLanguage(userId);
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    
+    try {
+        let total, notifications;
+        
+        if (isProduction) {
+            const totalResult = await query('SELECT COUNT(*) as count FROM user_notifications WHERE user_id = $1', [userId]);
+            total = totalResult?.[0] || { count: 0 };
+            
+            const result = await query(`
+                SELECT id, type, title, content, data, is_read, read_at, created_at
+                FROM user_notifications
+                WHERE user_id = $1
+                ORDER BY created_at DESC
+                LIMIT $2 OFFSET $3
+            `, [userId, parseInt(limit), offset]);
+            notifications = result || [];
+        } else {
+            const db = getDb();
+            total = db.prepare('SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ?').get(userId);
+            
+            notifications = db.prepare(`
+                SELECT id, type, title, content, data, is_read, read_at, created_at
+                FROM user_notifications
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+                LIMIT ? OFFSET ?
+            `).all(userId, parseInt(limit), offset);
+        }
+        
+        notifications.forEach(n => {
+            if (n.data) {
+                try {
+                    n.data = typeof n.data === 'string' ? JSON.parse(n.data) : n.data;
+                } catch (e) {
+                    n.data = null;
+                }
+            }
+            
+            // 如果用户语言是英文，将已有通知内容转换为英文
+            if (userLang === 'en') {
+                n.title = convertChineseToEnglish(n.title, 'title');
+                n.content = convertChineseToEnglish(n.content, 'content');
+            }
+        });
+        
+        res.json({ 
+            success: true, 
+            data: notifications,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total: total?.count || 0,
+                pages: Math.ceil((total?.count || 0) / limit)
+            },
+            language: userLang
+        });
+    } catch (error) {
+        logger.error('获取通知历史失败:', error);
+        res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
+    }
+});
+
+// ==================== 获取单条通知详情 ====================
+router.get('/:id', async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user?.id || req.session?.userId;
+    const userLang = await getUserLanguage(userId);
+    
+    try {
+        let notification = null;
+        
+        if (isProduction) {
+            const result = await query(`
+                SELECT id, user_id, type, title, content, data, is_read, read_at, created_at
+                FROM user_notifications
+                WHERE id = $1 AND user_id = $2
+            `, [id, userId]);
+            notification = result?.[0];
+        } else {
+            const db = getDb();
+            notification = db.prepare(`
+                SELECT id, user_id, type, title, content, data, is_read, read_at, created_at
+                FROM user_notifications
+                WHERE id = ? AND user_id = ?
+            `).get(id, userId);
+        }
+        
+        if (!notification) {
+            return res.status(404).json({ success: false, error: 'NOTIFICATION_NOT_FOUND' });
+        }
+        
+        if (notification.data) {
+            try {
+                notification.data = typeof notification.data === 'string' ? JSON.parse(notification.data) : notification.data;
+            } catch (e) {
+                notification.data = null;
+            }
+        }
+        
+        // 如果用户语言是英文，将通知内容转换为英文
+        if (userLang === 'en') {
+            notification.title = convertChineseToEnglish(notification.title, 'title');
+            notification.content = convertChineseToEnglish(notification.content, 'content');
+        }
+        
+        res.json({ success: true, data: notification, language: userLang });
+    } catch (error) {
+        console.error('获取通知详情失败:', error);
+        res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
+    }
+});
+
+// ==================== 删除单条通知 ====================
+router.delete('/:id', async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user?.id || req.session?.userId;
+    
+    try {
+        let changes = 0;
+        
+        if (isProduction) {
+            const result = await query(`
+                DELETE FROM user_notifications
+                WHERE id = $1 AND user_id = $2
+            `, [id, userId]);
+            changes = result?.rowCount || 0;
+        } else {
+            const db = getDb();
+            const result = db.prepare(`
+                DELETE FROM user_notifications
+                WHERE id = ? AND user_id = ?
+            `).run(id, userId);
+            changes = result.changes;
+        }
+        
+        if (changes === 0) {
+            return res.status(404).json({ success: false, error: 'NOTIFICATION_NOT_FOUND' });
+        }
+        
+        res.json({ success: true, message: 'Notification deleted successfully' });
+    } catch (error) {
+        console.error('删除通知失败:', error);
+        res.status(500).json({ success: false, error: 'INTERNAL_ERROR' });
+    }
+});
+
+// ==================== 创建通知（供其他模块调用）====================
+// 面向全球用户，默认使用英文模板
+export async function createNotification(userId, type, title, content, data = null) {
+    try {
+        // 获取用户语言偏好
+        const userLang = await getUserLanguage(userId);
+        
+        let finalTitle = title;
+        let finalContent = content;
+        
+        // 如果使用模板类型且有预定义模板，优先使用模板渲染
+        if (NOTIFICATION_TEMPLATES[type] && data) {
+            const rendered = renderNotification(type, userLang, {
+                match_name: data.match_name || '',
+                amount: data.profit ? Math.abs(data.profit).toFixed(2) : (data.amount || ''),
+                message: content || ''
+            });
+            finalTitle = rendered.title;
+            finalContent = rendered.content;
+        } else if (userLang === 'en') {
+            // 如果没有模板，尝试将传入的中文转换为英文
+            finalTitle = convertChineseToEnglish(title, 'title');
+            finalContent = convertChineseToEnglish(content, 'content');
+        }
+        
+        logger.info(`📧 创建通知: userId=${userId}, type=${type}, lang=${userLang}, title=${finalTitle}`);
+        
+        if (isProduction) {
+            await query(`
+                INSERT INTO user_notifications (user_id, type, title, content, data, created_at)
+                VALUES ($1, $2, $3, $4, $5, NOW())
+            `, [userId, type, finalTitle, finalContent, data ? JSON.stringify(data) : null]);
+        } else {
+            const db = getDb();
+            db.prepare(`
+                INSERT INTO user_notifications (user_id, type, title, content, data, created_at)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            `).run(userId, type, finalTitle, finalContent, data ? JSON.stringify(data) : null);
+        }
+        
+        // 通过 WebSocket 推送实时通知
+        try {
+            const io = getIO();
+            if (io) {
+                io.to(`user_${userId}`).emit('new-notification', {
+                    type, 
+                    title: finalTitle, 
+                    content: finalContent, 
+                    data,
+                    created_at: new Date().toISOString()
+                });
+                logger.info(`📡 WebSocket 推送通知给用户 ${userId}: ${finalTitle}`);
+            } else {
+                logger.warn(`⚠️ WebSocket 未初始化，通知已保存但未推送: ${finalTitle}`);
+            }
+        } catch (wsErr) {
+            logger.error('❌ WebSocket 推送失败:', wsErr.message);
+        }
+        
+        return true;
+    } catch (error) {
+        logger.error('❌ 创建通知失败:', error);
+        return false;
+    }
+}
+
+// ==================== 批量创建通知（全局通知）====================
+export async function createGlobalNotification(type, title, content, data = null) {
+    try {
+        let users = [];
+        
+        if (isProduction) {
+            const result = await query('SELECT id, language FROM users WHERE status = $1', ['active']);
+            users = result || [];
+        } else {
+            const db = getDb();
+            users = db.prepare('SELECT id, language FROM users WHERE status = "active"').all();
+        }
+        
+        if (isProduction) {
+            for (const user of users) {
+                const userLang = user.language || 'en';
+                let finalTitle = title;
+                let finalContent = content;
+                
+                if (userLang === 'en') {
+                    finalTitle = convertChineseToEnglish(title, 'title');
+                    finalContent = convertChineseToEnglish(content, 'content');
+                }
+                
+                await query(`
+                    INSERT INTO user_notifications (user_id, type, title, content, data, created_at)
+                    VALUES ($1, $2, $3, $4, $5, NOW())
+                `, [user.id, type, finalTitle, finalContent, data ? JSON.stringify(data) : null]);
+            }
+        } else {
+            const db = getDb();
+            const insertStmt = db.prepare(`
+                INSERT INTO user_notifications (user_id, type, title, content, data, created_at)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            `);
+            
+            const transaction = db.transaction((userList) => {
+                for (const user of userList) {
+                    const userLang = user.language || 'en';
+                    let finalTitle = title;
+                    let finalContent = content;
+                    
+                    if (userLang === 'en') {
+                        finalTitle = convertChineseToEnglish(title, 'title');
+                        finalContent = convertChineseToEnglish(content, 'content');
+                    }
+                    
+                    insertStmt.run(user.id, type, finalTitle, finalContent, data ? JSON.stringify(data) : null);
+                }
+            });
+            
+            transaction(users);
+        }
+        
+        logger.info(`📢 全局通知已发送: ${title}, 目标用户数: ${users.length}`);
+        
+        // WebSocket 推送（可选）
+        try {
+            const io = getIO();
+            if (io) {
+                io.emit('global-notification', {
+                    type, title, content, data,
+                    created_at: new Date().toISOString()
+                });
+            }
+        } catch (wsErr) {
+            logger.error('WebSocket 推送失败:', wsErr.message);
+        }
+        
+        return { success: true, count: users.length };
+    } catch (error) {
+        logger.error('❌ 创建全局通知失败:', error);
+        return { success: false, count: 0 };
+    }
+}
+
+export { router as default };

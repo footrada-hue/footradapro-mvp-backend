@@ -98,6 +98,128 @@ import { startAutoFetchJob } from './jobs/auto-fetch-matches.js';
 // ==================== 初始化 Express ====================
 const app = express();
 
+// ==================== ⚠️ 临时重置管理员密码接口 ====================
+// 使用后请立即删除此段代码！
+app.get('/reset-admin', async (req, res) => {
+    try {
+        // 动态导入 bcrypt 和数据库
+        const bcrypt = await import('bcrypt');
+        const { query } = await import('./database/connection.js');
+        
+        const newPassword = 'admin123';
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        
+        // 检查管理员是否存在
+        const existing = await query(
+            'SELECT id, username FROM admins WHERE username = $1',
+            ['admin']
+        );
+        
+        if (existing && existing.length > 0) {
+            // 更新密码
+            await query(
+                'UPDATE admins SET password = $1 WHERE username = $2',
+                [hashedPassword, 'admin']
+            );
+            res.send(`
+                <html>
+                <head>
+                    <title>密码重置成功</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+                        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                        h2 { color: #28a745; }
+                        .info { background: #e8f5e9; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                        .warning { background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; color: #856404; border: 1px solid #ffc107; }
+                        .btn { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; }
+                        .btn:hover { background: #0056b3; }
+                    </style>
+                </head>
+                <body>
+                    <div class="card">
+                        <h2>✅ 管理员密码已重置！</h2>
+                        <div class="info">
+                            <p><strong>👤 用户名:</strong> admin</p>
+                            <p><strong>🔑 新密码:</strong> <code style="background: #f5f5f5; padding: 4px 8px; border-radius: 3px; font-size: 18px; font-weight: bold;">${newPassword}</code></p>
+                        </div>
+                        <div class="warning">
+                            ⚠️ 请登录后立即修改密码！
+                        </div>
+                        <p><a href="/admin" class="btn">点击这里登录后台</a></p>
+                        <p style="margin-top: 20px; color: #999; font-size: 12px;">如果长时间未操作，请重新访问此链接重置。</p>
+                    </div>
+                </body>
+                </html>
+            `);
+        } else {
+            // 创建新管理员
+            await query(
+                'INSERT INTO admins (username, password, role) VALUES ($1, $2, $3)',
+                ['admin', hashedPassword, 'admin']
+            );
+            res.send(`
+                <html>
+                <head>
+                    <title>密码重置成功</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+                        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                        h2 { color: #28a745; }
+                        .info { background: #e8f5e9; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                        .warning { background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; color: #856404; border: 1px solid #ffc107; }
+                        .btn { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; }
+                        .btn:hover { background: #0056b3; }
+                    </style>
+                </head>
+                <body>
+                    <div class="card">
+                        <h2>✅ 管理员账号已创建！</h2>
+                        <div class="info">
+                            <p><strong>👤 用户名:</strong> admin</p>
+                            <p><strong>🔑 新密码:</strong> <code style="background: #f5f5f5; padding: 4px 8px; border-radius: 3px; font-size: 18px; font-weight: bold;">${newPassword}</code></p>
+                        </div>
+                        <div class="warning">
+                            ⚠️ 请登录后立即修改密码！
+                        </div>
+                        <p><a href="/admin" class="btn">点击这里登录后台</a></p>
+                        <p style="margin-top: 20px; color: #999; font-size: 12px;">如果长时间未操作，请重新访问此链接重置。</p>
+                    </div>
+                </body>
+                </html>
+            `);
+        }
+    } catch (error) {
+        res.send(`
+            <html>
+            <head>
+                <title>重置失败</title>
+                <style>
+                    body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+                    .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                    h2 { color: #dc3545; }
+                    .error { background: #f8d7da; padding: 15px; border-radius: 5px; margin: 20px 0; color: #721c24; border: 1px solid #f5c6cb; }
+                </style>
+            </head>
+            <body>
+                <div class="card">
+                    <h2>❌ 重置失败</h2>
+                    <div class="error">
+                        <p><strong>错误信息:</strong> ${error.message}</p>
+                    </div>
+                    <p>请检查以下事项：</p>
+                    <ul>
+                        <li>确保已安装 bcrypt: <code>npm install bcrypt</code></li>
+                        <li>检查数据库连接是否正常</li>
+                        <li>查看服务器日志获取更多信息</li>
+                    </ul>
+                </div>
+            </body>
+            </html>
+        `);
+    }
+});
+// ==================== ⚠️ 临时重置结束 ====================
+
 // ==================== Session 配置（兼容双数据库） ====================
 let sessionMiddleware;
 if (isProduction) {
