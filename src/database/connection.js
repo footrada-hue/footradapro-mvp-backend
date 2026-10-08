@@ -73,6 +73,11 @@ export const transaction = async (callback) => {
 
 // ==================== 初始化数据库 ====================
 export const initDatabase = async () => {
+    // ✅ 幂等保护：如果已经初始化过，直接返回，避免重复创建连接池
+    if (db && ((isProduction && pgPool) || (!isProduction && db))) {
+        return db;
+    }
+
     try {
         if (isProduction && DATABASE_URL) {
             // ========== PostgreSQL 生产环境 ==========
