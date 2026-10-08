@@ -77,48 +77,48 @@ export const initDatabase = async () => {
         if (isProduction && DATABASE_URL) {
             // ========== PostgreSQL 生产环境 ==========
             logger.info('[Database] 🚀 Connecting to PostgreSQL (Render production)...');
-            
+
             pgPool = new Pool({
                 connectionString: DATABASE_URL,
                 ssl: { rejectUnauthorized: false },
                 max: 10,
                 idleTimeoutMillis: 30000,
             });
-            
+
             // 测试连接
             await pgPool.query('SELECT NOW()');
             logger.info('[Database] ✅ PostgreSQL connected successfully');
-            
+
             // 创建表结构
             await createTablesPostgres();
-            
+
             logger.info('[Database] ✅ PostgreSQL initialization complete');
             db = pgPool; // 兼容旧接口
-            
+
         } else {
             // ========== SQLite 本地开发 ==========
             const DB_PATH = process.env.DB_PATH || './src/database/data/footradapro.sqlite';
             const DB_DIR = path.dirname(DB_PATH);
-            
+
             if (!fs.existsSync(DB_DIR)) {
                 fs.mkdirSync(DB_DIR, { recursive: true });
             }
-            
+
             db = sqlite3(DB_PATH);
             logger.info(`[Database] 📁 SQLite connected to ${DB_PATH}`);
-            
+
             db.pragma('foreign_keys = ON');
             db.pragma('journal_mode = WAL');
             db.pragma('busy_timeout = 5000');
-            
+
             createTablesSqlite();
             runPendingMigrations();
-            
+
             logger.info('[Database] ✅ SQLite initialization complete');
         }
-        
+
         return db;
-        
+
     } catch (error) {
         logger.error('[Database] ❌ Init error:', error);
         throw error;
@@ -128,7 +128,7 @@ export const initDatabase = async () => {
 // ==================== PostgreSQL 建表 ====================
 const createTablesPostgres = async () => {
     const client = await pgPool.connect();
-    
+
     try {
         // 用户表（完整字段）
         await client.query(`
@@ -160,7 +160,7 @@ const createTablesPostgres = async () => {
                 paypassword TEXT
             )
         `);
-        
+
         // 比赛表（包含所有必要字段）
         await client.query(`
             CREATE TABLE IF NOT EXISTS matches (
@@ -188,10 +188,11 @@ const createTablesPostgres = async () => {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 home_score INTEGER,
                 away_score INTEGER,
-                settled BOOLEAN DEFAULT FALSE
+                settled BOOLEAN DEFAULT FALSE,
+                finished_at TIMESTAMP
             )
         `);
-        
+
         // 授权表
         await client.query(`
             CREATE TABLE IF NOT EXISTS authorizations (
@@ -213,7 +214,7 @@ const createTablesPostgres = async () => {
                 settlement_type TEXT
             )
         `);
-        
+
         // 管理员表
         await client.query(`
             CREATE TABLE IF NOT EXISTS admins (
@@ -224,7 +225,7 @@ const createTablesPostgres = async () => {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        
+
         // 动态消息表
         await client.query(`
             CREATE TABLE IF NOT EXISTS ticker_messages (
@@ -243,7 +244,7 @@ const createTablesPostgres = async () => {
                 expires_at TIMESTAMP
             )
         `);
-        
+
         // 余额变动日志表
         await client.query(`
             CREATE TABLE IF NOT EXISTS balance_logs (
@@ -258,7 +259,7 @@ const createTablesPostgres = async () => {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        
+
         // 充值请求表
         await client.query(`
             CREATE TABLE IF NOT EXISTS deposit_requests (
@@ -271,7 +272,7 @@ const createTablesPostgres = async () => {
                 updated_at TIMESTAMP
             )
         `);
-        
+
         // 提现请求表
         await client.query(`
             CREATE TABLE IF NOT EXISTS withdraw_requests (
@@ -284,7 +285,7 @@ const createTablesPostgres = async () => {
                 updated_at TIMESTAMP
             )
         `);
-        
+
         // 报告表
         await client.query(`
             CREATE TABLE IF NOT EXISTS reports (
@@ -300,7 +301,7 @@ const createTablesPostgres = async () => {
                 published_at TIMESTAMP
             )
         `);
-        
+
         // 测试余额日志表
         await client.query(`
             CREATE TABLE IF NOT EXISTS test_balance_logs (
@@ -316,7 +317,7 @@ const createTablesPostgres = async () => {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        
+
         // 测试重置日志表
         await client.query(`
             CREATE TABLE IF NOT EXISTS test_reset_logs (
@@ -328,7 +329,7 @@ const createTablesPostgres = async () => {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        
+
         // 模式切换日志表
         await client.query(`
             CREATE TABLE IF NOT EXISTS mode_switch_logs (
@@ -341,7 +342,7 @@ const createTablesPostgres = async () => {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        
+
         // 迁移记录表
         await client.query(`
             CREATE TABLE IF NOT EXISTS migrations_log (
@@ -352,7 +353,7 @@ const createTablesPostgres = async () => {
                 execution_time INTEGER
             )
         `);
-        
+
         // 创建索引
         await client.query(`CREATE INDEX IF NOT EXISTS idx_users_uid ON users(uid)`);
         await client.query(`CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`);
@@ -361,16 +362,17 @@ const createTablesPostgres = async () => {
         await client.query(`CREATE INDEX IF NOT EXISTS idx_authorizations_user_id ON authorizations(user_id)`);
         await client.query(`CREATE INDEX IF NOT EXISTS idx_authorizations_match_id ON authorizations(match_id)`);
         await client.query(`CREATE INDEX IF NOT EXISTS idx_authorizations_status ON authorizations(status)`);
-        
+
         // 检查并添加缺失的字段（针对已存在的表，确保升级兼容）
         logger.info('[Database] Checking for missing columns in matches table...');
-        
+
         const matchesMissingColumns = [
             { name: 'home_score', type: 'INTEGER' },
             { name: 'away_score', type: 'INTEGER' },
-            { name: 'settled', type: 'BOOLEAN DEFAULT FALSE' }
+            { name: 'settled', type: 'BOOLEAN DEFAULT FALSE' },
+            { name: 'finished_at', type: 'TIMESTAMP' }
         ];
-        
+
         for (const col of matchesMissingColumns) {
             try {
                 await client.query(`
@@ -381,17 +383,17 @@ const createTablesPostgres = async () => {
                 logger.debug(`Column ${col.name} already exists or error:`, err.message);
             }
         }
-        
+
         // 检查并添加 users 表缺失的字段
         logger.info('[Database] Checking for missing columns in users table...');
-        
+
         const usersMissingColumns = [
             { name: 'is_mode_locked', type: 'BOOLEAN DEFAULT FALSE' },
             { name: 'account_status', type: 'TEXT DEFAULT \'live\'' },
             { name: 'last_login_at', type: 'TIMESTAMP' },
             { name: 'paypassword', type: 'TEXT' }
         ];
-        
+
         for (const col of usersMissingColumns) {
             try {
                 await client.query(`
@@ -402,9 +404,9 @@ const createTablesPostgres = async () => {
                 logger.debug(`Column ${col.name} already exists or error:`, err.message);
             }
         }
-        
+
         logger.info('[Database] PostgreSQL tables created/verified');
-        
+
     } finally {
         client.release();
     }
@@ -470,7 +472,8 @@ const createTablesSqlite = () => {
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             home_score INTEGER,
             away_score INTEGER,
-            settled INTEGER DEFAULT 0
+            settled INTEGER DEFAULT 0,
+            finished_at DATETIME
         )
     `);
 
@@ -589,7 +592,7 @@ const createTablesSqlite = () => {
             FOREIGN KEY (match_id) REFERENCES matches(match_id)
         )
     `);
-    
+
     // 测试相关表
     db.exec(`
         CREATE TABLE IF NOT EXISTS test_balance_logs (
@@ -605,7 +608,7 @@ const createTablesSqlite = () => {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
-    
+
     db.exec(`
         CREATE TABLE IF NOT EXISTS test_reset_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -616,7 +619,7 @@ const createTablesSqlite = () => {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
-    
+
     db.exec(`
         CREATE TABLE IF NOT EXISTS mode_switch_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -679,21 +682,21 @@ const calculateChecksum = (filePath) => {
 
 const runMigration = (migrationFile) => {
     const migrationPath = path.join(__dirname, 'migrations', migrationFile);
-    
+
     if (!fs.existsSync(migrationPath)) {
         logger.warn(`[Migration] File not found: ${migrationFile}`);
         return false;
     }
-    
+
     const sql = fs.readFileSync(migrationPath, 'utf8');
     const checksum = calculateChecksum(migrationPath);
     const startTime = Date.now();
-    
+
     try {
         const statements = sql.split(';').map(s => s.trim()).filter(s => s.length > 0 && !s.startsWith('--'));
-        
+
         db.exec('BEGIN TRANSACTION');
-        
+
         for (const stmt of statements) {
             try {
                 db.exec(stmt);
@@ -703,12 +706,12 @@ const runMigration = (migrationFile) => {
                 if (!shouldIgnore) throw err;
             }
         }
-        
+
         const existing = db.prepare(`SELECT id FROM ${MIGRATIONS_TABLE_SQLITE} WHERE name = ? AND checksum = ?`).get(migrationFile, checksum);
         if (!existing) {
             db.prepare(`INSERT INTO ${MIGRATIONS_TABLE_SQLITE} (name, checksum, execution_time) VALUES (?, ?, ?)`).run(migrationFile, checksum, Date.now() - startTime);
         }
-        
+
         db.exec('COMMIT');
         logger.info(`[Migration] Completed: ${migrationFile}`);
         return true;
@@ -725,13 +728,13 @@ const runPendingMigrations = () => {
         fs.mkdirSync(migrationsDir, { recursive: true });
         return;
     }
-    
+
     const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql') && f !== 'run.js').sort();
     if (files.length === 0) return;
-    
+
     ensureMigrationsTable();
     const applied = getAppliedMigrations();
-    
+
     for (const file of files) {
         if (!applied.includes(file)) {
             runMigration(file);
